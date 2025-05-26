@@ -186,7 +186,7 @@ def perform_course_content_validation(course: Course) -> List[str]:
 
 # --- Original Main Function (kept for CLI compatibility) ---
 def main():
-    parser = argparse.ArgumentParser(description="Validate LinguaLearn course content YAML files.")
+    parser = argparse.ArgumentParser(description="Validate LL course content YAML files.")
     parser.add_argument("manifest_file", help="Path to the manifest.yaml file for the course.")
     args = parser.parse_args()
 

@@ -22,7 +22,7 @@ IF EXIST "%SCRIPT_DIR%\venv\Scripts\activate.bat" (
 :menu
 cls
 echo =====================================================================
-echo  LinguaLearn Project - Main Menu
+echo  LL Project - Main Menu
 echo =====================================================================
 echo.
 echo  Paths are relative to the project root (%SCRIPT_DIR%) unless a full
@@ -321,7 +321,7 @@ goto menu
 
 :end
 cls
-echo Exiting LinguaLearn Project Menu. Goodbye!
+echo Exiting LL Project Menu. Goodbye!
 if defined VIRTUAL_ENV (
     echo.
     echo Virtual environment was active. You might need to manually type 'deactivate' 

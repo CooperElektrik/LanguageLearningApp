@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     app = QApplication(sys.argv)
-    logger.info("LinguaLearn Course Editor starting...")
+    logger.info("LL Course Editor starting...")
 
     editor = EditorWindow()
     editor.show()

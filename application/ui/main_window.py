@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
             self.course_load_failed = False
 
 
-        self.setWindowTitle(f"LinguaLearn - {self.course_manager.get_course_title() or 'Language Learning'}")
+        self.setWindowTitle(f"LL - {self.course_manager.get_course_title() or 'Language Learning'}")
         self.setGeometry(100, 100, 800, 600)
         # self.setWindowIcon(QIcon("path/to/your/icon.png")) # Optional
 

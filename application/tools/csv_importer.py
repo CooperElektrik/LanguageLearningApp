@@ -232,7 +232,7 @@ def import_csv_data(
 
 # --- Original Main Function (kept for CLI compatibility) ---
 def main():
-    parser = argparse.ArgumentParser(description="Import exercises from CSV into a LinguaLearn course content YAML file.")
+    parser = argparse.ArgumentParser(description="Import exercises from CSV into a LL course content YAML file.")
     parser.add_argument("csv_file", help="Path to the input CSV file.")
     parser.add_argument("--output_yaml", required=True, help="Path to the course content YAML file to create or update.")
     

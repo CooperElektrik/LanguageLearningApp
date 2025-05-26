@@ -76,7 +76,7 @@ def create_package_for_gui(
     else:
         final_package_name_stem = f"{course_id.replace(' ', '_')}_{version.replace(' ', '_')}" # Sanitize spaces for filename
     
-    final_package_name = f"{final_package_name_stem}.lcpkg" # LinguaLearn Course Package (custom extension, still a zip)
+    final_package_name = f"{final_package_name_stem}.lcpkg" # LL Course Package (custom extension, still a zip)
 
     output_dir_to_use = output_dir_override if output_dir_override else manifest_dir
     
@@ -118,7 +118,7 @@ def create_package_for_gui(
 
 # --- Original Main Function (kept for CLI compatibility) ---
 def main():
-    parser = argparse.ArgumentParser(description="Package a LinguaLearn course into a distributable archive.")
+    parser = argparse.ArgumentParser(description="Package a LL course into a distributable archive.")
     parser.add_argument("manifest_file", help="Path to the manifest.yaml file for the course.")
     parser.add_argument("--output_dir", "-o", help="Directory to save the course package. Defaults to the manifest file's directory.")
     parser.add_argument("--name", "-n", help="Custom name for the output package (without .zip or .lcpkg extension). Overrides default naming.")

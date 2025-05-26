@@ -45,7 +45,7 @@ class EditorWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("LinguaLearn Course Editor")
+        self.setWindowTitle("LL Course Editor")
         self.setGeometry(100, 100, 1200, 800)
 
         self.current_manifest_path: str = None
@@ -221,7 +221,7 @@ class EditorWindow(QMainWindow):
 
     def _set_dirty_state(self, dirty: bool = True):
         self.is_dirty = dirty
-        self.setWindowTitle(f"LinguaLearn Course Editor{' *' if dirty else ''} - "
+        self.setWindowTitle(f"LL Course Editor{' *' if dirty else ''} - "
                             f"{os.path.basename(self.current_manifest_path) if self.current_manifest_path else 'New Course'}")
         
     def _display_item_editor(self, item_data: Any):
