@@ -1,0 +1,7 @@
+venv/
+dist/
+esperanto_course.yaml
+manifest.yaml
+*.pyc
+.vscode/
+application/core/data

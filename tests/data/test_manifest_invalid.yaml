@@ -1,0 +1,5 @@
+# Missing course_id and content_file
+course_title: "Invalid Test Course"
+target_language: "TestLangTarget"
+source_language: "TestLangSource"
+version: "1.0.0"
