@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, 
-                               QFrame, QGroupBox, QHBoxLayout)
+                               QFrame, QGroupBox, QHBoxLayout, QStyle)
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont, QIcon # For icons if desired
+from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter, QColor
 
 from core.models import Unit, Lesson # Assuming core is accessible
 
@@ -60,29 +60,33 @@ class CourseOverviewView(QWidget):
                 current_unit_lessons = unit.lessons 
                 is_unlocked = self.progress_manager.is_lesson_unlocked(lesson.lesson_id, current_unit_lessons, all_course_units_for_unlock_check)
 
-                lesson_button = QPushButton()
+                lesson_button = QPushButton(lesson.title)
                 lesson_button.setFont(QFont("Arial", 11))
                 lesson_button.setMinimumHeight(40)
 
                 status_indicator = ""
                 button_style = "QPushButton { text-align: left; padding: 5px; }"
                 
+                icon = None
                 if is_completed:
-                    status_indicator = "✓ " # Checkmark for completed
-                    lesson_button_text = f"{status_indicator}{lesson.title}"
-                    button_style += "QPushButton { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }"
-                    lesson_button.setProperty("status", "completed")
+                    # Standard checkmark icon
+                    # icon = self.style().standardIcon(QStyle.SP_DialogApplyButton) # Or SP_DialogYesButton
+                    # Or create a custom text icon:
+                    pixmap = QPixmap(16, 16)
+                    pixmap.fill(Qt.transparent)
+                    painter = QPainter(pixmap)
+                    painter.setFont(QFont("Arial", 12, QFont.Bold))
+                    painter.setPen(QColor("green"))
+                    painter.drawText(pixmap.rect(), Qt.AlignCenter, "✓")
+                    painter.end()
+                    icon = QIcon(pixmap)
                 elif is_unlocked:
-                    status_indicator = "▶ " # Play icon for unlocked
-                    lesson_button_text = f"{status_indicator}{lesson.title}"
-                    button_style += "QPushButton { background-color: #e2e3e5; border: 1px solid #d6d8db; }"
-                    lesson_button.setProperty("status", "unlocked")
-                else:
-                    status_indicator = "🔒 " # Lock icon for locked
-                    lesson_button_text = f"{status_indicator}{lesson.title}"
-                    lesson_button.setEnabled(False)
-                    button_style += "QPushButton { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }"
-                    lesson_button.setProperty("status", "locked")
+                    icon = self.style().standardIcon(QStyle.SP_MediaPlay)
+                else: # Locked
+                    icon = self.style().standardIcon(QStyle.SP_DialogNoButton) # SP_DialogNoButton or SP_TrashIcon might be alternatives. SP_Lock might not be available on all styles.
+
+                if icon:
+                    lesson_button.setIcon(icon)
 
                 lesson_button.setText(lesson_button_text)
                 lesson_button.setStyleSheet(button_style)
