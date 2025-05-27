@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any, Optional
+from datetime import datetime
 
 @dataclass
 class ExerciseOption:
@@ -29,16 +30,44 @@ class Exercise:
     audio_file: Optional[str] = None # Relative path to audio file (e.g., "sounds/hello.mp3")
     image_file: Optional[str] = None # Relative path to image file (e.g., "images/cat.png")
 
+    last_reviewed: Optional[datetime] = field(default=None, repr=False) # Don't include in default repr
+    next_review_due: Optional[datetime] = field(default=None, repr=False)
+    interval_days: int = field(default=0) # Current SRS interval
+    ease_factor: float = field(default=2.5) # Part of SM-2 algorithm
+    repetitions: int = field(default=0) # Number of times reviewed
+    correct_in_a_row: int = field(default=0) # Consecutive correct answers for this item
+
     # Internal data for convenience after loading (not saved back to YAML)
     raw_data: Dict[str, Any] = field(default_factory=dict) 
 
     def to_dict(self) -> Dict[str, Any]:
-        # Convert dataclass to dict, filtering out None values, empty lists, and internal 'raw_data'/'exercise_id'
-        data = {k: v for k, v in asdict(self).items() if v is not None and v != [] and k not in ['raw_data', 'exercise_id']}
-        
-        # Special handling for options if they are dataclasses (convert to dicts)
-        if 'options' in data:
+        # Existing to_dict logic...
+        # Need to handle datetime serialization if saving to JSON.
+        # YAML handles datetime objects fine.
+        # For JSON, you'd convert datetime to isoformat string.
+        data = {
+            k: v for k, v in asdict(self).items() 
+            if v is not None and 
+               (v != [] if isinstance(v, list) else True) and # Check for empty list only if it's a list
+               k not in ['raw_data', 'exercise_id']
+        }
+        if 'options' in data and data['options']: # ensure options exist and not empty before list comp
             data['options'] = [opt.to_dict() for opt in self.options]
+        
+        srs_fields_to_save = ['last_reviewed', 'next_review_due', 'interval_days', 'ease_factor', 'repetitions', 'correct_in_a_row']
+        for srs_field in srs_fields_to_save:
+            value = getattr(self, srs_field)
+            if value is not None: # Only save if not None (or not default for int/float if desired)
+                if isinstance(value, datetime):
+                    data[srs_field] = value.isoformat() # Store as ISO string in YAML too for consistency
+                elif srs_field in ['interval_days', 'repetitions', 'correct_in_a_row'] and value == 0 and srs_field != 'repetitions': # Don't save default 0 unless it's 'repetitions'
+                    if srs_field in data: del data[srs_field] # Remove if it's default 0
+                elif srs_field == 'ease_factor' and value == 2.5:
+                     if srs_field in data: del data[srs_field] # Remove if it's default 2.5
+                else:
+                    data[srs_field] = value # Add/keep if not default or explicitly set
+            elif srs_field in data: # Remove if None was explicitly set by asdict
+                del data[srs_field]
 
         return data
 
