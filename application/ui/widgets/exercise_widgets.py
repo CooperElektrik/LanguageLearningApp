@@ -1,11 +1,20 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
-                               QRadioButton, QButtonGroup, QHBoxLayout, QScrollArea,
-                               QFrame)
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont
-import random
+import logging, os, sys
 
-from core.models import Exercise # Assuming core is a sibling directory or in PYTHONPATH
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QLineEdit, QRadioButton, QButtonGroup, QPushButton, QMessageBox)
+from PySide6.QtCore import Signal, QUrl
+from PySide6.QtGui import QFont
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+
+from core.models import Exercise
+
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s - [%(name)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class BaseExerciseWidget(QWidget):
     answer_submitted = Signal(str) # Emits the user's answer string
@@ -14,6 +23,7 @@ class BaseExerciseWidget(QWidget):
         super().__init__(parent)
         self.exercise = exercise
         self.course_manager = course_manager # To get formatted prompts
+        self.course_content_base_dir = self.course_manager.get_course_content_directory()
         self.layout = QVBoxLayout(self)
         self.prompt_label = QLabel()
         self.prompt_label.setFont(QFont("Arial", 14))
@@ -36,11 +46,46 @@ class TranslationExerciseWidget(BaseExerciseWidget):
         formatted_prompt = self.course_manager.get_formatted_prompt(self.exercise)
         self.prompt_label.setText(formatted_prompt)
 
+        if self.exercise.audio_file:
+            logger.info(f"Created play button from {self.exercise.audio_file}")
+            self.play_audio_button = QPushButton("🔊 Play Audio")
+            self.play_audio_button.clicked.connect(self._play_audio)
+            self.layout.addWidget(self.play_audio_button)
+            
+            self._media_player = QMediaPlayer(self)
+            self._audio_output = QAudioOutput(self)
+            self._media_player.setAudioOutput(self._audio_output)
+
         self.answer_input = QLineEdit()
         self.answer_input.setFont(QFont("Arial", 12))
         self.layout.addWidget(self.answer_input)
         self.answer_input.returnPressed.connect(lambda: self.answer_submitted.emit(self.get_answer()))
 
+    def _play_audio(self):
+        if self.exercise.audio_file and hasattr(self, '_media_player'):
+            # Construct the full path to the audio file
+            # The audio_file path is relative to the course content file's directory
+            if self.course_content_base_dir:
+                 # audio_path_in_yaml = "sounds/hello.mp3"
+                 # self.course_content_base_dir = "D:/path/to/application/" (if esperanto_course.yaml is there)
+                 # full_audio_path = "D:/path/to/application/sounds/hello.mp3"
+                full_audio_path = os.path.join(self.course_content_base_dir, self.exercise.audio_file)
+            else: # Fallback if base dir isn't available - might not work correctly
+                full_audio_path = self.exercise.audio_file 
+                logging.warning(f"Course content base directory not set. Trying to play audio from: {full_audio_path}")
+
+
+            if os.path.exists(full_audio_path):
+                self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
+                if self._media_player.error() == QMediaPlayer.NoError:
+                    self._media_player.play()
+                else:
+                    logging.error(f"Error setting media source for {full_audio_path}: {self._media_player.errorString()}")
+                    QMessageBox.warning(self, "Audio Error", f"Cannot play audio: {self._media_player.errorString()}")
+
+            else:
+                logging.error(f"Audio file not found: {full_audio_path}")
+                QMessageBox.warning(self, "Audio Error", f"Audio file not found: {self.exercise.audio_file}\n\nCheck paths.")
 
     def get_answer(self) -> str:
         return self.answer_input.text()

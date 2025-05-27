@@ -71,6 +71,20 @@ class CourseManager:
         else:
             logger.error(f"Failed to load course content from {content_filepath}.")
 
+    def get_course_content_directory(self) -> Optional[str]:
+        """Returns the directory where the current course's content file is located."""
+        if self.course and self.manifest_data and self.manifest_data.get("content_file"):
+            manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
+            # The content_file is relative to the manifest_dir
+            # For simplicity, assume content file is directly in manifest_dir for audio path resolution.
+            # If content_file can be in subdirs of manifest_dir, adjust this.
+            # This returns the directory containing the content file.
+            content_filepath = os.path.join(manifest_dir_abs, self.manifest_data["content_file"])
+            return os.path.dirname(content_filepath) # Directory of the content_file
+        elif self.manifest_path: # Fallback to manifest directory if content file info is missing
+            return os.path.dirname(os.path.abspath(self.manifest_path))
+        return None # Or raise an error if course not loaded
+
     def get_course_title(self) -> Optional[str]:
         return self.course.title if self.course else None
         

@@ -26,6 +26,9 @@ class Exercise:
     correct_option: Optional[str] = None    # For fill_in_the_blank (the word that fills the blank)
     translation_hint: Optional[str] = None  # For fill_in_the_blank
 
+    audio_file: Optional[str] = None # Relative path to audio file (e.g., "sounds/hello.mp3")
+    image_file: Optional[str] = None # Relative path to image file (e.g., "images/cat.png")
+
     # Internal data for convenience after loading (not saved back to YAML)
     raw_data: Dict[str, Any] = field(default_factory=dict) 
 

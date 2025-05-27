@@ -16,6 +16,7 @@ def course_to_yaml_data(course: Course) -> Dict[str, Any]:
                 if exercise.type in ["translate_to_target", "translate_to_source"]:
                     ex_raw["prompt"] = exercise.prompt
                     ex_raw["answer"] = exercise.answer
+                    ex_raw["audio_file"] = exercise.audio_file
                 elif exercise.type == "multiple_choice_translation":
                     ex_raw["source_word"] = exercise.source_word
                     ex_raw["options"] = [{"text": opt.text, "correct": opt.correct} for opt in exercise.options]

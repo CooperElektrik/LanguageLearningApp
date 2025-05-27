@@ -522,12 +522,6 @@ class EditorWindow(QMainWindow):
         self._set_dirty_state(True)
         self._expand_and_select_item(new_exercise)
 
-    # ... (Keep _add_unit, _delete_unit, _add_lesson, _delete_lesson, _add_exercise, _delete_exercise) ...
-    # ... (_expand_and_select_item, update_tree_view) ...
-    # ... (new_course, open_course, save_course, save_course_as, _do_save, closeEvent) ...
-    # ... (validate_current_course, import_from_csv, create_course_package) ...
-
-    # --- Add/Delete Methods (kept from previous version, ensure they use strip for titles) ---
     def _add_unit(self):
         if not self.course_data: return
         unit_id_suffix = str(uuid.uuid4().hex[:8])
@@ -848,8 +842,15 @@ class EditorWindow(QMainWindow):
         manifest_errors = perform_manifest_validation(self.manifest_data, self.current_manifest_path)
         all_errors.extend(manifest_errors)
 
+        if self.current_course_content_path:
+            course_content_base_dir = os.path.dirname(self.current_course_content_path)
+            content_errors = perform_course_content_validation(self.course_data, course_content_base_dir) # Pass base_dir
+            all_errors.extend(content_errors)
+        else:
+            all_errors.append("Error: Course content path is unknown, cannot validate asset file paths.")
+
         logger.info(f"Validating course content for: {self.course_data.title}")
-        content_errors = perform_course_content_validation(self.course_data)
+        content_errors = perform_course_content_validation(self.course_data, course_content_base_dir)
         all_errors.extend(content_errors)
 
         if not all_errors:

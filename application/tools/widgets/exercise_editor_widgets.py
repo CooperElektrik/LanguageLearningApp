@@ -3,7 +3,7 @@
 import logging
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                                QPushButton, QRadioButton, QButtonGroup, QScrollArea,
-                               QGroupBox, QCheckBox, QMessageBox, QFrame, QInputDialog, QTextEdit, QFormLayout, QDialog, QDialogButtonBox, QListWidget, QListWidgetItem) # Added QInputDialog, QTextEdit, QFrame
+                               QGroupBox, QCheckBox, QMessageBox, QFrame, QInputDialog, QTextEdit, QFormLayout, QDialog, QDialogButtonBox, QListWidget, QListWidgetItem, QFileDialog)
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
 from typing import Optional
@@ -85,6 +85,20 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.answer_input = self._add_input_field(f"Answer ({answer_lang_hint}):", 
                                                   exercise.answer or "", 
                                                   self._update_answer)
+        
+        audio_layout = QHBoxLayout()
+        self.audio_file_input = QLineEdit(self.exercise.audio_file or "")
+        self.audio_file_input.setPlaceholderText("e.g., sounds/hello.mp3 (relative to course content file)")
+        self.audio_file_input.textChanged.connect(self._update_audio_file)
+        
+        browse_audio_button = QPushButton("Browse Audio...")
+        browse_audio_button.clicked.connect(self._browse_audio_file)
+        
+        audio_layout.addWidget(QLabel("Audio File:"))
+        audio_layout.addWidget(self.audio_file_input, 1) # Stretch line edit
+        audio_layout.addWidget(browse_audio_button)
+        self.layout.addLayout(audio_layout)
+
         self.layout.addStretch(1)
 
     def _update_prompt(self, text: str):
@@ -94,6 +108,42 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
     def _update_answer(self, text: str):
         self.exercise.answer = text
         self.data_changed.emit()
+
+    def _update_audio_file(self, text: str):
+        self.exercise.audio_file = text.strip() if text.strip() else None
+        self.data_changed.emit()
+
+    def _browse_audio_file(self):
+        # The editor needs to know the base directory of the course content YAML to make relative paths intuitive.
+        # For now, assume the user manages relative paths, or the dialog opens in a sensible default location.
+        # A more advanced editor would have a "project root" or "course assets" directory.
+        
+        # Try to open file dialog in a 'sounds' or 'assets' subdir of where the manifest might be, if known.
+        # This is tricky as editor_window manages current_manifest_path.
+        # For simplicity, let it open in last used dir or home. User needs to pick relative path.
+        
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.mp3 *.wav *.ogg)")
+        if file_path:
+            # We need to store a path relative to the course content YAML.
+            # This requires knowing where the course content YAML will be saved.
+            # For now, just store the filename or a manually entered relative path.
+            # Or, try to make it relative if a course is loaded.
+            # This part is complex if the course isn't saved yet.
+            # Let's prompt the user to ensure the path is relative.
+            
+            # Simple approach: just use the selected file path.
+            # User must ensure it's correctly relative or the packager/app must resolve it.
+            # A better approach: if current_course_content_path is known, try to make relative.
+            # For now, we'll store what the user picks or types.
+            
+            # Simplest: Get only the filename if it's in a common 'sounds' folder,
+            # otherwise, it could be a relative path they construct.
+            # For demonstration, let's just take the filename, assuming it will be in a 'sounds/' dir.
+            # This is a simplification. A real editor would need robust relative path management.
+            
+            # Let's just set the input field text and let the user ensure it's a correct relative path
+            self.audio_file_input.setText(file_path) # User might need to edit this to be relative like "sounds/file.mp3"
+            self._update_audio_file(file_path) # Trigger update
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():

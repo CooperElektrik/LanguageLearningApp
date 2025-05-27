@@ -37,7 +37,6 @@ def _parse_exercise(exercise_data: Dict[str, Any], lesson_id: str, index: int, t
         if isinstance(options_data, list) and all(isinstance(opt, dict) for opt in options_data): # MC type
             parsed_options = [ExerciseOption(text=opt['text'], correct=opt.get('correct', False)) for opt in options_data]
         elif isinstance(options_data, list) and all(isinstance(opt, str) for opt in options_data): # FIB type
-            # For FIB, 'correct' flag isn't in options list in YAML, it's separate
             correct_opt_text = exercise_data.get("correct_option")
             parsed_options = [ExerciseOption(text=opt, correct=(opt == correct_opt_text)) for opt in options_data]
             random.shuffle(parsed_options) # Shuffle options for FIB
@@ -46,13 +45,8 @@ def _parse_exercise(exercise_data: Dict[str, Any], lesson_id: str, index: int, t
     if ex_type == "multiple_choice_translation" and source_word:
         prompt = f"Choose the {target_language} translation for: '{source_word}' ({source_language})"
 
-    # For translate_to_target and translate_to_source, provide context in prompt
-    if ex_type == "translate_to_target" and prompt:
-         # prompt is already source lang, so we just ask to translate to target
-        pass # Prompt like "Translate 'Hello' to Esperanto" could be formed in UI
-    elif ex_type == "translate_to_source" and prompt:
-        # prompt is already target lang, so we just ask to translate to source
-        pass # Prompt like "Translate 'Saluton' to English" could be formed in UI
+    audio_file = exercise_data.get("audio_file")
+    image_file = exercise_data.get("image_file")
 
     return Exercise(
         exercise_id=ex_id,
@@ -64,6 +58,10 @@ def _parse_exercise(exercise_data: Dict[str, Any], lesson_id: str, index: int, t
         sentence_template=exercise_data.get("sentence_template"),
         correct_option=exercise_data.get("correct_option"),
         translation_hint=exercise_data.get("translation_hint"),
+        # --- NEW: Pass audio_file and image_file to constructor ---
+        audio_file=audio_file,
+        image_file=image_file,
+        # --- END NEW ---
         raw_data=exercise_data
     )
 

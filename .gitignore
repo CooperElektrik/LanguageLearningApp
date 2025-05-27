@@ -1,7 +1,11 @@
 venv/
 dist/
+.vscode/
+application/core/data/
 esperanto_course.yaml
 manifest.yaml
 *.pyc
-.vscode/
-application/core/data
+*.wav
+*.mp3
+*.png
+*.jpg
