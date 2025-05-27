@@ -16,6 +16,7 @@ from PySide6.QtGui import QAction, QFont
 try:
     from core.models import Course, Unit, Lesson, Exercise, ExerciseOption
     from core.course_loader import load_course_content as load_course_content_from_yaml # Use app's loader
+    from tools.dialogs.exercise_preview_dialog import ExercisePreviewDialog
 except ImportError as e:
     logging.error(f"Failed to import models from core. Ensure 'application' directory is on sys.path. Error: {e}")
     class Course: pass # Dummy classes for graceful degradation
@@ -138,9 +139,12 @@ class EditorWindow(QMainWindow):
         self.move_up_button.clicked.connect(self._move_item_up)
         self.move_down_button = QPushButton("Move Down ↓")
         self.move_down_button.clicked.connect(self._move_item_down)
+        self.preview_exercise_button = QPushButton("Preview Exercise ▶") # NEW BUTTON
+        self.preview_exercise_button.clicked.connect(self._preview_exercise)
         item_actions_layout.addStretch(1)
         item_actions_layout.addWidget(self.move_up_button)
         item_actions_layout.addWidget(self.move_down_button)
+        item_actions_layout.addWidget(self.preview_exercise_button)
         item_actions_layout.addStretch(1)
         right_pane_layout.addWidget(self.item_actions_widget)
         self.item_actions_widget.setVisible(False) 
@@ -368,6 +372,7 @@ class EditorWindow(QMainWindow):
             else: # Should not happen if item is in tree
                 self.move_up_button.setEnabled(False)
                 self.move_down_button.setEnabled(False)
+            self.preview_exercise_button.setEnabled(isinstance(item_data, Exercise))
         else: # Manifest or other non-orderable item
             self.item_actions_widget.setVisible(False)
 
@@ -465,6 +470,38 @@ class EditorWindow(QMainWindow):
                 menu.addAction(delete_exercise_action)
         
         menu.exec(self.tree_widget.viewport().mapToGlobal(position))
+
+    def _preview_exercise(self): # NEW SLOT
+        if not self.current_selected_tree_item:
+            QMessageBox.warning(self, "Preview Error", "Please select an exercise in the tree to preview.")
+            return
+
+        item_data = self.current_selected_tree_item.data(0, Qt.UserRole)
+        if not isinstance(item_data, Exercise):
+            QMessageBox.warning(self, "Preview Error", "Only exercises can be previewed. Please select an exercise.")
+            return
+
+        # Ensure current editor content is applied to the exercise object before previewing
+        # This is critical if the user made changes but hasn't switched focus or saved.
+        if isinstance(self.current_editor_widget, (TranslationExerciseEditorWidget, MultipleChoiceExerciseEditorWidget, FillInTheBlankExerciseEditorWidget)):
+             # The editor widgets update the item_data directly via signal connections,
+             # so the item_data should already be up-to-date.
+             # However, if there's a specific "apply" mechanism or if some fields are only updated on focus loss,
+             # this might need an explicit call. For our current setup, it should be fine.
+             pass # Data is already updated by textChanged/button clicks.
+
+        # Pass course languages and base directory for audio/image path resolution in preview
+        course_languages = {
+            'target': self.course_data.target_language if self.course_data else "Target Language",
+            'source': self.course_data.source_language if self.course_data else "Source Language"
+        }
+        course_content_base_dir = None
+        if self.current_course_content_path:
+            course_content_base_dir = os.path.dirname(self.current_course_content_path)
+        
+        # Open the preview dialog
+        dialog = ExercisePreviewDialog(item_data, course_languages, course_content_base_dir, self)
+        dialog.exec()
 
     # --- Duplicate Methods ---
     def _generate_new_ids_for_exercise(self, exercise: Exercise):
