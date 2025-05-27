@@ -55,8 +55,8 @@ class EditorWindow(QMainWindow):
         self.course_data: Course = None 
 
         self._create_menu_bar()
-        self._setup_ui()
         self._set_dirty_state(False)
+        self._setup_ui()
         
         self.new_course()
 
@@ -124,6 +124,16 @@ class EditorWindow(QMainWindow):
         self.tree_widget.itemSelectionChanged.connect(self._on_tree_item_selected)
         left_pane_layout.addWidget(self.tree_widget, 1) # Tree gets stretch factor
 
+        tree_actions_layout = QHBoxLayout()
+        self.expand_all_button = QPushButton("Expand All")
+        self.expand_all_button.clicked.connect(self.tree_widget.expandAll)
+        self.collapse_all_button = QPushButton("Collapse All")
+        self.collapse_all_button.clicked.connect(self.tree_widget.collapseAll)
+        tree_actions_layout.addWidget(self.expand_all_button)
+        tree_actions_layout.addWidget(self.collapse_all_button)
+        tree_actions_layout.addStretch(1) # Push buttons to left
+        left_pane_layout.addLayout(tree_actions_layout)
+
         self.splitter.addWidget(left_pane_widget) # Add the entire left pane to splitter
 
         # Right pane: Editor details
@@ -160,6 +170,21 @@ class EditorWindow(QMainWindow):
 
         self.current_editor_widget = None 
         self.current_selected_tree_item = None 
+
+        self.status_bar = self.statusBar() # Get the QMainWindow's status bar
+        self.current_file_label = QLabel("No course loaded")
+        self.dirty_status_label = QLabel("") # Will show "Unsaved changes" or "Saved"
+        self.dirty_status_label.setStyleSheet("padding-right: 10px;") # Add some padding
+        
+        self.status_bar.addPermanentWidget(self.current_file_label, stretch=1) # Stretch takes available space
+        self.status_bar.addPermanentWidget(self.dirty_status_label)
+
+        if self.is_dirty:
+            self.dirty_status_label.setText("Unsaved Changes*")
+            self.dirty_status_label.setStyleSheet("color: orange; padding-right: 10px; font-weight: bold;")
+        else:
+            self.dirty_status_label.setText("Saved")
+            self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
 
     def _filter_tree_view(self, text: str):
         search_term = text.lower().strip()
@@ -754,6 +779,10 @@ class EditorWindow(QMainWindow):
         self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
         self.item_actions_widget.setVisible(False)
 
+        self.current_file_label.setText("New Course (Unsaved)")
+        self._set_dirty_state(False) # A new course is initially not "dirty" from a file perspective
+        self.status_bar.showMessage("New course created.", 3000)
+
 
     def open_course(self):
         if self.is_dirty:
@@ -816,6 +845,11 @@ class EditorWindow(QMainWindow):
         self._set_dirty_state(False)
         self._clear_editor_pane()
         self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
+        self.item_actions_widget.setVisible(False)
+
+        self.current_file_label.setText(os.path.basename(self.current_manifest_path))
+        self._set_dirty_state(False)
+        self.status_bar.showMessage(f"Course '{self.course_data.title}' loaded.", 3000)
 
 
     def save_course(self):
@@ -857,7 +891,9 @@ class EditorWindow(QMainWindow):
         
         self.current_manifest_path = manifest_file
         self.current_course_content_path = content_file
-        self._set_dirty_state(False)
+        self.current_file_label.setText(os.path.basename(self.current_manifest_path))
+        self._set_dirty_state(False) # Now it's saved
+        self.status_bar.showMessage("Course saved successfully!", 3000)
         QMessageBox.information(self, "Save Successful", "Course and Manifest saved successfully!")
         return True
 
