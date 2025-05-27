@@ -257,11 +257,22 @@ class EditorWindow(QMainWindow):
                 self.detail_editor_stacked_widget.removeWidget(widget)
                 widget.deleteLater()
         self.current_editor_widget = None
+    
+    def _validate_line_edit_required(self, input_widget: QLineEdit, is_required: bool):
+        if not is_required:
+            input_widget.setStyleSheet("")
+            return
+        text = input_widget.text().strip()
+        if not text:
+            input_widget.setStyleSheet("border: 1px solid red;")
+        else:
+            input_widget.setStyleSheet("") # Clear any error style
+        self._set_dirty_state(True) # Change implies dirty state
 
     def _create_unit_editor_widget(self, unit: Unit):
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.addWidget(QLabel(f"Editing Unit: {unit.title}"))
+        layout.addWidget(QLabel(f"Editing Unit: {unit.title}"))   
         id_layout = QHBoxLayout()
         id_layout.addWidget(QLabel("Unit ID:"))
         unit_id_edit = QLineEdit(unit.unit_id)
@@ -269,23 +280,24 @@ class EditorWindow(QMainWindow):
         id_layout.addWidget(unit_id_edit)
         layout.addLayout(id_layout)
         title_layout = QHBoxLayout()
-        title_layout.addWidget(QLabel("Title:"))
+        title_label = QLabel("Title: *")
+        title_layout.addWidget(title_label)
         unit_title_edit = QLineEdit(unit.title)
-        unit_title_edit.textChanged.connect(lambda text, u=unit: self._update_unit_title(u, text))
+        unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
+        unit_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(unit_title_edit, True)) # Connect validation
         title_layout.addWidget(unit_title_edit)
         layout.addLayout(title_layout)
         layout.addStretch(1)
         widget.unit_id_edit = unit_id_edit
         widget.unit_title_edit = unit_title_edit
+        self._validate_line_edit_required(unit_title_edit, True) # Initial validation
         return widget
 
     def _update_unit_title(self, unit: Unit, new_title: str):
-        unit.title = new_title
+        unit.title = new_title.strip() # Ensure stripped for data consistency
         self._set_dirty_state(True)
-        # Update tree item text directly for responsiveness
         if self.current_selected_tree_item and self.current_selected_tree_item.data(0, Qt.UserRole) is unit:
-            self.current_selected_tree_item.setText(0, new_title)
-        # self.update_tree_view() # Full rebuild can be slow for just title change
+            self.current_selected_tree_item.setText(0, new_title.strip())
 
     def _create_lesson_editor_widget(self, lesson: Lesson):
         widget = QWidget()
@@ -298,22 +310,24 @@ class EditorWindow(QMainWindow):
         id_layout.addWidget(lesson_id_edit)
         layout.addLayout(id_layout)
         title_layout = QHBoxLayout()
-        title_layout.addWidget(QLabel("Title:"))
+        title_label = QLabel("Title: *") # Mark as required
+        title_layout.addWidget(title_label)
         lesson_title_edit = QLineEdit(lesson.title)
-        lesson_title_edit.textChanged.connect(lambda text, l=lesson: self._update_lesson_title(l, text))
+        lesson_title_edit.textChanged.connect(lambda text: self._update_lesson_title(lesson, text))
+        lesson_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(lesson_title_edit, True)) # Connect validation
         title_layout.addWidget(lesson_title_edit)
         layout.addLayout(title_layout)
         layout.addStretch(1)
         widget.lesson_id_edit = lesson_id_edit
         widget.lesson_title_edit = lesson_title_edit
+        self._validate_line_edit_required(lesson_title_edit, True) # Initial validation
         return widget
 
     def _update_lesson_title(self, lesson: Lesson, new_title: str):
-        lesson.title = new_title
+        lesson.title = new_title.strip() # Ensure stripped
         self._set_dirty_state(True)
         if self.current_selected_tree_item and self.current_selected_tree_item.data(0, Qt.UserRole) is lesson:
-            self.current_selected_tree_item.setText(0, new_title)
-        # self.update_tree_view()
+            self.current_selected_tree_item.setText(0, new_title.strip())
 
     def _create_exercise_editor_widget(self, exercise: Exercise):
         target_lang = self.course_data.target_language if self.course_data else "Target Language"

@@ -28,9 +28,8 @@ class BaseExerciseEditorWidget(QWidget):
         self.source_language = source_language
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.setSpacing(10) # Add some spacing
+        self.layout.setSpacing(10)
 
-        # Common header
         self.type_label = QLabel(f"Exercise Type: {exercise.type.replace('_', ' ').title()}")
         self.type_label.setFont(QFont("Arial", 12, QFont.Bold))
         self.layout.addWidget(self.type_label)
@@ -42,25 +41,54 @@ class BaseExerciseEditorWidget(QWidget):
         separator.setFrameShadow(QFrame.Sunken)
         return separator
 
-    def _add_input_field(self, label_text: str, current_value: str, callback_func, is_multiline: bool = False):
+    # Helper for adding input fields with optional required validation
+    def _add_input_field(self, label_text: str, current_value: str, callback_func, is_multiline: bool = False, is_required: bool = False, placeholder_text: Optional[str] = None):
         h_layout = QHBoxLayout()
-        label = QLabel(label_text)
-        label.setMinimumWidth(120) # Align labels
+        label_full_text = label_text + (" *" if is_required else "") # Add asterisk
+        label = QLabel(label_full_text)
+        label.setMinimumWidth(120) 
         h_layout.addWidget(label)
         
-        input_field = QLineEdit()
         if is_multiline:
-            input_field = QTextEdit() # Use QTextEdit for multiline input
+            input_field = QTextEdit()
             input_field.setPlainText(current_value)
             input_field.textChanged.connect(lambda: callback_func(input_field.toPlainText()))
-            input_field.setMinimumHeight(60) # Give multiline field some height
+            input_field.setMinimumHeight(60) 
         else:
+            input_field = QLineEdit()
             input_field.setText(current_value)
             input_field.textChanged.connect(callback_func)
         
+        if placeholder_text:
+            input_field.setPlaceholderText(placeholder_text)
+
+        # Connect validation logic
+        input_field.textChanged.connect(lambda: self._validate_input_field(input_field, is_required))
+        
         h_layout.addWidget(input_field)
         self.layout.addLayout(h_layout)
-        return input_field # Return input field for direct access if needed
+
+        # Initial validation on creation
+        self._validate_input_field(input_field, is_required)
+        return input_field
+
+    # New: Generic validation for QLineEdit/QTextEdit
+    def _validate_input_field(self, input_widget, is_required: bool):
+        if not is_required:
+            input_widget.setStyleSheet("")
+            return
+        
+        text = ""
+        if isinstance(input_widget, QLineEdit):
+            text = input_widget.text().strip()
+        elif isinstance(input_widget, QTextEdit):
+            text = input_widget.toPlainText().strip()
+        
+        if not text:
+            input_widget.setStyleSheet("border: 1px solid red;")
+        else:
+            input_widget.setStyleSheet("")
+        self.data_changed.emit() # Signal that data (and validation status) has changed
 
     def validate(self) -> tuple[bool, str]:
         """
@@ -74,39 +102,47 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
     def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
         super().__init__(exercise, target_language, source_language, parent)
         
-        # Determine language for prompt based on exercise type
         prompt_lang_hint = self.source_language if exercise.type == 'translate_to_target' else self.target_language
-        self.prompt_input = self._add_input_field(f"Prompt ({prompt_lang_hint}):", 
+        self.prompt_input = self._add_input_field(f"Prompt ({prompt_lang_hint})", 
                                                  exercise.prompt or "", 
-                                                 self._update_prompt)
+                                                 self._update_prompt, is_required=True, placeholder_text="e.g., Hello")
 
-        # Determine language for answer based on exercise type
         answer_lang_hint = self.target_language if exercise.type == 'translate_to_target' else self.source_language
-        self.answer_input = self._add_input_field(f"Answer ({answer_lang_hint}):", 
+        self.answer_input = self._add_input_field(f"Answer ({answer_lang_hint})", 
                                                   exercise.answer or "", 
-                                                  self._update_answer)
+                                                  self._update_answer, is_required=True, placeholder_text="e.g., Saluton")
         
         audio_layout = QHBoxLayout()
-        self.audio_file_input = QLineEdit(self.exercise.audio_file or "")
-        self.audio_file_input.setPlaceholderText("e.g., sounds/hello.mp3 (relative to course content file)")
-        self.audio_file_input.textChanged.connect(self._update_audio_file)
+        self.audio_file_input = self._add_input_field("Audio File", exercise.audio_file or "", self._update_audio_file, is_required=False, placeholder_text="e.g., sounds/hello.mp3")
         
-        browse_audio_button = QPushButton("Browse Audio...")
+        browse_audio_button = QPushButton("Browse...")
         browse_audio_button.clicked.connect(self._browse_audio_file)
         
         audio_layout.addWidget(QLabel("Audio File:"))
-        audio_layout.addWidget(self.audio_file_input, 1) # Stretch line edit
+        audio_layout.addWidget(self.audio_file_input, 1)
         audio_layout.addWidget(browse_audio_button)
         self.layout.addLayout(audio_layout)
 
+        # Add image file input similar to audio_file_input
+        image_layout = QHBoxLayout()
+        self.image_file_input = self._add_input_field("Image File", exercise.image_file or "", self._update_image_file, is_required=False, placeholder_text="e.g., images/cat.png")
+        
+        browse_image_button = QPushButton("Browse...")
+        browse_image_button.clicked.connect(self._browse_image_file)
+        
+        image_layout.addWidget(QLabel("Image File:"))
+        image_layout.addWidget(self.image_file_input, 1)
+        image_layout.addWidget(browse_image_button)
+        self.layout.addLayout(image_layout)
+        
         self.layout.addStretch(1)
 
     def _update_prompt(self, text: str):
-        self.exercise.prompt = text
+        self.exercise.prompt = text.strip() if text.strip() else None # Store None if empty
         self.data_changed.emit()
 
     def _update_answer(self, text: str):
-        self.exercise.answer = text
+        self.exercise.answer = text.strip() if text.strip() else None
         self.data_changed.emit()
 
     def _update_audio_file(self, text: str):
@@ -114,36 +150,20 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.data_changed.emit()
 
     def _browse_audio_file(self):
-        # The editor needs to know the base directory of the course content YAML to make relative paths intuitive.
-        # For now, assume the user manages relative paths, or the dialog opens in a sensible default location.
-        # A more advanced editor would have a "project root" or "course assets" directory.
-        
-        # Try to open file dialog in a 'sounds' or 'assets' subdir of where the manifest might be, if known.
-        # This is tricky as editor_window manages current_manifest_path.
-        # For simplicity, let it open in last used dir or home. User needs to pick relative path.
-        
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.mp3 *.wav *.ogg)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.mp3 *.wav *.ogg);;All Files (*)")
         if file_path:
-            # We need to store a path relative to the course content YAML.
-            # This requires knowing where the course content YAML will be saved.
-            # For now, just store the filename or a manually entered relative path.
-            # Or, try to make it relative if a course is loaded.
-            # This part is complex if the course isn't saved yet.
-            # Let's prompt the user to ensure the path is relative.
-            
-            # Simple approach: just use the selected file path.
-            # User must ensure it's correctly relative or the packager/app must resolve it.
-            # A better approach: if current_course_content_path is known, try to make relative.
-            # For now, we'll store what the user picks or types.
-            
-            # Simplest: Get only the filename if it's in a common 'sounds' folder,
-            # otherwise, it could be a relative path they construct.
-            # For demonstration, let's just take the filename, assuming it will be in a 'sounds/' dir.
-            # This is a simplification. A real editor would need robust relative path management.
-            
-            # Let's just set the input field text and let the user ensure it's a correct relative path
-            self.audio_file_input.setText(file_path) # User might need to edit this to be relative like "sounds/file.mp3"
-            self._update_audio_file(file_path) # Trigger update
+            self.audio_file_input.setText(file_path)
+            self._update_audio_file(file_path)
+
+    def _update_image_file(self, text: str): # New method for image
+        self.exercise.image_file = text.strip() if text.strip() else None
+        self.data_changed.emit()
+
+    def _browse_image_file(self): # New method for image
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Image File", "", "Image Files (*.png *.jpg *.jpeg *.gif);;All Files (*)")
+        if file_path:
+            self.image_file_input.setText(file_path)
+            self._update_image_file(file_path)
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():
@@ -182,19 +202,17 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
     def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
         super().__init__(exercise, target_language, source_language, parent)
 
-        self.source_word_input = self._add_input_field(f"Source Word ({source_language}):", 
+        self.source_word_input = self._add_input_field(f"Source Word ({source_language})", 
                                                       exercise.source_word or "", 
-                                                      self._update_source_word)
+                                                      self._update_source_word, is_required=True, placeholder_text="e.g., Thank you")
 
         self.layout.addWidget(self._create_separator())
         self.layout.addWidget(QLabel(f"Options ({target_language}):"))
         
-        # --- New QListWidget for options ---
         self.options_list_widget = QListWidget()
-        self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option) # Edit on double-click
+        self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option)
         self.layout.addWidget(self.options_list_widget)
 
-        # --- Buttons for option management ---
         options_button_layout = QHBoxLayout()
         add_option_button = QPushButton("Add Option")
         add_option_button.clicked.connect(self._add_option_dialog)
@@ -208,27 +226,49 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
         options_button_layout.addWidget(delete_option_button)
         options_button_layout.addStretch(1)
         self.layout.addLayout(options_button_layout)
+
+        # New: Validation message for options (e.g., "exactly one correct option")
+        self.options_validation_label = QLabel()
+        self.options_validation_label.setStyleSheet("color: orange;")
+        self.layout.addWidget(self.options_validation_label)
         
-        self._populate_options_list() # Initial population
-        self.layout.addStretch(1) # Ensure main layout pushes content up
+        self._populate_options_list()
+        self._validate_mcq_options() # Initial validation
+        self.layout.addStretch(1)
+
 
     def _update_source_word(self, text: str):
-        self.exercise.source_word = text
+        self.exercise.source_word = text.strip() if text.strip() else None
         self.data_changed.emit()
 
     def _populate_options_list(self):
         self.options_list_widget.clear()
-        # Ensure there's always at least one correct option if options exist
-        if self.exercise.options and not any(opt.correct for opt in self.exercise.options):
-            self.exercise.options[0].correct = True # Default first to correct if none are
-
         for option_obj in self.exercise.options:
             item_text = option_obj.text
             if option_obj.correct:
                 item_text += " (Correct)"
             list_item = QListWidgetItem(item_text)
-            list_item.setData(Qt.UserRole, option_obj) # Store the ExerciseOption object
+            list_item.setData(Qt.UserRole, option_obj)
             self.options_list_widget.addItem(list_item)
+        self._validate_mcq_options() # Re-validate after populating
+
+    def _validate_mcq_options(self):
+        if not self.exercise.options:
+            self.options_validation_label.setText("Warning: At least one option is recommended.")
+            self.options_validation_label.setStyleSheet("color: orange;")
+            return
+        
+        correct_count = sum(1 for opt in self.exercise.options if opt.correct)
+        if correct_count == 0:
+            self.options_validation_label.setText("Error: No option marked as correct. Please mark one.")
+            self.options_validation_label.setStyleSheet("color: red;")
+        elif correct_count > 1:
+            self.options_validation_label.setText(f"Error: {correct_count} options marked correct. Please mark exactly one.")
+            self.options_validation_label.setStyleSheet("color: red;")
+        else:
+            self.options_validation_label.setText("") # Clear message
+            self.options_validation_label.setStyleSheet("color: green;") # Optional: green checkmark etc.
+
 
     def _add_option_dialog(self):
         dialog = MultipleChoiceOptionEditDialog(parent=self)
@@ -237,7 +277,7 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
             if text is not None:
                 new_option = ExerciseOption(text=text, correct=is_correct)
                 
-                if is_correct: # Ensure only one correct option
+                if is_correct: 
                     for opt in self.exercise.options:
                         opt.correct = False
                 
@@ -261,18 +301,13 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
                 option_obj.text = text
                 
                 if is_correct:
-                    # Unset other correct options
                     for opt in self.exercise.options:
-                        if opt is not option_obj: # Check object identity
+                        if opt is not option_obj: 
                             opt.correct = False
                     option_obj.correct = True
-                else: # User unchecked it
-                    option_obj.correct = False
-                    # Ensure at least one option remains correct if this was the one
-                    if not any(opt.correct for opt in self.exercise.options):
-                        QMessageBox.warning(self, "Validation", "At least one option must be correct. Re-marking this as correct.")
-                        option_obj.correct = True # Revert or prompt user
-                
+                else:
+                    option_obj.correct = False # Allow unchecking directly
+
                 self._populate_options_list()
                 self.data_changed.emit()
 
@@ -284,67 +319,12 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
             
         current_item = selected_items[0]
         option_obj: ExerciseOption = current_item.data(Qt.UserRole)
-
-        if option_obj.correct and len(self.exercise.options) <= 1:
-             QMessageBox.warning(self, "Delete Option", "Cannot delete the only option if it's marked correct. Add another correct option first or unmark this.")
-             return
         
-        reply = QMessageBox.question(self, "Delete Option", f"Are you sure you want to delete option: '{option_obj.text}'?",
-                                     QMessageBox.Yes | QMessageBox.No)
+        reply = QMessageBox.question(self, "Delete Option", f"Are you sure you want to delete option: '{option_obj.text}'?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.exercise.options.remove(option_obj)
-            # If the deleted option was correct, ensure another one becomes correct or handle appropriately
-            if option_obj.correct and self.exercise.options and not any(opt.correct for opt in self.exercise.options):
-                self.exercise.options[0].correct = True # Make first remaining option correct
-                QMessageBox.information(self, "Auto-Correction", f"'{self.exercise.options[0].text}' is now marked as the correct option.")
-            
-            self._populate_options_list()
+            self._populate_options_list() # This will trigger _validate_mcq_options
             self.data_changed.emit()
-
-
-    def _update_option_text(self, option: ExerciseOption, new_text: str):
-        option.text = new_text
-        self.data_changed.emit()
-
-    def _update_option_correctness(self, option: ExerciseOption, state: int):
-        # Ensure only one option can be correct for MC
-        if state == Qt.CheckState.Checked:
-            for opt in self.exercise.options:
-                if opt is not option: # Use 'is not' for object identity check
-                    opt.correct = False
-            option.correct = True
-            # Re-populate to update checkboxes visually (uncheck others)
-            self.data_changed.emit()
-            self._populate_options() # Re-draw to reflect the single correct option
-        else: # Unchecked
-            # Prevent unchecking if it's the only correct option, ensure at least one is correct if possible
-            if option.correct and sum(1 for opt in self.exercise.options if opt.correct) == 1:
-                QMessageBox.warning(self, "Warning", "At least one option must be marked as correct for Multiple Choice.")
-                # Force re-check the current checkbox
-                self._populate_options() # Re-draw to reflect the single correct option
-            else:
-                option.correct = False
-                self.data_changed.emit()
-
-    def _add_option(self):
-        new_option_text, ok = QInputDialog.getText(self, "New Option", "Enter new option text:")
-        if ok and new_option_text:
-            new_option = ExerciseOption(text=new_option_text.strip(), correct=False) # Strip whitespace
-            self.exercise.options.append(new_option)
-            self._populate_options() # Re-populate all to maintain order/index integrity
-            self.data_changed.emit()
-
-    def _delete_option_ui(self, widget_to_delete: QWidget, option_obj: ExerciseOption):
-        reply = QMessageBox.question(self, "Delete Option", "Are you sure you want to delete this option?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            # Remove from model's list
-            self.exercise.options.remove(option_obj)
-            # Re-populate to refresh UI and ensure correct references for remaining
-            self._populate_options() 
-            self.data_changed.emit()
-            # If the deleted option was the last correct one and there are other options,
-            # consider marking another one correct or warning. For now, rely on validation.
 
 
     def validate(self) -> tuple[bool, str]:
@@ -359,44 +339,39 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
                 return False, "Multiple Choice options cannot be empty."
         return True, ""
 
-# FILE: application/tools/widgets/exercise_editor_widgets.py
-
-# ... (Existing imports, BaseExerciseEditorWidget, TranslationExerciseEditorWidget, MultipleChoiceOptionEditDialog, MultipleChoiceExerciseEditorWidget) ...
-
 class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
     def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
         super().__init__(exercise, target_language, source_language, parent)
         
         self.template_input = self._add_input_field(
-            f"Sentence Template ({target_language}) (use __BLANK__):",
+            f"Sentence Template ({target_language}) (use __BLANK__)",
             exercise.sentence_template or "",
             self._update_sentence_template,
-            is_multiline=True
+            is_multiline=True, is_required=True, placeholder_text="e.g., Mi __BLANK__ feliĉa."
         )
 
-        self.correct_option_text_input = self._add_input_field( # Renamed for clarity
-            f"Correct Blank Word ({target_language}):",
+        self.correct_option_text_input = self._add_input_field(
+            f"Correct Blank Word ({target_language})",
             exercise.correct_option or "",
-            self._update_correct_option_text # Renamed method
+            self._update_correct_option_text, is_required=True, placeholder_text="e.g., estas"
         )
-        # Removed: self.correct_option_input.textChanged.connect(self._sync_correct_option_in_options)
-        # Syncing will happen when correct_option_text_input changes or options list is modified.
+        
+        self.correct_option_text_input.textChanged.connect(self._sync_correct_option_to_options_list)
+
 
         self.hint_input = self._add_input_field(
-            f"Translation Hint ({source_language}):",
+            f"Translation Hint ({source_language})",
             exercise.translation_hint or "",
-            self._update_translation_hint
+            self._update_translation_hint, is_required=True, placeholder_text="e.g., I am happy."
         )
         
         self.layout.addWidget(self._create_separator())
         self.layout.addWidget(QLabel("Available Options for Blank (will be shuffled in app, include the correct one):"))
         
-        # --- New QListWidget for options ---
         self.options_list_widget = QListWidget()
-        self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option_dialog) # Edit on double-click
+        self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option_dialog)
         self.layout.addWidget(self.options_list_widget)
 
-        # --- Buttons for option management ---
         options_button_layout = QHBoxLayout()
         add_option_button = QPushButton("Add Option")
         add_option_button.clicked.connect(self._add_option_dialog)
@@ -411,53 +386,76 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         options_button_layout.addStretch(1)
         self.layout.addLayout(options_button_layout)
         
-        self._populate_options_list() # Initial population
+        # New: Validation message for options (e.g., "correct option in list")
+        self.options_validation_label = QLabel()
+        self.options_validation_label.setStyleSheet("color: orange;")
+        self.layout.addWidget(self.options_validation_label)
+
+        self._populate_options_list()
+        self._validate_fib_options() # Initial validation
         self._sync_correct_option_to_options_list() # Ensure correct option is in the list
         self.layout.addStretch(1)
 
 
     def _update_sentence_template(self, text: str):
-        self.exercise.sentence_template = text
+        self.exercise.sentence_template = text.strip() if text.strip() else None
         self.data_changed.emit()
 
-    def _update_correct_option_text(self, text: str): # Renamed method
-        self.exercise.correct_option = text.strip()
-        self._sync_correct_option_to_options_list() # Ensure it's in the options list
+    def _update_correct_option_text(self, text: str):
+        self.exercise.correct_option = text.strip() if text.strip() else None
+        self._sync_correct_option_to_options_list() # Ensure it's in the options list (and re-validate)
         self.data_changed.emit()
 
     def _update_translation_hint(self, text: str):
-        self.exercise.translation_hint = text
+        self.exercise.translation_hint = text.strip() if text.strip() else None
         self.data_changed.emit()
 
     def _populate_options_list(self):
         self.options_list_widget.clear()
-        # self.exercise.options is List[ExerciseOption], but for FIB, 'correct' flag on ExerciseOption is not used.
-        # We only care about the text.
         for option_obj in self.exercise.options:
             list_item = QListWidgetItem(option_obj.text)
-            list_item.setData(Qt.UserRole, option_obj) # Store the ExerciseOption object
             self.options_list_widget.addItem(list_item)
+        self._validate_fib_options() # Re-validate after populating
+
+    def _validate_fib_options(self):
+        if not self.exercise.options:
+            self.options_validation_label.setText("Error: Options list cannot be empty.")
+            self.options_validation_label.setStyleSheet("color: red;")
+            return
+        
+        correct_text = self.exercise.correct_option
+        if correct_text and correct_text.strip():
+            # Check if current correct_option is among the list items
+            option_texts = [opt.text for opt in self.exercise.options]
+            if correct_text.strip() not in option_texts:
+                self.options_validation_label.setText(f"Error: Correct option '{correct_text}' not found in options list.")
+                self.options_validation_label.setStyleSheet("color: red;")
+                return
+        else:
+            self.options_validation_label.setText("Error: Correct option is empty, but required.")
+            self.options_validation_label.setStyleSheet("color: red;")
+            return
+            
+        self.options_validation_label.setText("") # Clear message
+        self.options_validation_label.setStyleSheet("color: green;")
+
 
     def _sync_correct_option_to_options_list(self):
         """Ensures the self.exercise.correct_option text is present in self.exercise.options list."""
         correct_text = self.exercise.correct_option
         if correct_text and correct_text.strip():
-            found = any(opt.text == correct_text for opt in self.exercise.options)
+            found = any(opt.text == correct_text.strip() for opt in self.exercise.options)
             if not found:
-                # Add the correct option to the list of options if not already present
-                # For FIB, the ExerciseOption's 'correct' flag is irrelevant, only its text matters.
-                self.exercise.options.append(ExerciseOption(text=correct_text, correct=False))
-                self._populate_options_list() # Re-populate to reflect addition
-                self.data_changed.emit() # Data has changed
+                self.exercise.options.append(ExerciseOption(text=correct_text.strip(), correct=False))
+                self._populate_options_list()
+                self.data_changed.emit()
+        self._validate_fib_options() # Always validate after sync attempt
 
 
     def _add_option_dialog(self):
         option_text, ok = QInputDialog.getText(self, "Add Option", "Enter option text:")
         if ok and option_text and option_text.strip():
-            # Avoid adding duplicates directly, though user can edit to create duplicates
             if not any(opt.text == option_text.strip() for opt in self.exercise.options):
-                # For FIB, the 'correct' flag on ExerciseOption is not used for display/logic,
-                # only the text. The main exercise.correct_option field is authoritative.
                 self.exercise.options.append(ExerciseOption(text=option_text.strip(), correct=False))
                 self._populate_options_list()
                 self.data_changed.emit()
@@ -478,15 +476,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         
         new_text, ok = QInputDialog.getText(self, "Edit Option", "Enter new option text:", text=option_obj.text)
         if ok and new_text and new_text.strip():
-            old_text = option_obj.text
             option_obj.text = new_text.strip()
-            # If the edited option was the correct one, update self.exercise.correct_option
-            if self.exercise.correct_option == old_text:
-                self.exercise.correct_option = new_text.strip()
-                # Update the QLineEdit for correct_option_text if it's visible and linked
-                if hasattr(self, 'correct_option_text_input'):
-                    self.correct_option_text_input.setText(new_text.strip())
-
             self._populate_options_list()
             self.data_changed.emit()
         elif ok:
@@ -502,22 +492,13 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         current_item = selected_items[0]
         option_obj: ExerciseOption = current_item.data(Qt.UserRole)
 
-        if option_obj.text == self.exercise.correct_option and len(self.exercise.options) <= 1:
-            QMessageBox.warning(self, "Delete Option", "Cannot delete the only option if it's also the correct answer. Change the correct answer first or add more options.")
+        if len(self.exercise.options) <= 1: # Cannot delete the last option
+            QMessageBox.warning(self, "Delete Option", "Cannot delete the last option from the list.")
             return
 
         reply = QMessageBox.question(self, "Delete Option", f"Are you sure you want to delete option: '{option_obj.text}'?",
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            is_correct_deleted = (option_obj.text == self.exercise.correct_option)
             self.exercise.options.remove(option_obj)
-            
-            if is_correct_deleted:
-                # If the correct option was deleted, clear it or prompt user
-                self.exercise.correct_option = "" # Clear it
-                if hasattr(self, 'correct_option_text_input'):
-                     self.correct_option_text_input.setText("")
-                QMessageBox.information(self, "Correct Option Deleted", "The correct option was deleted. Please specify a new correct option from the remaining choices.")
-
             self._populate_options_list()
             self.data_changed.emit()

@@ -3,16 +3,15 @@
 import os
 import logging
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                               QPushButton, QFileDialog, QFormLayout, QMessageBox) # Added QMessageBox
+                               QPushButton, QFileDialog, QFormLayout, QMessageBox)
 from PySide6.QtCore import Signal, Qt
 from typing import Any, Dict
 
-# Correct import for core.models - relies on project_root being added to sys.path by main_editor.py
 try:
-    from core.models import Course # This is for type hinting and potential direct manipulation
+    from core.models import Course
 except ImportError:
     logging.warning("Could not import Course model in ManifestEditorWidget.")
-    class Course: pass # Dummy class for type hinting
+    class Course: pass
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,13 @@ class ManifestEditorWidget(QWidget):
         self.current_course_obj: Course = None
 
         self.form_layout = QFormLayout(self)
+
+        def add_required_row(label_text: str, input_widget: QWidget, field_name: str):
+            label = QLabel(label_text + " *")
+            self.form_layout.addRow(label, input_widget)
+            input_widget.setProperty("field_name", field_name)
+            input_widget.textChanged.connect(lambda text: self._validate_field(input_widget))
+            return input_widget
 
         self.course_id_input = QLineEdit()
         self.course_id_input.setReadOnly(True) # IDs are usually fixed
@@ -60,6 +66,16 @@ class ManifestEditorWidget(QWidget):
         self.description_input.textChanged.connect(lambda: self.data_changed.emit())
         self.form_layout.addRow("Description:", self.description_input)
 
+        self.required_inputs = [
+            self.course_title_input, self.target_lang_input, self.source_lang_input, self.version_input
+        ]
+    
+    def _validate_field(self, input_widget: QLineEdit):
+        text = input_widget.text().strip()
+        if not text:
+            input_widget.setStyleSheet("border: 1px solid red;")
+        else:
+            input_widget.setStyleSheet("")
 
     def load_data(self, manifest_data: Dict[str, Any], course_obj: Course):
         """Loads manifest data and associated course object into the editor fields."""
