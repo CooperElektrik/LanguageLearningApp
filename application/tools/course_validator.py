@@ -249,7 +249,7 @@ def main():
             if not course_obj:
                 _collect_error(current_errors, f"Failed to load or parse course content file: {content_filepath}. See previous logs.", "")
             else:
-                content_validation_errors = perform_course_content_validation(course_obj)
+                content_validation_errors = perform_course_content_validation(course_obj, course_content_actual_base_dir)
                 current_errors.extend(content_validation_errors)
         else:
             # Error already added by perform_manifest_validation if content_file is present but non-existent
