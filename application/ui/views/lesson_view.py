@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, 
-                               QFrame, QProgressBar)
+                               QFrame, QProgressBar, QMessageBox)
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
 
@@ -64,9 +64,14 @@ class LessonView(QWidget):
         self.next_button = QPushButton("Continue") # Text changes to "Finish Lesson"
         self.next_button.setFont(QFont("Arial", 12, QFont.Bold))
         self.next_button.clicked.connect(self._handle_next_action)
+
+        self.skip_button = QPushButton("Skip Exercise")
+        self.skip_button.setFont(QFont("Arial", 10))
+        self.skip_button.clicked.connect(self._handle_skip_exercise)
         
         self.action_buttons_layout.addWidget(self.submit_button)
         self.action_buttons_layout.addWidget(self.next_button)
+        self.action_buttons_layout.addWidget(self.skip_button)
         self.main_layout.addLayout(self.action_buttons_layout)
 
     def start_lesson(self, lesson_id: str):
@@ -97,6 +102,7 @@ class LessonView(QWidget):
         self._clear_exercise_area()
         self.feedback_label.setText("")
         self.submit_button.setEnabled(True)
+        self.skip_button.setEnabled(True)
         self.next_button.setVisible(False) # Hide until answer is submitted and correct
 
         if self.current_exercise_index >= self.total_exercises_in_lesson:
@@ -166,6 +172,55 @@ class LessonView(QWidget):
     def _handle_next_action(self):
         self.current_exercise_index += 1
         self._load_current_exercise() # This will call _finish_lesson if no more exercises
+
+    def _handle_skip_exercise(self):
+        if not self.current_lesson or self.current_exercise_index < 0 or \
+        self.current_exercise_index >= self.total_exercises_in_lesson:
+            return
+
+        reply = QMessageBox.question(self, "Skip Exercise", 
+                                    "Are you sure you want to skip this exercise? You won't get points for it.",
+                                    QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.No:
+            return
+
+        exercise = self.current_lesson.exercises[self.current_exercise_index]
+        
+        # Get correct answer for display (similar to _process_answer)
+        _, correct_answer_display_text = self.course_manager.check_answer(exercise, "!@#INVALID_ANSWER_FOR_SKIPPING#@!") 
+        # The check_answer method usually returns tuple (is_correct, feedback_text).
+        # We need the feedback text part that reveals the answer.
+        # A more direct way to get the answer might be better if check_answer has side effects.
+        # Assuming check_answer is safe to call like this or we have another way to get display_answer.
+        
+        # Let's refine getting the correct answer:
+        correct_answer_for_display = "Could not retrieve answer." # Default
+        if exercise.type in ["translate_to_target", "translate_to_source"]:
+            correct_answer_for_display = exercise.answer
+        elif exercise.type == "multiple_choice_translation":
+            correct_option = next((opt for opt in exercise.options if opt.correct), None)
+            if correct_option: correct_answer_for_display = correct_option.text
+        elif exercise.type == "fill_in_the_blank":
+            correct_answer_for_display = exercise.correct_option
+            
+        self.feedback_label.setText(f"Skipped. The correct answer was: {correct_answer_for_display}")
+        self.feedback_label.setStyleSheet("color: orange;") # Skipped color
+
+        self.progress_bar.setValue(self.current_exercise_index + 1) # Visually advance
+        
+        self.submit_button.setEnabled(False)
+        self.skip_button.setEnabled(False) # Disable skip too once skipped
+        self.next_button.setVisible(True)
+        if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
+            self.next_button.setText("Finish Lesson 🎉")
+        else:
+            self.next_button.setText("Next Exercise →")
+        self.next_button.setFocus()
+        
+        # We don't actually call _handle_next_action immediately here, as that increments the index again.
+        # The next_button click will handle moving to the next exercise.
+        # The state is now: exercise "answered" (skipped), show next_button.
+
 
     def _finish_lesson(self):
         self.feedback_label.setText(f"Lesson '{self.current_lesson.title}' completed!")
