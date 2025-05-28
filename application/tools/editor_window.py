@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 _current_script_dir = os.path.dirname(os.path.abspath(__file__))
 _dark_theme_qss_path = os.path.join(_current_script_dir, "styles", "dark_theme.qss")
+_light_theme_qss_path = os.path.join(_current_script_dir, "styles", "light_theme.qss")
 
 class EditorWindow(QMainWindow):
     course_changed = Signal() # Emits when course data is structurally modified
@@ -62,6 +63,12 @@ class EditorWindow(QMainWindow):
         self._create_tool_bar()
         self._set_dirty_state(False)
         self._setup_ui()
+
+        # Make Dark theme default
+
+        with open(_dark_theme_qss_path, 'r', encoding='utf-8') as f:
+            qss_content = f.read()
+            QApplication.instance().setStyleSheet(qss_content)
         
         self.new_course()
 
@@ -153,27 +160,36 @@ class EditorWindow(QMainWindow):
         tool_bar.addAction(self.package_action)
         # Add more actions as needed
 
-        self.addToolBar(Qt.TopToolBarArea, tool_bar)
+        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, tool_bar)
 
-    def _set_theme(self, theme_name: str): # NEW METHOD for theme switching
+    def _set_theme(self, theme_name: str):
+        qss_file_path = ""
         if theme_name == 'dark':
-            try:
-                with open(_dark_theme_qss_path, 'r', encoding='utf-8') as f:
-                    qss_content = f.read()
-                QApplication.instance().setStyleSheet(qss_content)
-                self.status_bar.showMessage("Switched to Dark Theme.", 3000)
-                self.dark_theme_action.setChecked(True)
-            except FileNotFoundError:
-                QMessageBox.warning(self, "Theme Error", f"Dark theme QSS file not found at: {_dark_theme_qss_path}")
-                self.status_bar.showMessage("Error loading dark theme.", 3000)
-                self.light_theme_action.setChecked(True) # Revert to light if dark fails
-            except Exception as e:
-                QMessageBox.warning(self, "Theme Error", f"Failed to apply dark theme: {e}")
-                self.status_bar.showMessage("Error applying dark theme.", 3000)
-                self.light_theme_action.setChecked(True)
+            qss_file_path = _dark_theme_qss_path
         else: # 'light'
-            QApplication.instance().setStyleSheet("") # Clear stylesheet
-            self.status_bar.showMessage("Switched to Light Theme.", 3000)
+            qss_file_path = _light_theme_qss_path # Use the light theme QSS
+
+        try:
+            with open(qss_file_path, 'r', encoding='utf-8') as f:
+                qss_content = f.read()
+            QApplication.instance().setStyleSheet(qss_content)
+            self.status_bar.showMessage(f"Switched to {theme_name.capitalize()} Theme.", 3000)
+            
+            # Update checked state
+            if theme_name == 'dark':
+                self.dark_theme_action.setChecked(True)
+            else:
+                self.light_theme_action.setChecked(True)
+
+        except FileNotFoundError:
+            QMessageBox.warning(self, "Theme Error", f"Theme QSS file not found at: {qss_file_path}")
+            self.status_bar.showMessage(f"Error loading {theme_name} theme.", 3000)
+            QApplication.instance().setStyleSheet("") # Clear any invalid style
+            self.light_theme_action.setChecked(True) # Fallback to default/light
+        except Exception as e:
+            QMessageBox.warning(self, "Theme Error", f"Failed to apply {theme_name} theme: {e}")
+            self.status_bar.showMessage(f"Error applying {theme_name} theme.", 3000)
+            QApplication.instance().setStyleSheet("")
             self.light_theme_action.setChecked(True)
 
     def _setup_ui(self):
