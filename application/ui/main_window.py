@@ -1,5 +1,6 @@
 import sys
 import logging
+import os
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QMessageBox
 from PySide6.QtGui import QIcon, QAction # Optional: for window icon
 from PySide6.QtCore import Qt
@@ -13,6 +14,9 @@ from ui.views.review_view import ReviewView
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_dark_theme_qss_path = os.path.join(_current_dir, 'styles', 'dark_theme.qss')
 
 class MainWindow(QMainWindow):
     def __init__(self, course_manager: CourseManager, progress_manager: ProgressManager, parent=None):
@@ -47,6 +51,8 @@ class MainWindow(QMainWindow):
             # For now, the window will be mostly empty.
             pass
 
+        with open(_dark_theme_qss_path, 'r') as f:
+            self.setStyleSheet(f.read())
 
     def _setup_views(self):
         self.course_overview_view = CourseOverviewView(self.course_manager, self.progress_manager)

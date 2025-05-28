@@ -39,7 +39,7 @@ class LessonView(QWidget):
 
         # Progress Bar
         self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setTextVisible(False)
         self.progress_bar.setFormat("%v / %m Steps")
         self.main_layout.addWidget(self.progress_bar)
 
