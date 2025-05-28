@@ -1,7 +1,7 @@
 import os
 import logging
 import sys
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from .models import Course, Unit, Lesson, Exercise
 from . import course_loader
 
@@ -115,6 +115,15 @@ class CourseManager:
         if 0 <= exercise_index < len(exercises):
             return exercises[exercise_index]
         return None
+    
+    def get_all_exercises(self) -> List[Any]:
+        """Returns a flat list of all Exercise objects across all units and lessons."""
+        all_exercises = []
+        if self.course:
+            for unit in self.course.units:
+                for lesson in unit.lessons:
+                    all_exercises.extend(lesson.exercises)
+        return all_exercises
 
     def get_lesson_exercise_count(self, lesson_id: str) -> int:
         return len(self.get_exercises(lesson_id))

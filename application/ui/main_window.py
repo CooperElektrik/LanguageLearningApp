@@ -1,12 +1,14 @@
 import sys
 import logging
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QMessageBox
-from PySide6.QtGui import QIcon # Optional: for window icon
+from PySide6.QtGui import QIcon, QAction # Optional: for window icon
+from PySide6.QtCore import Qt
 
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
+from ui.views.review_view import ReviewView
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
@@ -38,6 +40,7 @@ class MainWindow(QMainWindow):
 
         if not self.course_load_failed:
             self._setup_views()
+            self._setup_menu_bar()
             self.show_course_overview()
         else:
             # Handle the UI state when course loading fails (e.g., show an error message widget)
@@ -48,15 +51,28 @@ class MainWindow(QMainWindow):
     def _setup_views(self):
         self.course_overview_view = CourseOverviewView(self.course_manager, self.progress_manager)
         self.lesson_view = LessonView(self.course_manager, self.progress_manager)
+        self.review_view = ReviewView(self.course_manager, self.progress_manager)
 
         self.stacked_widget.addWidget(self.course_overview_view)
         self.stacked_widget.addWidget(self.lesson_view)
+        self.stacked_widget.addWidget(self.review_view)
 
         # Connect signals
         self.course_overview_view.lesson_selected.connect(self.start_lesson)
         self.lesson_view.lesson_completed_signal.connect(self.handle_lesson_completion)
         self.lesson_view.back_to_overview_signal.connect(self.show_course_overview)
+        self.review_view.review_session_finished.connect(self.show_course_overview)
+        self.review_view.back_to_overview_signal.connect(self.show_course_overview)
 
+    def _setup_menu_bar(self): # NEW METHOD
+        menu_bar = self.menuBar()
+        learning_menu = menu_bar.addMenu("&Learning")
+
+        self.start_review_action = QAction("&Start Review", self)
+        self.start_review_action.setShortcut(Qt.CTRL | Qt.Key_R)
+        self.start_review_action.setStatusTip("Start a spaced repetition review session")
+        self.start_review_action.triggered.connect(self.start_review_session)
+        learning_menu.addAction(self.start_review_action)
 
     def show_course_overview(self):
         if hasattr(self, 'course_overview_view') and self.course_overview_view:
@@ -79,6 +95,15 @@ class MainWindow(QMainWindow):
         logger.info(f"Lesson {lesson_id} completed. Returning to overview.")
         # Progress is already saved by LessonView calling ProgressManager
         self.show_course_overview() # This will also refresh the overview
+
+    def start_review_session(self): # NEW SLOT
+        if not self.course_manager.course:
+            QMessageBox.warning(self, "Review Session", "No course loaded to start a review session.")
+            return
+
+        self.review_view.start_review_session()
+        self.stacked_widget.setCurrentWidget(self.review_view)
+        logger.info("Started review session.")
 
     def closeEvent(self, event):
         # Ensure progress is saved on close, though it should be saved after each lesson.

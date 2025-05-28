@@ -55,10 +55,10 @@ class CourseOverviewView(QWidget):
 
             for lesson in unit.lessons:
                 lesson_button_text = f"{lesson.title}"
-                is_completed = self.progress_manager.is_lesson_completed(lesson.lesson_id)
+                is_completed = self.progress_manager.is_lesson_completed(lesson.lesson_id, self.course_manager)
                 # Pass current unit's lessons and all units for accurate unlocking check
                 current_unit_lessons = unit.lessons 
-                is_unlocked = self.progress_manager.is_lesson_unlocked(lesson.lesson_id, current_unit_lessons, all_course_units_for_unlock_check)
+                is_unlocked = self.progress_manager.is_lesson_unlocked(lesson.lesson_id, current_unit_lessons, all_course_units_for_unlock_check, self.course_manager)
 
                 lesson_button = QPushButton(lesson.title)
                 lesson_button.setFont(QFont("Arial", 11))
