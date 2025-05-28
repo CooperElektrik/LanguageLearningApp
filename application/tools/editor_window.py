@@ -8,8 +8,8 @@ import yaml
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QTreeWidget, QTreeWidgetItem, QStackedWidget,
                                QPushButton, QFileDialog, QMessageBox, QLabel, QInputDialog,
-                               QSplitter, QComboBox, QMenu, QTextEdit, QDialog, QFrame, QLineEdit, QTreeWidgetItemIterator) # Added QFrame
-from PySide6.QtCore import Qt, Signal
+                               QSplitter, QComboBox, QMenu, QTextEdit, QDialog, QFrame, QLineEdit, QTreeWidgetItemIterator, QStyle, QToolBar)
+from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QAction, QFont
 
 # Dynamic path adjustment for importing models from the 'application/core' directory.
@@ -54,49 +54,87 @@ class EditorWindow(QMainWindow):
         self.manifest_data: dict = None
         self.course_data: Course = None 
 
+        self._create_actions()
         self._create_menu_bar()
+        self._create_tool_bar()
         self._set_dirty_state(False)
         self._setup_ui()
         
         self.new_course()
 
+    def _create_actions(self):
+        self.new_action = QAction(self.style().standardIcon(QStyle.SP_FileIcon), "&New Course...", self)
+        self.new_action.setShortcut(Qt.CTRL | Qt.Key_N)
+        self.new_action.setStatusTip("Create a new course")
+        self.new_action.triggered.connect(self.new_course)
+
+        self.open_action = QAction(self.style().standardIcon(QStyle.SP_DialogOpenButton), "&Open Course...", self)
+        self.open_action.setShortcut(Qt.CTRL | Qt.Key_O)
+        self.open_action.setStatusTip("Open an existing course manifest")
+        self.open_action.triggered.connect(self.open_course)
+
+        self.save_action = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton), "&Save Course", self)
+        self.save_action.setShortcut(Qt.CTRL | Qt.Key_S)
+        self.save_action.setStatusTip("Save the current course")
+        self.save_action.triggered.connect(self.save_course)
+
+        self.save_as_action = QAction("Save Course &As...", self) # Icon can be same as Save or omitted for menu
+        self.save_as_action.setShortcut(Qt.CTRL | Qt.SHIFT | Qt.Key_S)
+        self.save_as_action.setStatusTip("Save the current course under a new name or location")
+        self.save_as_action.triggered.connect(self.save_course_as)
+
+        self.exit_action = QAction(self.style().standardIcon(QStyle.SP_DialogCloseButton), "E&xit", self)
+        self.exit_action.setShortcut(Qt.CTRL | Qt.Key_Q)
+        self.exit_action.setStatusTip("Exit the application")
+        self.exit_action.triggered.connect(self.close)
+
+        # Tools Actions
+        self.validate_action = QAction(self.style().standardIcon(QStyle.SP_DialogApplyButton), "&Validate Current Course", self)
+        self.validate_action.setStatusTip("Validate the structure and content of the current course")
+        self.validate_action.triggered.connect(self.validate_current_course)
+
+        self.import_csv_action = QAction(self.style().standardIcon(QStyle.SP_ArrowUp), "&Import Exercises from CSV...", self) # SP_ArrowUp implies import
+        self.import_csv_action.setStatusTip("Import exercises from a CSV file")
+        self.import_csv_action.triggered.connect(self.import_from_csv)
+        
+        self.package_action = QAction(self.style().standardIcon(QStyle.SP_DriveHDIcon), "Create Course &Package (.lcpkg)...", self) # SP_DriveHDIcon for package/archive
+        self.package_action.setStatusTip("Package the current course into a distributable .lcpkg file")
+        self.package_action.triggered.connect(self.create_course_package)
+
     def _create_menu_bar(self):
         menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu("File")
+        file_menu = menu_bar.addMenu("&File") # Use ampersand for mnemonics
 
-        new_action = QAction("New Course...", self)
-        new_action.triggered.connect(self.new_course)
-        file_menu.addAction(new_action)
-
-        open_action = QAction("Open Course...", self)
-        open_action.triggered.connect(self.open_course)
-        file_menu.addAction(open_action)
+        file_menu.addAction(self.new_action)
+        file_menu.addAction(self.open_action)
         file_menu.addSeparator()
-
-        save_action = QAction("Save Course", self)
-        save_action.triggered.connect(self.save_course)
-        file_menu.addAction(save_action)
-
-        save_as_action = QAction("Save Course As...", self)
-        save_as_action.triggered.connect(self.save_course_as)
-        file_menu.addAction(save_as_action)
+        file_menu.addAction(self.save_action)
+        file_menu.addAction(self.save_as_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.exit_action)
         
-        tools_menu = menu_bar.addMenu("Tools")
-        validate_action = QAction("Validate Current Course", self)
-        validate_action.triggered.connect(self.validate_current_course)
-        tools_menu.addAction(validate_action)
-        import_csv_action = QAction("Import Exercises from CSV...", self)
-        import_csv_action.triggered.connect(self.import_from_csv)
-        tools_menu.addAction(import_csv_action)
+        tools_menu = menu_bar.addMenu("&Tools")
+        tools_menu.addAction(self.validate_action)
+        tools_menu.addAction(self.import_csv_action)
         tools_menu.addSeparator()
-        package_action = QAction("Create Course Package (.lcpkg)...", self)
-        package_action.triggered.connect(self.create_course_package)
-        tools_menu.addAction(package_action)
-        
-        file_menu.addSeparator()
-        exit_action = QAction("Exit", self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
+        tools_menu.addAction(self.package_action)
+
+    def _create_tool_bar(self): # NEW METHOD
+        tool_bar = QToolBar("Main Toolbar", self)
+        tool_bar.setIconSize(QSize(22, 22)) # Standard icon size
+        # tool_bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon) # Or ToolButtonIconOnly
+        tool_bar.setToolButtonStyle(Qt.ToolButtonIconOnly) # More compact
+
+        tool_bar.addAction(self.new_action)
+        tool_bar.addAction(self.open_action)
+        tool_bar.addAction(self.save_action)
+        tool_bar.addSeparator()
+        tool_bar.addAction(self.validate_action)
+        tool_bar.addAction(self.import_csv_action)
+        tool_bar.addAction(self.package_action)
+        # Add more actions as needed
+
+        self.addToolBar(Qt.TopToolBarArea, tool_bar)
 
     def _setup_ui(self):
         main_widget = QWidget()
