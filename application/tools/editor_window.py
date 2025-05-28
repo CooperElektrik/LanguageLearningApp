@@ -8,9 +8,9 @@ import yaml
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QTreeWidget, QTreeWidgetItem, QStackedWidget,
                                QPushButton, QFileDialog, QMessageBox, QLabel, QInputDialog,
-                               QSplitter, QComboBox, QMenu, QTextEdit, QDialog, QFrame, QLineEdit, QTreeWidgetItemIterator, QStyle, QToolBar)
+                               QSplitter, QComboBox, QMenu, QTextEdit, QDialog, QFrame, QLineEdit, QTreeWidgetItemIterator, QStyle, QToolBar, QApplication)
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtGui import QAction, QFont, QActionGroup
 
 # Dynamic path adjustment for importing models from the 'application/core' directory.
 try:
@@ -40,6 +40,9 @@ from .course_packager import create_package_for_gui
 
 
 logger = logging.getLogger(__name__)
+
+_current_script_dir = os.path.dirname(os.path.abspath(__file__))
+_dark_theme_qss_path = os.path.join(_current_script_dir, "styles", "dark_theme.qss")
 
 class EditorWindow(QMainWindow):
     course_changed = Signal() # Emits when course data is structurally modified
@@ -101,6 +104,17 @@ class EditorWindow(QMainWindow):
         self.package_action.setStatusTip("Package the current course into a distributable .lcpkg file")
         self.package_action.triggered.connect(self.create_course_package)
 
+        self.theme_group = QActionGroup(self) # ActionGroup for exclusive checkable actions
+        self.light_theme_action = QAction("Light Theme", self, checkable=True)
+        self.light_theme_action.setStatusTip("Switch to light theme")
+        self.light_theme_action.triggered.connect(lambda: self._set_theme('light'))
+        self.theme_group.addAction(self.light_theme_action)
+
+        self.dark_theme_action = QAction("Dark Theme", self, checkable=True)
+        self.dark_theme_action.setStatusTip("Switch to dark theme")
+        self.dark_theme_action.triggered.connect(lambda: self._set_theme('dark'))
+        self.theme_group.addAction(self.dark_theme_action)
+
     def _create_menu_bar(self):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File") # Use ampersand for mnemonics
@@ -119,6 +133,11 @@ class EditorWindow(QMainWindow):
         tools_menu.addSeparator()
         tools_menu.addAction(self.package_action)
 
+        view_menu = menu_bar.addMenu("&View")
+        theme_submenu = view_menu.addMenu("Theme")
+        theme_submenu.addAction(self.light_theme_action)
+        theme_submenu.addAction(self.dark_theme_action)
+
     def _create_tool_bar(self): # NEW METHOD
         tool_bar = QToolBar("Main Toolbar", self)
         tool_bar.setIconSize(QSize(22, 22)) # Standard icon size
@@ -135,6 +154,27 @@ class EditorWindow(QMainWindow):
         # Add more actions as needed
 
         self.addToolBar(Qt.TopToolBarArea, tool_bar)
+
+    def _set_theme(self, theme_name: str): # NEW METHOD for theme switching
+        if theme_name == 'dark':
+            try:
+                with open(_dark_theme_qss_path, 'r', encoding='utf-8') as f:
+                    qss_content = f.read()
+                QApplication.instance().setStyleSheet(qss_content)
+                self.status_bar.showMessage("Switched to Dark Theme.", 3000)
+                self.dark_theme_action.setChecked(True)
+            except FileNotFoundError:
+                QMessageBox.warning(self, "Theme Error", f"Dark theme QSS file not found at: {_dark_theme_qss_path}")
+                self.status_bar.showMessage("Error loading dark theme.", 3000)
+                self.light_theme_action.setChecked(True) # Revert to light if dark fails
+            except Exception as e:
+                QMessageBox.warning(self, "Theme Error", f"Failed to apply dark theme: {e}")
+                self.status_bar.showMessage("Error applying dark theme.", 3000)
+                self.light_theme_action.setChecked(True)
+        else: # 'light'
+            QApplication.instance().setStyleSheet("") # Clear stylesheet
+            self.status_bar.showMessage("Switched to Light Theme.", 3000)
+            self.light_theme_action.setChecked(True)
 
     def _setup_ui(self):
         main_widget = QWidget()

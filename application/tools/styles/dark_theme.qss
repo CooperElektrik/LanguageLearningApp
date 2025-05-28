@@ -1,0 +1,152 @@
+/* FILE: application/tools/styles/dark_theme.qss */
+
+/* General background and text colors */
+QWidget {
+    background-color: #2b2b2b; /* Dark charcoal */
+    color: #f0f0f0; /* Light gray text */
+    selection-background-color: #555555; /* Medium gray for selected items */
+    selection-color: #ffffff; /* White text on selection */
+}
+
+/* Labels */
+QLabel {
+    color: #f0f0f0;
+}
+
+/* Line Edits and Text Edits */
+QLineEdit, QTextEdit {
+    background-color: #3c3c3c; /* Slightly lighter dark gray */
+    color: #f0f0f0;
+    border: 1px solid #555555;
+    padding: 2px;
+    border-radius: 3px;
+}
+/* Error styling from inline validation */
+QLineEdit[style*="border: 1px solid red;"], QTextEdit[style*="border: 1px solid red;"] {
+    border: 1px solid #ff4d4d; /* Bright red border for errors */
+}
+
+
+/* Push Buttons */
+QPushButton {
+    background-color: #4a4a4a; /* Darker gray button */
+    color: #ffffff;
+    border: 1px solid #666666;
+    border-radius: 4px;
+    padding: 5px 10px;
+}
+QPushButton:hover {
+    background-color: #5a5a5a; /* Lighter on hover */
+    border: 1px solid #777777;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a; /* Darker on press */
+    border: 1px solid #555555;
+}
+QPushButton:disabled {
+    background-color: #333333;
+    color: #999999;
+    border: 1px solid #444444;
+}
+
+/* Group Boxes (e.g., Unit, Lesson, Column Mapping) */
+QGroupBox {
+    border: 1px solid #555555;
+    border-radius: 5px;
+    margin-top: 1ex; /* Space for title */
+    font-weight: bold;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center; /* Title in the middle of the top line */
+    padding: 0 3px;
+    background-color: #2b2b2b;
+    color: #cccccc;
+}
+
+/* QTreeWidget and QListWidget */
+QTreeWidget, QListWidget {
+    background-color: #323232; /* Slightly darker than main background */
+    color: #f0f0f0;
+    border: 1px solid #555555;
+    alternate-background-color: #2f2f2f; /* Optional alternating row colors */
+    padding-left: 5px;
+    selection-background-color: #555555;
+    selection-color: #ffffff;
+    border-radius: 5px;
+}
+QTreeWidget::item:selected, QListWidget::item:selected {
+    background-color: #0078d7; /* Standard blue for selection */
+    color: #ffffff;
+}
+QTreeWidget::branch:selected, QListWidget::branch:selected { /* For branches in tree view */
+    background-color: #0078d7;
+}
+
+QHeaderView {
+    background-color: #4a4a4a; /* Ensure the header's general background is dark */
+    color: #f0f0f0;
+}
+QHeaderView::section {
+    background-color: #4a4a4a; /* Dark gray for header background */
+    color: #f0f0f0; /* Light text color */
+    padding: 4px;
+    border: 1px solid #555555; /* Border around sections */
+    border-bottom: 1px solid #666666; /* Slightly darker bottom border */
+    border-right: 1px solid #555555; /* Separator between columns */
+}
+QHeaderView::section:hover {
+    background-color: #5a5a5a; /* Hover effect for header sections */
+}
+QHeaderView::section:pressed {
+    background-color: #3a3a3a; /* Pressed effect for header sections */
+}
+
+
+/* Menus and Menu Bar */
+QMenuBar {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+}
+QMenuBar::item:selected {
+    background-color: #0078d7;
+}
+QMenu {
+    background-color: #3a3a3a;
+    border: 1px solid #555555;
+    color: #f0f0f0;
+}
+QMenu::item:selected {
+    background-color: #0078d7;
+}
+
+/* Tool Bar */
+QToolBar {
+    background-color: #3a3a3a;
+    border: none;
+    padding: 2px;
+}
+QToolButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 3px;
+    border-radius: 3px;
+}
+QToolButton:hover {
+    background-color: #5a5a5a;
+    border: 1px solid #777777;
+}
+QToolButton:pressed {
+    background-color: #3a3a3a;
+    border: 1px solid #555555;
+}
+
+/* Status Bar */
+QStatusBar {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    border-top: 1px solid #555555;
+}
+QStatusBar::item {
+    border: none; /* No border for individual items */
+}
