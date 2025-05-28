@@ -85,6 +85,12 @@ class CourseManager:
             return os.path.dirname(os.path.abspath(self.manifest_path))
         return None # Or raise an error if course not loaded
 
+    def get_course_manifest_directory(self) -> Optional[str]:
+        """Returns the directory where the current course's manifest file is located."""
+        if self.manifest_path and os.path.exists(self.manifest_path):
+            return os.path.dirname(os.path.abspath(self.manifest_path))
+        return None
+
     def get_course_title(self) -> Optional[str]:
         return self.course.title if self.course else None
         

@@ -30,7 +30,7 @@ from .yaml_manager import load_manifest, save_manifest, create_new_course
 from .widgets.manifest_editor_widget import ManifestEditorWidget
 from .widgets.exercise_editor_widgets import (
     TranslationExerciseEditorWidget, MultipleChoiceExerciseEditorWidget, 
-    FillInTheBlankExerciseEditorWidget
+    FillInTheBlankExerciseEditorWidget, BaseExerciseEditorWidget
 )
 from .dialogs.csv_import_dialog import CsvImportDialog
 from .dialogs.package_creation_dialog import PackageCreationDialog
@@ -455,8 +455,21 @@ class EditorWindow(QMainWindow):
     def _create_exercise_editor_widget(self, exercise: Exercise):
         target_lang = self.course_data.target_language if self.course_data else "Target Language"
         source_lang = self.course_data.source_language if self.course_data else "Source Language"
+
+        course_root_dir = None
+        if self.current_manifest_path: # This is the path to the manifest.yaml
+            course_root_dir = os.path.dirname(self.current_manifest_path)
+        elif self.current_course_content_path: # Fallback if manifest not saved yet but content path is
+             # This case is less ideal as assets should ideally be relative to manifest root
+            course_root_dir = os.path.dirname(self.current_course_content_path) 
+            logging.warning("Using content file directory as course root for asset handling. Save manifest for best results.")
+        else:
+            logging.warning("Course root directory for assets could not be determined (no manifest/content path). Asset browsing might be limited to full paths.")
+
+        widget: BaseExerciseEditorWidget # Type hint for clarity
+
         if exercise.type == "translate_to_target" or exercise.type == "translate_to_source":
-            widget = TranslationExerciseEditorWidget(exercise, target_lang, source_lang)
+            widget = TranslationExerciseEditorWidget(exercise, target_lang, source_lang, course_root_dir)
         elif exercise.type == "multiple_choice_translation":
             widget = MultipleChoiceExerciseEditorWidget(exercise, target_lang, source_lang)
         elif exercise.type == "fill_in_the_blank":
