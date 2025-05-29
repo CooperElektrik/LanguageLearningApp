@@ -2,20 +2,39 @@
 
 /* General background and text colors */
 QWidget {
-    background-color: #2b2b2b; /* Dark charcoal */
+    background-color: rgba(60, 60, 60, 60); /* Dark charcoal */
     color: #f0f0f0; /* Light gray text */
     selection-background-color: #555555; /* Medium gray for selected items */
     selection-color: #ffffff; /* White text on selection */
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Specific styling for the EditorWindow (QMainWindow) */
+QMainWindow#EditorWindow {
+    /*
+    The 'border-image' property with 0 0 0 0 stretch effectively stretches
+    the image over the entire background of the QMainWindow.
+    The path is relative to the QSS file itself.
+    Assuming image is in 'application/tools/images/' and QSS is in 'application/tools/styles/'
+    */
+    border-image: url("D:/dev-new/py-bsc-2/application/tools/images/editor_background_night.jpg") 0 0 0 0 stretch;
+    background-color: #2b2b2b; /* Fallback color if image fails to load or for areas not covered */
+}
+
+/* Make the QMainWindow's direct central widget transparent */
+QMainWindow#EditorWindow > QWidget {
+    background-color: transparent;
 }
 
 /* Labels */
 QLabel {
     color: #f0f0f0;
+    background-color: rgba(0,0,0,0)
 }
 
 /* Line Edits and Text Edits */
 QLineEdit, QTextEdit {
-    background-color: #3c3c3c; /* Slightly lighter dark gray */
+    background-color: #af3c3c3c; /* Slightly lighter dark gray */
     color: #f0f0f0;
     border: 1px solid #555555;
     padding: 2px;
@@ -66,7 +85,7 @@ QGroupBox::title {
 
 /* QTreeWidget and QListWidget */
 QTreeWidget, QListWidget {
-    background-color: #323232; /* Slightly darker than main background */
+    background-color: #8e323232; /* Slightly darker than main background */
     color: #f0f0f0;
     border: 1px solid #555555;
     alternate-background-color: #2f2f2f; /* Optional alternating row colors */
@@ -84,14 +103,12 @@ QTreeWidget::branch:selected, QListWidget::branch:selected { /* For branches in 
 }
 
 QHeaderView {
-    background-color: #4a4a4a; /* Ensure the header's general background is dark */
     color: #f0f0f0;
 }
 QHeaderView::section {
-    background-color: #4a4a4a; /* Dark gray for header background */
-    color: #f0f0f0; /* Light text color */
+    background-color: #00000000; /* Dark gray for header background */
     padding: 4px;
-    border: 1px solid #555555; /* Border around sections */
+    border: 0px solid #555555; /* Border around sections */
     border-bottom: 1px solid #666666; /* Slightly darker bottom border */
     border-right: 1px solid #555555; /* Separator between columns */
 }

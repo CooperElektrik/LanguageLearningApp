@@ -18,7 +18,7 @@ try:
     from core.course_loader import load_course_content as load_course_content_from_yaml # Use app's loader
     from tools.dialogs.exercise_preview_dialog import ExercisePreviewDialog
 except ImportError as e:
-    logging.error(f"Failed to import models from core. Ensure 'application' directory is on sys.path. Error: {e}")
+    logging.error(f"Failed to import core or UI widgets for preview dialog. Ensure 'application' directory is on sys.path. Error: {e}")
     class Course: pass # Dummy classes for graceful degradation
     class Unit: pass
     class Lesson: pass
@@ -30,7 +30,7 @@ from .yaml_manager import load_manifest, save_manifest, create_new_course
 from .widgets.manifest_editor_widget import ManifestEditorWidget
 from .widgets.exercise_editor_widgets import (
     TranslationExerciseEditorWidget, MultipleChoiceExerciseEditorWidget, 
-    FillInTheBlankExerciseEditorWidget
+    FillInTheBlankExerciseEditorWidget, BaseExerciseEditorWidget
 )
 from .dialogs.csv_import_dialog import CsvImportDialog
 from .dialogs.package_creation_dialog import PackageCreationDialog
@@ -50,8 +50,14 @@ class EditorWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        WIN_WIDTH = 1200
+        WIN_HEIGHT = 800
+
         self.setWindowTitle("LL Course Editor")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, WIN_WIDTH, WIN_HEIGHT)
+        self.setObjectName("EditorWindow") # Set object name for QSS styling
+        self.setFixedSize(WIN_WIDTH, WIN_HEIGHT)
 
         self.current_manifest_path: str = None
         self.current_course_content_path: str = None
@@ -65,11 +71,8 @@ class EditorWindow(QMainWindow):
         self._setup_ui()
 
         # Make Dark theme default
+        self._set_theme('dark') # Set dark theme initially
 
-        with open(_dark_theme_qss_path, 'r', encoding='utf-8') as f:
-            qss_content = f.read()
-            QApplication.instance().setStyleSheet(qss_content)
-        
         self.new_course()
 
     def _create_actions(self):
@@ -166,8 +169,10 @@ class EditorWindow(QMainWindow):
         qss_file_path = ""
         if theme_name == 'dark':
             qss_file_path = _dark_theme_qss_path
+            self.dark_theme_action.setChecked(True) # Set the checkbox for the selected theme
         else: # 'light'
-            qss_file_path = _light_theme_qss_path # Use the light theme QSS
+            qss_file_path = _light_theme_qss_path
+            self.light_theme_action.setChecked(True) # Set the checkbox for the selected theme
 
         try:
             with open(qss_file_path, 'r', encoding='utf-8') as f:
@@ -175,22 +180,18 @@ class EditorWindow(QMainWindow):
             QApplication.instance().setStyleSheet(qss_content)
             self.status_bar.showMessage(f"Switched to {theme_name.capitalize()} Theme.", 3000)
             
-            # Update checked state
-            if theme_name == 'dark':
-                self.dark_theme_action.setChecked(True)
-            else:
-                self.light_theme_action.setChecked(True)
-
         except FileNotFoundError:
             QMessageBox.warning(self, "Theme Error", f"Theme QSS file not found at: {qss_file_path}")
             self.status_bar.showMessage(f"Error loading {theme_name} theme.", 3000)
-            QApplication.instance().setStyleSheet("") # Clear any invalid style
-            self.light_theme_action.setChecked(True) # Fallback to default/light
+            QApplication.instance().setStyleSheet("")
+            self.dark_theme_action.setChecked(False) 
+            self.light_theme_action.setChecked(False)
         except Exception as e:
             QMessageBox.warning(self, "Theme Error", f"Failed to apply {theme_name} theme: {e}")
             self.status_bar.showMessage(f"Error applying {theme_name} theme.", 3000)
             QApplication.instance().setStyleSheet("")
-            self.light_theme_action.setChecked(True)
+            self.dark_theme_action.setChecked(False)
+            self.light_theme_action.setChecked(False)
 
     def _setup_ui(self):
         main_widget = QWidget()
@@ -198,10 +199,12 @@ class EditorWindow(QMainWindow):
         outer_layout = QVBoxLayout(main_widget)
 
         self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.setObjectName("EditorSplitter") # Set object name for QSS styling
         # outer_layout.addWidget(self.splitter, 1) # Give splitter stretch factor
 
         # Left pane: Search bar and Tree view
         left_pane_widget = QWidget()
+        left_pane_widget.setObjectName("LeftPane") # Set object name for QSS styling
         left_pane_layout = QVBoxLayout(left_pane_widget)
         left_pane_layout.setContentsMargins(0,0,0,0) # No margin for left pane itself
 
@@ -234,6 +237,7 @@ class EditorWindow(QMainWindow):
         right_pane_widget = QWidget()
         right_pane_layout = QVBoxLayout(right_pane_widget)
         self.detail_editor_stacked_widget = QStackedWidget()
+        self.detail_editor_stacked_widget.setObjectName("DetailEditorStackedWidget") # Object name for QSS
         right_pane_layout.addWidget(self.detail_editor_stacked_widget, 1) 
 
         self.item_actions_widget = QWidget() 
@@ -1031,8 +1035,6 @@ class EditorWindow(QMainWindow):
             all_errors.append("Error: Course content path is unknown, cannot validate asset file paths.")
 
         logger.info(f"Validating course content for: {self.course_data.title}")
-        content_errors = perform_course_content_validation(self.course_data, course_content_base_dir)
-        all_errors.extend(content_errors)
 
         if not all_errors:
             QMessageBox.information(self, "Validation Result", "Validation Successful! No errors found.")

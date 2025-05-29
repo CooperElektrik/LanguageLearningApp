@@ -70,6 +70,7 @@ QTreeWidget, QListWidget {
     color: #333333; /* Dark gray text */
     border: 1px solid #cccccc; /* Light gray border */
     alternate-background-color: #f8f8f8; /* Very light alternating row colors */
+    border-radius: 5px;
 }
 QTreeWidget::item:selected, QListWidget::item:selected {
     background-color: #0078d7; /* Standard blue for selection */
