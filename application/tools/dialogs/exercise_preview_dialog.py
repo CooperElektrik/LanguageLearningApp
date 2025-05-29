@@ -43,6 +43,9 @@ class MockCourseManager(QObject): # Inherit QObject for signals if needed, not s
 
     def get_course_content_directory(self) -> str:
         return self._course_content_base_dir
+    
+    def get_course_manifest_directory(self) -> str:
+        return self._course_content_base_dir
 
     def get_formatted_prompt(self, exercise: Exercise) -> str:
         """Mimics CourseManager's method for formatting prompts."""

@@ -30,6 +30,14 @@ class BaseExerciseWidget(QWidget):
         self.prompt_label.setWordWrap(True)
         self.layout.addWidget(self.prompt_label)
 
+        self.assets_base_dir = self.course_manager.get_course_manifest_directory()
+        if not self.assets_base_dir: # Fallback if manifest path not set
+             self.assets_base_dir = self.course_manager.get_course_content_directory()
+             if self.assets_base_dir:
+                 logging.warning("Using content directory as asset base. Manifest directory preferred.")
+             else:
+                 logging.error("Could not determine asset base directory.")
+
     def get_answer(self) -> str:
         raise NotImplementedError("Subclasses must implement get_answer")
 
@@ -63,16 +71,11 @@ class TranslationExerciseWidget(BaseExerciseWidget):
 
     def _play_audio(self):
         if self.exercise.audio_file and hasattr(self, '_media_player'):
-            # Construct the full path to the audio file
-            # The audio_file path is relative to the course content file's directory
-            if self.course_content_base_dir:
-                 # audio_path_in_yaml = "sounds/hello.mp3"
-                 # self.course_content_base_dir = "D:/path/to/application/" (if esperanto_course.yaml is there)
-                 # full_audio_path = "D:/path/to/application/sounds/hello.mp3"
-                full_audio_path = os.path.join(self.course_content_base_dir, self.exercise.audio_file)
-            else: # Fallback if base dir isn't available - might not work correctly
+            if self.assets_base_dir: # Use the new assets_base_dir
+                full_audio_path = os.path.join(self.assets_base_dir, self.exercise.audio_file)
+            else: 
                 full_audio_path = self.exercise.audio_file 
-                logging.warning(f"Course content base directory not set. Trying to play audio from: {full_audio_path}")
+                logging.warning(f"Asset base directory not set. Trying to play audio from: {full_audio_path}")
 
 
             if os.path.exists(full_audio_path):

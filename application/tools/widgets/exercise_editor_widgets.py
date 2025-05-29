@@ -1,6 +1,8 @@
 # File: tools/widgets/exercise_editor_widgets.py
 
 import logging
+import os
+import shutil
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                                QPushButton, QRadioButton, QButtonGroup, QScrollArea,
                                QGroupBox, QCheckBox, QMessageBox, QFrame, QInputDialog, QTextEdit, QFormLayout, QDialog, QDialogButtonBox, QListWidget, QListWidgetItem, QFileDialog)
@@ -21,11 +23,13 @@ logger = logging.getLogger(__name__)
 class BaseExerciseEditorWidget(QWidget):
     data_changed = Signal() # Emits when data within the exercise is changed
 
-    def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
+    def __init__(self, exercise: Exercise, target_language: str, source_language: str, course_root_dir: Optional[str], parent=None):
         super().__init__(parent)
         self.exercise = exercise
         self.target_language = target_language
         self.source_language = source_language
+        self.course_root_dir = course_root_dir
+
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.layout.setSpacing(10)
@@ -99,8 +103,8 @@ class BaseExerciseEditorWidget(QWidget):
 
 
 class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
-    def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
-        super().__init__(exercise, target_language, source_language, parent)
+    def __init__(self, exercise: Exercise, target_language: str, source_language: str, course_root_dir: Optional[str], parent=None):
+        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
         
         prompt_lang_hint = self.source_language if exercise.type == 'translate_to_target' else self.target_language
         self.prompt_input = self._add_input_field(f"Prompt ({prompt_lang_hint})", 
@@ -112,25 +116,35 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
                                                   exercise.answer or "", 
                                                   self._update_answer, is_required=True, placeholder_text="e.g., Saluton")
         
+        # --- Audio File Input ---
         audio_layout = QHBoxLayout()
-        self.audio_file_input = self._add_input_field("Audio File", exercise.audio_file or "", self._update_audio_file, is_required=False, placeholder_text="e.g., sounds/hello.mp3")
+        audio_label = QLabel("Audio File:") # Required status not on label directly, but on input via _add_input_field
         
+        self.audio_file_input = QLineEdit(self.exercise.audio_file or "")
+        self.audio_file_input.setPlaceholderText("e.g., assets/sounds/hello.mp3")
+        self.audio_file_input.textChanged.connect(self._update_audio_file)
+        self.audio_file_input.textChanged.connect(lambda: self._validate_input_field(self.audio_file_input, False)) # False = not strictly required
+
         browse_audio_button = QPushButton("Browse...")
         browse_audio_button.clicked.connect(self._browse_audio_file)
         
-        audio_layout.addWidget(QLabel("Audio File:"))
-        audio_layout.addWidget(self.audio_file_input, 1)
+        audio_layout.addWidget(audio_label)
+        audio_layout.addWidget(self.audio_file_input, 1) 
         audio_layout.addWidget(browse_audio_button)
         self.layout.addLayout(audio_layout)
-
-        # Add image file input similar to audio_file_input
-        image_layout = QHBoxLayout()
-        self.image_file_input = self._add_input_field("Image File", exercise.image_file or "", self._update_image_file, is_required=False, placeholder_text="e.g., images/cat.png")
         
+        # --- Image File Input (similar setup) ---
+        image_layout = QHBoxLayout()
+        image_label = QLabel("Image File:")
+        self.image_file_input = QLineEdit(self.exercise.image_file or "")
+        self.image_file_input.setPlaceholderText("e.g., assets/images/cat.png")
+        self.image_file_input.textChanged.connect(self._update_image_file)
+        self.image_file_input.textChanged.connect(lambda: self._validate_input_field(self.image_file_input, False))
+
         browse_image_button = QPushButton("Browse...")
         browse_image_button.clicked.connect(self._browse_image_file)
-        
-        image_layout.addWidget(QLabel("Image File:"))
+
+        image_layout.addWidget(image_label)
         image_layout.addWidget(self.image_file_input, 1)
         image_layout.addWidget(browse_image_button)
         self.layout.addLayout(image_layout)
@@ -138,7 +152,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.layout.addStretch(1)
 
     def _update_prompt(self, text: str):
-        self.exercise.prompt = text.strip() if text.strip() else None # Store None if empty
+        self.exercise.prompt = text.strip() if text.strip() else None 
         self.data_changed.emit()
 
     def _update_answer(self, text: str):
@@ -146,24 +160,88 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.data_changed.emit()
 
     def _update_audio_file(self, text: str):
-        self.exercise.audio_file = text.strip() if text.strip() else None
+        self.exercise.audio_file = text.strip().replace("\\", "/") if text.strip() else None # Normalize path separators
         self.data_changed.emit()
 
     def _browse_audio_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Audio File", "", "Audio Files (*.mp3 *.wav *.ogg);;All Files (*)")
-        if file_path:
-            self.audio_file_input.setText(file_path)
-            self._update_audio_file(file_path)
+        self._browse_asset_file("audio")
 
-    def _update_image_file(self, text: str): # New method for image
-        self.exercise.image_file = text.strip() if text.strip() else None
+    def _update_image_file(self, text: str): 
+        self.exercise.image_file = text.strip().replace("\\", "/") if text.strip() else None # Normalize
         self.data_changed.emit()
 
-    def _browse_image_file(self): # New method for image
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Image File", "", "Image Files (*.png *.jpg *.jpeg *.gif);;All Files (*)")
-        if file_path:
-            self.image_file_input.setText(file_path)
-            self._update_image_file(file_path)
+    def _browse_image_file(self): 
+        self._browse_asset_file("image")
+
+    def _browse_asset_file(self, asset_type: str):
+        if not self.course_root_dir:
+            QMessageBox.warning(self, f"Browse {asset_type.capitalize()}", "Course root directory is not set. Please save the manifest first to establish the course location.")
+            return
+
+        file_types = "Audio Files (*.mp3 *.wav *.ogg);;All Files (*)" if asset_type == "audio" else \
+                     "Image Files (*.png *.jpg *.jpeg *.gif);;All Files (*)"
+        
+        # Default open directory to the course's assets/sounds or assets/images if they exist
+        default_asset_subdir = f"assets/{asset_type}s" # e.g., assets/sounds or assets/images
+        initial_browse_dir = os.path.join(self.course_root_dir, default_asset_subdir)
+        if not os.path.exists(initial_browse_dir):
+            initial_browse_dir = self.course_root_dir # Fallback to course root
+
+        source_file_path, _ = QFileDialog.getOpenFileName(self, f"Select {asset_type.capitalize()} File", initial_browse_dir, file_types)
+        
+        if not source_file_path:
+            return
+
+        # Define target asset directory within the course structure
+        target_asset_subfolder = os.path.join("assets", f"{asset_type}s") # e.g., "assets/sounds"
+        target_asset_dir_abs = os.path.join(self.course_root_dir, target_asset_subfolder)
+
+        # Ensure target directory exists
+        if not os.path.exists(target_asset_dir_abs):
+            try:
+                os.makedirs(target_asset_dir_abs, exist_ok=True)
+            except OSError as e:
+                QMessageBox.critical(self, "Asset Import Error", f"Could not create asset directory '{target_asset_dir_abs}': {e}")
+                return
+        
+        asset_filename = os.path.basename(source_file_path)
+        target_file_path_abs = os.path.join(target_asset_dir_abs, asset_filename)
+        
+        relative_path_for_yaml = os.path.join(target_asset_subfolder, asset_filename).replace("\\", "/")
+
+
+        # Check if the file is already in the target directory (or a sub-path if user selected from within assets already)
+        # This gets tricky if source_file_path is ALREADY relative from within the course root.
+        # For simplicity: if selected file is outside target_asset_dir_abs, copy it.
+        # If it's already inside, just use its relative path.
+
+        try:
+            source_is_already_in_assets = os.path.commonpath([target_asset_dir_abs, os.path.abspath(source_file_path)]) == target_asset_dir_abs
+        except ValueError: # Happens if paths are on different drives
+            source_is_already_in_assets = False
+
+
+        if os.path.abspath(source_file_path) == os.path.abspath(target_file_path_abs) or source_is_already_in_assets:
+            # File is already in the target asset directory or a subdirectory of it relative to course root.
+            # We just need to ensure the stored path is relative from course_root/assets/type/
+            # The relative_path_for_yaml should already be correct.
+            pass
+        else:
+            # Copy the file to the target asset directory
+            try:
+                shutil.copy2(source_file_path, target_file_path_abs)
+                logger.info(f"Copied asset '{source_file_path}' to '{target_file_path_abs}'")
+            except Exception as e:
+                QMessageBox.critical(self, "Asset Copy Error", f"Could not copy asset file to '{target_file_path_abs}': {e}")
+                return
+        
+        # Update the input field and the exercise model
+        if asset_type == "audio":
+            self.audio_file_input.setText(relative_path_for_yaml)
+            # self._update_audio_file(relative_path_for_yaml) # textChanged signal will do this
+        elif asset_type == "image":
+            self.image_file_input.setText(relative_path_for_yaml)
+            # self._update_image_file(relative_path_for_yaml)
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():

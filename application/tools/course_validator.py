@@ -80,7 +80,7 @@ def _validate_exercise_fib_internal(exercise: Exercise, path_prefix: str, errors
     if not exercise.translation_hint or not isinstance(exercise.translation_hint, str) or not exercise.translation_hint.strip():
         _collect_error(errors_list, "Missing or empty 'translation_hint' (must be a string).", path_prefix)
 
-def _validate_exercise_internal(exercise: Exercise, index: int, lesson_path_prefix: str, errors_list: List[str], course_content_base_dir: str):
+def _validate_exercise_internal(exercise: Exercise, index: int, lesson_path_prefix: str, errors_list: List[str], course_manifest_base_dir: str):
     """Validates a single exercise."""
     path_prefix = f"{lesson_path_prefix}Exercise #{index+1} (Type: {exercise.type if hasattr(exercise, 'type') else 'N/A'}): "
     
@@ -92,7 +92,7 @@ def _validate_exercise_internal(exercise: Exercise, index: int, lesson_path_pref
         if not isinstance(exercise.audio_file, str):
             _collect_error(errors_list, "'audio_file' field must be a string path.", path_prefix)
         else:
-            full_audio_path = os.path.join(course_content_base_dir, exercise.audio_file)
+            full_audio_path = os.path.join(course_manifest_base_dir, exercise.audio_file)
             if not os.path.exists(full_audio_path):
                 _collect_error(errors_list, f"Audio file '{exercise.audio_file}' not found at resolved path '{full_audio_path}'.", path_prefix)
     
@@ -100,7 +100,7 @@ def _validate_exercise_internal(exercise: Exercise, index: int, lesson_path_pref
         if not isinstance(exercise.image_file, str):
             _collect_error(errors_list, "'image_file' field must be a string path.", path_prefix)
         else:
-            full_image_path = os.path.join(course_content_base_dir, exercise.image_file)
+            full_image_path = os.path.join(course_manifest_base_dir, exercise.image_file)
             if not os.path.exists(full_image_path):
                 _collect_error(errors_list, f"Image file '{exercise.image_file}' not found at resolved path '{full_image_path}'.", path_prefix)
 
@@ -117,7 +117,7 @@ def _validate_exercise_internal(exercise: Exercise, index: int, lesson_path_pref
         _validate_exercise_fib_internal(exercise, path_prefix, errors_list)
 
 
-def _validate_lesson_internal(lesson: Lesson, unit_path_prefix: str, errors_list: List[str], course_content_base_dir: str):
+def _validate_lesson_internal(lesson: Lesson, unit_path_prefix: str, errors_list: List[str], course_manifest_base_dir: str):
     """Validates a single lesson."""
     path_prefix = f"{unit_path_prefix}Lesson '{lesson.lesson_id}' ('{lesson.title}'): "
     if not hasattr(lesson, 'lesson_id') or not isinstance(lesson.lesson_id, str) or not lesson.lesson_id.strip():
@@ -133,9 +133,9 @@ def _validate_lesson_internal(lesson: Lesson, unit_path_prefix: str, errors_list
          _collect_error(errors_list, "Warning: Contains no exercises.", path_prefix)
 
     for i, exercise in enumerate(lesson.exercises):
-        _validate_exercise_internal(exercise, i, path_prefix, errors_list, course_content_base_dir)
+        _validate_exercise_internal(exercise, i, path_prefix, errors_list, course_manifest_base_dir)
 
-def _validate_unit_internal(unit: Unit, course_path_prefix: str, errors_list: List[str], course_content_base_dir: str):
+def _validate_unit_internal(unit: Unit, course_path_prefix: str, errors_list: List[str], course_manifest_base_dir: str):
     """Validates a single unit."""
     path_prefix = f"{course_path_prefix}Unit '{unit.unit_id}' ('{unit.title}'): "
     if not hasattr(unit, 'unit_id') or not isinstance(unit.unit_id, str) or not unit.unit_id.strip():
@@ -157,7 +157,7 @@ def _validate_unit_internal(unit: Unit, course_path_prefix: str, errors_list: Li
         elif lesson.lesson_id in lesson_ids_in_unit:
             _collect_error(errors_list, f"Duplicate lesson_id '{lesson.lesson_id}' found within this unit.", path_prefix)
         lesson_ids_in_unit.add(lesson.lesson_id)
-        _validate_lesson_internal(lesson, path_prefix, errors_list, course_content_base_dir)
+        _validate_lesson_internal(lesson, path_prefix, errors_list, course_manifest_base_dir)
 
 
 # --- New Callable Functions for Editor (replace old CLI main logic) ---
@@ -176,7 +176,7 @@ def perform_manifest_validation(manifest_data: Dict[str, Any], manifest_path: st
             _collect_error(errors, f"Manifest 'content_file' points to a non-existent file: '{content_filepath}' (relative to manifest location)")
     return errors
 
-def perform_course_content_validation(course: Course, course_content_base_dir: str) -> List[str]:
+def perform_course_content_validation(course: Course, course_manifest_base_dir: str) -> List[str]:
     """Validates the main course content object, returning a list of errors."""
     errors = []
     path_prefix = f"Course '{course.title}': "
@@ -195,7 +195,7 @@ def perform_course_content_validation(course: Course, course_content_base_dir: s
         elif unit.unit_id in unit_ids_in_course:
             _collect_error(errors, f"Duplicate unit_id '{unit.unit_id}' found within the course.", path_prefix)
         unit_ids_in_course.add(unit.unit_id)
-        _validate_unit_internal(unit, path_prefix, errors, course_content_base_dir)
+        _validate_unit_internal(unit, path_prefix, errors, course_manifest_base_dir)
     
     return errors
 
