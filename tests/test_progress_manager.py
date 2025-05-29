@@ -1,9 +1,10 @@
+
 import pytest
 import os
 import json
 import uuid
 from application.core.progress_manager import ProgressManager
-from application.core.models import Course, Unit, Lesson
+from application.core.models import Course, Unit, Lesson, Exercise # Import Exercise
 
 
 def test_initial_progress(progress_manager_instance: ProgressManager):
@@ -13,7 +14,7 @@ def test_initial_progress(progress_manager_instance: ProgressManager):
 def test_update_exercise_srs_data(progress_manager_instance: ProgressManager):
     exercise_id = "ex1"
 
-    # First correct answer
+    # First correct answer (quality 5)
     progress_manager_instance.update_exercise_srs_data(
         exercise_id, is_correct=True, xp_awarded=10, quality_score_sm2=5
     )
@@ -21,29 +22,29 @@ def test_update_exercise_srs_data(progress_manager_instance: ProgressManager):
     assert srs_data["repetitions"] == 1
     assert srs_data["interval_days"] == 1
     assert srs_data["correct_in_a_row"] == 1
-    assert srs_data["ease_factor"] > 2.5
+    assert srs_data["ease_factor"] == 2.6 # 2.5 + 0.1
     assert progress_manager_instance.get_total_xp() == 10
 
-    # Second correct answer
+    # Second correct answer (quality 5)
     progress_manager_instance.update_exercise_srs_data(
         exercise_id, is_correct=True, xp_awarded=10, quality_score_sm2=5
     )
     srs_data = progress_manager_instance.get_exercise_srs_data(exercise_id)
     assert srs_data["repetitions"] == 2
-    assert srs_data["interval_days"] == 6
+    assert srs_data["interval_days"] == 6 # Should be 6 for 2nd rep
     assert srs_data["correct_in_a_row"] == 2
-    assert srs_data["ease_factor"] > 2.5
+    assert srs_data["ease_factor"] == 2.7 # 2.6 + 0.1
     assert progress_manager_instance.get_total_xp() == 20
 
-    # Incorrect answer
+    # Incorrect answer (quality 0)
     progress_manager_instance.update_exercise_srs_data(
         exercise_id, is_correct=False, xp_awarded=10, quality_score_sm2=0
     )
     srs_data = progress_manager_instance.get_exercise_srs_data(exercise_id)
-    assert srs_data["repetitions"] == 0
-    assert srs_data["interval_days"] == 0
-    assert srs_data["correct_in_a_row"] == 0
-    assert srs_data["ease_factor"] < 2.5
+    assert srs_data["repetitions"] == 0 # Repetitions reset
+    assert srs_data["interval_days"] == 0 # Interval reset
+    assert srs_data["correct_in_a_row"] == 0 # Correct in a row reset
+    assert srs_data["ease_factor"] == 2.5 # 2.7 - 0.2 = 2.5 (max(1.3, 2.5))
     assert (
         progress_manager_instance.get_total_xp() == 20
     )  # XP doesn't increase on incorrect
@@ -61,7 +62,7 @@ def test_save_and_load_progress(
     pm1.update_exercise_srs_data("ex2", is_correct=True, xp_awarded=10)
 
     pm2 = ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
-    assert pm2.get_total_total_xp() == 20
+    assert pm2.get_total_xp() == 20 # Corrected method name
     srs_data_ex1 = pm2.get_exercise_srs_data("ex1")
     assert srs_data_ex1["repetitions"] > 0
     srs_data_ex2 = pm2.get_exercise_srs_data("ex2")
@@ -91,11 +92,13 @@ def course_for_unlock_test() -> Course:
 
 def test_lesson_completion_status(progress_manager_instance: ProgressManager):
     pm = progress_manager_instance
+    
+    # Mock Exercise objects for testing
     lesson_exercises = [
-        {"exercise_id": "lesson1_ex1"},
-        {"exercise_id": "lesson1_ex2"},
-        {"exercise_id": "lesson1_ex3"},
-    ]  # Mock exercise objects with exercise_id
+        Exercise(exercise_id="lesson1_ex1", type="test"),
+        Exercise(exercise_id="lesson1_ex2", type="test"),
+        Exercise(exercise_id="lesson1_ex3", type="test"),
+    ] 
 
     # Initially not completed
     assert pm.get_lesson_completion_status("lesson1", lesson_exercises) is False
@@ -119,23 +122,23 @@ def test_lesson_unlocking_logic(
     unit1 = next(u for u in all_units if u.unit_id == "u1")
     unit2 = next(u for u in all_units if u.unit_id == "u2")
 
-    mock_course_manager = type(
-        "MockCourseManager",
-        (),
-        {
-            "get_exercises": lambda self, lesson_id: [
-                type("Exercise", (), {"exercise_id": f"{lesson_id}_ex{i}"})()
+    # Mock CourseManager for `is_lesson_unlocked`
+    # It needs a get_exercises method that returns Exercise objects
+    class MockCourseManagerForUnlock:
+        def get_exercises(self, lesson_id: str):
+            return [
+                Exercise(exercise_id=f"{lesson_id}_ex{i}", type="test")
                 for i in range(3)
-            ]  # Mock 3 exercises per lesson
-        },
-    )()
+            ]
+
+    mock_course_manager_ref = MockCourseManagerForUnlock() # Instance of the mock
 
     assert (
         pm.is_lesson_unlocked(
             lesson_id="u1l1",
             unit_lessons=unit1.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is True
     )
@@ -144,7 +147,7 @@ def test_lesson_unlocking_logic(
             lesson_id="u1l2",
             unit_lessons=unit1.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is False
     )
@@ -153,7 +156,7 @@ def test_lesson_unlocking_logic(
             lesson_id="u2l1",
             unit_lessons=unit2.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is False
     )
@@ -163,7 +166,7 @@ def test_lesson_unlocking_logic(
         pm.update_exercise_srs_data(f"u1l1_ex{i}", is_correct=True)
 
     assert (
-        pm.is_lesson_completed("u1l1", mock_course_manager.get_exercises("u1l1"))
+        pm.is_lesson_completed("u1l1", mock_course_manager_ref) # Pass the instance here
         is True
     )
 
@@ -172,7 +175,7 @@ def test_lesson_unlocking_logic(
             lesson_id="u1l2",
             unit_lessons=unit1.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is True
     )
@@ -181,7 +184,7 @@ def test_lesson_unlocking_logic(
             lesson_id="u2l1",
             unit_lessons=unit2.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is False
     )
@@ -190,7 +193,7 @@ def test_lesson_unlocking_logic(
     for i in range(3):
         pm.update_exercise_srs_data(f"u1l2_ex{i}", is_correct=True)
     assert (
-        pm.is_lesson_completed("u1l2", mock_course_manager.get_exercises("u1l2"))
+        pm.is_lesson_completed("u1l2", mock_course_manager_ref) # Pass the instance here
         is True
     )
 
@@ -199,7 +202,7 @@ def test_lesson_unlocking_logic(
             lesson_id="u2l1",
             unit_lessons=unit2.lessons,
             all_units=all_units,
-            course_manager_ref=mock_course_manager,
+            course_manager_ref=mock_course_manager_ref, # Pass the instance
         )
         is True
     )
