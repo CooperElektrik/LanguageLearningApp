@@ -1,8 +1,13 @@
+black==25.1.0
+click==8.2.1
 colorama==0.4.6
 iniconfig==2.1.0
+mypy_extensions==1.1.0
 Nuitka==2.7.3
 ordered-set==4.1.0
 packaging==25.0
+pathspec==0.12.1
+platformdirs==4.3.8
 pluggy==1.6.0
 PySide6==6.9.0
 PySide6_Addons==6.9.0

@@ -1,9 +1,16 @@
-# File: tools/widgets/manifest_editor_widget.py
-
 import os
 import logging
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                               QPushButton, QFileDialog, QFormLayout, QMessageBox)
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QFileDialog,
+    QFormLayout,
+    QMessageBox,
+)
 from PySide6.QtCore import Signal, Qt
 from typing import Any, Dict
 
@@ -11,12 +18,16 @@ try:
     from core.models import Course
 except ImportError:
     logging.warning("Could not import Course model in ManifestEditorWidget.")
-    class Course: pass
+
+    class Course:
+        pass
+
 
 logger = logging.getLogger(__name__)
 
+
 class ManifestEditorWidget(QWidget):
-    data_changed = Signal() # Emits when data in the form is changed
+    data_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -29,11 +40,13 @@ class ManifestEditorWidget(QWidget):
             label = QLabel(label_text + " *")
             self.form_layout.addRow(label, input_widget)
             input_widget.setProperty("field_name", field_name)
-            input_widget.textChanged.connect(lambda text: self._validate_field(input_widget))
+            input_widget.textChanged.connect(
+                lambda text: self._validate_field(input_widget)
+            )
             return input_widget
 
         self.course_id_input = QLineEdit()
-        self.course_id_input.setReadOnly(True) # IDs are usually fixed
+        self.course_id_input.setReadOnly(True)
         self.form_layout.addRow("Course ID:", self.course_id_input)
 
         self.course_title_input = QLineEdit()
@@ -49,9 +62,7 @@ class ManifestEditorWidget(QWidget):
         self.form_layout.addRow("Source Language:", self.source_lang_input)
 
         self.content_file_input = QLineEdit()
-        self.content_file_input.setReadOnly(True) # Display only, content is derived
-        # For simplicity, we don't allow changing content_file directly here.
-        # It's tied to the manifest filename/location.
+        self.content_file_input.setReadOnly(True)
         self.form_layout.addRow("Content File:", self.content_file_input)
 
         self.version_input = QLineEdit()
@@ -67,9 +78,12 @@ class ManifestEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.description_input)
 
         self.required_inputs = [
-            self.course_title_input, self.target_lang_input, self.source_lang_input, self.version_input
+            self.course_title_input,
+            self.target_lang_input,
+            self.source_lang_input,
+            self.version_input,
         ]
-    
+
     def _validate_field(self, input_widget: QLineEdit):
         text = input_widget.text().strip()
         if not text:
@@ -96,13 +110,10 @@ class ManifestEditorWidget(QWidget):
         manifest_data["course_title"] = self.course_title_input.text()
         manifest_data["target_language"] = self.target_lang_input.text()
         manifest_data["source_language"] = self.source_lang_input.text()
-        # content_file is typically updated by save_course_as, not directly here.
-        # manifest_data["content_file"] = self.content_file_input.text() # Not editable
         manifest_data["version"] = self.version_input.text()
         manifest_data["author"] = self.author_input.text()
         manifest_data["description"] = self.description_input.text()
 
-        # Update core.models.Course object as well, as it holds some of this redundant info
         if course_obj:
             course_obj.title = self.course_title_input.text()
             course_obj.target_language = self.target_lang_input.text()
@@ -110,7 +121,6 @@ class ManifestEditorWidget(QWidget):
             course_obj.version = self.version_input.text()
             course_obj.author = self.author_input.text()
             course_obj.description = self.description_input.text()
-            # course_obj.content_file = self.content_file_input.text() # Not editable
 
     def validate(self) -> tuple[bool, str]:
         """Validates the current data in the manifest editor fields."""
@@ -120,6 +130,5 @@ class ManifestEditorWidget(QWidget):
             return False, "Target Language cannot be empty."
         if not self.source_lang_input.text().strip():
             return False, "Source Language cannot be empty."
-        # content_file is automatically set by save_as, no direct user input validation needed here.
-        
+
         return True, ""

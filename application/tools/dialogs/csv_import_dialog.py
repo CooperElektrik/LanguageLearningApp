@@ -1,29 +1,43 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                               QPushButton, QFileDialog, QComboBox, QFormLayout, 
-                               QMessageBox, QScrollArea, QWidget, QGroupBox)
+from PySide6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QFileDialog,
+    QComboBox,
+    QFormLayout,
+    QMessageBox,
+    QScrollArea,
+    QWidget,
+    QGroupBox,
+)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
+
 class CsvImportDialog(QDialog):
-    def __init__(self, parent=None, current_unit_id: str = "", current_lesson_id: str = ""):
+    def __init__(
+        self, parent=None, current_unit_id: str = "", current_lesson_id: str = ""
+    ):
         super().__init__(parent)
         self.setWindowTitle("Import Exercises from CSV")
         self.setMinimumSize(500, 400)
-        
+
         self.csv_file_path = ""
         self.exercise_type = ""
         self.unit_id = current_unit_id
         self.unit_title = ""
         self.lesson_id = current_lesson_id
         self.lesson_title = ""
-        self.custom_cols = {} # Store custom column names
-        
+        self.custom_cols = {}
+
         self._setup_ui()
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
 
-        # File Selection
         file_layout = QHBoxLayout()
         self.csv_path_input = QLineEdit()
         self.csv_path_input.setReadOnly(True)
@@ -34,9 +48,12 @@ class CsvImportDialog(QDialog):
         file_layout.addWidget(file_button)
         main_layout.addLayout(file_layout)
 
-        # Exercise Type Selection
         type_layout = QHBoxLayout()
-        self_exercise_types = ["translate_to_target", "translate_to_source", "multiple_choice_translation"]
+        self_exercise_types = [
+            "translate_to_target",
+            "translate_to_source",
+            "multiple_choice_translation",
+        ]
         self.exercise_type_combo = QComboBox()
         self.exercise_type_combo.addItems(self_exercise_types)
         self.exercise_type_combo.currentIndexChanged.connect(self._update_column_inputs)
@@ -44,7 +61,6 @@ class CsvImportDialog(QDialog):
         type_layout.addWidget(self.exercise_type_combo)
         main_layout.addLayout(type_layout)
 
-        # Target Unit/Lesson Inputs
         target_group = QGroupBox("Target Unit/Lesson")
         target_layout = QFormLayout(target_group)
         self.unit_id_input = QLineEdit(self.unit_id)
@@ -57,13 +73,11 @@ class CsvImportDialog(QDialog):
         target_layout.addRow("Lesson Title (if new):", self.lesson_title_input)
         main_layout.addWidget(target_group)
 
-        # Column Mapping Inputs (Dynamic based on exercise type)
         self.column_mapping_group = QGroupBox("Custom Column Mapping (Optional)")
         self.column_mapping_layout = QFormLayout(self.column_mapping_group)
         main_layout.addWidget(self.column_mapping_group)
-        self._update_column_inputs() # Populate initial column inputs
+        self._update_column_inputs()
 
-        # Action Buttons
         button_layout = QHBoxLayout()
         import_button = QPushButton("Import")
         import_button.clicked.connect(self.accept)
@@ -75,12 +89,13 @@ class CsvImportDialog(QDialog):
         main_layout.addLayout(button_layout)
 
     def _select_csv_file(self):
-        filepath, _ = QFileDialog.getOpenFileName(self, "Select CSV File", "", "CSV Files (*.csv)")
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select CSV File", "", "CSV Files (*.csv)"
+        )
         if filepath:
             self.csv_path_input.setText(filepath)
 
     def _update_column_inputs(self):
-        # Clear existing inputs
         while self.column_mapping_layout.count() > 0:
             item = self.column_mapping_layout.takeAt(0)
             if item.widget():
@@ -88,10 +103,13 @@ class CsvImportDialog(QDialog):
             elif item.layout():
                 while item.layout().count() > 0:
                     sub_item = item.layout().takeAt(0)
-                    if sub_item.widget(): sub_item.widget().deleteLater()
-        
+                    if sub_item.widget():
+                        sub_item.widget().deleteLater()
+
         current_type = self.exercise_type_combo.currentText()
-        self.column_mapping_group.setTitle(f"Custom Column Mapping (for {current_type})")
+        self.column_mapping_group.setTitle(
+            f"Custom Column Mapping (for {current_type})"
+        )
 
         if current_type in ["translate_to_target", "translate_to_source"]:
             self.prompt_col_input = QLineEdit("prompt")
@@ -101,13 +119,25 @@ class CsvImportDialog(QDialog):
         elif current_type == "multiple_choice_translation":
             self.source_word_col_input = QLineEdit("source_word")
             self.correct_option_col_input = QLineEdit("correct_option")
-            self.incorrect_options_cols_input = QLineEdit("incorrect_option_1,incorrect_option_2,incorrect_option_3")
-            self.incorrect_options_prefix_input = QLineEdit("incorrect_option_") # For auto-detection
+            self.incorrect_options_cols_input = QLineEdit(
+                "incorrect_option_1,incorrect_option_2,incorrect_option_3"
+            )
+            self.incorrect_options_prefix_input = QLineEdit("incorrect_option_")
 
-            self.column_mapping_layout.addRow("Source Word Column:", self.source_word_col_input)
-            self.column_mapping_layout.addRow("Correct Option Column:", self.correct_option_col_input)
-            self.column_mapping_layout.addRow("Incorrect Options (comma-separated names):", self.incorrect_options_cols_input)
-            self.column_mapping_layout.addRow("Or Prefix (e.g., 'incorrect_option_'):", self.incorrect_options_prefix_input)
+            self.column_mapping_layout.addRow(
+                "Source Word Column:", self.source_word_col_input
+            )
+            self.column_mapping_layout.addRow(
+                "Correct Option Column:", self.correct_option_col_input
+            )
+            self.column_mapping_layout.addRow(
+                "Incorrect Options (comma-separated names):",
+                self.incorrect_options_cols_input,
+            )
+            self.column_mapping_layout.addRow(
+                "Or Prefix (e.g., 'incorrect_option_'):",
+                self.incorrect_options_prefix_input,
+            )
 
     def get_data(self) -> dict:
         data = {
@@ -117,23 +147,30 @@ class CsvImportDialog(QDialog):
             "unit_title": self.unit_title_input.text(),
             "lesson_id": self.lesson_id_input.text(),
             "lesson_title": self.lesson_title_input.text(),
-            "custom_cols": {}
+            "custom_cols": {},
         }
-        
+
         current_type = self.exercise_type_combo.currentText()
         if current_type in ["translate_to_target", "translate_to_source"]:
             data["custom_cols"]["prompt_col"] = self.prompt_col_input.text()
             data["custom_cols"]["answer_col"] = self.answer_col_input.text()
         elif current_type == "multiple_choice_translation":
             data["custom_cols"]["source_word_col"] = self.source_word_col_input.text()
-            data["custom_cols"]["correct_option_col"] = self.correct_option_col_input.text()
-            data["custom_cols"]["incorrect_options_cols"] = [s.strip() for s in self.incorrect_options_cols_input.text().split(',') if s.strip()]
-            data["custom_cols"]["incorrect_options_prefix"] = self.incorrect_options_prefix_input.text()
+            data["custom_cols"][
+                "correct_option_col"
+            ] = self.correct_option_col_input.text()
+            data["custom_cols"]["incorrect_options_cols"] = [
+                s.strip()
+                for s in self.incorrect_options_cols_input.text().split(",")
+                if s.strip()
+            ]
+            data["custom_cols"][
+                "incorrect_options_prefix"
+            ] = self.incorrect_options_prefix_input.text()
 
         return data
 
     def accept(self):
-        # Basic validation before accepting
         data = self.get_data()
         if not data["csv_filepath"]:
             QMessageBox.warning(self, "Missing Input", "Please select a CSV file.")
@@ -144,8 +181,5 @@ class CsvImportDialog(QDialog):
         if not data["lesson_id"]:
             QMessageBox.warning(self, "Missing Input", "Please provide a Lesson ID.")
             return
-        
-        # Check titles for new units/lessons (the importer logic will check this more robustly)
-        # For simplicity, we just allow the importer to return an error if missing.
-        
+
         super().accept()
