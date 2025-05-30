@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Set, Optional, Any, List
 from PySide6.QtCore import QStandardPaths
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,8 @@ class ProgressManager:
             }
         )
         self.xp: int = 0
+        self.last_study_date: Optional[date] = None
+        self.current_streak_days: int = 0
 
         self._ensure_data_dir_exists()
         self.load_progress()
@@ -78,6 +80,12 @@ class ProgressManager:
                         )
                     self.exercise_srs_data[ex_id] = srs_attrs
                 self.xp = data.get("xp", 0)
+
+                raw_last_study_date = data.get("last_study_date")
+                if raw_last_study_date:
+                    self.last_study_date = date.fromisoformat(raw_last_study_date)
+                self.current_streak_days = data.get("current_streak_days", 0)
+
                 logger.info(f"Progress loaded for course {self.course_id}.")
         except FileNotFoundError:
             logger.info(
@@ -101,7 +109,12 @@ class ProgressManager:
                 srs_copy["next_review_due"] = srs_copy["next_review_due"].isoformat()
             srs_data_for_save[ex_id] = srs_copy
 
-        data = {"exercise_srs_data": srs_data_for_save, "xp": self.xp}
+        data = {
+            "exercise_srs_data": srs_data_for_save, 
+            "xp": self.xp,
+            "last_study_date": self.last_study_date.isoformat() if self.last_study_date else None,
+            "current_streak_days": self.current_streak_days,
+        }
         try:
             with open(self.progress_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
@@ -169,11 +182,51 @@ class ProgressManager:
 
         if is_correct:
             self.xp += xp_awarded
+            self.update_study_streak()
 
         self.save_progress()
         logger.debug(
             f"SRS updated for {exercise_id}: next_review_due={srs_attrs['next_review_due']}, interval={srs_attrs['interval_days']}, XP={self.xp}"
         )
+
+    def _update_study_streak(self):
+        """
+        Updates the study streak based on the current date.
+        Call this method whenever an exercise is successfully completed.
+        """
+        today = date.today()
+        if self.last_study_date is None:
+            # First study session
+            self.current_streak_days = 1
+        elif self.last_study_date == today - timedelta(days=1):
+            # Continued streak
+            self.current_streak_days += 1
+        elif self.last_study_date < today - timedelta(days=1):
+            # Streak broken
+            self.current_streak_days = 1
+        # If last_study_date == today, no change to streak (already counted)
+        
+        self.last_study_date = today
+        logger.info(f"Study streak updated to: {self.current_streak_days} days. Last study: {self.last_study_date}")
+
+
+    def get_current_streak(self) -> int:
+        """Returns the current study streak in days."""
+        # Check if the streak is still valid if the app hasn't been closed
+        today = date.today()
+        if self.last_study_date is None:
+            return 0
+        elif self.last_study_date == today:
+            return self.current_streak_days
+        elif self.last_study_date == today - timedelta(days=1):
+            return self.current_streak_days
+        else:
+            # If last study was more than one day ago, streak is broken.
+            # This handles cases where the app wasn't opened for a day.
+            self.current_streak_days = 0 # Reset streak on check if broken
+            # The next successful exercise will set it to 1 and update last_study_date
+            return 0
+
 
     def get_exercise_srs_data(self, exercise_id: str) -> Dict[str, Any]:
         """Returns the current SRS attributes for a specific exercise."""

@@ -10,6 +10,7 @@ from core.progress_manager import ProgressManager
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
 from ui.views.review_view import ReviewView
+from ui.views.progress_view import ProgressView
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
@@ -66,10 +67,12 @@ class MainWindow(QMainWindow):
         )
         self.lesson_view = LessonView(self.course_manager, self.progress_manager)
         self.review_view = ReviewView(self.course_manager, self.progress_manager)
+        self.progress_view = ProgressView(self.course_manager,self.progress_manager)
 
         self.stacked_widget.addWidget(self.course_overview_view)
         self.stacked_widget.addWidget(self.lesson_view)
         self.stacked_widget.addWidget(self.review_view)
+        self.stacked_widget.addWidget(self.progress_view)
 
         self.course_overview_view.lesson_selected.connect(self.start_lesson)
         self.lesson_view.lesson_completed_signal.connect(self.handle_lesson_completion)
@@ -78,6 +81,7 @@ class MainWindow(QMainWindow):
         self.review_view.back_to_overview_signal.connect(self.show_course_overview)
 
         self.course_overview_view.start_review_session_requested.connect(self.start_review_session)
+        self.progress_view.back_to_overview_signal.connect(self.show_course_overview)
 
     def _setup_menu_bar(self):
         menu_bar = self.menuBar()
@@ -90,6 +94,25 @@ class MainWindow(QMainWindow):
         )
         self.start_review_action.triggered.connect(self.start_review_session)
         learning_menu.addAction(self.start_review_action)
+
+        self.show_progress_action = QAction("&Progress", self)
+        self.show_progress_action.setShortcut(Qt.CTRL | Qt.Key_P)
+        self.show_progress_action.setStatusTip("View your learning progress and achievements")
+        self.show_progress_action.triggered.connect(self.show_progress_view)
+        learning_menu.addAction(self.show_progress_action)
+
+    def show_progress_view(self):
+        if not self.course_manager.course:
+            QMessageBox.warning(
+                self, "Progress View", "No course loaded to view progress."
+            )
+            return
+        if hasattr(self, "progress_view") and self.progress_view:
+            self.progress_view.refresh_view() # Refresh stats before showing
+            self.stacked_widget.setCurrentWidget(self.progress_view)
+            logger.info("Showing progress view.")
+        else:
+            logger.warning("Progress view not available.")
 
     def show_course_overview(self):
         if hasattr(self, "course_overview_view") and self.course_overview_view:
