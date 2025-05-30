@@ -77,6 +77,8 @@ class MainWindow(QMainWindow):
         self.review_view.review_session_finished.connect(self.show_course_overview)
         self.review_view.back_to_overview_signal.connect(self.show_course_overview)
 
+        self.course_overview_view.start_review_session_requested.connect(self.start_review_session)
+
     def _setup_menu_bar(self):
         menu_bar = self.menuBar()
         learning_menu = menu_bar.addMenu("&Learning")
