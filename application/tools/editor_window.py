@@ -38,6 +38,7 @@ try:
     from core.models import Course, Unit, Lesson, Exercise, ExerciseOption
     from core.course_loader import load_course_content as load_course_content_from_yaml
     from tools.dialogs.exercise_preview_dialog import ExercisePreviewDialog
+    from tools.widgets.course_tree_widget import CourseTreeWidget
 except ImportError as e:
     logging.error(
         f"Failed to import core or UI widgets for preview dialog. Ensure 'application' directory is on sys.path. Error: {e}"
@@ -344,12 +345,15 @@ class EditorWindow(QMainWindow):
 
         left_pane_layout.addWidget(self.advanced_filters_group)
 
-        self.tree_widget = QTreeWidget()
+        self.tree_widget = CourseTreeWidget(self.course_data, self)
         self.tree_widget.setHeaderLabels(["Course Structure"])
         self.tree_widget.setFont(QFont("Arial", 10))
         self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_widget.customContextMenuRequested.connect(self._show_context_menu)
         self.tree_widget.itemSelectionChanged.connect(self._on_tree_item_selected)
+
+        self.tree_widget.data_model_reordered.connect(self._handle_data_model_reordered)
+
         left_pane_layout.addWidget(self.tree_widget, 1)
 
         tree_actions_layout = QHBoxLayout()
@@ -415,6 +419,16 @@ class EditorWindow(QMainWindow):
         else:
             self.dirty_status_label.setText("Saved")
             self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
+
+    def _handle_data_model_reordered(self, moved_obj: Any, new_parent_obj: Any):
+        """
+        Slot to handle the data_model_reordered signal from CourseTreeWidget.
+        Refreshes the tree view and re-selects the moved item.
+        """
+        self.update_tree_view()
+        self._set_dirty_state(True)
+        self._expand_and_select_item(moved_obj)
+        self.status_bar.showMessage("Item reordered successfully.", 2000)
 
     def _clear_advanced_filters(self):
         """Resets all advanced filter combo boxes to their default selections."""
@@ -1195,6 +1209,7 @@ class EditorWindow(QMainWindow):
         manifest_item = QTreeWidgetItem(self.tree_widget, ["Manifest Info"])
         manifest_item.setData(0, Qt.UserRole, manifest_item_data)
         manifest_item.setFont(0, QFont("Arial", 11, QFont.Bold))
+        manifest_item.setFlags(manifest_item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
         if (
             id(manifest_item_data) in expanded_items_data
             and expanded_items_data[id(manifest_item_data)]
@@ -1205,12 +1220,14 @@ class EditorWindow(QMainWindow):
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
             unit_item.setFont(0, QFont("Arial", 10, QFont.Bold))
+            unit_item.setFlags(unit_item.flags() | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled)
             if id(unit) in expanded_items_data and expanded_items_data[id(unit)]:
                 unit_item.setExpanded(True)
 
             for lesson in unit.lessons:
                 lesson_item = QTreeWidgetItem(unit_item, [lesson.title])
                 lesson_item.setData(0, Qt.UserRole, lesson)
+                lesson_item.setFlags(lesson_item.flags() | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled)
                 if (
                     id(lesson) in expanded_items_data
                     and expanded_items_data[id(lesson)]
@@ -1221,9 +1238,14 @@ class EditorWindow(QMainWindow):
                     ex_display_text = f"[{exercise.type}] {exercise.prompt or exercise.source_word or exercise.sentence_template or 'No Prompt'}"
                     exercise_item = QTreeWidgetItem(lesson_item, [ex_display_text])
                     exercise_item.setData(0, Qt.UserRole, exercise)
+                    exercise_item.setFlags(exercise_item.flags() | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled)
 
         if selected_item_data:
             self._expand_and_select_item(selected_item_data)
+
+        # Reapply current filter after update_tree_view rebuilds it
+        # This ensures that any active filters are maintained after a reorder operation.
+        self._filter_tree_view(self.search_bar.text())
 
     def new_course(self):
         if self.is_dirty:
