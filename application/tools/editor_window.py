@@ -97,7 +97,7 @@ class EditorWindow(QMainWindow):
         self.setWindowTitle("LL Course Editor")
         self.setGeometry(100, 100, WIN_WIDTH, WIN_HEIGHT)
         self.setObjectName("EditorWindow")
-        self.setFixedSize(WIN_WIDTH, WIN_HEIGHT)
+        # self.setFixedSize(WIN_WIDTH, WIN_HEIGHT)
 
         self.current_manifest_path: str = None
         self.current_course_content_path: str = None
