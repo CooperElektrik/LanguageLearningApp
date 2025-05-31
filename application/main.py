@@ -1,7 +1,8 @@
 import sys
 import os
 import logging
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtCore import QTranslator, QLocale, QCoreApplication
 
 project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
@@ -21,7 +22,34 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    # Determine the path to the translations directory
+    translations_dir = os.path.join(project_root, "localization")
+    
+    # Get the system locale (e.g., 'en_US', 'fr_FR')
+    locale_name = QLocale.system().name() # Or hardcode 'fr' for testing French
+    print(locale_name)
+    locale_name = "vi"
+
+    # Create a QTranslator instance
+    translator = QTranslator()
+    
+    # Attempt to load the .qm file for the system locale
+    # The .qm file should be named based on the locale, e.g., 'll_fr.qm' for French
+    # The 'll' prefix is a common convention for application translations
+    qm_file_path = os.path.join(translations_dir, f"ll_{locale_name}.qm")
+    if not os.path.exists(qm_file_path):
+        # Fallback to language-only if full locale not found (e.g., 'en_US' -> 'en')
+        lang_name = locale_name.split('_')[0]
+        qm_file_path = os.path.join(translations_dir, f"ll_{lang_name}.qm")
+
+    if translator.load(qm_file_path):
+        logger.info(f"Loaded translation file: {qm_file_path}")
+    else:
+        logger.warning(f"Could not load translation file: {qm_file_path}. Running in default language.")
+
     app = QApplication(sys.argv)
+    app.installTranslator(translator)
+
     logger.info("LL application starting...")
 
     logger.info(f"Project root: {project_root}")
