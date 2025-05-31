@@ -5,6 +5,7 @@ import yaml
 from application.core.glossary_loader import load_glossary
 from application.core.models import GlossaryEntry
 from application.core.course_manager import CourseManager
+from application.core import yaml_serializer
 
 
 @pytest.fixture
@@ -115,3 +116,28 @@ def manifest_with_glossary_and_content(tmp_path, tests_data_dir):
 
     # Return the path to the copied manifest
     return str(manifest_target_path)
+
+def test_save_glossary_to_yaml(tmp_path):
+    """Test saving a list of GlossaryEntry objects to a YAML file."""
+    output_filepath = tmp_path / "saved_glossary.yaml"
+    
+    entries_to_save = [
+        GlossaryEntry(word="TestWord1", translation="TestTranslation1", part_of_speech="n."),
+        GlossaryEntry(word="TestWord2", translation="TestTranslation2", example_sentence="Example."),
+    ]
+
+    success = yaml_serializer.save_glossary_to_yaml(entries_to_save, str(output_filepath))
+    assert success is True
+    assert os.path.exists(output_filepath)
+
+    # Load and verify content
+    with open(output_filepath, "r", encoding="utf-8") as f:
+        loaded_data = yaml.safe_load(f)
+
+    assert isinstance(loaded_data, list)
+    assert len(loaded_data) == 2
+    assert loaded_data[0]["word"] == "TestWord1"
+    assert loaded_data[1]["translation"] == "TestTranslation2"
+    assert "part_of_speech" in loaded_data[0]
+    assert "example_sentence" in loaded_data[1]
+    assert "notes" not in loaded_data[0] # Verify None fields are not saved

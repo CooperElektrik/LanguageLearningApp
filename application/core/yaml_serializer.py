@@ -1,7 +1,9 @@
 import yaml
+import logging
 from typing import Dict, Any, List
-from .models import Course, Unit, Lesson, Exercise, ExerciseOption
+from .models import Course, Unit, Lesson, Exercise, ExerciseOption, GlossaryEntry
 
+logger = logging.getLogger(__name__)
 
 def course_to_yaml_data(course: Course) -> Dict[str, Any]:
     """Converts a Course object hierarchy into a dictionary structure suitable for YAML dumping."""
@@ -55,3 +57,20 @@ def save_manifest_to_yaml(manifest_data: Dict[str, Any], filepath: str):
     """Saves manifest data to a YAML file."""
     with open(filepath, "w", encoding="utf-8") as f:
         yaml.dump(manifest_data, f, indent=2, sort_keys=False, allow_unicode=True)
+
+def save_glossary_to_yaml(glossary_entries: List[GlossaryEntry], filepath: str):
+    """Saves a list of GlossaryEntry objects to a YAML file."""
+    # Convert list of GlossaryEntry objects to a list of dictionaries
+    glossary_data_to_save = [entry.to_dict() for entry in glossary_entries]
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            yaml.safe_dump(glossary_data_to_save, f, indent=2, sort_keys=False, allow_unicode=True)
+        logger.info(f"Glossary saved successfully to {filepath}")
+        return True
+    except IOError as e:
+        logger.error(f"Error writing glossary file {filepath}: {e}")
+    except Exception as e:
+        logger.error(
+            f"An unexpected error occurred while saving glossary {filepath}: {e}"
+        )
+    return False

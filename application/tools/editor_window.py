@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QTreeWidget,
     QTreeWidgetItem,
     QStackedWidget,
     QPushButton,
@@ -39,6 +38,7 @@ try:
     from core.course_loader import load_course_content as load_course_content_from_yaml
     from tools.dialogs.exercise_preview_dialog import ExercisePreviewDialog
     from tools.widgets.course_tree_widget import CourseTreeWidget
+    from tools.widgets.glossary_editor_widget import GlossaryEditorWidget
 except ImportError as e:
     logging.error(
         f"Failed to import core or UI widgets for preview dialog. Ensure 'application' directory is on sys.path. Error: {e}"
@@ -400,6 +400,10 @@ class EditorWindow(QMainWindow):
         self.manifest_editor.data_changed.connect(self._set_dirty_state)
         self.detail_editor_stacked_widget.addWidget(self.manifest_editor)
 
+        self.glossary_editor = GlossaryEditorWidget()
+        self.glossary_editor.data_changed.connect(self._set_dirty_state)
+        self.detail_editor_stacked_widget.addWidget(self.glossary_editor)
+
         self.current_editor_widget = None
         self.current_selected_tree_item = None
 
@@ -593,6 +597,12 @@ class EditorWindow(QMainWindow):
                 item_data.get("course_obj", self.course_data),
             )
             self.detail_editor_stacked_widget.setCurrentWidget(self.manifest_editor)
+        elif isinstance(item_data, dict) and item_data.get("type") == "glossary":
+            self.current_editor_widget = self.glossary_editor
+            self.glossary_editor.load_glossary_data(
+                self.manifest_data, self.current_manifest_path
+            )
+            self.detail_editor_stacked_widget.setCurrentWidget(self.glossary_editor)
         elif isinstance(item_data, Unit):
             self.current_editor_widget = self._create_unit_editor_widget(item_data)
             self.detail_editor_stacked_widget.addWidget(self.current_editor_widget)
@@ -624,7 +634,7 @@ class EditorWindow(QMainWindow):
     def _clear_editor_pane(self):
         for i in reversed(range(self.detail_editor_stacked_widget.count())):
             widget = self.detail_editor_stacked_widget.widget(i)
-            if widget is not self.manifest_editor:
+            if widget is not self.manifest_editor and widget is not self.glossary_editor:
                 self.detail_editor_stacked_widget.removeWidget(widget)
                 widget.deleteLater()
         self.current_editor_widget = None
@@ -1216,6 +1226,21 @@ class EditorWindow(QMainWindow):
         ):
             manifest_item.setExpanded(True)
 
+        glossary_item_data = {"type": "glossary"}
+        glossary_item = QTreeWidgetItem(self.tree_widget, ["Glossary"])
+        glossary_item.setData(0, Qt.UserRole, glossary_item_data)
+        glossary_item.setFont(0, QFont("Arial", 11, QFont.Bold))
+        # Glossary item itself is not draggable/droppable, only its content.
+        glossary_item.setFlags(glossary_item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
+        # Place after Manifest Info
+        self.tree_widget.insertTopLevelItem(self.tree_widget.indexOfTopLevelItem(manifest_item) + 1, glossary_item)
+        
+        if (
+            id(glossary_item_data) in expanded_items_data
+            and expanded_items_data[id(glossary_item_data)]
+        ):
+            glossary_item.setExpanded(True)
+
         for unit in self.course_data.units:
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
@@ -1386,6 +1411,13 @@ class EditorWindow(QMainWindow):
             self.manifest_editor.apply_changes_to_data(
                 self.manifest_data, self.course_data
             )
+
+        # It's better to always attempt to save glossary if it's been loaded
+        # so changes in its tab are saved.
+        if self.glossary_editor.glossary_entries: # Only attempt if there's glossary data
+            if not self.glossary_editor.save_glossary_data(self.manifest_data, self.current_manifest_path):
+                QMessageBox.critical(self, "Save Error", "Failed to save glossary file.")
+                return False
 
         if not save_manifest(self.manifest_data, manifest_file):
             QMessageBox.critical(self, "Save Error", "Failed to save manifest file.")
