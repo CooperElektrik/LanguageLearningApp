@@ -40,6 +40,7 @@ class ProgressManager:
         self.xp: int = 0
         self.last_study_date: Optional[date] = None
         self.current_streak_days: int = 0
+        self.exercise_notes: Dict[str, str] = {}
 
         self._ensure_data_dir_exists()
         self.load_progress()
@@ -86,6 +87,8 @@ class ProgressManager:
                     self.last_study_date = date.fromisoformat(raw_last_study_date)
                 self.current_streak_days = data.get("current_streak_days", 0)
 
+                self.exercise_notes = data.get("exercise_notes", {})
+
                 logger.info(f"Progress loaded for course {self.course_id}.")
         except FileNotFoundError:
             logger.info(
@@ -114,6 +117,7 @@ class ProgressManager:
             "xp": self.xp,
             "last_study_date": self.last_study_date.isoformat() if self.last_study_date else None,
             "current_streak_days": self.current_streak_days,
+            "exercise_notes": self.exercise_notes
         }
         try:
             with open(self.progress_file, "w", encoding="utf-8") as f:
@@ -125,6 +129,20 @@ class ProgressManager:
             logger.error(f"Could not write progress to file {self.progress_file}.")
         except Exception as e:
             logger.error(f"An unexpected error occurred while saving progress: {e}")
+    
+    def get_exercise_note(self, exercise_id: str) -> Optional[str]:
+        """Retrieves the note for a given exercise ID."""
+        return self.exercise_notes.get(exercise_id)
+
+    def save_exercise_note(self, exercise_id: str, note_text: str):
+        """Saves or updates the note for a given exercise ID."""
+        if note_text and note_text.strip():
+            self.exercise_notes[exercise_id] = note_text.strip()
+        elif exercise_id in self.exercise_notes: # Remove note if text is empty
+            del self.exercise_notes[exercise_id]
+        
+        self.save_progress() # Persist changes immediately
+        logger.debug(f"Note saved for exercise {exercise_id}.")
 
     def _calculate_srs_parameters(
         self, srs_attrs: Dict[str, Any], quality_score_sm2: int

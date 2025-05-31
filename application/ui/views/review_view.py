@@ -8,9 +8,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QProgressBar,
     QMessageBox,
+    QTextEdit,
+    QGroupBox,
+    QStyle
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Signal, Qt, QTimer
+from PySide6.QtGui import QFont, QIcon
 
 from typing import List, Optional
 
@@ -70,7 +73,7 @@ class ReviewView(QWidget):
         self.current_exercise_index: int = -1
         self.current_exercise_widget: Optional[BaseExerciseWidget] = None
         self.total_exercises_in_session: int = 0
-        self.current_exercise_obj: Optional[Exercise] = None
+        self.current_exercise_obj: Optional[Exercise] = None # Will store the current exercise object
 
         self.user_just_submitted = False
         self.user_just_showed_answer = False
@@ -82,7 +85,7 @@ class ReviewView(QWidget):
 
         top_bar_layout = QHBoxLayout()
         self.back_button = QPushButton("← Back to Lessons")
-        self.back_button.clicked.connect(self.back_to_overview_signal.emit)
+        self.back_button.clicked.connect(self._handle_back_to_overview) # Connect to new handler for note saving
         top_bar_layout.addWidget(self.back_button)
 
         self.session_title_label = QLabel("Review Session")
@@ -100,6 +103,22 @@ class ReviewView(QWidget):
         self.exercise_area_layout = QVBoxLayout(self.exercise_area_container)
         main_layout.addWidget(self.exercise_area_container, 1)
 
+        self.notes_group_box = QGroupBox("My Notes")
+        self.notes_group_box.setVisible(False) # Initially hidden
+        notes_layout = QVBoxLayout(self.notes_group_box)
+        
+        self.notes_text_edit = QTextEdit()
+        self.notes_text_edit.setPlaceholderText("Type your personal notes for this exercise here...")
+        # Debounce saving notes to avoid saving on every keystroke
+        self.notes_save_timer = QTimer(self)
+        self.notes_save_timer.setSingleShot(True)
+        self.notes_save_timer.setInterval(1500) # Save 1.5 seconds after last edit
+        self.notes_save_timer.timeout.connect(self._save_current_note)
+        self.notes_text_edit.textChanged.connect(self.notes_save_timer.start) # Restart timer on change
+        
+        notes_layout.addWidget(self.notes_text_edit)
+        main_layout.addWidget(self.notes_group_box)
+
         self.feedback_label = QLabel("")
         self.feedback_label.setFont(QFont("Arial", 12))
         self.feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -107,20 +126,27 @@ class ReviewView(QWidget):
         main_layout.addWidget(self.feedback_label)
 
         self.action_buttons_layout = QVBoxLayout()
+        self.control_buttons_layout = QHBoxLayout()
 
-        self.submit_show_layout = QHBoxLayout()
+        self.toggle_notes_button = QPushButton()
+        self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Placeholder icon
+        self.toggle_notes_button.setToolTip("Show/Hide Notes")
+        self.toggle_notes_button.setCheckable(True)
+        self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
+        self.control_buttons_layout.addWidget(self.toggle_notes_button)
+        self.control_buttons_layout.addStretch(1) # Push submit/show to right
+
         self.submit_button = QPushButton("Submit Answer")
         self.submit_button.setFont(QFont("Arial", 12, QFont.Bold))
         self.submit_button.clicked.connect(self._handle_user_submission_from_button)
-        self.submit_show_layout.addWidget(self.submit_button)
+        self.control_buttons_layout.addWidget(self.submit_button)
 
         self.show_answer_button = QPushButton("Show Answer")
         self.show_answer_button.setFont(QFont("Arial", 12))
         self.show_answer_button.clicked.connect(self._handle_show_answer)
-        self.submit_show_layout.addWidget(self.show_answer_button)
-        self.submit_show_layout.addStretch(1)
+        self.control_buttons_layout.addWidget(self.show_answer_button)
 
-        self.action_buttons_layout.addLayout(self.submit_show_layout)
+        self.action_buttons_layout.addLayout(self.control_buttons_layout)
 
         self.rating_buttons_layout = QHBoxLayout()
         self.rating_button_again = QPushButton("Again (0)")
@@ -143,6 +169,11 @@ class ReviewView(QWidget):
         main_layout.addLayout(self.action_buttons_layout)
 
         self._set_button_states(initial=True)
+
+    def _handle_back_to_overview(self):
+        """Handles saving notes before going back to overview."""
+        self._save_current_note() # Ensure latest note is saved
+        self.back_to_overview_signal.emit()
 
     def _set_button_states(
         self, initial=False, after_submission=False, after_show_answer=False
@@ -186,6 +217,7 @@ class ReviewView(QWidget):
             self.rating_button_easy.setEnabled(False)
 
     def start_review_session(self, review_limit: int = 20):
+        self._save_current_note() # Save note from any previously viewed exercise if applicable
         self.due_exercises = self.progress_manager.get_due_exercises(
             self.course_manager.get_all_exercises(), limit=review_limit
         )
@@ -217,8 +249,12 @@ class ReviewView(QWidget):
         self.feedback_label.setText("")
 
     def _load_current_exercise(self):
+        self._save_current_note()
         self._clear_exercise_area()
         self._set_button_states(initial=True)
+        self.toggle_notes_button.setChecked(False)
+        self.notes_group_box.setVisible(False)
+
 
         if self.current_exercise_index >= self.total_exercises_in_session:
             self._finish_review_session()
@@ -253,6 +289,12 @@ class ReviewView(QWidget):
             self._handle_user_submission_from_widget
         )
         self.current_exercise_widget.set_focus_on_input()
+
+        note_text = self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id)
+        self.notes_text_edit.blockSignals(True) # Prevent textChanged during programmatic set
+        self.notes_text_edit.setPlainText(note_text or "")
+        self.notes_text_edit.blockSignals(False)
+        self._update_notes_button_indicator()
 
         self.progress_bar.setValue(self.current_exercise_index)
 
@@ -346,3 +388,30 @@ class ReviewView(QWidget):
         self.current_exercise_index = -1
         self.due_exercises = []
         self.current_exercise_obj = None
+
+    def _toggle_notes_panel(self, checked: bool):
+        self.notes_group_box.setVisible(checked)
+        if not checked: # Panel is being hidden
+            self._save_current_note() # Explicitly save
+        else: # Panel is being shown
+            self.notes_text_edit.setFocus()
+        self._update_notes_button_indicator()
+
+
+    def _save_current_note(self):
+        self.notes_save_timer.stop() # Stop any pending debounced save
+        if self.current_exercise_obj: # Only save if an exercise is currently loaded
+            note_content = self.notes_text_edit.toPlainText()
+            self.progress_manager.save_exercise_note(self.current_exercise_obj.exercise_id, note_content)
+            self._update_notes_button_indicator() # Update button icon based on saved note presence
+            logger.info("Note saved for exercise ID: %s")
+
+    def _update_notes_button_indicator(self):
+        if self.current_exercise_obj: # Only update if an exercise is currently loaded
+            has_note = bool(self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id))
+            if has_note:
+                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView)) # Example: "document with content" icon
+                self.toggle_notes_button.setToolTip("Edit Notes")
+            else:
+                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Example: "empty document" icon
+                self.toggle_notes_button.setToolTip("Add Notes")
