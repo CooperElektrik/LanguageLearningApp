@@ -30,14 +30,14 @@ class GlossaryView(QWidget):
 
         # Top Bar with Back Button
         top_bar_layout = QHBoxLayout()
-        self.back_button = QPushButton("← Back to Course Overview")
+        self.back_button = QPushButton(self.tr("← Back to Course Overview"))
         self.back_button.clicked.connect(self.back_to_overview_signal.emit)
         top_bar_layout.addWidget(self.back_button)
         top_bar_layout.addStretch(1)
         main_layout.addLayout(top_bar_layout)
 
         # Title
-        title_label = QLabel("Glossary")
+        title_label = QLabel(self.tr("Glossary"))
         title_label.setFont(QFont("Arial", 20, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
@@ -46,7 +46,7 @@ class GlossaryView(QWidget):
 
         # Search Bar
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search words or translations...")
+        self.search_bar.setPlaceholderText(self.tr("Search words or translations..."))
         self.search_bar.textChanged.connect(self._filter_glossary_list)
         main_layout.addWidget(self.search_bar)
 
@@ -73,7 +73,7 @@ class GlossaryView(QWidget):
         self.glossary_list_widget.clear()
         if not entries_to_display:
             # Handle empty glossary or no search results
-            self.glossary_list_widget.addItem(QListWidgetItem("No glossary entries found."))
+            self.glossary_list_widget.addItem(QListWidgetItem(self.tr("No glossary entries found.")))
             return
 
         for entry in entries_to_display:

@@ -45,11 +45,11 @@ class LessonView(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         top_bar_layout = QHBoxLayout()
-        self.back_button = QPushButton("← Back to Lessons")
+        self.back_button = QPushButton(self.tr("← Back to Lessons"))
         self.back_button.clicked.connect(self._handle_back_to_overview)
         top_bar_layout.addWidget(self.back_button)
 
-        self.lesson_title_label = QLabel("Lesson Title")
+        self.lesson_title_label = QLabel(self.tr("Lesson Title"))
         self.lesson_title_label.setFont(QFont("Arial", 16, QFont.Bold))
         self.lesson_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top_bar_layout.addWidget(self.lesson_title_label, 1)
@@ -57,19 +57,19 @@ class LessonView(QWidget):
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(False)
-        self.progress_bar.setFormat("%v / %m Steps")
+        self.progress_bar.setFormat(self.tr("%v / %m Steps"))
         self.main_layout.addWidget(self.progress_bar)
 
         self.exercise_area_container = QFrame()
         self.exercise_area_layout = QVBoxLayout(self.exercise_area_container)
         self.main_layout.addWidget(self.exercise_area_container, 1)
 
-        self.notes_group_box = QGroupBox("My Notes")
+        self.notes_group_box = QGroupBox(self.tr("My Notes"))
         self.notes_group_box.setVisible(False) # Initially hidden
         notes_layout = QVBoxLayout(self.notes_group_box)
         
         self.notes_text_edit = QTextEdit()
-        self.notes_text_edit.setPlaceholderText("Type your personal notes for this exercise here...")
+        self.notes_text_edit.setPlaceholderText(self.tr("Type your personal notes for this exercise here..."))
         # Debounce saving notes to avoid saving on every keystroke
         self.notes_save_timer = QTimer(self)
         self.notes_save_timer.setSingleShot(True)
@@ -90,21 +90,21 @@ class LessonView(QWidget):
 
         self.toggle_notes_button = QPushButton()
         self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Placeholder icon
-        self.toggle_notes_button.setToolTip("Show/Hide Notes")
+        self.toggle_notes_button.setToolTip(self.tr("Show/Hide Notes"))
         self.toggle_notes_button.setCheckable(True)
         self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
         self.action_buttons_layout.addWidget(self.toggle_notes_button)
         self.action_buttons_layout.addStretch(1) # Push other buttons to the right
 
-        self.submit_button = QPushButton("Submit Answer")
+        self.submit_button = QPushButton(self.tr("Submit Answer"))
         self.submit_button.setFont(QFont("Arial", 12, QFont.Bold))
         self.submit_button.clicked.connect(self._handle_submit_answer)
 
-        self.next_button = QPushButton("Continue")
+        self.next_button = QPushButton(self.tr("Continue"))
         self.next_button.setFont(QFont("Arial", 12, QFont.Bold))
         self.next_button.clicked.connect(self._handle_next_action)
 
-        self.skip_button = QPushButton("Skip Exercise")
+        self.skip_button = QPushButton(self.tr("Skip Exercise"))
         self.skip_button.setFont(QFont("Arial", 10))
         self.skip_button.clicked.connect(self._handle_skip_exercise)
 
@@ -121,7 +121,7 @@ class LessonView(QWidget):
     def start_lesson(self, lesson_id: str):
         self.current_lesson = self.course_manager.get_lesson(lesson_id)
         if not self.current_lesson:
-            self.feedback_label.setText("Error: Could not load lesson.")
+            self.feedback_label.setText(self.tr("Error: Could not load lesson."))
             self.submit_button.setEnabled(False)
             self.next_button.setEnabled(False)
             return
@@ -176,7 +176,7 @@ class LessonView(QWidget):
                 exercise, self.course_manager
             )
         else:
-            self.feedback_label.setText(f"Unsupported exercise type: {exercise.type}")
+            self.feedback_label.setText(self.tr("Unsupported exercise type: {0}").format(exercise.type))
             self.submit_button.setEnabled(False)
             return
 
@@ -194,7 +194,7 @@ class LessonView(QWidget):
             self._update_notes_button_indicator() # Update button icon based on note presence
 
         self.progress_bar.setValue(self.current_exercise_index)
-        self.submit_button.setText("Submit Answer")
+        self.submit_button.setText(self.tr("Submit Answer"))
 
     def _toggle_notes_panel(self, checked: bool):
         self.notes_group_box.setVisible(checked)
@@ -218,10 +218,10 @@ class LessonView(QWidget):
             has_note = bool(self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id))
             if has_note:
                 self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView)) # Example: "document with content" icon
-                self.toggle_notes_button.setToolTip("Edit Notes")
+                self.toggle_notes_button.setToolTip(self.tr("Edit Notes"))
             else:
                 self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Example: "empty document" icon
-                self.toggle_notes_button.setToolTip("Add Notes")
+                self.toggle_notes_button.setToolTip(self.tr("Add Notes"))
 
     def _handle_submit_answer_from_widget(self, answer_text: str):
         if self.submit_button.isEnabled():
@@ -243,7 +243,7 @@ class LessonView(QWidget):
                 "fill_in_the_blank"
             )
         ):
-            self.feedback_label.setText("Please provide an answer.")
+            self.feedback_label.setText(self.tr("Please provide an answer."))
             self.feedback_label.setStyleSheet("color: orange;")
             return
 
@@ -261,9 +261,9 @@ class LessonView(QWidget):
             self.skip_button.setEnabled(False) # Disable skip once answered correctly
             self.next_button.setVisible(True)
             if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
-                self.next_button.setText("Finish Lesson 🎉")
+                self.next_button.setText(self.tr("Finish Lesson 🎉"))
             else:
-                self.next_button.setText("Next Exercise →")
+                self.next_button.setText(self.tr("Next Exercise →"))
             self.next_button.setFocus()
 
             quality_score_for_srs = 4 # Assume 'Good' (SM-2 scale 0-5)
@@ -302,8 +302,8 @@ class LessonView(QWidget):
 
         reply = QMessageBox.question(
             self,
-            "Skip Exercise",
-            "Are you sure you want to skip this exercise? You won't get points for it.",
+            self.tr("Skip Exercise"),
+            self.tr("Are you sure you want to skip this exercise? You won't get points for it."),
             QMessageBox.Yes | QMessageBox.No,
         )
         if reply == QMessageBox.No:
@@ -311,7 +311,7 @@ class LessonView(QWidget):
 
         exercise = self.current_lesson.exercises[self.current_exercise_index]
 
-        correct_answer_for_display = "Could not retrieve answer."
+        correct_answer_for_display = self.tr("Could not retrieve answer.")
         if exercise.type in ["translate_to_target", "translate_to_source"]:
             correct_answer_for_display = exercise.answer
         elif exercise.type == "multiple_choice_translation":
@@ -324,7 +324,7 @@ class LessonView(QWidget):
             correct_answer_for_display = exercise.correct_option
 
         self.feedback_label.setText(
-            f"Skipped. The correct answer was: {correct_answer_for_display}"
+            self.tr("Skipped. The correct answer was: {0}").format(correct_answer_for_display)
         )
         self.feedback_label.setStyleSheet("color: orange;")
 
@@ -341,20 +341,20 @@ class LessonView(QWidget):
         self.skip_button.setEnabled(False)
         self.next_button.setVisible(True)
         if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
-            self.next_button.setText("Finish Lesson 🎉")
+            self.next_button.setText(self.tr("Finish Lesson 🎉"))
         else:
-            self.next_button.setText("Next Exercise →")
+            self.next_button.setText(self.tr("Next Exercise →"))
         self.next_button.setFocus()
 
     def _finish_lesson(self):
         self._save_current_note() # Save note for the last exercise in the lesson
-        self.feedback_label.setText(f"Lesson '{self.current_lesson.title}' completed!")
+        self.feedback_label.setText(self.tr("Lesson '{0}' completed!").format(self.current_lesson.title))
         self.feedback_label.setStyleSheet("color: blue;")
         
         self._clear_exercise_area()
 
         self.submit_button.setVisible(False)
-        self.next_button.setText("Back to Course Overview")
+        self.next_button.setText(self.tr("Back to Course Overview"))
         self.next_button.setVisible(True)
         try:
             self.next_button.clicked.disconnect()

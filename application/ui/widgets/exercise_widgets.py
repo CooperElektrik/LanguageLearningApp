@@ -101,7 +101,7 @@ class TranslationExerciseWidget(BaseExerciseWidget):
 
         if self.exercise.audio_file:
             logger.info(f"Created play button from {self.exercise.audio_file}")
-            self.play_audio_button = QPushButton("🔊 Play Audio")
+            self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
             self.play_audio_button.clicked.connect(self._play_audio)
             self.layout.insertWidget(self.layout.indexOf(self.image_label) + 1, self.play_audio_button)
 
@@ -138,16 +138,16 @@ class TranslationExerciseWidget(BaseExerciseWidget):
                     )
                     QMessageBox.warning(
                         self,
-                        "Audio Error",
-                        f"Cannot play audio: {self._media_player.errorString()}",
+                        self.tr("Audio Error"),
+                        self.tr("Cannot play audio: {0}").format(self._media_player.errorString()),
                     )
 
             else:
                 logging.error(f"Audio file not found: {full_audio_path}")
                 QMessageBox.warning(
                     self,
-                    "Audio Error",
-                    f"Audio file not found: {self.exercise.audio_file}\n\nCheck paths.",
+                    self.tr("Audio Error"),
+                    self.tr("Audio file not found: {0}\n\nCheck paths.").format(self.exercise.audio_file),
                 )
 
     def get_answer(self) -> str:
