@@ -18,6 +18,7 @@ from application.core.course_loader import load_manifest as app_load_manifest
 from application.core.course_loader import (
     load_course_content as app_load_course_content,
 )
+from application.core.course_manager import CourseManager
 
 
 @pytest.fixture
@@ -74,3 +75,13 @@ def progress_manager_instance(tmp_path):
     course_id = f"test_course_{uuid.uuid4().hex}"
     pm_data_dir = tmp_path / "pm_test_data_dir"
     return ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
+
+@pytest.fixture
+def course_manager_instance(sample_course_obj, valid_manifest_path): # Add valid_manifest_path
+    # The CourseManager now expects a manifest_path directly
+    manager = CourseManager(manifest_path=valid_manifest_path) # <-- MODIFIED CALL
+    # The fixture might implicitly override these, but ensures the manager is initialized correctly.
+    manager.course = sample_course_obj # Ensure this assignment happens after initialization if necessary for old tests
+    manager.target_language = sample_course_obj.target_language
+    manager.source_language = sample_course_obj.source_language
+    return manager

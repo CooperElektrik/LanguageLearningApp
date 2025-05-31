@@ -2,23 +2,22 @@ import os
 import logging
 import sys
 from typing import Optional, List, Tuple, Any
-from .models import Course, Unit, Lesson, Exercise
+from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
+from . import glossary_loader
 
 logger = logging.getLogger(__name__)
 
 
 class CourseManager:
-    def __init__(self, manifest_dir: str = "."):
+    def __init__(self, manifest_path: str):
         self.course: Optional[Course] = None
         self.manifest_data: Optional[dict] = None
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
+        self.glossary: List[GlossaryEntry] = []
 
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            self.manifest_path = os.path.join(sys._MEIPASS, "manifest.yaml")
-        else:
-            self.manifest_path = os.path.join(manifest_dir, "manifest.yaml")
+        self.manifest_path = manifest_path
 
         self._load_course_from_manifest()
 
@@ -40,11 +39,8 @@ class CourseManager:
             logger.error("Manifest does not specify a 'content_file'.")
             return
 
-        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            content_filepath = os.path.join(sys._MEIPASS, content_filename)
-        else:
-            manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
-            content_filepath = os.path.join(manifest_dir_abs, content_filename)
+        manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
+        content_filepath = os.path.join(manifest_dir_abs, content_filename)
 
         self.course = course_loader.load_course_content(
             content_filepath,
@@ -60,6 +56,39 @@ class CourseManager:
             logger.info(f"Course '{self.course.title}' initialized successfully.")
         else:
             logger.error(f"Failed to load course content from {content_filepath}.")
+
+        glossary_filename = self.manifest_data.get("glossary_file")
+        if glossary_filename:
+            glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
+            self.glossary = glossary_loader.load_glossary(glossary_filepath)
+        else:
+            logger.info("Manifest does not specify a 'glossary_file'. Skipping glossary loading.")
+
+        self.course = course_loader.load_course_content(
+            content_filepath, # This is already correctly resolved relative to manifest_path
+            self.manifest_data.get("course_id", "unknown_course"),
+            self.manifest_data.get("course_title", "Untitled Course"),
+            self.target_language,
+            self.source_language,
+            self.manifest_data.get("version", "0.0.0"),
+            self.manifest_data.get("author"),
+            self.manifest_data.get("description"),
+        )
+        if self.course:
+            logger.info(f"Course '{self.course.title}' initialized successfully.")
+        else:
+            logger.error(f"Failed to load course content from {content_filepath}.")
+        
+        glossary_filename = self.manifest_data.get("glossary_file")
+        if glossary_filename:
+            glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
+            self.glossary = glossary_loader.load_glossary(glossary_filepath)
+        else:
+            logger.info("Manifest does not specify a 'glossary_file'. Skipping glossary loading.")
+
+    def get_glossary_entries(self) -> List[GlossaryEntry]:
+        """Returns the loaded glossary entries."""
+        return self.glossary
 
     def get_course_content_directory(self) -> Optional[str]:
         """Returns the directory where the current course's content file is located."""

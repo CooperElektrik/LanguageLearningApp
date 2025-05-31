@@ -11,6 +11,7 @@ from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
 from ui.views.review_view import ReviewView
 from ui.views.progress_view import ProgressView
+from ui.views.glossary_view import GlossaryView
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
@@ -68,17 +69,20 @@ class MainWindow(QMainWindow):
         self.lesson_view = LessonView(self.course_manager, self.progress_manager)
         self.review_view = ReviewView(self.course_manager, self.progress_manager)
         self.progress_view = ProgressView(self.course_manager,self.progress_manager)
+        self.glossary_view = GlossaryView(self.course_manager)
 
         self.stacked_widget.addWidget(self.course_overview_view)
         self.stacked_widget.addWidget(self.lesson_view)
         self.stacked_widget.addWidget(self.review_view)
         self.stacked_widget.addWidget(self.progress_view)
+        self.stacked_widget.addWidget(self.glossary_view)
 
         self.course_overview_view.lesson_selected.connect(self.start_lesson)
         self.lesson_view.lesson_completed_signal.connect(self.handle_lesson_completion)
         self.lesson_view.back_to_overview_signal.connect(self.show_course_overview)
         self.review_view.review_session_finished.connect(self.show_course_overview)
         self.review_view.back_to_overview_signal.connect(self.show_course_overview)
+        self.glossary_view.back_to_overview_signal.connect(self.show_course_overview)
 
         self.course_overview_view.start_review_session_requested.connect(self.start_review_session)
         self.progress_view.back_to_overview_signal.connect(self.show_course_overview)
@@ -100,6 +104,12 @@ class MainWindow(QMainWindow):
         self.show_progress_action.setStatusTip("View your learning progress and achievements")
         self.show_progress_action.triggered.connect(self.show_progress_view)
         learning_menu.addAction(self.show_progress_action)
+
+        self.show_glossary_action = QAction("&Glossary", self)
+        self.show_glossary_action.setShortcut(Qt.CTRL | Qt.Key_G)
+        self.show_glossary_action.setStatusTip("View the course glossary")
+        self.show_glossary_action.triggered.connect(self.show_glossary_view)
+        learning_menu.addAction(self.show_glossary_action)
 
     def show_progress_view(self):
         if not self.course_manager.course:
@@ -145,6 +155,25 @@ class MainWindow(QMainWindow):
         self.review_view.start_review_session()
         self.stacked_widget.setCurrentWidget(self.review_view)
         logger.info("Started review session.")
+
+    def show_glossary_view(self):
+        if not self.course_manager.course:
+            QMessageBox.warning(
+                self, "Glossary", "No course loaded to view glossary."
+            )
+            return
+        if self.course_manager.get_glossary_entries():
+            if hasattr(self, "glossary_view") and self.glossary_view:
+                self.glossary_view.refresh_view() # Refresh list before showing
+                self.stacked_widget.setCurrentWidget(self.glossary_view)
+                logger.info("Showing glossary view.")
+            else:
+                logger.warning("Glossary view not available.")
+        else:
+            QMessageBox.information(
+                self, "Glossary Empty", "No glossary entries found for this course."
+            )
+            logger.info("Attempted to show glossary view, but glossary is empty.")
 
     def closeEvent(self, event):
         if self.progress_manager and not self.course_load_failed:

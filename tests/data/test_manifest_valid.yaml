@@ -3,6 +3,7 @@ course_title: "Valid Test Course"
 target_language: "TestLangTarget"
 source_language: "TestLangSource"
 content_file: "test_course_valid.yaml" # Relative to this manifest
+glossary_file: glossary_valid.yaml
 version: "1.0.0"
 author: "Test Author"
 description: "A valid course for testing."

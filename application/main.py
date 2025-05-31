@@ -25,7 +25,15 @@ def main():
     logger.info("LL application starting...")
 
     logger.info(f"Project root: {project_root}")
-    course_manager = CourseManager(manifest_dir=project_root)
+
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        main_manifest_path = os.path.join(sys._MEIPASS, "manifest.yaml")
+        logger.info(f"Running frozen app. Manifest path: {main_manifest_path}")
+    else:
+        main_manifest_path = os.path.join(project_root, "manifest.yaml")
+        logger.info(f"Running in development. Manifest path: {main_manifest_path}")
+
+    course_manager = CourseManager(manifest_path=main_manifest_path)
 
     if course_manager.manifest_data and course_manager.course:
         progress_manager = ProgressManager(

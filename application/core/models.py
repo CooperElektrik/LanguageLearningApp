@@ -124,3 +124,15 @@ class Course:
 
     def to_dict(self) -> Dict[str, Any]:
         return {"units": [unit.to_dict() for unit in self.units]}
+
+@dataclass
+class GlossaryEntry:
+    word: str
+    translation: str
+    part_of_speech: Optional[str] = None # e.g., "n.", "v.", "adj."
+    example_sentence: Optional[str] = None
+    notes: Optional[str] = None
+    audio_file: Optional[str] = None # Relative path to audio file for pronunciation
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in asdict(self).items() if v is not None}

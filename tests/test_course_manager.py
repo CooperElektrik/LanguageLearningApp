@@ -8,7 +8,7 @@ from application.core.models import (
 
 @pytest.fixture
 def course_manager_instance(sample_course_obj):
-    manager = CourseManager(manifest_dir=".")
+    manager = CourseManager(manifest_path=".")
     manager.course = sample_course_obj
     manager.target_language = sample_course_obj.target_language
     manager.source_language = sample_course_obj.source_language
