@@ -9,9 +9,10 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QPushButton,
     QMessageBox,
+    QHBoxLayout
 )
-from PySide6.QtCore import Signal, QUrl
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Signal, QUrl, QSize, Qt
+from PySide6.QtGui import QFont, QPixmap, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 from core.models import Exercise
@@ -34,12 +35,6 @@ class BaseExerciseWidget(QWidget):
         self.course_content_base_dir = (
             self.course_manager.get_course_content_directory()
         )
-        self.layout = QVBoxLayout(self)
-        self.prompt_label = QLabel()
-        self.prompt_label.setFont(QFont("Arial", 14))
-        self.prompt_label.setWordWrap(True)
-        self.layout.addWidget(self.prompt_label)
-
         self.assets_base_dir = self.course_manager.get_course_manifest_directory()
         if not self.assets_base_dir:
             self.assets_base_dir = self.course_manager.get_course_content_directory()
@@ -49,6 +44,43 @@ class BaseExerciseWidget(QWidget):
                 )
             else:
                 logging.error("Could not determine asset base directory.")
+
+        self.layout = QVBoxLayout(self)
+        self.prompt_label = QLabel()
+        self.prompt_label.setFont(QFont("Arial", 14))
+        self.prompt_label.setWordWrap(True)
+        self.layout.addWidget(self.prompt_label)
+
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignCenter) # Center the image
+        self.image_label.setMaximumWidth(400) # Max width for image to not be too big
+        self.image_label.setMaximumHeight(300) # Max height
+        self.image_label.setScaledContents(False) # Keep aspect ratio when scaled
+        
+        if self.exercise.image_file and self.assets_base_dir:
+            full_image_path = os.path.join(self.assets_base_dir, self.exercise.image_file)
+            if os.path.exists(full_image_path):
+                pixmap = QPixmap(full_image_path)
+                if not pixmap.isNull():
+                    # Scale pixmap to fit within max dimensions while maintaining aspect ratio
+                    scaled_pixmap = pixmap.scaled(
+                        self.image_label.maximumWidth(), 
+                        self.image_label.maximumHeight(), 
+                        Qt.KeepAspectRatio, 
+                        Qt.SmoothTransformation
+                    )
+                    self.image_label.setPixmap(scaled_pixmap)
+                    self.image_label.setVisible(True)
+                else:
+                    logger.warning(f"Failed to load image from {full_image_path}. Pixmap is null.")
+                    self.image_label.setVisible(False)
+            else:
+                logger.warning(f"Image file not found: {full_image_path} for exercise {self.exercise.exercise_id}")
+                self.image_label.setVisible(False)
+        else:
+            self.image_label.setVisible(False) # Hide if no image file or base dir missing
+
+        self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
 
     def get_answer(self) -> str:
         raise NotImplementedError("Subclasses must implement get_answer")
@@ -71,7 +103,7 @@ class TranslationExerciseWidget(BaseExerciseWidget):
             logger.info(f"Created play button from {self.exercise.audio_file}")
             self.play_audio_button = QPushButton("🔊 Play Audio")
             self.play_audio_button.clicked.connect(self._play_audio)
-            self.layout.addWidget(self.play_audio_button)
+            self.layout.insertWidget(self.layout.indexOf(self.image_label) + 1, self.play_audio_button)
 
             self._media_player = QMediaPlayer(self)
             self._audio_output = QAudioOutput(self)
