@@ -24,12 +24,13 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QFileDialog,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Signal, Qt, QMimeData
+from PySide6.QtGui import QFont, QDragEnterEvent, QDropEvent
 from typing import Optional
 
 try:
     from core.models import Exercise, ExerciseOption
+    from tools.dialogs.asset_manager_dialog import AssetManagerDialog, _ASSET_PATH_MIME_TYPE
 except ImportError:
     logging.warning("Could not import Exercise model in ExerciseEditorWidgets.")
 
@@ -192,7 +193,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         )
 
         browse_audio_button = QPushButton("Browse...")
-        browse_audio_button.clicked.connect(self._browse_audio_file)
+        browse_audio_button.clicked.connect(lambda: self._browse_asset_file("audio"))
 
         audio_layout.addWidget(audio_label)
         audio_layout.addWidget(self.audio_file_input, 1)
@@ -209,7 +210,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         )
 
         browse_image_button = QPushButton("Browse...")
-        browse_image_button.clicked.connect(self._browse_image_file)
+        browse_image_button.clicked.connect(lambda: self._browse_asset_file("image"))
 
         image_layout.addWidget(image_label)
         image_layout.addWidget(self.image_file_input, 1)
@@ -245,6 +246,9 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self._browse_asset_file("image")
 
     def _browse_asset_file(self, asset_type: str):
+        """
+        Launches the AssetManagerDialog to select an asset.
+        """
         if not self.course_root_dir:
             QMessageBox.warning(
                 self,
@@ -253,83 +257,16 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
             )
             return
 
-        file_types = (
-            "Audio Files (*.mp3 *.wav *.ogg);;All Files (*)"
-            if asset_type == "audio"
-            else "Image Files (*.png *.jpg *.jpeg *.gif);;All Files (*)"
-        )
-
-        default_asset_subdir = f"assets/{asset_type}s"
-        initial_browse_dir = os.path.join(self.course_root_dir, default_asset_subdir)
-        if not os.path.exists(initial_browse_dir):
-            initial_browse_dir = self.course_root_dir
-
-        source_file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            f"Select {asset_type.capitalize()} File",
-            initial_browse_dir,
-            file_types,
-        )
-
-        if not source_file_path:
-            return
-
-        target_asset_subfolder = os.path.join("assets", f"{asset_type}s")
-        target_asset_dir_abs = os.path.join(
-            self.course_root_dir, target_asset_subfolder
-        )
-
-        if not os.path.exists(target_asset_dir_abs):
-            try:
-                os.makedirs(target_asset_dir_abs, exist_ok=True)
-            except OSError as e:
-                QMessageBox.critical(
-                    self,
-                    "Asset Import Error",
-                    f"Could not create asset directory '{target_asset_dir_abs}': {e}",
-                )
-                return
-
-        asset_filename = os.path.basename(source_file_path)
-        target_file_path_abs = os.path.join(target_asset_dir_abs, asset_filename)
-
-        relative_path_for_yaml = os.path.join(
-            target_asset_subfolder, asset_filename
-        ).replace("\\", "/")
-
-        try:
-            source_is_already_in_assets = (
-                os.path.commonpath(
-                    [target_asset_dir_abs, os.path.abspath(source_file_path)]
-                )
-                == target_asset_dir_abs
+        dialog = AssetManagerDialog(self.course_root_dir, asset_type, self)
+        # Connect to the signal emitted when an asset is selected
+        dialog.asset_selected.connect(
+            lambda path: (
+                self.audio_file_input.setText(path)
+                if asset_type == "audio"
+                else self.image_file_input.setText(path)
             )
-        except ValueError:
-            source_is_already_in_assets = False
-
-        if (
-            os.path.abspath(source_file_path) == os.path.abspath(target_file_path_abs)
-            or source_is_already_in_assets
-        ):
-            pass
-        else:
-            try:
-                shutil.copy2(source_file_path, target_file_path_abs)
-                logger.info(
-                    f"Copied asset '{source_file_path}' to '{target_file_path_abs}'"
-                )
-            except Exception as e:
-                QMessageBox.critical(
-                    self,
-                    "Asset Copy Error",
-                    f"Could not copy asset file to '{target_file_path_abs}': {e}",
-                )
-                return
-
-        if asset_type == "audio":
-            self.audio_file_input.setText(relative_path_for_yaml)
-        elif asset_type == "image":
-            self.image_file_input.setText(relative_path_for_yaml)
+        )
+        dialog.exec() # Show the dialog
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():
