@@ -113,9 +113,9 @@ class AssetManagerDialog(QDialog):
                 if not pixmap.isNull():
                     icon.addPixmap(pixmap)
                 else:
-                    icon = self.style().standardIcon(self.style().SP_MessageBoxWarning) # Fallback icon
+                    icon = self.style().standardIcon(self.style().StandardPixmap.SP_MessageBoxWarning) # Fallback icon
             elif self.asset_type == "audio":
-                icon = self.style().standardIcon(self.style().SP_MediaVolume) # Generic audio icon
+                icon = self.style().standardIcon(self.style().StandardPixmap.SP_MediaVolume) # Generic audio icon
             
             item.setIcon(icon)
             self.asset_list_widget.addItem(item)
