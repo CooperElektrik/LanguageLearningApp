@@ -5,6 +5,7 @@ import json
 import uuid
 from application.core.progress_manager import ProgressManager
 from application.core.models import Course, Unit, Lesson, Exercise # Import Exercise
+from datetime import date, timedelta
 
 
 def test_initial_progress(progress_manager_instance: ProgressManager):
@@ -206,3 +207,160 @@ def test_lesson_unlocking_logic(
         )
         is True
     )
+
+def test_initial_streak_and_last_study_date(progress_manager_instance: ProgressManager):
+    """Test that initially streak is 0 and last_study_date is None."""
+    assert progress_manager_instance.get_current_streak() == 0
+    assert progress_manager_instance.last_study_date is None
+
+def test_streak_first_day_study(progress_manager_instance: ProgressManager):
+    """Test streak becomes 1 after the first study session."""
+    pm = progress_manager_instance
+    # Simulate a successful exercise completion
+    pm.update_exercise_srs_data("ex_streak1", is_correct=True) 
+    
+    assert pm.get_current_streak() == 1
+    assert pm.last_study_date == date.today()
+
+def test_streak_consecutive_days(progress_manager_instance: ProgressManager):
+    """Test streak increments on consecutive study days."""
+    pm = progress_manager_instance
+    today = date.today()
+
+    # Day 1
+    pm.last_study_date = today - timedelta(days=2) # Simulate studied day before yesterday
+    pm.current_streak_days = 0 # Ensure clean start for this test's logic
+    pm._update_study_streak() # Call directly to set 'today' as last_study_date and streak to 1
+    assert pm.get_current_streak() == 1
+    assert pm.last_study_date == today
+    
+    # Simulate Day 2 (next day)
+    # To simulate next day, we manually set last_study_date as 'today' (which was prev. 'yesterday')
+    # and then call _update_study_streak as if it's the 'new today'
+    pm.last_study_date = today # This is now considered 'yesterday' for the next call
+    # To properly test, we need to mock 'date.today()' or manually manipulate last_study_date
+    # Simpler approach for unit test: directly manipulate state.
+    pm.last_study_date = today - timedelta(days=1) # Set it to yesterday
+    pm.current_streak_days = 1 # Reflecting that yesterday was a study day
+    pm._update_study_streak() # This call is now for 'today'
+    assert pm.get_current_streak() == 2
+    assert pm.last_study_date == today
+
+    # Simulate Day 3
+    pm.last_study_date = today - timedelta(days=1) # Set to yesterday relative to a "new today"
+    pm.current_streak_days = 2
+    pm._update_study_streak()
+    assert pm.get_current_streak() == 3
+    assert pm.last_study_date == today
+
+def test_streak_broken_then_resumed(progress_manager_instance: ProgressManager):
+    """Test streak resets if a day is missed, then restarts."""
+    pm = progress_manager_instance
+    today = date.today()
+
+    # Studied 2 days ago
+    pm.last_study_date = today - timedelta(days=2)
+    pm.current_streak_days = 1 # Was 1 after studying 2 days ago
+    
+    # Now, study "today" (after missing yesterday)
+    pm._update_study_streak() 
+    assert pm.get_current_streak() == 1 # Streak should reset to 1
+    assert pm.last_study_date == today
+
+def test_streak_multiple_studies_same_day(progress_manager_instance: ProgressManager):
+    """Test multiple studies on the same day don't increment streak beyond 1 for that day."""
+    pm = progress_manager_instance
+    
+    pm.update_exercise_srs_data("ex_sameday1", is_correct=True)
+    assert pm.get_current_streak() == 1
+    assert pm.last_study_date == date.today()
+
+    pm.update_exercise_srs_data("ex_sameday2", is_correct=True)
+    assert pm.get_current_streak() == 1 # Still 1 for the same day
+    assert pm.last_study_date == date.today()
+
+def test_streak_resets_on_load_after_gap(tmp_path):
+    """Test streak is correctly 0 if loaded after a study gap."""
+    course_id = "streak_gap_test"
+    pm_data_dir = tmp_path / "streak_gap_data"
+    os.makedirs(pm_data_dir, exist_ok=True)
+    
+    pm1 = ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
+    # Simulate study 2 days ago
+    pm1.last_study_date = date.today() - timedelta(days=2)
+    pm1.current_streak_days = 5 # Artificially set a streak
+    pm1.save_progress()
+
+    # Load progress (simulating app opening on a new day, after the gap)
+    pm2 = ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
+    # get_current_streak() should detect the gap and reset streak
+    assert pm2.get_current_streak() == 0 
+    # last_study_date should still be the old date until a new study occurs
+    assert pm2.last_study_date == date.today() - timedelta(days=2)
+
+    # Now, simulate a study session on the current day with pm2
+    pm2.update_exercise_srs_data("ex_after_gap", is_correct=True)
+    assert pm2.get_current_streak() == 1
+    assert pm2.last_study_date == date.today()
+
+# --- NEW TESTS FOR EXERCISE NOTES ---
+
+def test_save_and_retrieve_exercise_note(progress_manager_instance: ProgressManager):
+    """Test saving and retrieving a note for an exercise."""
+    pm = progress_manager_instance
+    exercise_id = "note_ex1"
+    note_text = "This is a test note."
+
+    assert pm.get_exercise_note(exercise_id) is None # Initially no note
+
+    pm.save_exercise_note(exercise_id, note_text)
+    assert pm.get_exercise_note(exercise_id) == note_text
+
+def test_update_exercise_note(progress_manager_instance: ProgressManager):
+    """Test updating an existing note."""
+    pm = progress_manager_instance
+    exercise_id = "note_ex2"
+    initial_note = "Initial note."
+    updated_note = "Updated note text."
+
+    pm.save_exercise_note(exercise_id, initial_note)
+    assert pm.get_exercise_note(exercise_id) == initial_note
+
+    pm.save_exercise_note(exercise_id, updated_note)
+    assert pm.get_exercise_note(exercise_id) == updated_note
+
+def test_delete_exercise_note_by_empty_string(progress_manager_instance: ProgressManager):
+    """Test that saving an empty string for a note deletes it."""
+    pm = progress_manager_instance
+    exercise_id = "note_ex3"
+    note_text = "A note to be deleted."
+
+    pm.save_exercise_note(exercise_id, note_text)
+    assert pm.get_exercise_note(exercise_id) == note_text
+
+    pm.save_exercise_note(exercise_id, "") # Save empty string
+    assert pm.get_exercise_note(exercise_id) is None # Note should be gone
+
+    pm.save_exercise_note(exercise_id, "   ") # Save whitespace string
+    assert pm.get_exercise_note(exercise_id) is None # Note should also be gone
+
+def test_notes_persistence_across_save_load(tmp_path):
+    """Test notes are correctly saved and loaded."""
+    course_id = f"test_notes_persist_{uuid.uuid4().hex}"
+    pm_data_dir = tmp_path / "notes_persist_data"
+
+    pm1 = ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
+    exercise_id1 = "persist_ex1"
+    note1 = "Note for ex1."
+    exercise_id2 = "persist_ex2"
+    note2 = "Note for ex2, a bit longer."
+
+    pm1.save_exercise_note(exercise_id1, note1)
+    pm1.save_exercise_note(exercise_id2, note2)
+    # save_progress is called within save_exercise_note, so no explicit call needed here.
+
+    # Create a new ProgressManager instance to load the saved data
+    pm2 = ProgressManager(course_id=course_id, data_dir=str(pm_data_dir))
+    assert pm2.get_exercise_note(exercise_id1) == note1
+    assert pm2.get_exercise_note(exercise_id2) == note2
+    assert pm2.get_exercise_note("non_existent_ex") is None
