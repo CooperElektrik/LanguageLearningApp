@@ -235,9 +235,12 @@ class LessonView(QWidget):
 
     def _process_answer(self, user_answer: str):
         if (
-            not user_answer
+            not user_answer.strip()
             and not self.current_exercise_widget.exercise.type.startswith(
                 "multiple_choice"
+            )
+            and not self.current_exercise_widget.exercise.type.startswith(
+                "fill_in_the_blank"
             )
         ):
             self.feedback_label.setText("Please provide an answer.")
@@ -250,21 +253,40 @@ class LessonView(QWidget):
         )
 
         self.feedback_label.setText(feedback_text)
+        xp_to_award = 10 # Default XP for a lesson exercise
         if is_correct:
             self.feedback_label.setStyleSheet("color: green;")
             self.progress_bar.setValue(self.current_exercise_index + 1)
             self.submit_button.setEnabled(False)
+            self.skip_button.setEnabled(False) # Disable skip once answered correctly
             self.next_button.setVisible(True)
             if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
                 self.next_button.setText("Finish Lesson 🎉")
             else:
                 self.next_button.setText("Next Exercise →")
             self.next_button.setFocus()
+
+            quality_score_for_srs = 4 # Assume 'Good' (SM-2 scale 0-5)
+            self.progress_manager.update_exercise_srs_data(
+                exercise.exercise_id,
+                is_correct=True,
+                xp_awarded=xp_to_award,
+                quality_score_sm2=quality_score_for_srs
+            )
         else:
             self.feedback_label.setStyleSheet("color: red;")
             if self.current_exercise_widget:
                 self.current_exercise_widget.clear_input()
                 self.current_exercise_widget.set_focus_on_input()
+            
+            # For incorrect answers, quality score should be low (e.g., 0-2)
+            quality_score_for_srs = 1 # Example: Treat as difficult/barely recall
+            self.progress_manager.update_exercise_srs_data(
+                exercise.exercise_id,
+                is_correct=False,
+                xp_awarded=0, # No XP for incorrect answer
+                quality_score_sm2=quality_score_for_srs
+            )
 
     def _handle_next_action(self):
         self.current_exercise_index += 1
@@ -308,6 +330,13 @@ class LessonView(QWidget):
 
         self.progress_bar.setValue(self.current_exercise_index + 1)
 
+        self.progress_manager.update_exercise_srs_data(
+            exercise.exercise_id,
+            is_correct=False, # Skipped is treated as incorrect for SRS progression
+            xp_awarded=0,
+            quality_score_sm2=0 # Lowest quality for SM-2, ensuring it comes up for review soon
+        )
+
         self.submit_button.setEnabled(False)
         self.skip_button.setEnabled(False)
         self.next_button.setVisible(True)
@@ -321,14 +350,16 @@ class LessonView(QWidget):
         self._save_current_note() # Save note for the last exercise in the lesson
         self.feedback_label.setText(f"Lesson '{self.current_lesson.title}' completed!")
         self.feedback_label.setStyleSheet("color: blue;")
-        self.progress_manager.mark_lesson_completed(self.current_lesson.lesson_id)
-
+        
         self._clear_exercise_area()
 
         self.submit_button.setVisible(False)
         self.next_button.setText("Back to Course Overview")
         self.next_button.setVisible(True)
-        self.next_button.clicked.disconnect()
+        try:
+            self.next_button.clicked.disconnect()
+        except TypeError:
+            pass
         self.next_button.clicked.connect(self.back_to_overview_signal.emit)
 
         self.lesson_completed_signal.emit(self.current_lesson.lesson_id)

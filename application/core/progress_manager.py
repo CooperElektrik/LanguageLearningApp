@@ -200,7 +200,7 @@ class ProgressManager:
 
         if is_correct:
             self.xp += xp_awarded
-            self.update_study_streak()
+            self._update_study_streak()
 
         self.save_progress()
         logger.debug(
@@ -300,14 +300,6 @@ class ProgressManager:
         """
         lesson_exercises = course_manager_ref.get_exercises(lesson_id)
         return self.get_lesson_completion_status(lesson_id, lesson_exercises)
-
-    def mark_lesson_completed(self, lesson_id: str, score: int = 0):
-        """
-        This method is now less relevant. XP is awarded per exercise.
-        """
-        logger.warning(
-            f"mark_lesson_completed({lesson_id}) called. XP is now managed per exercise."
-        )
 
     def is_lesson_unlocked(
         self,
