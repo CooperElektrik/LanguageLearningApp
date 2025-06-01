@@ -2,6 +2,65 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="vi_VN">
 <context>
+    <name>BaseExerciseWidget</name>
+    <message>
+        <source>Translate to %1: &quot;%2&quot;</source>
+        <translation type="vanished">Dịch sang %1: &quot;%2&quot;</translation>
+    </message>
+    <message>
+        <source>Choose the %1 translation for: &quot;%2&quot; (%3)</source>
+        <translation type="vanished">Chọn bản dịch %1 cho: &quot;%2&quot; (%3)</translation>
+    </message>
+    <message>
+        <source>%1 (Hint: %2)</source>
+        <translation type="vanished">%1 (Gợi ý: %2)</translation>
+    </message>
+    <message>
+        <source>Exercise Prompt: %1</source>
+        <translation type="vanished">Yêu cầu bài tập: %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="96"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="98"/>
+        <source>Translate to %s: &quot;%s&quot;</source>
+        <translation>Dịch sang %s: &quot;%s&quot;</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="100"/>
+        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
+        <translation>Chọn bản dịch %s cho: &quot;%s&quot; (%s)</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="102"/>
+        <source>%s (Hint: %s)</source>
+        <translation>%s (Gợi ý: %s)</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="105"/>
+        <source>Exercise Prompt: %s</source>
+        <translation>Yêu cầu bài tập: %s</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="107"/>
+        <source>Exercise Prompt</source>
+        <translation>Yêu cầu bài tập</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="111"/>
+        <source>Exercise: %s</source>
+        <translation>Bài tập: %s</translation>
+    </message>
+    <message>
+        <source>Exercise: %1</source>
+        <translation type="vanished">Bài tập: %1</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="115"/>
+        <source>Exercise</source>
+        <translation>Bài tập</translation>
+    </message>
+</context>
+<context>
     <name>CourseOverviewView</name>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="32"/>
@@ -562,23 +621,23 @@ Xem nhật ký bảng điều khiển để biết chi tiết.</translation>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="104"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="154"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Phát âm thanh</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="141"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="149"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="191"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="199"/>
         <source>Audio Error</source>
         <translation>Lỗi âm thanh</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="142"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="192"/>
         <source>Cannot play audio: {0}</source>
         <translation>Không thể phát âm thanh: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="150"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
         <source>Audio file not found: {0}
 
 Check paths.</source>
