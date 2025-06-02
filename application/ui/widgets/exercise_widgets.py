@@ -49,7 +49,7 @@ class BaseExerciseWidget(QWidget):
 
         self.layout = QVBoxLayout(self)
         self.prompt_label = QLabel()
-        self.prompt_label.setFont(QFont("Arial", 14))
+        self.prompt_label.setObjectName("prompt_label")
         self.prompt_label.setWordWrap(True)
         self.layout.addWidget(self.prompt_label)
 

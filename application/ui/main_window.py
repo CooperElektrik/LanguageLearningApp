@@ -47,7 +47,8 @@ class MainWindow(QMainWindow):
             self.tr("LL - {0}").format(self.course_manager.get_course_title() or self.tr('Language Learning'))
         )
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 480, 600)
+        self.setFixedSize(480, 600)
 
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)

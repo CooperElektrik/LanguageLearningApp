@@ -4,7 +4,7 @@
 QWidget {
     background-color: #c0c0c0; /* Standard Win95 gray */
     color: black;
-    font-family: "MS Sans Serif", Tahoma, sans-serif; /* Fallback fonts */
+    font-family: "Cascadia Mono"; /* Fallback fonts */
     font-size: 8pt; /* Typical Win95 font size */
 }
 
@@ -18,10 +18,18 @@ QLabel {
 }
 
 QLabel#due_count_label {
-    color: #ff2424;
-    font: "MS Sans Serif", Tahoma, sans-serif;
+    color: #ad0000;
     font-weight: bold;
     font-size: 12pt
+}
+
+QLabel#title_label {
+    font-weight: bold;
+    font-size: 32pt;
+}
+
+QLabel#prompt_label {
+    font-size: 16pt;
 }
 
 /* Line Edits and Text Edits - Inset look */
@@ -90,6 +98,7 @@ QGroupBox {
     border: 1px solid #808080; /* Dark gray inner part of groove */
     margin-top: 15px; /* Space for title */
     padding: 10px 5px 5px 5px; /* Top padding is for content below title */
+    font-size: 10pt;
 }
 
 QGroupBox::title {

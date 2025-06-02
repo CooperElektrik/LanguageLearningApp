@@ -201,16 +201,16 @@ class CourseManager:
     def get_formatted_prompt(self, exercise: Exercise) -> str:
         """Formats the prompt text, incorporating language names etc."""
         if exercise.type == "translate_to_target":
-            return f'Translate to {self.target_language}: "{exercise.prompt}"'
+            return f'Translate to {self.target_language}: \n"{exercise.prompt}"'
         elif exercise.type == "translate_to_source":
-            return f'Translate to {self.source_language}: "{exercise.prompt}"'
+            return f'Translate to {self.source_language}: \n"{exercise.prompt}"'
         elif exercise.type == "multiple_choice_translation":
-            return f'Choose the {self.target_language} translation for: "{exercise.source_word}" ({self.source_language})'
+            return f'Choose the {self.target_language} translation for: \n"{exercise.source_word}" \n({self.source_language})'
         elif exercise.type == "fill_in_the_blank":
             return f"{exercise.sentence_template} (Hint: {exercise.translation_hint})"
         return exercise.prompt or "Exercise Prompt"
 
-    def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]: # <-- Renamed and changed return type
+    def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
         """
         Returns a dictionary with a template_key and arguments for formatting the prompt.
         The UI widget will be responsible for translating the template_key.

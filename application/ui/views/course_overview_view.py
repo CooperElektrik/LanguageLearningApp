@@ -30,8 +30,9 @@ class CourseOverviewView(QWidget):
         title_label = QLabel(
             self.course_manager.get_course_title() or self.tr("Language Course")
         )
-        title_font = QFont("Arial", 18, QFont.Bold)
-        title_label.setFont(title_font)
+        title_label.setObjectName("title_label")
+        # title_font = QFont("Arial", 18, QFont.Bold)
+        # title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(title_label)
 
@@ -42,7 +43,6 @@ class CourseOverviewView(QWidget):
         self.main_layout.addWidget(self.xp_label)
 
         self.srs_groupbox = QGroupBox(self.tr("Daily Review"))
-        self.srs_groupbox.setFont(QFont("Arial", 14, QFont.DemiBold))
         srs_layout = QVBoxLayout(self.srs_groupbox)
         srs_layout.setContentsMargins(10, 20, 10, 10) # Add some padding
 
@@ -80,7 +80,6 @@ class CourseOverviewView(QWidget):
 
         for unit in units:
             unit_groupbox = QGroupBox(unit.title)
-            unit_groupbox.setFont(QFont("Arial", 14, QFont.DemiBold))
             unit_layout = QVBoxLayout()
 
             for lesson in unit.lessons:

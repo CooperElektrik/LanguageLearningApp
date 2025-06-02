@@ -251,7 +251,7 @@ echo.
 echo Changing directory to: "%SCRIPT_DIR%\application\"
 cd /D "%SCRIPT_DIR%\application"
 echo Running Nuitka...
-nuitka --standalone --onefile --windows-disable-console --plugin-enable=pyside6 --include-qt-plugins=platforms,styles,imageformats --include-data-files="manifest.yaml=manifest.yaml" --include-data-files="esperanto_course.yaml=esperanto_course.yaml" --output-dir=dist main.py
+nuitka --standalone --onefile --windows-disable-console --plugin-enable=pyside6 --include-qt-plugins=platforms,styles,imageformats --include-data-file="manifest.yaml=manifest.yaml" --include-data-file="esperanto_course.yaml=esperanto_course.yaml" --include-data-file="glossary.yaml=glossary.yaml" --include-data-dir="assets=assets" --include-data-dir="ui/styles=ui/styles" --include-data-dir="localization=localization" --output-dir=dist main.py
 if %errorlevel% neq 0 (
     echo.
     echo ERROR: Nuitka compilation failed for Main Application.
