@@ -84,11 +84,11 @@ class ReviewView(QWidget):
         main_layout = QVBoxLayout(self)
 
         top_bar_layout = QHBoxLayout()
-        self.back_button = QPushButton("← Back to Lessons")
+        self.back_button = QPushButton(self.tr("← Back to Lessons"))
         self.back_button.clicked.connect(self._handle_back_to_overview) # Connect to new handler for note saving
         top_bar_layout.addWidget(self.back_button)
 
-        self.session_title_label = QLabel("Review Session")
+        self.session_title_label = QLabel(self.tr("Review Session"))
         self.session_title_label.setFont(QFont("Arial", 16, QFont.Bold))
         self.session_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top_bar_layout.addWidget(self.session_title_label, 1)
@@ -96,19 +96,19 @@ class ReviewView(QWidget):
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(True)
-        self.progress_bar.setFormat("Review Progress: %v / %m")
+        self.progress_bar.setFormat(self.tr("Review Progress: %v / %m"))
         main_layout.addWidget(self.progress_bar)
 
         self.exercise_area_container = QFrame()
         self.exercise_area_layout = QVBoxLayout(self.exercise_area_container)
         main_layout.addWidget(self.exercise_area_container, 1)
 
-        self.notes_group_box = QGroupBox("My Notes")
+        self.notes_group_box = QGroupBox(self.tr("My Notes"))
         self.notes_group_box.setVisible(False) # Initially hidden
         notes_layout = QVBoxLayout(self.notes_group_box)
         
         self.notes_text_edit = QTextEdit()
-        self.notes_text_edit.setPlaceholderText("Type your personal notes for this exercise here...")
+        self.notes_text_edit.setPlaceholderText(self.tr("Type your personal notes for this exercise here..."))
         # Debounce saving notes to avoid saving on every keystroke
         self.notes_save_timer = QTimer(self)
         self.notes_save_timer.setSingleShot(True)
@@ -130,18 +130,18 @@ class ReviewView(QWidget):
 
         self.toggle_notes_button = QPushButton()
         self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Placeholder icon
-        self.toggle_notes_button.setToolTip("Show/Hide Notes")
+        self.toggle_notes_button.setToolTip(self.tr("Show/Hide Notes"))
         self.toggle_notes_button.setCheckable(True)
         self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
         self.control_buttons_layout.addWidget(self.toggle_notes_button)
         self.control_buttons_layout.addStretch(1) # Push submit/show to right
 
-        self.submit_button = QPushButton("Submit Answer")
+        self.submit_button = QPushButton(self.tr("Submit Answer"))
         self.submit_button.setFont(QFont("Arial", 12, QFont.Bold))
         self.submit_button.clicked.connect(self._handle_user_submission_from_button)
         self.control_buttons_layout.addWidget(self.submit_button)
 
-        self.show_answer_button = QPushButton("Show Answer")
+        self.show_answer_button = QPushButton(self.tr("Show Answer"))
         self.show_answer_button.setFont(QFont("Arial", 12))
         self.show_answer_button.clicked.connect(self._handle_show_answer)
         self.control_buttons_layout.addWidget(self.show_answer_button)
@@ -149,13 +149,13 @@ class ReviewView(QWidget):
         self.action_buttons_layout.addLayout(self.control_buttons_layout)
 
         self.rating_buttons_layout = QHBoxLayout()
-        self.rating_button_again = QPushButton("Again (0)")
+        self.rating_button_again = QPushButton(self.tr("Again (0)"))
         self.rating_button_again.clicked.connect(lambda: self._handle_rating(0))
-        self.rating_button_hard = QPushButton("Hard (1)")
+        self.rating_button_hard = QPushButton(self.tr("Hard (1)"))
         self.rating_button_hard.clicked.connect(lambda: self._handle_rating(1))
-        self.rating_button_good = QPushButton("Good (2)")
+        self.rating_button_good = QPushButton(self.tr("Good (2)"))
         self.rating_button_good.clicked.connect(lambda: self._handle_rating(2))
-        self.rating_button_easy = QPushButton("Easy (3)")
+        self.rating_button_easy = QPushButton(self.tr("Easy (3)"))
         self.rating_button_easy.clicked.connect(lambda: self._handle_rating(3))
 
         self.rating_buttons_layout.addStretch(1)
@@ -227,14 +227,14 @@ class ReviewView(QWidget):
         if self.total_exercises_in_session == 0:
             QMessageBox.information(
                 self,
-                "Review Session",
-                "No exercises are due for review right now! Keep up the good work!",
+                self.tr("Review Session"),
+                self.tr("No exercises are due for review right now! Keep up the good work!"),
             )
             self.back_to_overview_signal.emit()
             return
 
         self.session_title_label.setText(
-            f"Review Session ({self.total_exercises_in_session} exercises)"
+            self.tr("Review Session ({0} exercises)").format(self.total_exercises_in_session)
         )
         self.progress_bar.setRange(0, self.total_exercises_in_session)
         self.progress_bar.setValue(0)
@@ -279,7 +279,7 @@ class ReviewView(QWidget):
             )
         else:
             self.feedback_label.setText(
-                f"Unsupported exercise type: {self.current_exercise_obj.type}"
+                self.tr("Unsupported exercise type: {0}").format(self.current_exercise_obj.type)
             )
             self._set_button_states(initial=False)
             return
@@ -310,7 +310,7 @@ class ReviewView(QWidget):
         if not user_answer.strip() and isinstance(
             self.current_exercise_widget, TranslationExerciseWidget
         ):
-            self.feedback_label.setText("Please provide an answer.")
+            self.feedback_label.setText(self.tr("Please provide an answer."))
             self.feedback_label.setStyleSheet("color: orange;")
             return
 
@@ -332,7 +332,7 @@ class ReviewView(QWidget):
         if not self.current_exercise_obj:
             return
 
-        correct_answer_for_display = "Could not retrieve answer."
+        correct_answer_for_display = self.tr("Could not retrieve answer.")
         if self.current_exercise_obj.type in [
             "translate_to_target",
             "translate_to_source",
@@ -347,7 +347,7 @@ class ReviewView(QWidget):
         elif self.current_exercise_obj.type == "fill_in_the_blank":
             correct_answer_for_display = self.current_exercise_obj.correct_option
 
-        self.feedback_label.setText(f"Correct answer: {correct_answer_for_display}")
+        self.feedback_label.setText(self.tr("Correct answer: {0}").format(correct_answer_for_display))
         self.feedback_label.setStyleSheet("color: orange;")
 
         self._set_button_states(after_show_answer=True)
@@ -374,8 +374,8 @@ class ReviewView(QWidget):
     def _finish_review_session(self):
         QMessageBox.information(
             self,
-            "Review Session",
-            f"You've completed this review session! Total exercises: {self.total_exercises_in_session}",
+            self.tr("Review Session"),
+            self.tr("You've completed this review session! Total exercises: {0}").format(self.total_exercises_in_session),
         )
         self.review_session_finished.emit()
         self.back_to_overview_signal.emit()
@@ -410,8 +410,8 @@ class ReviewView(QWidget):
         if self.current_exercise_obj: # Only update if an exercise is currently loaded
             has_note = bool(self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id))
             if has_note:
-                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView)) # Example: "document with content" icon
-                self.toggle_notes_button.setToolTip("Edit Notes")
+                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView)) 
+                self.toggle_notes_button.setToolTip(self.tr("Edit Notes"))
             else:
-                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Example: "empty document" icon
-                self.toggle_notes_button.setToolTip("Add Notes")
+                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) 
+                self.toggle_notes_button.setToolTip(self.tr("Add Notes"))

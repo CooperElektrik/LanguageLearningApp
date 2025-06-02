@@ -27,14 +27,14 @@ class ProgressView(QWidget):
 
         # Top Bar with Back Button
         top_bar_layout = QHBoxLayout()
-        self.back_button = QPushButton("← Back to Course Overview")
+        self.back_button = QPushButton(self.tr("← Back to Course Overview"))
         self.back_button.clicked.connect(self.back_to_overview_signal.emit)
         top_bar_layout.addWidget(self.back_button)
         top_bar_layout.addStretch(1) # Pushes button to left
         main_layout.addLayout(top_bar_layout)
 
         # Title
-        title_label = QLabel("Your Progress")
+        title_label = QLabel(self.tr("Your Progress"))
         title_label.setFont(QFont("Arial", 20, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
@@ -50,23 +50,23 @@ class ProgressView(QWidget):
 
 
         # XP Section
-        xp_group = QGroupBox("Total Experience (XP)")
+        xp_group = QGroupBox(self.tr("Total Experience (XP)"))
         xp_group.setFont(QFont("Arial", 14, QFont.DemiBold))
         xp_layout = QVBoxLayout(xp_group)
-        self.xp_value_label = QLabel("0 XP")
+        self.xp_value_label = QLabel(self.tr("0 XP"))
         self.xp_value_label.setFont(QFont("Arial", 24, QFont.Bold))
         self.xp_value_label.setAlignment(Qt.AlignCenter)
         xp_layout.addWidget(self.xp_value_label)
         self.scroll_content_layout.addWidget(xp_group)
 
         # Streak Section
-        streak_group = QGroupBox("Study Streak")
+        streak_group = QGroupBox(self.tr("Study Streak"))
         streak_group.setFont(QFont("Arial", 14, QFont.DemiBold))
         streak_layout = QVBoxLayout(streak_group)
-        self.streak_value_label = QLabel("0 Days")
+        self.streak_value_label = QLabel(self.tr("0 Days"))
         self.streak_value_label.setFont(QFont("Arial", 24, QFont.Bold))
         self.streak_value_label.setAlignment(Qt.AlignCenter)
-        self.streak_description_label = QLabel("Keep up the consistent work!")
+        self.streak_description_label = QLabel(self.tr("Keep up the consistent work!"))
         self.streak_description_label.setFont(QFont("Arial", 10))
         self.streak_description_label.setAlignment(Qt.AlignCenter)
         streak_layout.addWidget(self.streak_value_label)
@@ -75,15 +75,15 @@ class ProgressView(QWidget):
 
 
         # Achievements Section (Placeholder)
-        achievements_group = QGroupBox("Achievements")
+        achievements_group = QGroupBox(self.tr("Achievements"))
         achievements_group.setFont(QFont("Arial", 14, QFont.DemiBold))
         self.achievements_grid_layout = QGridLayout(achievements_group)
         self.achievements_grid_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         
         # Add some placeholder achievements
-        self._add_achievement_placeholder("First Step", "Complete your first lesson.", lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
-        self._add_achievement_placeholder("XP Enthusiast", "Reach 1000 XP.", lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
-        self._add_achievement_placeholder("7-Day Streak", "Study for 7 consecutive days.", lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
+        self._add_achievement_placeholder(self.tr("First Step"), self.tr("Complete your first lesson."), lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
+        self._add_achievement_placeholder(self.tr("XP Enthusiast"), self.tr("Reach 1000 XP."), lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
+        self._add_achievement_placeholder(self.tr("7-Day Streak"), self.tr("Study for 7 consecutive days."), lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
         # Add more as needed
         
         self.scroll_content_layout.addWidget(achievements_group)
@@ -147,16 +147,16 @@ class ProgressView(QWidget):
         self.achievements_grid_layout.addWidget(achievement_frame, row, col)
 
     def refresh_view(self):
-        self.xp_value_label.setText(f"{self.progress_manager.get_total_xp()} XP")
+        self.xp_value_label.setText(self.tr("{0} XP").format(self.progress_manager.get_total_xp()))
         
         current_streak = self.progress_manager.get_current_streak()
-        self.streak_value_label.setText(f"{current_streak} Days")
+        self.streak_value_label.setText(self.tr("{0} Days").format(current_streak))
         if current_streak > 0:
             self.streak_value_label.setStyleSheet("color: #FFD700;") # Gold
-            self.streak_description_label.setText("Keep up the consistent work!")
+            self.streak_description_label.setText(self.tr("Keep up the consistent work!"))
         else:
             self.streak_value_label.setStyleSheet("color: gray;")
-            self.streak_description_label.setText("Start a new streak today!")
+            self.streak_description_label.setText(self.tr("Start a new streak today!"))
 
         # Re-populate achievements to update their unlocked status
         # Clear existing achievements before re-adding
@@ -165,7 +165,7 @@ class ProgressView(QWidget):
             if widget: widget.deleteLater()
 
         # Re-add achievements (adjust arguments as per _add_achievement_placeholder)
-        self._add_achievement_placeholder("First Step", "Complete your first lesson.", lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
-        self._add_achievement_placeholder("XP Enthusiast", "Reach 1000 XP.", lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
-        self._add_achievement_placeholder("7-Day Streak", "Study for 7 consecutive days.", lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
+        self._add_achievement_placeholder(self.tr("First Step"), self.tr("Complete your first lesson."), lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
+        self._add_achievement_placeholder(self.tr("XP Enthusiast"), self.tr("Reach 1000 XP."), lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
+        self._add_achievement_placeholder(self.tr("7-Day Streak"), self.tr("Study for 7 consecutive days."), lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
         # Ensure that any new achievements added to _add_achievement_placeholder are also added here for refresh.

@@ -1,13 +1,18 @@
 import os
 import logging
 import sys
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple, Any, Dict
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
 
 logger = logging.getLogger(__name__)
 
+PROMPT_KEY_TRANSLATE_TO_TARGET = "prompt_translate_to_target" # e.g., "Translate to %1: \"%2\""
+PROMPT_KEY_TRANSLATE_TO_SOURCE = "prompt_translate_to_source" # e.g., "Translate to %1: \"%2\""
+PROMPT_KEY_MCQ_TRANSLATION = "prompt_mcq_translation"       # e.g., "Choose the %1 translation for: \"%2\" (%3)"
+PROMPT_KEY_FIB = "prompt_fib"                               # e.g., "%1 (Hint: %2)"
+PROMPT_KEY_DEFAULT = "prompt_default_exercise_text"         # e.g., "Exercise Prompt"
 
 class CourseManager:
     def __init__(self, manifest_path: str):
@@ -204,3 +209,35 @@ class CourseManager:
         elif exercise.type == "fill_in_the_blank":
             return f"{exercise.sentence_template} (Hint: {exercise.translation_hint})"
         return exercise.prompt or "Exercise Prompt"
+
+    def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]: # <-- Renamed and changed return type
+        """
+        Returns a dictionary with a template_key and arguments for formatting the prompt.
+        The UI widget will be responsible for translating the template_key.
+        """
+        if exercise.type == "translate_to_target":
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
+                "args": [self.target_language, exercise.prompt or ""]
+            }
+        elif exercise.type == "translate_to_source":
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
+                "args": [self.source_language, exercise.prompt or ""]
+            }
+        elif exercise.type == "multiple_choice_translation":
+            return {
+                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
+                "args": [self.target_language, exercise.source_word or "", self.source_language]
+            }
+        elif exercise.type == "fill_in_the_blank":
+            return {
+                "template_key": PROMPT_KEY_FIB,
+                "args": [exercise.sentence_template or "", exercise.translation_hint or ""]
+            }
+        
+        # Default case
+        return {
+            "template_key": PROMPT_KEY_DEFAULT,
+            "args": [exercise.prompt or ""] # Or a more generic default
+        }

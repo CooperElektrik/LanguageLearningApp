@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class GlossaryDetailDialog(QDialog):
     def __init__(self, entry: GlossaryEntry, course_manager, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Glossary Entry: {entry.word}")
+        self.setWindowTitle(self.tr("Glossary Entry: {0}").format(entry.word))
         self.setMinimumSize(500, 400)
         
         self.entry = entry
@@ -55,29 +55,29 @@ class GlossaryDetailDialog(QDialog):
 
         # Part of Speech
         self.pos_label = QLabel()
-        content_layout.addRow(QLabel("Part of Speech:"), self.pos_label)
+        content_layout.addRow(QLabel(self.tr("Part of Speech:")), self.pos_label)
 
         # Example Sentence
         self.example_sentence_text = QTextEdit()
         self.example_sentence_text.setReadOnly(True)
         self.example_sentence_text.setFrameShape(QFrame.NoFrame)
         self.example_sentence_text.setMinimumHeight(80)
-        content_layout.addRow(QLabel("Example Sentence:"), self.example_sentence_text)
+        content_layout.addRow(QLabel(self.tr("Example Sentence:")), self.example_sentence_text)
 
         # Notes
         self.notes_text = QTextEdit()
         self.notes_text.setReadOnly(True)
         self.notes_text.setFrameShape(QFrame.NoFrame)
         self.notes_text.setMinimumHeight(80)
-        content_layout.addRow(QLabel("Notes:"), self.notes_text)
+        content_layout.addRow(QLabel(self.tr("Notes:")), self.notes_text)
 
         # Audio Playback
         audio_layout = QHBoxLayout()
-        self.play_audio_button = QPushButton("🔊 Play Audio")
+        self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
         self.play_audio_button.clicked.connect(self._play_audio)
         audio_layout.addWidget(self.play_audio_button)
         audio_layout.addStretch(1)
-        content_layout.addRow(QLabel("Pronunciation:"), audio_layout)
+        content_layout.addRow(QLabel(self.tr("Pronunciation:")), audio_layout)
 
         # OK Button
         buttons = QDialogButtonBox(QDialogButtonBox.Ok)
@@ -98,17 +98,17 @@ class GlossaryDetailDialog(QDialog):
     def _load_entry_data(self):
         self.word_label.setText(self.entry.word)
         self.translation_label.setText(self.entry.translation)
-        self.pos_label.setText(self.entry.part_of_speech or "N/A")
-        self.example_sentence_text.setPlainText(self.entry.example_sentence or "N/A")
-        self.notes_text.setPlainText(self.entry.notes or "N/A")
+        self.pos_label.setText(self.entry.part_of_speech or self.tr("N/A"))
+        self.example_sentence_text.setPlainText(self.entry.example_sentence or self.tr("N/A"))
+        self.notes_text.setPlainText(self.entry.notes or self.tr("N/A"))
 
         # Enable/disable audio button
         if not self.entry.audio_file:
             self.play_audio_button.setEnabled(False)
-            self.play_audio_button.setText("No Audio Available")
+            self.play_audio_button.setText(self.tr("No Audio Available"))
         else:
             self.play_audio_button.setEnabled(True)
-            self.play_audio_button.setText("🔊 Play Audio")
+            self.play_audio_button.setText(self.tr("🔊 Play Audio"))
 
     def _play_audio(self):
         if self.entry.audio_file:
@@ -124,10 +124,10 @@ class GlossaryDetailDialog(QDialog):
                         self._media_player.play()
                     else:
                         logger.error(f"Error setting media source {full_audio_path}: {self._media_player.errorString()}")
-                        QMessageBox.warning(self, "Audio Error", f"Cannot play audio: {self._media_player.errorString()}")
+                        QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot play audio: {0}").format(self._media_player.errorString()))
                 else:
                     logger.error(f"Audio file not found: {full_audio_path} for entry {self.entry.word}")
-                    QMessageBox.warning(self, "Audio Error", f"Audio file not found: {self.entry.audio_file}\n\nCheck paths.")
+                    QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Audio file not found: {0}\n\nCheck paths.").format(self.entry.audio_file))
             else:
                 logger.error("Could not determine asset base directory for audio playback.")
-                QMessageBox.warning(self, "Audio Error", "Could not determine asset base directory.")
+                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Could not determine asset base directory."))

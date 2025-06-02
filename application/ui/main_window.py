@@ -35,16 +35,16 @@ class MainWindow(QMainWindow):
         if not self.course_manager.course:
             QMessageBox.critical(
                 self,
-                "Course Load Error",
-                "Failed to load course. Please check manifest.yaml and course content file.\n"
-                "See console logs for details.",
+                self.tr("Course Load Error"),
+                self.tr("Failed to load course. Please check manifest.yaml and course content file.\n"
+                        "See console logs for details."),
             )
             self.course_load_failed = True
         else:
             self.course_load_failed = False
 
         self.setWindowTitle(
-            f"LL - {self.course_manager.get_course_title() or 'Language Learning'}"
+            self.tr("LL - {0}").format(self.course_manager.get_course_title() or self.tr('Language Learning'))
         )
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.setGeometry(100, 100, 800, 600)
@@ -86,32 +86,32 @@ class MainWindow(QMainWindow):
 
     def _setup_menu_bar(self):
         menu_bar = self.menuBar()
-        learning_menu = menu_bar.addMenu("&Learning")
+        learning_menu = menu_bar.addMenu(self.tr("&Learning"))
 
-        self.start_review_action = QAction("&Start Review", self)
+        self.start_review_action = QAction(self.tr("&Start Review"), self)
         self.start_review_action.setShortcut(Qt.CTRL | Qt.Key_R)
         self.start_review_action.setStatusTip(
-            "Start a spaced repetition review session"
+            self.tr("Start a spaced repetition review session")
         )
         self.start_review_action.triggered.connect(self.start_review_session)
         learning_menu.addAction(self.start_review_action)
 
-        self.show_progress_action = QAction("&Progress", self)
+        self.show_progress_action = QAction(self.tr("&Progress"), self)
         self.show_progress_action.setShortcut(Qt.CTRL | Qt.Key_P)
-        self.show_progress_action.setStatusTip("View your learning progress and achievements")
+        self.show_progress_action.setStatusTip(self.tr("View your learning progress and achievements"))
         self.show_progress_action.triggered.connect(self.show_progress_view)
         learning_menu.addAction(self.show_progress_action)
 
-        self.show_glossary_action = QAction("&Glossary", self)
+        self.show_glossary_action = QAction(self.tr("&Glossary"), self)
         self.show_glossary_action.setShortcut(Qt.CTRL | Qt.Key_G)
-        self.show_glossary_action.setStatusTip("View the course glossary")
+        self.show_glossary_action.setStatusTip(self.tr("View the course glossary"))
         self.show_glossary_action.triggered.connect(self.show_glossary_view)
         learning_menu.addAction(self.show_glossary_action)
 
     def show_progress_view(self):
         if not self.course_manager.course:
             QMessageBox.warning(
-                self, "Progress View", "No course loaded to view progress."
+                self, self.tr("Progress View"), self.tr("No course loaded to view progress.")
             )
             return
         if hasattr(self, "progress_view") and self.progress_view:
@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
     def start_review_session(self):
         if not self.course_manager.course:
             QMessageBox.warning(
-                self, "Review Session", "No course loaded to start a review session."
+                self, self.tr("Review Session"), self.tr("No course loaded to start a review session.")
             )
             return
 
@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
     def show_glossary_view(self):
         if not self.course_manager.course:
             QMessageBox.warning(
-                self, "Glossary", "No course loaded to view glossary."
+                self, self.tr("Glossary"), self.tr("No course loaded to view glossary.")
             )
             return
         if self.course_manager.get_glossary_entries():
@@ -168,7 +168,7 @@ class MainWindow(QMainWindow):
                 logger.warning("Glossary view not available.")
         else:
             QMessageBox.information(
-                self, "Glossary Empty", "No glossary entries found for this course."
+                self, self.tr("Glossary Empty"), self.tr("No glossary entries found for this course.")
             )
             logger.info("Attempted to show glossary view, but glossary is empty.")
 

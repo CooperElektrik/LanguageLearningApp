@@ -1,4 +1,5 @@
 import logging, os, sys
+from typing import Any, Dict
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -16,6 +17,7 @@ from PySide6.QtGui import QFont, QPixmap, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 from core.models import Exercise
+from core.course_manager import PROMPT_KEY_DEFAULT, PROMPT_KEY_FIB, PROMPT_KEY_MCQ_TRANSLATION, PROMPT_KEY_TRANSLATE_TO_SOURCE, PROMPT_KEY_TRANSLATE_TO_TARGET
 
 logging.basicConfig(
     level=logging.INFO,
@@ -82,6 +84,53 @@ class BaseExerciseWidget(QWidget):
 
         self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
 
+    def _format_prompt_from_data(self, prompt_data: Dict[str, Any]) -> str:
+        """Helper to format the prompt using tr() and arguments."""
+        template_key = prompt_data.get("template_key", PROMPT_KEY_DEFAULT)
+        args = prompt_data.get("args", [])
+        
+        # Define the English source strings for the templates here.
+        # Use Python's %s style placeholders.
+        if template_key == PROMPT_KEY_TRANSLATE_TO_TARGET:
+            template_str = self.tr("Translate to %s: \"%s\"") # Changed %1/%2 to %s
+        elif template_key == PROMPT_KEY_TRANSLATE_TO_SOURCE:
+            template_str = self.tr("Translate to %s: \"%s\"") # Changed %1/%2 to %s
+        elif template_key == PROMPT_KEY_MCQ_TRANSLATION:
+            template_str = self.tr("Choose the %s translation for: \"%s\" (%s)") # Changed %1/%2/%3 to %s
+        elif template_key == PROMPT_KEY_FIB:
+            template_str = self.tr("%s (Hint: %s)") # Changed %1/%2 to %s
+        elif template_key == PROMPT_KEY_DEFAULT:
+            if args:
+                template_str = self.tr("Exercise Prompt: %s") # Changed %1 to %s
+            else:
+                template_str = self.tr("Exercise Prompt")
+        else:
+            # Fallback for an unknown key
+            if args:
+                template_str = self.tr("Exercise: %s") # Changed %1 to %s
+            else:
+                template_str = self.tr("Exercise")
+
+        # Format the string with arguments using Python's % formatting
+        if args:
+            # Ensure all arguments are strings for %s formatting
+            str_args = tuple(str(arg) for arg in args)
+            try:
+                formatted_string = template_str % str_args
+            except TypeError as e:
+                # This can happen if number of %s placeholders in translated string
+                # doesn't match the number of arguments provided.
+                logger.warning(
+                    f"String formatting error for template key '{template_key}'. "
+                    f"Template: '{template_str}', Args: {str_args}. Error: {e}"
+                )
+                # Fallback: try to join args or just use the template
+                formatted_string = template_str + " (" + ", ".join(str_args) + ")" if str_args else template_str
+        else:
+            formatted_string = template_str # If no args, use template directly
+
+        return formatted_string
+
     def get_answer(self) -> str:
         raise NotImplementedError("Subclasses must implement get_answer")
 
@@ -96,12 +145,13 @@ class TranslationExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
 
-        formatted_prompt = self.course_manager.get_formatted_prompt(self.exercise)
+        prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
+        formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
 
         if self.exercise.audio_file:
             logger.info(f"Created play button from {self.exercise.audio_file}")
-            self.play_audio_button = QPushButton("🔊 Play Audio")
+            self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
             self.play_audio_button.clicked.connect(self._play_audio)
             self.layout.insertWidget(self.layout.indexOf(self.image_label) + 1, self.play_audio_button)
 
@@ -138,16 +188,16 @@ class TranslationExerciseWidget(BaseExerciseWidget):
                     )
                     QMessageBox.warning(
                         self,
-                        "Audio Error",
-                        f"Cannot play audio: {self._media_player.errorString()}",
+                        self.tr("Audio Error"),
+                        self.tr("Cannot play audio: {0}").format(self._media_player.errorString()),
                     )
 
             else:
                 logging.error(f"Audio file not found: {full_audio_path}")
                 QMessageBox.warning(
                     self,
-                    "Audio Error",
-                    f"Audio file not found: {self.exercise.audio_file}\n\nCheck paths.",
+                    self.tr("Audio Error"),
+                    self.tr("Audio file not found: {0}\n\nCheck paths.").format(self.exercise.audio_file),
                 )
 
     def get_answer(self) -> str:
@@ -164,7 +214,8 @@ class MultipleChoiceExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
 
-        formatted_prompt = self.course_manager.get_formatted_prompt(self.exercise)
+        prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
+        formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
 
         self.options_group = QButtonGroup(self)
@@ -203,7 +254,8 @@ class FillInTheBlankExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
 
-        formatted_prompt = self.course_manager.get_formatted_prompt(self.exercise)
+        prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
+        formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
 
         self.options_group = QButtonGroup(self)
