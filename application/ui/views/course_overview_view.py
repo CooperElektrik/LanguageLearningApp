@@ -47,7 +47,8 @@ class CourseOverviewView(QWidget):
         srs_layout.setContentsMargins(10, 20, 10, 10) # Add some padding
 
         self.due_count_label = QLabel("0 exercises due for review.")
-        self.due_count_label.setFont(QFont("Arial", 12))
+        self.due_count_label.setObjectName("due_count_label")
+        # self.due_count_label.setFont(QFont("Arial", 12))
         self.due_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         srs_layout.addWidget(self.due_count_label)
 
@@ -226,12 +227,12 @@ class CourseOverviewView(QWidget):
         
         if due_exercises_count > 0:
             self.due_count_label.setText(f"{due_exercises_count} exercises due for review.")
-            self.due_count_label.setStyleSheet("color: #FFD700; font-weight: bold;") # Gold color for urgency
+            # self.due_count_label.setStyleSheet("color: #FFD700; font-weight: bold;") # Gold color for urgency
             self.start_review_button.setEnabled(True)
             self.start_review_button.setText("Start Review Session")
         else:
             self.due_count_label.setText("No exercises due for review right now! Keep up the good work!")
-            self.due_count_label.setStyleSheet("color: green;")
+            # self.due_count_label.setStyleSheet("color: green;")
             self.start_review_button.setEnabled(False)
             self.start_review_button.setText("No Reviews Due")
 

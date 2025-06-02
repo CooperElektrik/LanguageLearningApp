@@ -19,7 +19,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 _current_dir = os.path.dirname(os.path.abspath(__file__))
-_dark_theme_qss_path = os.path.join(_current_dir, "styles", "dark_theme.qss")
 
 
 class MainWindow(QMainWindow):
@@ -47,6 +46,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(
             f"LL - {self.course_manager.get_course_title() or 'Language Learning'}"
         )
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.setGeometry(100, 100, 800, 600)
 
         self.stacked_widget = QStackedWidget()
@@ -58,9 +58,6 @@ class MainWindow(QMainWindow):
             self.show_course_overview()
         else:
             pass
-
-        with open(_dark_theme_qss_path, "r") as f:
-            self.setStyleSheet(f.read())
 
     def _setup_views(self):
         self.course_overview_view = CourseOverviewView(

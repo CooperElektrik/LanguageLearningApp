@@ -1,0 +1,253 @@
+/* application/ui/styles/win95_theme.qss */
+
+/* Global settings - Classic light gray background */
+QWidget {
+    background-color: #c0c0c0; /* Standard Win95 gray */
+    color: black;
+    font-family: "MS Sans Serif", Tahoma, sans-serif; /* Fallback fonts */
+    font-size: 8pt; /* Typical Win95 font size */
+}
+
+QMainWindow {
+    background-color: #c0c0c0;
+}
+
+/* Labels */
+QLabel {
+    background-color: transparent; /* Ensure labels don't have their own background unless specified */
+}
+
+QLabel#due_count_label {
+    color: #ff2424;
+    font: "MS Sans Serif", Tahoma, sans-serif;
+    font-weight: bold;
+    font-size: 12pt
+}
+
+/* Line Edits and Text Edits - Inset look */
+QLineEdit, QTextEdit {
+    background-color: white;
+    color: black;
+    border: 1px solid #808080; /* Dark gray inner shadow */
+    border-top-color: #000000; /* Black top inner shadow */
+    border-left-color: #000000; /* Black left inner shadow */
+    padding: 2px;
+    border-width: 2px;
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: white;
+    border-bottom-color: white;
+    
+}
+
+/* Push Buttons - Classic 3D bevel */
+QPushButton {
+    background-color: #c0c0c0;
+    color: black;
+    border-width: 2px;
+    border-style: outset;
+    border-top-color: #dfdfdf;  /* Lighter top/left for raised effect */
+    border-left-color: #dfdfdf;
+    border-right-color: #404040; /* Darker right/bottom */
+    border-bottom-color: #404040;
+    padding: 4px 8px; /* Adjust padding as needed */
+    min-height: 18px; /* Classic button height */
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    background-color: #c8c8c8;
+    border-top-color: #404040;
+    border-left-color: #404040;
+    border-right-color: #dfdfdf;
+    border-bottom-color: #dfdfdf;
+}
+
+QPushButton:pressed {
+    border-style: inset;
+    border-top-color: #404040;
+    border-left-color: #404040;
+    border-right-color: #dfdfdf;
+    border-bottom-color: #dfdfdf;
+    background-color: #b0b0b0; /* Slightly darker when pressed */
+    padding: 5px 7px 3px 9px; /* Shift text for pressed look */
+}
+
+QPushButton:disabled {
+    color: #808080; /* Grayed out text */
+    /* For disabled buttons, often the 3D effect was less pronounced or text was stippled */
+    /* We'll just gray out the text for simplicity */
+    border-top-color: #c0c0c0;
+    border-left-color: #c0c0c0;
+    border-right-color: #c0c0c0;
+    border-bottom-color: #c0c0c0;
+}
+
+/* Group Boxes - Classic 3D border */
+QGroupBox {
+    background-color: transparent;
+    border: 1px solid #808080; /* Dark gray inner part of groove */
+    margin-top: 15px; /* Space for title */
+    padding: 10px 5px 5px 5px; /* Top padding is for content below title */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0px 3px 0px 3px; /* Horizontal padding for title text */
+    left: 8px; /* Offset title from left edge */
+    background-color: #c0c0c0; /* Match widget background */
+    color: black;
+}
+
+/* ScrollArea and its viewport - ensure consistency */
+QScrollArea {
+    border: 1px solid #808080; /* Dark gray border */
+    /* Consider specific borders for Win95 scrollbars if needed */
+}
+QScrollArea > QWidget > QWidget { /* For the viewport widget if it's generic QWidget */
+    background-color: #c0c0c0;
+}
+
+/* QListWidget */
+QListWidget {
+    background-color: white;
+    color: black;
+    border: 1px solid #808080;
+    border-top-color: black;
+    border-left-color: black;
+}
+
+QListWidget::item {
+    padding: 3px;
+}
+
+QListWidget::item:selected {
+    background-color: #000080; /* System blue */
+    color: white;
+}
+
+/* Progress Bar */
+QProgressBar {
+    border: 1px solid #808080;
+    border-top-color: black;
+    border-left-color: black;
+    background-color: white;
+    text-align: center;
+    color: black;
+    height: 18px;
+}
+
+QProgressBar::chunk {
+    background-color: #000080; /* System blue chunks */
+    /* Win95 often had small gaps between chunks, margin can simulate this */
+    margin: 1px; 
+    /* width: 8px; */ /* If you want fixed width chunks, but this can look odd */
+}
+
+/* Menu Bar and Menus */
+QMenuBar {
+    background-color: #008080;
+    color: black;
+    border-bottom: 1px solid #808080; /* Subtle separator */
+}
+
+QMenuBar::item {
+    spacing: 3px;
+    padding: 2px 5px;
+    background-color: transparent;
+    color: white;
+}
+
+QMenuBar::item:selected {
+    background-color: #000080; /* System blue */
+    color: white;
+}
+
+QMenuBar::item:pressed {
+    background-color: #000080;
+    color: white;
+}
+
+QMenu {
+    background-color: #c0c0c0;
+    color: black;
+    border: 1px solid #808080;
+    border-top-color: white;
+    border-left-color: white;
+    padding: 1px; /* Small padding around menu items */
+}
+
+QMenu::item {
+    padding: 3px 20px 3px 20px; /* Top/bottom, left/right padding */
+}
+
+QMenu::item:selected {
+    background-color: #000080;
+    color: white;
+}
+
+QMenu::separator {
+    height: 2px;
+    background: #808080;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+/* Status Bar */
+QStatusBar {
+    background-color: #c0c0c0;
+    color: black;
+}
+QStatusBar::item {
+    border: none; /* No border for individual items */
+}
+
+/* Tooltips - can also be styled if needed */
+QToolTip {
+    background-color: #FFFFE1; /* Classic yellow tooltip */
+    color: black;
+    border: 1px solid black;
+    padding: 2px;
+}
+
+/* QDialog might need specific styling if QWidget doesn't cover it */
+QDialog {
+    background-color: #c0c0c0;
+}
+
+/* QMessageBox buttons will inherit QPushButton styles */
+/* Adjust if specific message box styling is needed */
+
+/* QTabWidget - A bit more complex for Win95 style */
+QTabWidget::pane {
+    border: 1px solid #808080;
+    border-top-color: white;
+    border-left-color: white;
+    background-color: #c0c0c0;
+    padding: 5px;
+}
+
+QTabBar::tab {
+    background-color: #c0c0c0;
+    color: black;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #dfdfdf;
+    border-left-color: #dfdfdf;
+    border-right-color: #404040;
+    border-bottom-color: #404040; /* Bottom border removed when selected */
+    padding: 4px 8px;
+    margin-right: 2px; /* Space between tabs */
+}
+
+QTabBar::tab:selected {
+    background-color: #c0c0c0; /* Selected tab is part of the pane */
+    border-bottom-color: #c0c0c0; /* Make bottom border blend with pane */
+    /* Optionally make it look slightly raised or different */
+}
+
+QTabBar::tab:!selected:hover {
+    /* background-color: #c8c8c8; */ /* Subtle hover */
+}

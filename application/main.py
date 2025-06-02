@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QStyle, QStyleFactory
 
 project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
@@ -11,6 +11,8 @@ from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.main_window import MainWindow
 
+_win95_theme_qss_path = os.path.join(project_root, "ui", "styles", "win95_theme.qss")
+_dark_theme_qss_path = os.path.join(project_root, "ui", "styles", "dark_theme.qss")
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -23,6 +25,16 @@ logger = logging.getLogger(__name__)
 def main():
     app = QApplication(sys.argv)
     logger.info("LL application starting...")
+    print(QStyleFactory.keys())
+
+    try:
+        with open(_win95_theme_qss_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+        logger.info(f"Applied Win95 theme from {_win95_theme_qss_path}")
+    except FileNotFoundError:
+        logger.error(f"Win95 theme QSS file not found at: {_win95_theme_qss_path}")
+    except Exception as e:
+        logger.error(f"Failed to apply Win95 theme: {e}")
 
     logger.info(f"Project root: {project_root}")
 
