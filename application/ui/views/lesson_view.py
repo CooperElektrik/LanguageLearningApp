@@ -1,365 +1,392 @@
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
-    QFrame,
-    QProgressBar,
-    QMessageBox,
-    QStyle,
-    QGroupBox,
-    QTextEdit
-)
-from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QFont, QIcon
+import logging
+from enum import Enum, auto
 
-from core.models import Lesson, Exercise
-from ui.widgets.exercise_widgets import (
-    TranslationExerciseWidget,
-    MultipleChoiceExerciseWidget,
-    FillInTheBlankExerciseWidget,
-    BaseExerciseWidget,
+from PySide6.QtWidgets import (
+    QLabel, QPushButton, QHBoxLayout, QMessageBox, QStyle, QWidget
 )
+from PySide6.QtCore import Signal, Qt
 
 from typing import Optional
-import logging
+
+from core.models import Lesson, Exercise
+from core.course_manager import CourseManager
+from core.progress_manager import ProgressManager
+from ui.views.base_exercise_player_view import BaseExercisePlayerView
+from ui.widgets.exercise_widgets import EXERCISE_WIDGET_MAP # For direct use of the map
 
 logger = logging.getLogger(__name__)
 
-class LessonView(QWidget):
-    lesson_completed_signal = Signal(str)
-    back_to_overview_signal = Signal()
+# State machine for the LessonView
+class LessonViewState(Enum):
+    INITIAL_LOAD = auto()       # View is first loaded or reset
+    ASKING_QUESTION = auto()    # Displaying an exercise, awaiting submission
+    ANSWER_SUBMITTED = auto()   # Answer processed, feedback shown (correct or incorrect)
+    LESSON_COMPLETED = auto()   # All exercises in the lesson are done
 
-    def __init__(self, course_manager, progress_manager, parent=None):
-        super().__init__(parent)
-        self.course_manager = course_manager
-        self.progress_manager = progress_manager
 
-        self.current_lesson: Lesson = None
+class LessonView(BaseExercisePlayerView): # Inherit from the new base class
+    lesson_completed_signal = Signal(str) # Emits lesson_id on completion
+
+    def __init__(self, course_manager: CourseManager, progress_manager: ProgressManager, parent: Optional[QWidget] = None):
+        # Call the base class constructor first. This sets up common UI and managers.
+        super().__init__(course_manager, progress_manager, parent)
+
+        # LessonView-specific instance variables
+        self.current_lesson: Optional[Lesson] = None
         self.current_exercise_index: int = -1
-        self.current_exercise_widget: BaseExerciseWidget = None
         self.total_exercises_in_lesson: int = 0
-        self.current_exercise_obj: Optional[Exercise] = None # To store current exercise for notes
+        # self.current_exercise_obj and self.current_exercise_widget are managed by BaseExercisePlayerView
 
-        self.main_layout = QVBoxLayout(self)
+        self.view_state: LessonViewState = LessonViewState.INITIAL_LOAD
+        
+        # Setup UI elements specific to LessonView
+        self._setup_specific_ui()
+        
+        # Reset view to its initial state, which also calls the base reset
+        self.reset_view()
 
-        top_bar_layout = QHBoxLayout()
+
+    def _setup_specific_ui(self):
+        """Sets up UI elements unique to LessonView, complementing the base class's UI."""
+        
+        # --- Top Bar (Populated into self.top_bar_layout from Base) ---
         self.back_button = QPushButton(self.tr("← Back to Lessons"))
+        self.back_button.setObjectName("back_button_lesson")
+        # Connect to the base class's _handle_back_to_overview for common behavior
         self.back_button.clicked.connect(self._handle_back_to_overview)
-        top_bar_layout.addWidget(self.back_button)
+        self.top_bar_layout.addWidget(self.back_button)
 
         self.lesson_title_label = QLabel(self.tr("Lesson Title"))
-        self.lesson_title_label.setFont(QFont("Arial", 16, QFont.Bold))
+        self.lesson_title_label.setObjectName("lesson_title_label")
         self.lesson_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        top_bar_layout.addWidget(self.lesson_title_label, 1)
-        self.main_layout.addLayout(top_bar_layout)
+        self.top_bar_layout.addWidget(self.lesson_title_label, 1) # Add with stretch
 
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(False)
+
+        # --- Progress Bar Configuration (Configuring self.progress_bar from Base) ---
         self.progress_bar.setFormat(self.tr("%v / %m Steps"))
-        self.main_layout.addWidget(self.progress_bar)
 
-        self.exercise_area_container = QFrame()
-        self.exercise_area_layout = QVBoxLayout(self.exercise_area_container)
-        self.main_layout.addWidget(self.exercise_area_container, 1)
 
-        self.notes_group_box = QGroupBox(self.tr("My Notes"))
-        self.notes_group_box.setVisible(False) # Initially hidden
-        notes_layout = QVBoxLayout(self.notes_group_box)
-        
-        self.notes_text_edit = QTextEdit()
-        self.notes_text_edit.setPlaceholderText(self.tr("Type your personal notes for this exercise here..."))
-        # Debounce saving notes to avoid saving on every keystroke
-        self.notes_save_timer = QTimer(self)
-        self.notes_save_timer.setSingleShot(True)
-        self.notes_save_timer.setInterval(1500) # Save 1.5 seconds after last edit
-        self.notes_save_timer.timeout.connect(self._save_current_note)
-        self.notes_text_edit.textChanged.connect(self.notes_save_timer.start) # Restart timer on change
-        
-        notes_layout.addWidget(self.notes_text_edit)
-        self.main_layout.addWidget(self.notes_group_box)
+        # --- Action Buttons Area (Populated into self.action_buttons_layout_container from Base) ---
+        # Create a horizontal layout for LessonView's specific buttons
+        lesson_action_buttons_layout = QHBoxLayout()
 
-        self.feedback_label = QLabel("")
-        self.feedback_label.setFont(QFont("Arial", 12))
-        self.feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.feedback_label.setWordWrap(True)
-        self.main_layout.addWidget(self.feedback_label)
-
-        self.action_buttons_layout = QHBoxLayout()
-
+        # Toggle Notes Button (used by base class notes logic)
         self.toggle_notes_button = QPushButton()
-        self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Placeholder icon
+        self.toggle_notes_button.setObjectName("toggle_notes_button_lesson")
+        self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
         self.toggle_notes_button.setToolTip(self.tr("Show/Hide Notes"))
         self.toggle_notes_button.setCheckable(True)
+        # Connect to the base class's _toggle_notes_panel method
         self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
-        self.action_buttons_layout.addWidget(self.toggle_notes_button)
-        self.action_buttons_layout.addStretch(1) # Push other buttons to the right
+        lesson_action_buttons_layout.addWidget(self.toggle_notes_button)
+        
+        lesson_action_buttons_layout.addStretch(1) # Pushes main buttons to the right
 
-        self.submit_button = QPushButton(self.tr("Submit Answer"))
-        self.submit_button.setFont(QFont("Arial", 12, QFont.Bold))
-        self.submit_button.clicked.connect(self._handle_submit_answer)
-
-        self.next_button = QPushButton(self.tr("Continue"))
-        self.next_button.setFont(QFont("Arial", 12, QFont.Bold))
-        self.next_button.clicked.connect(self._handle_next_action)
-
-        self.skip_button = QPushButton(self.tr("Skip Exercise"))
-        self.skip_button.setFont(QFont("Arial", 10))
+        # Skip Button
+        self.skip_button = QPushButton(self.tr("Skip"))
+        self.skip_button.setObjectName("skip_button_lesson")
         self.skip_button.clicked.connect(self._handle_skip_exercise)
+        lesson_action_buttons_layout.addWidget(self.skip_button)
 
-        self.action_buttons_layout.addWidget(self.submit_button)
-        self.action_buttons_layout.addWidget(self.next_button)
-        self.action_buttons_layout.addWidget(self.skip_button)
-        self.main_layout.addLayout(self.action_buttons_layout)
+        # Submit Button
+        self.submit_button = QPushButton(self.tr("Submit"))
+        self.submit_button.setObjectName("submit_button_lesson")
+        self.submit_button.clicked.connect(self._handle_submit_button_click)
+        lesson_action_buttons_layout.addWidget(self.submit_button)
 
-    def _handle_back_to_overview(self):
-        """Handles saving notes before going back."""
-        self._save_current_note() # Ensure latest note is saved
-        self.back_to_overview_signal.emit()
-
-    def start_lesson(self, lesson_id: str):
-        self.current_lesson = self.course_manager.get_lesson(lesson_id)
-        if not self.current_lesson:
-            self.feedback_label.setText(self.tr("Error: Could not load lesson."))
-            self.submit_button.setEnabled(False)
-            self.next_button.setEnabled(False)
-            return
-
-        self.lesson_title_label.setText(self.current_lesson.title)
-        self.current_exercise_index = 0
-        self.total_exercises_in_lesson = len(self.current_lesson.exercises)
-        self.progress_bar.setRange(0, self.total_exercises_in_lesson)
-        self.progress_bar.setValue(0)
-        self.current_exercise_obj = None
-
-        self._load_current_exercise()
-
-    def _clear_exercise_area(self):
-        while self.exercise_area_layout.count():
-            child = self.exercise_area_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        self.current_exercise_widget = None
-        self.current_exercise_obj = None
-
-    def _load_current_exercise(self):
-        self._save_current_note() # Save note for the *previous* exercise before loading new one
-        self._clear_exercise_area()
-        self.feedback_label.setText("")
-        self.submit_button.setEnabled(True)
-        self.skip_button.setEnabled(True)
-        self.next_button.setVisible(False)
-        self.toggle_notes_button.setChecked(False) # Ensure notes panel is hidden initially
-        self.notes_group_box.setVisible(False)
-
-        if self.current_exercise_index >= self.total_exercises_in_lesson:
-            self._finish_lesson()
-            return
-
-        self.current_exercise_obj = self.current_lesson.exercises[self.current_exercise_index]
-        exercise = self.current_exercise_obj
-
-        if (
-            exercise.type == "translate_to_target"
-            or exercise.type == "translate_to_source"
-        ):
-            self.current_exercise_widget = TranslationExerciseWidget(
-                exercise, self.course_manager
-            )
-        elif exercise.type == "multiple_choice_translation":
-            self.current_exercise_widget = MultipleChoiceExerciseWidget(
-                exercise, self.course_manager
-            )
-        elif exercise.type == "fill_in_the_blank":
-            self.current_exercise_widget = FillInTheBlankExerciseWidget(
-                exercise, self.course_manager
-            )
-        else:
-            self.feedback_label.setText(self.tr("Unsupported exercise type: {0}").format(exercise.type))
-            self.submit_button.setEnabled(False)
-            return
-
-        if self.current_exercise_widget:
-            self.exercise_area_layout.addWidget(self.current_exercise_widget)
-            self.current_exercise_widget.answer_submitted.connect(
-                self._handle_submit_answer_from_widget
-            )
-            self.current_exercise_widget.set_focus_on_input()
-
-            note_text = self.progress_manager.get_exercise_note(exercise.exercise_id)
-            self.notes_text_edit.blockSignals(True) # Prevent textChanged during programmatic set
-            self.notes_text_edit.setPlainText(note_text or "")
-            self.notes_text_edit.blockSignals(False)
-            self._update_notes_button_indicator() # Update button icon based on note presence
-
-        self.progress_bar.setValue(self.current_exercise_index)
-        self.submit_button.setText(self.tr("Submit Answer"))
-
-    def _toggle_notes_panel(self, checked: bool):
-        self.notes_group_box.setVisible(checked)
-        if not checked: # Panel is being hidden
-            self._save_current_note() # Explicitly save
-        else: # Panel is being shown
-            self.notes_text_edit.setFocus()
-        self._update_notes_button_indicator()
+        # Next/Continue Button
+        self.next_button = QPushButton(self.tr("Continue")) # Initial text
+        self.next_button.setObjectName("next_button_lesson")
+        self.next_button.clicked.connect(self._handle_next_action_click)
+        lesson_action_buttons_layout.addWidget(self.next_button)
+        
+        # Add this specific layout to the base class's container
+        self.action_buttons_layout_container.addLayout(lesson_action_buttons_layout)
+        
+        # Initial update of button states based on view state
+        self._update_button_states()
 
 
-    def _save_current_note(self):
-        self.notes_save_timer.stop() # Stop any pending debounced save
-        if self.current_exercise_obj:
-            note_content = self.notes_text_edit.toPlainText()
-            self.progress_manager.save_exercise_note(self.current_exercise_obj.exercise_id, note_content)
-            self._update_notes_button_indicator()
-            logger.info(f"Saved note for exercise {self.current_exercise_obj.exercise_id}: {note_content}")
-            
-    def _update_notes_button_indicator(self):
-        if self.current_exercise_obj:
-            has_note = bool(self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id))
-            if has_note:
-                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView)) # Example: "document with content" icon
-                self.toggle_notes_button.setToolTip(self.tr("Edit Notes"))
-            else:
-                self.toggle_notes_button.setIcon(self.style().standardIcon(QStyle.SP_FileIcon)) # Example: "empty document" icon
-                self.toggle_notes_button.setToolTip(self.tr("Add Notes"))
+    def _update_button_states(self):
+        """Manages visibility and enabled state of LessonView-specific buttons based on current state."""
+        # Determine visibility and enabled state based on LessonViewState
+        is_asking = self.view_state == LessonViewState.ASKING_QUESTION
+        is_submitted = self.view_state == LessonViewState.ANSWER_SUBMITTED
+        is_completed = self.view_state == LessonViewState.LESSON_COMPLETED
+        is_initial = self.view_state == LessonViewState.INITIAL_LOAD # For toggle notes button init
 
-    def _handle_submit_answer_from_widget(self, answer_text: str):
-        if self.submit_button.isEnabled():
-            self._process_answer(answer_text)
+        self.submit_button.setVisible(is_asking)
+        self.submit_button.setEnabled(is_asking)
+        
+        self.skip_button.setVisible(is_asking)
+        self.skip_button.setEnabled(is_asking)
 
-    def _handle_submit_answer(self):
-        if not self.current_exercise_widget:
-            return
-        user_answer = self.current_exercise_widget.get_answer()
-        self._process_answer(user_answer)
+        self.next_button.setVisible(is_submitted or is_completed)
+        self.next_button.setEnabled(is_submitted or is_completed)
 
-    def _process_answer(self, user_answer: str):
-        if (
-            not user_answer.strip()
-            and not self.current_exercise_widget.exercise.type.startswith(
-                "multiple_choice"
-            )
-            and not self.current_exercise_widget.exercise.type.startswith(
-                "fill_in_the_blank"
-            )
-        ):
-            self.feedback_label.setText(self.tr("Please provide an answer."))
-            self.feedback_label.setStyleSheet("color: orange;")
-            return
+        # Toggle notes button is enabled unless the lesson is completed or not yet started
+        self.toggle_notes_button.setEnabled(not (is_completed or is_initial))
 
-        exercise = self.current_lesson.exercises[self.current_exercise_index]
-        is_correct, feedback_text = self.course_manager.check_answer(
-            exercise, user_answer
-        )
-
-        self.feedback_label.setText(feedback_text)
-        xp_to_award = 10 # Default XP for a lesson exercise
-        if is_correct:
-            self.feedback_label.setStyleSheet("color: green;")
-            self.progress_bar.setValue(self.current_exercise_index + 1)
-            self.submit_button.setEnabled(False)
-            self.skip_button.setEnabled(False) # Disable skip once answered correctly
-            self.next_button.setVisible(True)
+        # Update next_button text and set focus
+        if is_submitted:
             if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
                 self.next_button.setText(self.tr("Finish Lesson 🎉"))
             else:
                 self.next_button.setText(self.tr("Next Exercise →"))
             self.next_button.setFocus()
+        elif is_completed:
+            self.next_button.setText(self.tr("Back to Overview"))
+            self.next_button.setFocus()
+        
+        # Set focus on the exercise input if in asking state and widget exists
+        if is_asking and self.current_exercise_widget:
+            self.current_exercise_widget.set_focus_on_input()
 
-            quality_score_for_srs = 4 # Assume 'Good' (SM-2 scale 0-5)
-            self.progress_manager.update_exercise_srs_data(
-                exercise.exercise_id,
-                is_correct=True,
-                xp_awarded=xp_to_award,
-                quality_score_sm2=quality_score_for_srs
-            )
-        else:
+
+    # _handle_back_to_overview is inherited from BaseExercisePlayerView,
+    # and calls _save_current_note and reset_view.
+
+    def start_lesson(self, lesson_id: str):
+        """Initiates a new lesson session."""
+        self.reset_view() # Ensure view is clean before starting a new lesson
+        
+        self.current_lesson = self.course_manager.get_lesson(lesson_id)
+
+        if not self.current_lesson:
+            logger.error(f"Could not load lesson with ID: {lesson_id}")
+            self.feedback_label.setText(self.tr("Error: Could not load lesson data."))
             self.feedback_label.setStyleSheet("color: red;")
-            if self.current_exercise_widget:
-                self.current_exercise_widget.clear_input()
-                self.current_exercise_widget.set_focus_on_input()
-            
-            # For incorrect answers, quality score should be low (e.g., 0-2)
-            quality_score_for_srs = 1 # Example: Treat as difficult/barely recall
-            self.progress_manager.update_exercise_srs_data(
-                exercise.exercise_id,
-                is_correct=False,
-                xp_awarded=0, # No XP for incorrect answer
-                quality_score_sm2=quality_score_for_srs
-            )
+            self.view_state = LessonViewState.INITIAL_LOAD # Stay in initial state
+            self._update_button_states()
+            return
 
-    def _handle_next_action(self):
-        self.current_exercise_index += 1
-        self._load_current_exercise()
+        self.lesson_title_label.setText(self.current_lesson.title)
+        self.current_exercise_index = 0
+        self.total_exercises_in_lesson = len(self.current_lesson.exercises)
+        
+        # Configure progress bar from base class
+        self.progress_bar.setRange(0, self.total_exercises_in_lesson)
+        self.progress_bar.setValue(0)
+        
+        self._load_next_exercise_in_lesson()
+
+
+    def _load_next_exercise_in_lesson(self):
+        """Loads the next exercise in the current lesson, or finishes the lesson."""
+        # Ensure any notes from the previous exercise are saved before loading a new one.
+        # This is handled by _load_exercise_widget via _save_current_note().
+        self._save_current_note() # Explicitly save notes for the *previous* exercise (if any)
+
+        # Check if all exercises in the lesson are completed
+        if self.current_exercise_index >= self.total_exercises_in_lesson:
+            self._finish_lesson()
+            return
+
+        exercise_to_load = self.current_lesson.exercises[self.current_exercise_index]
+        
+        # Use the base class method to load the exercise widget
+        if super()._load_exercise_widget(exercise_to_load): # This also sets self.current_exercise_obj
+            # Connect the answer_submitted signal from the new widget to our handler
+            if self.current_exercise_widget:
+                self.current_exercise_widget.answer_submitted.connect(self._handle_submit_answer_from_widget)
+            
+            self.progress_bar.setValue(self.current_exercise_index) # Update progress bar (0-indexed)
+            self.view_state = LessonViewState.ASKING_QUESTION
+        else:
+            # If _load_exercise_widget failed (e.g., unsupported exercise type),
+            # provide feedback and allow user to proceed.
+            self.feedback_label.setText(self.tr("Error loading exercise. Skipping."))
+            self.feedback_label.setStyleSheet("color: red;")
+            self.view_state = LessonViewState.ANSWER_SUBMITTED # Allows "Next" button
+        
+        self._update_button_states() # Update buttons based on new state and set focus
+
+
+    def _handle_submit_button_click(self):
+        """Handles the 'Submit' button click."""
+        if self.current_exercise_widget and self.view_state == LessonViewState.ASKING_QUESTION:
+            user_answer = self.current_exercise_widget.get_answer()
+            self._process_answer(user_answer, was_skipped=False)
+
+    def _handle_submit_answer_from_widget(self, answer_text: str):
+        """Handles submission triggered by pressing Enter in the exercise widget."""
+        if self.view_state == LessonViewState.ASKING_QUESTION:
+            self._process_answer(answer_text, was_skipped=False)
+
+
+    def _process_answer(self, user_answer: str, was_skipped: bool):
+        """Processes the user's answer or a skipped exercise."""
+        # self.current_exercise_obj is set by BaseExercisePlayerView._load_exercise_widget
+        if not self.current_exercise_obj:
+            logger.error("_process_answer called with no current_exercise_obj available.")
+            return
+
+        is_correct = False
+        feedback_text_display = ""
+        xp_to_award = 0
+        quality_score_for_srs = 0 # Default SM-2 (0-5)
+
+        if was_skipped:
+            # Determine correct answer for display if skipped
+            correct_answer_for_display = self.tr("N/A")
+            if self.current_exercise_obj.type in ["translate_to_target", "translate_to_source"]:
+                correct_answer_for_display = self.current_exercise_obj.answer
+            elif self.current_exercise_obj.type == "multiple_choice_translation":
+                correct_option = next((opt for opt in self.current_exercise_obj.options if opt.correct), None)
+                if correct_option: correct_answer_for_display = correct_option.text
+            elif self.current_exercise_obj.type == "fill_in_the_blank":
+                correct_answer_for_display = self.current_exercise_obj.correct_option
+            
+            feedback_text_display = self.tr("Skipped. Correct answer: {0}").format(correct_answer_for_display or self.tr("N/A"))
+            self.feedback_label.setStyleSheet("color: orange;")
+            is_correct = False # Skipped is treated as incorrect for SRS progression
+            quality_score_for_srs = 0 # Lowest quality for SM-2
+        else:
+            # --- Answer Input Validation ---
+            # For non-MCQ/FIB exercises, ensure input is not empty
+            if (not user_answer.strip() and 
+                self.current_exercise_widget and
+                self.current_exercise_widget.exercise.type not in ["multiple_choice_translation", "fill_in_the_blank"]):
+                self.feedback_label.setText(self.tr("Please provide an answer."))
+                self.feedback_label.setStyleSheet("color: orange;")
+                return # Stay in ASKING_QUESTION state, don't update progress or SRS
+
+            # --- Check Answer with CourseManager ---
+            is_correct, feedback_text_display = self.course_manager.check_answer(
+                self.current_exercise_obj, user_answer
+            )
+            self.feedback_label.setStyleSheet("color: green;" if is_correct else "color: red;")
+            
+            # --- Determine XP and SM-2 Quality ---
+            if is_correct:
+                xp_to_award = 10 # Default XP for a correct lesson exercise
+                quality_score_for_srs = 4 # Assume 'Good' for SM-2 (0-5)
+            else:
+                xp_to_award = 0 # No XP for incorrect answer
+                quality_score_for_srs = 1 # Treat as 'Hard' or 'Incorrect' for SM-2
+                if self.current_exercise_widget:
+                    self.current_exercise_widget.clear_input() # Clear input for incorrect answer
+
+
+        # --- Update UI and Progress ---
+        self.feedback_label.setText(feedback_text_display)
+        
+        # Update SRS data and XP via ProgressManager
+        self.progress_manager.update_exercise_srs_data(
+            self.current_exercise_obj.exercise_id,
+            is_correct=is_correct,
+            xp_awarded=xp_to_award,
+            quality_score_sm2=quality_score_for_srs
+        )
+        
+        # Advance progress bar (even for incorrect/skipped, it's a step in the lesson)
+        self.progress_bar.setValue(self.current_exercise_index + 1)
+        
+        # Transition to ANSWER_SUBMITTED state and update buttons
+        self.view_state = LessonViewState.ANSWER_SUBMITTED
+        self._update_button_states() # This will show "Next Exercise" or "Finish Lesson"
+
+
+    def _handle_next_action_click(self):
+        """Handles the 'Next Exercise' or 'Back to Overview' button click."""
+        if self.view_state == LessonViewState.LESSON_COMPLETED:
+            # If lesson is completed, clicking 'Next' means go back to overview
+            super()._handle_back_to_overview() # Calls base handler for save and reset
+        elif self.view_state == LessonViewState.ANSWER_SUBMITTED:
+            # If an answer was just submitted, load the next exercise
+            self.current_exercise_index += 1
+            self._load_next_exercise_in_lesson()
+
 
     def _handle_skip_exercise(self):
-        if (
-            not self.current_lesson
-            or self.current_exercise_index < 0
-            or self.current_exercise_index >= self.total_exercises_in_lesson
-        ):
+        """Handles the 'Skip Exercise' button click."""
+        if not self.current_lesson or self.view_state != LessonViewState.ASKING_QUESTION:
             return
 
         reply = QMessageBox.question(
             self,
             self.tr("Skip Exercise"),
-            self.tr("Are you sure you want to skip this exercise? You won't get points for it."),
-            QMessageBox.Yes | QMessageBox.No,
+            self.tr("Are you sure you want to skip this exercise? It will be marked for earlier review."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No # Default button for safety
         )
-        if reply == QMessageBox.No:
+        if reply == QMessageBox.StandardButton.No:
             return
+        
+        # Process the skip, treating it as an incorrect answer
+        self._process_answer(user_answer="", was_skipped=True)
 
-        exercise = self.current_lesson.exercises[self.current_exercise_index]
-
-        correct_answer_for_display = self.tr("Could not retrieve answer.")
-        if exercise.type in ["translate_to_target", "translate_to_source"]:
-            correct_answer_for_display = exercise.answer
-        elif exercise.type == "multiple_choice_translation":
-            correct_option = next(
-                (opt for opt in exercise.options if opt.correct), None
-            )
-            if correct_option:
-                correct_answer_for_display = correct_option.text
-        elif exercise.type == "fill_in_the_blank":
-            correct_answer_for_display = exercise.correct_option
-
-        self.feedback_label.setText(
-            self.tr("Skipped. The correct answer was: {0}").format(correct_answer_for_display)
-        )
-        self.feedback_label.setStyleSheet("color: orange;")
-
-        self.progress_bar.setValue(self.current_exercise_index + 1)
-
-        self.progress_manager.update_exercise_srs_data(
-            exercise.exercise_id,
-            is_correct=False, # Skipped is treated as incorrect for SRS progression
-            xp_awarded=0,
-            quality_score_sm2=0 # Lowest quality for SM-2, ensuring it comes up for review soon
-        )
-
-        self.submit_button.setEnabled(False)
-        self.skip_button.setEnabled(False)
-        self.next_button.setVisible(True)
-        if self.current_exercise_index + 1 >= self.total_exercises_in_lesson:
-            self.next_button.setText(self.tr("Finish Lesson 🎉"))
-        else:
-            self.next_button.setText(self.tr("Next Exercise →"))
-        self.next_button.setFocus()
 
     def _finish_lesson(self):
-        self._save_current_note() # Save note for the last exercise in the lesson
-        self.feedback_label.setText(self.tr("Lesson '{0}' completed!").format(self.current_lesson.title))
+        """Actions to perform when the entire lesson is completed."""
+        self._save_current_note() # Ensure notes for the last exercise are saved
+        
+        self.feedback_label.setText(self.tr("Lesson '{0}' completed!").format(self.current_lesson.title if self.current_lesson else ""))
         self.feedback_label.setStyleSheet("color: blue;")
         
-        self._clear_exercise_area()
+        super()._clear_exercise_area() # Clear out the last exercise widget from display
+        self.current_exercise_obj = None # Explicitly clear the current exercise reference for this view
+        
+        self.view_state = LessonViewState.LESSON_COMPLETED
+        self._update_button_states() # This will change the "Next" button text to "Back to Overview"
+        
+        # Emit signal that the lesson is completed
+        if self.current_lesson:
+            self.lesson_completed_signal.emit(self.current_lesson.lesson_id)
 
-        self.submit_button.setVisible(False)
-        self.next_button.setText(self.tr("Back to Course Overview"))
-        self.next_button.setVisible(True)
-        try:
-            self.next_button.clicked.disconnect()
-        except TypeError:
-            pass
-        self.next_button.clicked.connect(self.back_to_overview_signal.emit)
 
-        self.lesson_completed_signal.emit(self.current_lesson.lesson_id)
+    def reset_view(self):
+        """
+        Resets LessonView to its initial state.
+        Overrides the base class reset to include LessonView-specific elements.
+        """
+        super().reset_view() # Call the base class's reset method first
+        
+        # Reset LessonView-specific variables
+        self.current_lesson = None
+        self.current_exercise_index = -1
+        self.total_exercises_in_lesson = 0
+        # self.current_exercise_obj is already handled by super().reset_view()
+
+        # Reset LessonView-specific UI elements
+        self.lesson_title_label.setText(self.tr("Lesson")) # Reset title to generic
+        self.progress_bar.setFormat(self.tr("%v / %m Steps")) # Ensure format is correct
+        self.progress_bar.setRange(0,100) # Reset range for a cleaner look if not active
+        self.progress_bar.setValue(0) # Reset value
+
+        # Reset view state and update buttons accordingly
+        self.view_state = LessonViewState.INITIAL_LOAD
+        self._update_button_states()
+
+
+    # --- Notes Panel Methods (Highly similar to ReviewView, candidate for base class) ---
+    def _toggle_notes_panel(self, checked: bool):
+        """Toggles the visibility of the notes panel."""
+        self.notes_group_box.setVisible(checked)
+        if checked:
+            self.notes_text_edit.setFocus() # Set focus when showing
+        else:
+            self._save_current_note() # Save notes when panel is hidden
+        self._update_notes_button_indicator() # Update icon based on note presence
+
+    def _save_current_note(self):
+        """Saves the current note for the active exercise to progress manager."""
+        self.notes_save_timer.stop() # Stop pending debounced save
+        if self.current_exercise_obj: # Only save if an exercise is active
+            note_content = self.notes_text_edit.toPlainText().strip()
+            self.progress_manager.save_exercise_note(self.current_exercise_obj.exercise_id, note_content)
+            self._update_notes_button_indicator() # Update button icon
+
+    def _update_notes_button_indicator(self):
+        """Updates the icon and tooltip of the toggle notes button based on whether a note exists."""
+        has_note = False
+        if self.current_exercise_obj:
+            note_content = self.progress_manager.get_exercise_note(self.current_exercise_obj.exercise_id)
+            if note_content and note_content.strip():
+                has_note = True
+        
+        icon_to_use = QStyle.StandardPixmap.SP_FileDialogDetailedView if has_note else QStyle.StandardPixmap.SP_FileIcon
+        tooltip_text = self.tr("Edit Notes") if has_note else self.tr("Add Notes")
+        
+        self.toggle_notes_button.setIcon(self.style().standardIcon(icon_to_use))
+        self.toggle_notes_button.setToolTip(tooltip_text)

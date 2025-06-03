@@ -2,10 +2,15 @@ import os
 import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea,
-    QFrame, QGroupBox, QGridLayout, QSizePolicy
+    QFrame, QGroupBox, QGridLayout, QStyle
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QPixmap, QIcon, QPainter
+from PySide6.QtGui import QPixmap, QPainter
+
+import utils
+
+from core.course_manager import CourseManager # For type hinting
+from core.progress_manager import ProgressManager # For type hinting
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ProgressView(QWidget):
     back_to_overview_signal = Signal()
 
-    def __init__(self, course_manager, progress_manager, parent=None):
+    def __init__(self, course_manager: CourseManager, progress_manager: ProgressManager, parent=None):
         super().__init__(parent)
         self.course_manager = course_manager
         self.progress_manager = progress_manager
@@ -23,11 +28,13 @@ class ProgressView(QWidget):
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        main_layout.setObjectName("progress_view_main_layout")
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         # Top Bar with Back Button
         top_bar_layout = QHBoxLayout()
         self.back_button = QPushButton(self.tr("← Back to Course Overview"))
+        self.back_button.setObjectName("back_button_progress")
         self.back_button.clicked.connect(self.back_to_overview_signal.emit)
         top_bar_layout.addWidget(self.back_button)
         top_bar_layout.addStretch(1) # Pushes button to left
@@ -35,137 +42,176 @@ class ProgressView(QWidget):
 
         # Title
         title_label = QLabel(self.tr("Your Progress"))
-        title_label.setFont(QFont("Arial", 20, QFont.Bold))
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setObjectName("progress_title_label")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(title_label)
 
         # Scroll Area for Content
         self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("progress_scroll_area")
         self.scroll_area.setWidgetResizable(True)
+        
         self.scroll_content_widget = QWidget()
+        self.scroll_content_widget.setObjectName("progress_scroll_content_widget")
         self.scroll_content_layout = QVBoxLayout(self.scroll_content_widget)
-        self.scroll_content_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        self.scroll_content_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         self.scroll_area.setWidget(self.scroll_content_widget)
         main_layout.addWidget(self.scroll_area)
 
 
         # XP Section
         xp_group = QGroupBox(self.tr("Total Experience (XP)"))
-        xp_group.setFont(QFont("Arial", 14, QFont.DemiBold))
+        xp_group.setObjectName("xp_groupbox")
         xp_layout = QVBoxLayout(xp_group)
-        self.xp_value_label = QLabel(self.tr("0 XP"))
-        self.xp_value_label.setFont(QFont("Arial", 24, QFont.Bold))
-        self.xp_value_label.setAlignment(Qt.AlignCenter)
+        
+        self.xp_value_label = QLabel() # Text set in refresh_view
+        self.xp_value_label.setObjectName("xp_value_label")
+        self.xp_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         xp_layout.addWidget(self.xp_value_label)
         self.scroll_content_layout.addWidget(xp_group)
 
         # Streak Section
         streak_group = QGroupBox(self.tr("Study Streak"))
-        streak_group.setFont(QFont("Arial", 14, QFont.DemiBold))
+        streak_group.setObjectName("streak_groupbox")
         streak_layout = QVBoxLayout(streak_group)
-        self.streak_value_label = QLabel(self.tr("0 Days"))
-        self.streak_value_label.setFont(QFont("Arial", 24, QFont.Bold))
-        self.streak_value_label.setAlignment(Qt.AlignCenter)
-        self.streak_description_label = QLabel(self.tr("Keep up the consistent work!"))
-        self.streak_description_label.setFont(QFont("Arial", 10))
-        self.streak_description_label.setAlignment(Qt.AlignCenter)
+        
+        self.streak_value_label = QLabel() # Text set in refresh_view
+        self.streak_value_label.setObjectName("streak_value_label")
+        self.streak_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.streak_description_label = QLabel() # Text set in refresh_view
+        self.streak_description_label.setObjectName("streak_description_label")
+        self.streak_description_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         streak_layout.addWidget(self.streak_value_label)
         streak_layout.addWidget(self.streak_description_label)
         self.scroll_content_layout.addWidget(streak_group)
 
 
-        # Achievements Section (Placeholder)
-        achievements_group = QGroupBox(self.tr("Achievements"))
-        achievements_group.setFont(QFont("Arial", 14, QFont.DemiBold))
-        self.achievements_grid_layout = QGridLayout(achievements_group)
-        self.achievements_grid_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        # Achievements Section
+        self.achievements_group = QGroupBox(self.tr("Achievements"))
+        self.achievements_group.setObjectName("achievements_groupbox")
+        self.achievements_grid_layout = QGridLayout(self.achievements_group)
+        self.achievements_grid_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
-        # Add some placeholder achievements
-        self._add_achievement_placeholder(self.tr("First Step"), self.tr("Complete your first lesson."), lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
-        self._add_achievement_placeholder(self.tr("XP Enthusiast"), self.tr("Reach 1000 XP."), lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
-        self._add_achievement_placeholder(self.tr("7-Day Streak"), self.tr("Study for 7 consecutive days."), lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
-        # Add more as needed
+        # Add achievements definitions
+        self._ACHIEVEMENTS = [
+            {"id": "first_step", "title": self.tr("First Step"), "description": self.tr("Complete your first lesson."), 
+             "check": lambda: self.progress_manager.get_total_xp() >= 10, "icon": "trophy_bronze.png"},
+            {"id": "xp_enthusiast", "title": self.tr("XP Enthusiast"), "description": self.tr("Reach 1000 XP."), 
+             "check": lambda: self.progress_manager.get_total_xp() >= 1000, "icon": "star_silver.png"},
+            {"id": "7_day_streak", "title": self.tr("7-Day Streak"), "description": self.tr("Study for 7 consecutive days."), 
+             "check": lambda: self.progress_manager.get_current_streak() >= 7, "icon": "streak_gold.png"},
+            {"id": "30_day_streak", "title": self.tr("30-Day Streak"), "description": self.tr("Study for 30 consecutive days."), 
+             "check": lambda: self.progress_manager.get_current_streak() >= 30, "icon": "streak_platinum.png"},
+            {"id": "all_lessons_completed", "title": self.tr("Lesson Master"), "description": self.tr("Complete all lessons in the course."),
+             "check": self._check_all_lessons_completed, "icon": "lessons_complete.png"},
+        ]
         
-        self.scroll_content_layout.addWidget(achievements_group)
+        self.scroll_content_layout.addWidget(self.achievements_group)
         self.scroll_content_layout.addStretch(1) # Pushes content to top
 
 
-    def _add_achievement_placeholder(self, title: str, description: str, is_unlocked_func, icon_filename: str):
-        """Helper to add a conceptual achievement to the grid."""
-        # Check if the achievement is unlocked
-        is_unlocked = is_unlocked_func()
+    def _check_all_lessons_completed(self) -> bool:
+        """Checks if all lessons in the course are completed."""
+        if not self.course_manager.course:
+            return False
+        all_lessons = [lesson for unit in self.course_manager.get_units() for lesson in unit.lessons]
+        if not all_lessons:
+            return False
         
-        # Create a frame for each achievement
+        for lesson in all_lessons:
+            if not self.progress_manager.is_lesson_completed(lesson.lesson_id, self.course_manager):
+                return False
+        return True
+
+
+    def _clear_grid_layout(self, layout: QGridLayout):
+        """Helper to remove all widgets from a QGridLayout."""
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+
+    def _add_achievement(self, title: str, description: str, is_unlocked: bool, icon_filename: str):
+        """Adds a single achievement display to the grid layout."""
+        
         achievement_frame = QFrame()
-        achievement_frame.setFrameShape(QFrame.StyledPanel)
-        achievement_frame.setFrameShadow(QFrame.Raised)
-        achievement_layout = QVBoxLayout(achievement_frame)
-        achievement_layout.setAlignment(Qt.AlignCenter)
+        achievement_frame.setObjectName("achievement_frame")
+        achievement_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        achievement_frame.setFrameShadow(QFrame.Shadow.Raised)
         
-        # Icon (conceptual, assumes local path for now or would need a pixmap cache)
-        icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", icon_filename)
-        # Note: 'assets/icons' might need to be created and relevant icons placed there for this to work
-        # For now, if icon not found, it will just show empty icon or a default.
+        achievement_frame.setProperty("unlocked", is_unlocked)
+        
+        achievement_layout = QVBoxLayout(achievement_frame)
+        achievement_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         icon_label = QLabel()
+        icon_label.setObjectName("achievement_icon_label")
+        
+        # icons are in 'application/assets/icons/'
+        icon_relative_path = os.path.join("assets", "icons", icon_filename)
+        icon_path = utils.get_resource_path(icon_relative_path)
+        
         pixmap = QPixmap(icon_path)
         if pixmap.isNull():
-            # Fallback to a default icon or a generic one if image not found
-            pixmap = self.style().standardIcon(self.style().StandardPixmap.SP_DialogNoButton).pixmap(64, 64)
-            logger.warning(f"Achievement icon not found: {icon_path}. Using default.")
+            pixmap = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogNoButton).pixmap(64, 64)
+            logger.warning(f"Achievement icon not found: {icon_path}. Using default icon.")
         
+        # Apply grayscale effect if locked
         if not is_unlocked:
-            # Apply grayscale effect to pixmap if locked
-            if not pixmap.isNull():
-                grayscale_pixmap = QPixmap(pixmap.size())
-                grayscale_pixmap.fill(Qt.transparent)
-                painter = QPainter(grayscale_pixmap)
-                painter.setOpacity(0.3) # Dim it
-                painter.drawPixmap(0, 0, pixmap)
-                painter.end()
-                pixmap = grayscale_pixmap
+            grayscale_pixmap = QPixmap(pixmap.size())
+            grayscale_pixmap.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(grayscale_pixmap)
+            painter.setOpacity(0.3)
+            painter.drawPixmap(0, 0, pixmap)
+            painter.end()
+            pixmap = grayscale_pixmap
 
         icon_label.setPixmap(pixmap)
-        achievement_layout.addWidget(icon_label, alignment=Qt.AlignCenter)
+        achievement_layout.addWidget(icon_label, stretch=1, alignment=(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter))
         
-        # Title
         title_label = QLabel(title)
-        title_label.setFont(QFont("Arial", 12, QFont.Bold))
-        title_label.setAlignment(Qt.AlignCenter)
-        achievement_layout.addWidget(title_label, alignment=Qt.AlignCenter)
+        title_label.setObjectName("achievement_title_label")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        achievement_layout.addWidget(title_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Description
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Arial", 9))
-        desc_label.setAlignment(Qt.AlignCenter)
+        desc_label.setObjectName("achievement_description_label")
+        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc_label.setWordWrap(True)
-        achievement_layout.addWidget(desc_label, alignment=Qt.AlignCenter)
+        achievement_layout.addWidget(desc_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Add to grid layout
         row = self.achievements_grid_layout.count() // 3 # 3 columns per row
         col = self.achievements_grid_layout.count() % 3
         self.achievements_grid_layout.addWidget(achievement_frame, row, col)
 
+
     def refresh_view(self):
+        """Refreshes all dynamic content in the progress view."""
         self.xp_value_label.setText(self.tr("{0} XP").format(self.progress_manager.get_total_xp()))
         
         current_streak = self.progress_manager.get_current_streak()
         self.streak_value_label.setText(self.tr("{0} Days").format(current_streak))
+        
         if current_streak > 0:
-            self.streak_value_label.setStyleSheet("color: #FFD700;") # Gold
+            self.streak_value_label.setProperty("active_streak", True)
             self.streak_description_label.setText(self.tr("Keep up the consistent work!"))
         else:
-            self.streak_value_label.setStyleSheet("color: gray;")
+            self.streak_value_label.setProperty("active_streak", False)
             self.streak_description_label.setText(self.tr("Start a new streak today!"))
 
-        # Re-populate achievements to update their unlocked status
         # Clear existing achievements before re-adding
-        for i in reversed(range(self.achievements_grid_layout.count())): 
-            widget = self.achievements_grid_layout.itemAt(i).widget()
-            if widget: widget.deleteLater()
+        self._clear_grid_layout(self.achievements_grid_layout)
 
-        # Re-add achievements (adjust arguments as per _add_achievement_placeholder)
-        self._add_achievement_placeholder(self.tr("First Step"), self.tr("Complete your first lesson."), lambda: self.progress_manager.get_total_xp() >= 10, "trophy_bronze.png")
-        self._add_achievement_placeholder(self.tr("XP Enthusiast"), self.tr("Reach 1000 XP."), lambda: self.progress_manager.get_total_xp() >= 1000, "star_silver.png")
-        self._add_achievement_placeholder(self.tr("7-Day Streak"), self.tr("Study for 7 consecutive days."), lambda: self.progress_manager.get_current_streak() >= 7, "streak_gold.png")
-        # Ensure that any new achievements added to _add_achievement_placeholder are also added here for refresh.
+        # Re-add achievements based on current progress
+        for achievement_data in self._ACHIEVEMENTS:
+            is_unlocked = achievement_data["check"]() # Execute the lambda function
+            self._add_achievement(
+                achievement_data["title"],
+                achievement_data["description"],
+                is_unlocked,
+                achievement_data["icon"]
+            )

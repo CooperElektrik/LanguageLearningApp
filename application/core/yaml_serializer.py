@@ -5,62 +5,57 @@ from .models import Course, Unit, Lesson, Exercise, ExerciseOption, GlossaryEntr
 
 logger = logging.getLogger(__name__)
 
+
 def course_to_yaml_data(course: Course) -> Dict[str, Any]:
-    """Converts a Course object hierarchy into a dictionary structure suitable for YAML dumping."""
-    data = {"units": []}
-    for unit in course.units:
-        unit_data = {"unit_id": unit.unit_id, "title": unit.title, "lessons": []}
-        for lesson in unit.lessons:
-            lesson_data = {
-                "lesson_id": lesson.lesson_id,
-                "title": lesson.title,
-                "exercises": [],
-            }
-            for exercise in lesson.exercises:
-                ex_raw = {"type": exercise.type}
-
-                if exercise.type in ["translate_to_target", "translate_to_source"]:
-                    ex_raw["prompt"] = exercise.prompt
-                    ex_raw["answer"] = exercise.answer
-                    ex_raw["audio_file"] = exercise.audio_file
-                elif exercise.type == "multiple_choice_translation":
-                    ex_raw["source_word"] = exercise.source_word
-                    ex_raw["options"] = [
-                        {"text": opt.text, "correct": opt.correct}
-                        for opt in exercise.options
-                    ]
-                elif exercise.type == "fill_in_the_blank":
-                    ex_raw["sentence_template"] = exercise.sentence_template
-                    ex_raw["correct_option"] = exercise.correct_option
-                    ex_raw["options"] = [opt.text for opt in exercise.options]
-                    ex_raw["translation_hint"] = exercise.translation_hint
-
-                lesson_data["exercises"].append(ex_raw)
-            unit_data["lessons"].append(lesson_data)
-        data["units"].append(unit_data)
-    return data
+    """
+    Converts a Course object hierarchy into a dictionary structure suitable for
+    dumping as the main course content YAML file.
+    Delegates serialization to the models' to_dict() and to_content_dict() methods.
+    """
+    # The Course model's to_dict() method is designed to return the top-level
+    # dictionary structure for the content file (e.g., {"units": [...]}).
+    return course.to_dict()
 
 
 def manifest_to_yaml_data(manifest_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Returns the manifest data as is, suitable for YAML dumping."""
+    """
+    Returns the manifest data as is, suitable for YAML dumping.
+    This function simply passes through the dictionary data.
+    """
     return manifest_data
 
 
 def save_course_to_yaml(course: Course, filepath: str):
     """Saves a Course object to a YAML file."""
-    yaml_data = course_to_yaml_data(course)
-    with open(filepath, "w", encoding="utf-8") as f:
-        yaml.dump(yaml_data, f, indent=2, sort_keys=False, allow_unicode=True)
+    try:
+        yaml_data = course_to_yaml_data(course)
+        with open(filepath, "w", encoding="utf-8") as f:
+            yaml.safe_dump(yaml_data, f, indent=2, sort_keys=False, allow_unicode=True)
+        logger.info(f"Course content saved successfully to {filepath}")
+        return True
+    except IOError as e:
+        logger.error(f"Error writing course content file {filepath}: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while saving course content {filepath}: {e}")
+    return False
 
 
 def save_manifest_to_yaml(manifest_data: Dict[str, Any], filepath: str):
     """Saves manifest data to a YAML file."""
-    with open(filepath, "w", encoding="utf-8") as f:
-        yaml.dump(manifest_data, f, indent=2, sort_keys=False, allow_unicode=True)
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            yaml.safe_dump(manifest_data, f, indent=2, sort_keys=False, allow_unicode=True)
+        logger.info(f"Manifest saved successfully to {filepath}")
+        return True
+    except IOError as e:
+        logger.error(f"Error writing manifest file {filepath}: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while saving manifest {filepath}: {e}")
+    return False
+
 
 def save_glossary_to_yaml(glossary_entries: List[GlossaryEntry], filepath: str):
     """Saves a list of GlossaryEntry objects to a YAML file."""
-    # Convert list of GlossaryEntry objects to a list of dictionaries
     glossary_data_to_save = [entry.to_dict() for entry in glossary_entries]
     try:
         with open(filepath, "w", encoding="utf-8") as f:

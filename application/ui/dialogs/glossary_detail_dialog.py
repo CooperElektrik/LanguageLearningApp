@@ -5,15 +5,18 @@ from PySide6.QtWidgets import (
     QFormLayout, QDialogButtonBox, QMessageBox, QFrame, QScrollArea, QWidget
 )
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QFont
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 from core.models import GlossaryEntry
+from core.course_manager import CourseManager
+
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
 class GlossaryDetailDialog(QDialog):
-    def __init__(self, entry: GlossaryEntry, course_manager, parent=None):
+    def __init__(self, entry: GlossaryEntry, course_manager: CourseManager, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Glossary Entry: {0}").format(entry.word))
         self.setMinimumSize(500, 400)
@@ -21,88 +24,101 @@ class GlossaryDetailDialog(QDialog):
         self.entry = entry
         self.course_manager = course_manager
 
+        # Media player for audio
+        self._media_player: Optional[QMediaPlayer] = None
+        self._audio_output: Optional[QAudioOutput] = None
+
         self._setup_ui()
         self._load_entry_data()
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
+        main_layout.setObjectName("glossary_detail_dialog_main_layout")
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Scroll Area for the content
+        # Word and Translation (placed directly in main_layout for prominence)
+        self.word_label = QLabel()
+        self.word_label.setObjectName("detail_word_label")
+        # self.word_label.setFont(QFont("Arial", 18, QFont.Bold)) # To QSS
+        self.word_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.word_label)
+
+        self.translation_label = QLabel()
+        self.translation_label.setObjectName("detail_translation_label")
+        # self.translation_label.setFont(QFont("Arial", 14)) # To QSS
+        self.translation_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.translation_label)
+
+        main_layout.addWidget(self._create_separator())
+
+        # Scroll Area for the rest of the content (QFormLayout within)
         scroll_area = QScrollArea()
+        scroll_area.setObjectName("detail_scroll_area")
         scroll_area.setWidgetResizable(True)
+        
         content_widget = QWidget()
+        content_widget.setObjectName("detail_content_widget")
         content_layout = QFormLayout(content_widget)
-        content_layout.setLabelAlignment(Qt.AlignRight)
-        content_layout.setFormAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        content_layout.setObjectName("detail_content_form_layout")
+        content_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        content_layout.setFormAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         content_layout.setContentsMargins(10, 10, 10, 10)
         scroll_area.setWidget(content_widget)
         main_layout.addWidget(scroll_area)
 
-        # Word and Translation
-        self.word_label = QLabel()
-        self.word_label.setFont(QFont("Arial", 18, QFont.Bold))
-        self.word_label.setAlignment(Qt.AlignCenter)
-        main_layout.insertWidget(0, self.word_label) # Insert at top
-
-        self.translation_label = QLabel()
-        self.translation_label.setFont(QFont("Arial", 14))
-        self.translation_label.setAlignment(Qt.AlignCenter)
-        main_layout.insertWidget(1, self.translation_label) # Insert below word
-
-        main_layout.insertWidget(2, self._create_separator()) # Separator
-
         # Part of Speech
         self.pos_label = QLabel()
+        self.pos_label.setObjectName("detail_pos_label")
         content_layout.addRow(QLabel(self.tr("Part of Speech:")), self.pos_label)
 
         # Example Sentence
         self.example_sentence_text = QTextEdit()
+        self.example_sentence_text.setObjectName("detail_example_text")
         self.example_sentence_text.setReadOnly(True)
-        self.example_sentence_text.setFrameShape(QFrame.NoFrame)
+        self.example_sentence_text.setFrameShape(QFrame.Shape.NoFrame)
         self.example_sentence_text.setMinimumHeight(80)
         content_layout.addRow(QLabel(self.tr("Example Sentence:")), self.example_sentence_text)
 
         # Notes
         self.notes_text = QTextEdit()
+        self.notes_text.setObjectName("detail_notes_text")
         self.notes_text.setReadOnly(True)
-        self.notes_text.setFrameShape(QFrame.NoFrame)
+        self.notes_text.setFrameShape(QFrame.Shape.NoFrame)
         self.notes_text.setMinimumHeight(80)
         content_layout.addRow(QLabel(self.tr("Notes:")), self.notes_text)
 
         # Audio Playback
         audio_layout = QHBoxLayout()
         self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
+        self.play_audio_button.setObjectName("detail_play_audio_button")
         self.play_audio_button.clicked.connect(self._play_audio)
         audio_layout.addWidget(self.play_audio_button)
         audio_layout.addStretch(1)
         content_layout.addRow(QLabel(self.tr("Pronunciation:")), audio_layout)
 
         # OK Button
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        buttons.setObjectName("detail_dialog_button_box")
         buttons.accepted.connect(self.accept)
         main_layout.addWidget(buttons)
-
-        # Media player for audio
-        self._media_player = QMediaPlayer(self)
-        self._audio_output = QAudioOutput(self)
-        self._media_player.setAudioOutput(self._audio_output)
-
-    def _create_separator(self):
+    
+    def _create_separator(self) -> QFrame:
+        """Creates a horizontal separator line."""
         separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setFrameShadow(QFrame.Shadow.Sunken)
+        separator.setObjectName("h_separator_detail")
         return separator
 
     def _load_entry_data(self):
+        """Populates the UI fields with data from the GlossaryEntry."""
         self.word_label.setText(self.entry.word)
         self.translation_label.setText(self.entry.translation)
         self.pos_label.setText(self.entry.part_of_speech or self.tr("N/A"))
         self.example_sentence_text.setPlainText(self.entry.example_sentence or self.tr("N/A"))
         self.notes_text.setPlainText(self.entry.notes or self.tr("N/A"))
 
-        # Enable/disable audio button
         if not self.entry.audio_file:
             self.play_audio_button.setEnabled(False)
             self.play_audio_button.setText(self.tr("No Audio Available"))
@@ -110,24 +126,64 @@ class GlossaryDetailDialog(QDialog):
             self.play_audio_button.setEnabled(True)
             self.play_audio_button.setText(self.tr("🔊 Play Audio"))
 
+    def _init_audio_player(self):
+        """Initializes QMediaPlayer and QAudioOutput if not already done."""
+        if self._media_player is None:
+            self._media_player = QMediaPlayer(self)
+            self._audio_output = QAudioOutput(self)
+            self._media_player.setAudioOutput(self._audio_output)
+            self._media_player.errorOccurred.connect(self._handle_media_error)
+
+    def _handle_media_error(self, error: QMediaPlayer.Error, error_string: str):
+        logger.error(f"QMediaPlayer Error ({error}): {error_string}")
+        # Optionally, show a more user-friendly message for critical errors
+        QMessageBox.warning(
+            self,
+            self.tr("Audio Playback Error"),
+            self.tr("An audio error occurred: {0}").format(error_string)
+        )
+
     def _play_audio(self):
-        if self.entry.audio_file:
-            assets_base_dir = self.course_manager.get_course_manifest_directory()
+        """Plays the audio file associated with the glossary entry."""
+        if not self.entry.audio_file:
+            logger.debug("Attempted to play audio, but no audio_file specified.")
+            return
+
+        self._init_audio_player()
+
+        # Determine the base directory for assets (manifest_dir is preferred)
+        assets_base_dir = self.course_manager.get_course_manifest_directory()
+        if not assets_base_dir:
+            assets_base_dir = self.course_manager.get_course_content_directory()
             if not assets_base_dir:
-                assets_base_dir = self.course_manager.get_course_content_directory()
-            
-            if assets_base_dir:
-                full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
-                if os.path.exists(full_audio_path):
-                    self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
-                    if self._media_player.error() == QMediaPlayer.NoError:
-                        self._media_player.play()
-                    else:
-                        logger.error(f"Error setting media source {full_audio_path}: {self._media_player.errorString()}")
-                        QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot play audio: {0}").format(self._media_player.errorString()))
-                else:
-                    logger.error(f"Audio file not found: {full_audio_path} for entry {self.entry.word}")
-                    QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Audio file not found: {0}\n\nCheck paths.").format(self.entry.audio_file))
-            else:
                 logger.error("Could not determine asset base directory for audio playback.")
-                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Could not determine asset base directory."))
+                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Could not determine asset base directory for audio."))
+                return
+        
+        full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
+
+        if os.path.exists(full_audio_path):
+            self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
+            
+            # Check for immediate source setting errors
+            if self._media_player.mediaStatus() == QMediaPlayer.MediaStatus.NoMedia and self._media_player.error() != QMediaPlayer.Error.NoError:
+                logger.error(f"Error setting media source {full_audio_path}: {self._media_player.errorString()}")
+                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot prepare audio: {0}").format(self._media_player.errorString()))
+                return
+
+            self._media_player.play()
+            if self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+                logger.info(f"Playing glossary audio: {full_audio_path}")
+            elif self._media_player.error() != QMediaPlayer.Error.NoError: # Check error after play attempt
+                logger.error(f"Error playing audio {full_audio_path}: {self._media_player.errorString()}")
+                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot play audio: {0}").format(self._media_player.errorString()))
+
+        else:
+            logger.error(f"Audio file not found: {full_audio_path} for entry '{self.entry.word}'")
+            QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Audio file not found: {0}\n\nCheck course assets and paths.").format(self.entry.audio_file))
+
+    def closeEvent(self, event):
+        """Stops any playing audio when the dialog is closed."""
+        if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self._media_player.stop()
+        super().closeEvent(event)

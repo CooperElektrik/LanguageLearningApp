@@ -2,7 +2,8 @@ import yaml
 import os
 import logging
 import random
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+
 from .models import Course, Unit, Lesson, Exercise, ExerciseOption
 
 logger = logging.getLogger(__name__)
@@ -10,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
     """Loads the course manifest YAML file."""
+    if not os.path.exists(manifest_path):
+        logger.error(f"Manifest file not found: {manifest_path}")
+        return None
     try:
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest_data = yaml.safe_load(f)
         logger.info(f"Manifest loaded successfully from {manifest_path}")
         return manifest_data
-    except FileNotFoundError:
-        logger.error(f"Manifest file not found: {manifest_path}")
     except yaml.YAMLError as e:
         logger.error(f"Error parsing manifest YAML file {manifest_path}: {e}")
     except Exception as e:
@@ -26,60 +28,84 @@ def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _parse_exercise_options(options_data: Any, correct_option_text: Optional[str] = None) -> List[ExerciseOption]:
+    """Helper to parse options data into a list of ExerciseOption objects."""
+    parsed_options = []
+    if isinstance(options_data, list):
+        if all(isinstance(opt, dict) for opt in options_data):
+            # Format: [{"text": "Option A", "correct": true}]
+            parsed_options = [
+                ExerciseOption(text=opt["text"], correct=opt.get("correct", False))
+                for opt in options_data
+            ]
+        elif all(isinstance(opt, str) for opt in options_data):
+            # Format: ["Option A", "Option B", "Option C"]
+            # Requires correct_option_text to determine correctness
+            parsed_options = [
+                ExerciseOption(text=opt, correct=(opt == correct_option_text))
+                for opt in options_data
+            ]
+            # Shuffle only if not explicitly ordered or correctness is determined by separate field
+            random.shuffle(parsed_options)
+    else:
+        logger.warning(f"Invalid options data format: {options_data}. Expected a list.")
+    return parsed_options
+
+
 def _parse_exercise(
     exercise_data: Dict[str, Any],
     lesson_id: str,
     index: int,
     target_language: str,
     source_language: str,
-) -> Exercise:
+) -> Optional[Exercise]:
     """Parses a single exercise entry from YAML data into an Exercise object."""
     ex_id = f"{lesson_id}_ex{index}"
-    ex_type = exercise_data.get("type", "unknown")
+    ex_type = exercise_data.get("type")
+
+    if not ex_type:
+        logger.warning(f"Skipping exercise {ex_id}: 'type' field is missing.")
+        return None
 
     prompt = exercise_data.get("prompt")
     answer = exercise_data.get("answer")
     source_word = exercise_data.get("source_word")
-
-    options_data = exercise_data.get("options", [])
-    parsed_options = []
-    if ex_type == "multiple_choice_translation" or ex_type == "fill_in_the_blank":
-        if isinstance(options_data, list) and all(
-            isinstance(opt, dict) for opt in options_data
-        ):
-            parsed_options = [
-                ExerciseOption(text=opt["text"], correct=opt.get("correct", False))
-                for opt in options_data
-            ]
-        elif isinstance(options_data, list) and all(
-            isinstance(opt, str) for opt in options_data
-        ):
-            correct_opt_text = exercise_data.get("correct_option")
-            parsed_options = [
-                ExerciseOption(text=opt, correct=(opt == correct_opt_text))
-                for opt in options_data
-            ]
-            random.shuffle(parsed_options)
-
-    if ex_type == "multiple_choice_translation" and source_word:
-        prompt = f"Choose the {target_language} translation for: '{source_word}' ({source_language})"
-
+    sentence_template = exercise_data.get("sentence_template")
+    correct_option = exercise_data.get("correct_option") # Used for FIB and for determining correct option in simple MCQ lists
+    translation_hint = exercise_data.get("translation_hint")
     audio_file = exercise_data.get("audio_file")
     image_file = exercise_data.get("image_file")
 
+    options: List[ExerciseOption] = []
+    if ex_type in ["multiple_choice_translation", "fill_in_the_blank"]:
+        options = _parse_exercise_options(exercise_data.get("options", []), correct_option)
+        if not options:
+            logger.warning(f"No valid options parsed for {ex_type} exercise {ex_id}.")
+
+    # Basic validation for essential fields based on type
+    if ex_type in ["translate_to_target", "translate_to_source"] and (prompt is None or answer is None):
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing.")
+        return None
+    elif ex_type == "multiple_choice_translation" and (source_word is None or not options):
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'source_word' or 'options' missing/empty.")
+        return None
+    elif ex_type == "fill_in_the_blank" and (sentence_template is None or correct_option is None or not options):
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'sentence_template', 'correct_option' or 'options' missing/empty.")
+        return None
+    
     return Exercise(
         exercise_id=ex_id,
         type=ex_type,
         prompt=prompt,
         answer=answer,
         source_word=source_word,
-        options=parsed_options,
-        sentence_template=exercise_data.get("sentence_template"),
-        correct_option=exercise_data.get("correct_option"),
-        translation_hint=exercise_data.get("translation_hint"),
+        options=options,
+        sentence_template=sentence_template,
+        correct_option=correct_option,
+        translation_hint=translation_hint,
         audio_file=audio_file,
         image_file=image_file,
-        raw_data=exercise_data,
+        raw_data=exercise_data, # Store original raw data for editor round-trip
     )
 
 
@@ -94,12 +120,12 @@ def load_course_content(
     description: Optional[str] = None,
 ) -> Optional[Course]:
     """Loads and parses the course content YAML file into a Course object."""
+    if not os.path.exists(content_filepath):
+        logger.error(f"Course content file not found: {content_filepath}")
+        return None
     try:
         with open(content_filepath, "r", encoding="utf-8") as f:
             raw_course_data = yaml.safe_load(f)
-    except FileNotFoundError:
-        logger.error(f"Course content file not found: {content_filepath}")
-        return None
     except yaml.YAMLError as e:
         logger.error(f"Error parsing course content YAML file {content_filepath}: {e}")
         return None
@@ -127,18 +153,32 @@ def load_course_content(
     )
 
     for unit_data in raw_course_data.get("units", []):
-        unit_obj = Unit(unit_id=unit_data["unit_id"], title=unit_data["title"])
+        unit_id = unit_data.get("unit_id")
+        unit_title = unit_data.get("title")
+        if not unit_id or not unit_title:
+            logger.warning(f"Skipping malformed unit: {unit_data}. Missing unit_id or title.")
+            continue
+        unit_obj = Unit(unit_id=unit_id, title=unit_title)
+
         for lesson_data in unit_data.get("lessons", []):
+            lesson_id = lesson_data.get("lesson_id")
+            lesson_title = lesson_data.get("title")
+            if not lesson_id or not lesson_title:
+                logger.warning(f"Skipping malformed lesson in unit {unit_id}: {lesson_data}. Missing lesson_id or title.")
+                continue
             lesson_obj = Lesson(
-                lesson_id=lesson_data["lesson_id"],
-                title=lesson_data["title"],
+                lesson_id=lesson_id,
+                title=lesson_title,
                 unit_id=unit_obj.unit_id,
             )
             for i, ex_data in enumerate(lesson_data.get("exercises", [])):
                 exercise_obj = _parse_exercise(
                     ex_data, lesson_obj.lesson_id, i, target_lang, source_lang
                 )
-                lesson_obj.exercises.append(exercise_obj)
+                if exercise_obj: # Only add if successfully parsed
+                    lesson_obj.exercises.append(exercise_obj)
+                else:
+                    logger.warning(f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping.")
             unit_obj.lessons.append(lesson_obj)
         course.units.append(unit_obj)
 
