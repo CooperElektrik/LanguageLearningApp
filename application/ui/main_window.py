@@ -128,6 +128,54 @@ class MainWindow(QMainWindow):
             )
             return False
         return True
+    
+    def _dump_state(self) -> None:
+        """
+        Dumps the current state of the course and progress for debugging.
+        """
+        state_str = "--- Application State Dump ---\n"
+        
+        if self.course_load_failed:
+            state_str += "Course Load Status: FAILED\n"
+            return state_str # No further state to dump if course failed
+
+        state_str += "Course Load Status: SUCCESS\n"
+        state_str += f"Course Title: {self.course_manager.get_course_title()}\n"
+        state_str += f"Total XP: {self.progress_manager.get_total_xp()}\n"
+        state_str += f"Current Streak: {self.progress_manager.get_current_streak()} days\n"
+        state_str += f"Current View: {type(self.stacked_widget.currentWidget()).__name__}\n"
+        
+        state_str += "\n--- Units and Lessons Status ---\n"
+        units = self.course_manager.get_units()
+        if not units:
+            state_str += "No units defined.\n"
+        else:
+            for unit in units:
+                state_str += f"Unit: {unit.title} (ID: {unit.unit_id})\n"
+                if not unit.lessons:
+                    state_str += "  No lessons in this unit.\n"
+                else:
+                    for lesson in unit.lessons:
+                        is_unlocked = self.progress_manager.is_lesson_unlocked(lesson.lesson_id, self.course_manager)
+                        is_completed = self.progress_manager.is_lesson_completed(lesson.lesson_id, self.course_manager)
+                        status = "Completed" if is_completed else ("Unlocked" if is_unlocked else "Locked")
+                        state_str += f"  Lesson: {lesson.title} (ID: {lesson.lesson_id}) - Status: {status}\n"
+        
+        state_str += "\n--- SRS Status (Due Exercises) ---\n"
+        all_exercises = self.course_manager.get_all_exercises()
+        due_exercises = self.progress_manager.get_due_exercises(all_exercises, limit=None) # Get all due
+
+        if not due_exercises:
+            state_str += "No exercises currently due for review.\n"
+        else:
+            state_str += f"Total due exercises: {len(due_exercises)}\n"
+            for i, exercise in enumerate(due_exercises):
+                srs_data = self.progress_manager.get_exercise_srs_data(exercise.exercise_id)
+                due_date_str = srs_data.get('next_review_due').strftime('%Y-%m-%d %H:%M') if srs_data.get('next_review_due') else "N/A (New)"
+                state_str += f"  Due #{i+1}: ID: {exercise.exercise_id}, Prompt: \"{exercise.prompt or exercise.source_word or 'N/A'}\", Due: {due_date_str}\n"
+        
+        state_str += "\n--- End of State Dump ---\n"
+        logger.debug(f"Application State Dump:\n{state_str}") # Log the dump for easier access
 
     def show_progress_view(self):
         if not self._is_course_available(self.tr("Progress View")):
@@ -169,6 +217,7 @@ class MainWindow(QMainWindow):
 
     def handle_lesson_completion(self, lesson_id: str):
         logger.info(f"Lesson {lesson_id} completed. Returning to overview.")
+        self._dump_state()
         self.show_course_overview() # Refresh overview to show updated progress
 
 
