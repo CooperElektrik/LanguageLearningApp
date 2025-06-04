@@ -29,8 +29,6 @@ class ProgressManager:
 
         self.progress_data_dir = os.path.join(
             app_data_base_dir,
-            settings.ORG_NAME,
-            settings.APP_NAME,
             settings.PROGRESS_DATA_SUBDIR
         )
         self.progress_file = os.path.join(
