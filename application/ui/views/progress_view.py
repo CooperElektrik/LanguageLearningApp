@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProgressView(QWidget):
-    back_to_overview_signal = Signal()
+    # back_to_overview_signal is no longer needed as this view is embedded.
 
     def __init__(self, course_manager: CourseManager, progress_manager: ProgressManager, parent=None):
         super().__init__(parent)
@@ -29,27 +29,16 @@ class ProgressView(QWidget):
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setObjectName("progress_view_main_layout")
-        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        main_layout.setContentsMargins(0, 0, 0, 0) # Make it more compact for embedding
 
-        # Top Bar with Back Button
-        top_bar_layout = QHBoxLayout()
-        self.back_button = QPushButton(self.tr("← Back to Course Overview"))
-        self.back_button.setObjectName("back_button_progress")
-        self.back_button.clicked.connect(self.back_to_overview_signal.emit)
-        top_bar_layout.addWidget(self.back_button)
-        top_bar_layout.addStretch(1) # Pushes button to left
-        main_layout.addLayout(top_bar_layout)
-
-        # Title
-        title_label = QLabel(self.tr("Your Progress"))
-        title_label.setObjectName("progress_title_label")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(title_label)
+        # Top Bar and Title have been removed as this view is now embedded.
 
         # Scroll Area for Content
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("progress_scroll_area")
         self.scroll_area.setWidgetResizable(True)
+        # Set a minimum height to ensure it doesn't collapse entirely
+        self.scroll_area.setMinimumHeight(200)
         
         self.scroll_content_widget = QWidget()
         self.scroll_content_widget.setObjectName("progress_scroll_content_widget")

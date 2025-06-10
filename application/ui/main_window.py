@@ -1,6 +1,6 @@
 import sys
 import logging
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox, QLabel
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QHBoxLayout, QVBoxLayout
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QCoreApplication
 
@@ -39,53 +39,83 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(
             self.tr("LL - {0}").format(self.course_manager.get_course_title() or self.tr('Language Learning'))
         )
-        # self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.setGeometry(100, 100, 480, 600)
-        self.setFixedSize(480, 600)
+        self.setGeometry(100, 100, 960, 720) # New size, now resizable
 
-        self.stacked_widget = QStackedWidget()
-        self.setCentralWidget(self.stacked_widget)
+        # --- Main Layout Setup ---
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        self.main_layout = QHBoxLayout(self.main_widget)
+        self.main_layout.setObjectName("main_window_layout")
+
+        # --- Left Panel ---
+        self.left_panel = QWidget()
+        self.left_panel.setObjectName("left_panel")
+        left_panel_layout = QVBoxLayout(self.left_panel)
+        left_panel_layout.setObjectName("left_panel_layout")
+        self.main_layout.addWidget(self.left_panel, 1) # Stretch factor 1
+
+        # --- Right Panel (The QStackedWidget) ---
+        self.right_panel_stack = QStackedWidget()
+        self.right_panel_stack.setObjectName("right_panel_stack")
+        self.main_layout.addWidget(self.right_panel_stack, 2) # Stretch factor 2
 
         if not self.course_load_failed:
             self._setup_views()
             self._setup_menu_bar()
-            self.show_course_overview()
+            self.show_course_overview() # Go to initial state
         else:
             error_label = QLabel(self.tr("Failed to load course. Please check logs and restart."), self)
             error_label.setAlignment(Qt.AlignCenter)
             error_label.setWordWrap(True)
-            self.stacked_widget.addWidget(error_label)
-            self.stacked_widget.setCurrentWidget(error_label)
+            self.main_layout.addWidget(error_label)
             logger.error("MainWindow initialized in a course-load-failed state. Limited functionality.")
 
 
     def _setup_views(self):
-        """Initializes and adds all views to the stacked widget and connects signals."""
+        """Initializes and adds all views to the correct panels and connects signals."""
+        
+        # --- Instantiate Left Panel Views ---
         self.course_overview_view = CourseOverviewView(
             self.course_manager, self.progress_manager
         )
+        self.progress_view = ProgressView(self.course_manager,self.progress_manager)
+        
+        # Add views to the left panel's layout
+        left_panel_layout = self.left_panel.layout()
+        left_panel_layout.addWidget(self.course_overview_view)
+        left_panel_layout.addWidget(self.progress_view)
+
+        # --- Instantiate Right Panel Views ---
         self.lesson_view = LessonView(self.course_manager, self.progress_manager)
         self.review_view = ReviewView(self.course_manager, self.progress_manager)
-        self.progress_view = ProgressView(self.course_manager,self.progress_manager)
         self.glossary_view = GlossaryView(self.course_manager)
 
-        self.stacked_widget.addWidget(self.course_overview_view)
-        self.stacked_widget.addWidget(self.lesson_view)
-        self.stacked_widget.addWidget(self.review_view)
-        self.stacked_widget.addWidget(self.progress_view)
-        self.stacked_widget.addWidget(self.glossary_view)
+        # Create a placeholder for the right panel's initial state
+        self.right_panel_placeholder = QWidget()
+        placeholder_layout = QVBoxLayout(self.right_panel_placeholder)
+        placeholder_layout.setAlignment(Qt.AlignCenter)
+        placeholder_label = QLabel(self.tr("Select a lesson to begin, start a review session, or view the glossary from the menu."))
+        placeholder_label.setObjectName("placeholder_label")
+        placeholder_label.setWordWrap(True)
+        placeholder_label.setAlignment(Qt.AlignCenter)
+        placeholder_layout.addWidget(placeholder_label)
 
-        # Connect signals
+        # Add all right-panel widgets to the QStackedWidget
+        self.right_panel_stack.addWidget(self.right_panel_placeholder)
+        self.right_panel_stack.addWidget(self.lesson_view)
+        self.right_panel_stack.addWidget(self.review_view)
+        self.right_panel_stack.addWidget(self.glossary_view)
+
+        # --- Connect Signals ---
         self.course_overview_view.lesson_selected.connect(self.start_lesson)
         self.course_overview_view.start_review_session_requested.connect(self.start_review_session)
         
         self.lesson_view.lesson_completed_signal.connect(self.handle_lesson_completion)
         self.lesson_view.back_to_overview_signal.connect(self.show_course_overview)
         
-        self.review_view.review_session_finished.connect(self.show_course_overview) # Or a different view like progress
+        self.review_view.review_session_finished.connect(self.show_course_overview)
         self.review_view.back_to_overview_signal.connect(self.show_course_overview)
         
-        self.progress_view.back_to_overview_signal.connect(self.show_course_overview)
         self.glossary_view.back_to_overview_signal.connect(self.show_course_overview)
 
     def _setup_menu_bar(self):
@@ -96,18 +126,14 @@ class MainWindow(QMainWindow):
         learning_menu = menu_bar.addMenu(self.tr("&Learning"))
 
         self.start_review_action = QAction(self.tr("&Start Review"), self)
-        self.start_review_action.setShortcut(Qt.CTRL | Qt.Key_R) # Using Qt.CTRL instead of Qt.CTRL
+        self.start_review_action.setShortcut(Qt.CTRL | Qt.Key_R)
         self.start_review_action.setStatusTip(
             self.tr("Start a spaced repetition review session")
         )
         self.start_review_action.triggered.connect(self.start_review_session)
         learning_menu.addAction(self.start_review_action)
 
-        self.show_progress_action = QAction(self.tr("&Progress"), self)
-        self.show_progress_action.setShortcut(Qt.CTRL | Qt.Key_P)
-        self.show_progress_action.setStatusTip(self.tr("View your learning progress and achievements"))
-        self.show_progress_action.triggered.connect(self.show_progress_view)
-        learning_menu.addAction(self.show_progress_action)
+        # Progress view is now always visible, so no menu action is needed for it.
 
         self.show_glossary_action = QAction(self.tr("&Glossary"), self)
         self.show_glossary_action.setShortcut(Qt.CTRL | Qt.Key_G)
@@ -143,7 +169,7 @@ class MainWindow(QMainWindow):
         state_str += f"Course Title: {self.course_manager.get_course_title()}\n"
         state_str += f"Total XP: {self.progress_manager.get_total_xp()}\n"
         state_str += f"Current Streak: {self.progress_manager.get_current_streak()} days\n"
-        state_str += f"Current View: {type(self.stacked_widget.currentWidget()).__name__}\n"
+        state_str += f"Current View: {type(self.right_panel_stack.currentWidget()).__name__}\n"
         
         state_str += "\n--- Units and Lessons Status ---\n"
         units = self.course_manager.get_units()
@@ -178,39 +204,39 @@ class MainWindow(QMainWindow):
         logger.debug(f"Application State Dump:\n{state_str}") # Log the dump for easier access
 
     def show_progress_view(self):
-        if not self._is_course_available(self.tr("Progress View")):
-            return
-        
-        if hasattr(self, "progress_view") and self.progress_view:
-            self.progress_view.refresh_view() # Refresh stats before showing
-            self.stacked_widget.setCurrentWidget(self.progress_view)
-            logger.info("Showing progress view.")
-        else:
-            logger.warning("Progress view not available (should not happen if course loaded).")
+        # This method is now obsolete as progress is always visible.
+        # It is no longer connected to any menu action.
+        pass
 
     def show_course_overview(self):
-        if self.course_load_failed: # If course failed to load initially, don't try to show overview
-            logger.warning("Attempted to show course overview, but course loading failed.")
+        if self.course_load_failed:
             return
 
-        if hasattr(self, "course_overview_view") and self.course_overview_view:
-            self.course_overview_view.refresh_view()
-            self.stacked_widget.setCurrentWidget(self.course_overview_view)
-            logger.info("Showing course overview.")
-        else:
-            logger.error("Course overview view not available despite course load success. Internal error.")
-            QMessageBox.critical(self, self.tr("Internal Error"), self.tr("Course overview cannot be displayed."))
+        # Refresh the left panel views
+        self.course_overview_view.refresh_view()
+        self.progress_view.refresh_view()
+
+        # Set the right panel to the placeholder
+        self.right_panel_stack.setCurrentWidget(self.right_panel_placeholder)
+        
+        # Enable the left panel for interaction
+        self.left_panel.setEnabled(True)
+        
+        logger.info("Showing course overview (home state). Left panel enabled.")
 
 
     def start_lesson(self, lesson_id: str):
-        if self.course_load_failed: # Should already be handled by overview view not emitting signal
+        if self.course_load_failed:
             return
         
-        # No need for _is_course_available here, as lesson_id implies a course context
         if hasattr(self, "lesson_view") and self.lesson_view:
             logger.info(f"Starting lesson: {lesson_id}")
+            # Disable left panel
+            self.left_panel.setEnabled(False)
+            
+            # Start lesson and switch right panel
             self.lesson_view.start_lesson(lesson_id)
-            self.stacked_widget.setCurrentWidget(self.lesson_view)
+            self.right_panel_stack.setCurrentWidget(self.lesson_view)
         else:
             logger.warning("Lesson view not available (should not happen if course loaded).")
 
@@ -218,7 +244,7 @@ class MainWindow(QMainWindow):
     def handle_lesson_completion(self, lesson_id: str):
         logger.info(f"Lesson {lesson_id} completed. Returning to overview.")
         self._dump_state()
-        self.show_course_overview() # Refresh overview to show updated progress
+        self.show_course_overview() # Refresh overview and return to home state
 
 
     def start_review_session(self):
@@ -226,11 +252,13 @@ class MainWindow(QMainWindow):
             return
 
         if hasattr(self, "review_view") and self.review_view:
-            self.review_view.start_review_session() # This method itself should check for due exercises
-            if self.review_view.total_exercises_in_session > 0: # Only switch if session actually starts
-                self.stacked_widget.setCurrentWidget(self.review_view)
+            self.review_view.start_review_session()
+            if self.review_view.total_exercises_in_session > 0:
+                # Disable left panel
+                self.left_panel.setEnabled(False)
+                # Switch right panel
+                self.right_panel_stack.setCurrentWidget(self.review_view)
                 logger.info("Started review session.")
-            # If no exercises are due, ReviewView's start_review_session will show a message and not proceed.
         else:
             logger.warning("Review view not available (should not happen if course loaded).")
 
@@ -239,19 +267,20 @@ class MainWindow(QMainWindow):
         if not self._is_course_available(self.tr("Glossary")):
             return
         
-        # Check if glossary itself has entries
         if not self.course_manager.get_glossary_entries():
             QMessageBox.information(
                 self, 
                 self.tr("Glossary Empty"), 
                 self.tr("No glossary entries found for this course.")
             )
-            logger.info("Attempted to show glossary view, but glossary is empty.")
             return
 
         if hasattr(self, "glossary_view") and self.glossary_view:
-            self.glossary_view.refresh_view() # Refresh list before showing
-            self.stacked_widget.setCurrentWidget(self.glossary_view)
+            # Disable left panel
+            self.left_panel.setEnabled(False)
+            # Refresh and switch right panel
+            self.glossary_view.refresh_view()
+            self.right_panel_stack.setCurrentWidget(self.glossary_view)
             logger.info("Showing glossary view.")
         else:
             logger.warning("Glossary view not available (should not happen if course loaded).")
@@ -266,6 +295,4 @@ class MainWindow(QMainWindow):
                 logger.info("Progress saved successfully on application close.")
             except Exception as e:
                 logger.error(f"Error saving progress on close: {e}")
-                # Optionally, inform the user if saving failed critically
-                # QMessageBox.critical(self, self.tr("Save Error"), self.tr("Could not save progress: {0}").format(str(e)))
         super().closeEvent(event)
