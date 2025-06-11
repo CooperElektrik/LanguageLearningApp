@@ -1,6 +1,6 @@
 import sys
 import logging
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QHBoxLayout, QVBoxLayout
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QDockWidget
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QCoreApplication
 
@@ -39,58 +39,54 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(
             self.tr("LL - {0}").format(self.course_manager.get_course_title() or self.tr('Language Learning'))
         )
-        self.setGeometry(100, 100, 960, 720) # New size, now resizable
+        self.setGeometry(100, 100, 960, 720)
 
-        # --- Main Layout Setup ---
-        self.main_widget = QWidget()
-        self.setCentralWidget(self.main_widget)
-        self.main_layout = QHBoxLayout(self.main_widget)
-        self.main_layout.setObjectName("main_window_layout")
-
-        # --- Left Panel ---
-        self.left_panel = QWidget()
-        self.left_panel.setObjectName("left_panel")
-        left_panel_layout = QVBoxLayout(self.left_panel)
-        left_panel_layout.setObjectName("left_panel_layout")
-        self.main_layout.addWidget(self.left_panel, 1) # Stretch factor 1
-
-        # --- Right Panel (The QStackedWidget) ---
-        self.right_panel_stack = QStackedWidget()
-        self.right_panel_stack.setObjectName("right_panel_stack")
-        self.main_layout.addWidget(self.right_panel_stack, 2) # Stretch factor 2
+        # The QMainWindow will now manage the layout with its central widget and dock widgets.
 
         if not self.course_load_failed:
             self._setup_views()
             self._setup_menu_bar()
             self.show_course_overview() # Go to initial state
         else:
+            # If course fails to load, we still need a central widget.
+            error_widget = QWidget()
+            error_layout = QVBoxLayout(error_widget)
             error_label = QLabel(self.tr("Failed to load course. Please check logs and restart."), self)
             error_label.setAlignment(Qt.AlignCenter)
             error_label.setWordWrap(True)
-            self.main_layout.addWidget(error_label)
+            error_layout.addWidget(error_label)
+            self.setCentralWidget(error_widget)
             logger.error("MainWindow initialized in a course-load-failed state. Limited functionality.")
 
 
     def _setup_views(self):
         """Initializes and adds all views to the correct panels and connects signals."""
         
-        # --- Instantiate Left Panel Views ---
+        # --- Setup Navigation Dock Widget (Left Panel) ---
+        self.navigation_dock_widget = QDockWidget(self.tr("Course Navigation"), self)
+        self.navigation_dock_widget.setObjectName("navigation_dock_widget")
         self.course_overview_view = CourseOverviewView(
             self.course_manager, self.progress_manager
         )
-        self.progress_view = ProgressView(self.course_manager,self.progress_manager)
-        
-        # Add views to the left panel's layout
-        left_panel_layout = self.left_panel.layout()
-        left_panel_layout.addWidget(self.course_overview_view)
-        left_panel_layout.addWidget(self.progress_view)
+        self.navigation_dock_widget.setWidget(self.course_overview_view)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.navigation_dock_widget)
 
-        # --- Instantiate Right Panel Views ---
+        # --- Setup Progress Dock Widget ---
+        self.progress_dock_widget = QDockWidget(self.tr("Progress & Achievements"), self)
+        self.progress_dock_widget.setObjectName("progress_dock_widget")
+        self.progress_view = ProgressView(self.course_manager,self.progress_manager)
+        self.progress_dock_widget.setWidget(self.progress_view)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.progress_dock_widget) # Default to right side
+
+        # --- Setup Central Widget (Right Panel Stack) ---
+        self.right_panel_stack = QStackedWidget()
+        self.right_panel_stack.setObjectName("right_panel_stack")
+        self.setCentralWidget(self.right_panel_stack)
+
         self.lesson_view = LessonView(self.course_manager, self.progress_manager)
         self.review_view = ReviewView(self.course_manager, self.progress_manager)
         self.glossary_view = GlossaryView(self.course_manager)
 
-        # Create a placeholder for the right panel's initial state
         self.right_panel_placeholder = QWidget()
         placeholder_layout = QVBoxLayout(self.right_panel_placeholder)
         placeholder_layout.setAlignment(Qt.AlignCenter)
@@ -100,7 +96,6 @@ class MainWindow(QMainWindow):
         placeholder_label.setAlignment(Qt.AlignCenter)
         placeholder_layout.addWidget(placeholder_label)
 
-        # Add all right-panel widgets to the QStackedWidget
         self.right_panel_stack.addWidget(self.right_panel_placeholder)
         self.right_panel_stack.addWidget(self.lesson_view)
         self.right_panel_stack.addWidget(self.review_view)
@@ -122,7 +117,7 @@ class MainWindow(QMainWindow):
         """Sets up the main menu bar and its actions."""
         menu_bar = self.menuBar()
         
-        # Learning Menu
+        # --- Learning Menu ---
         learning_menu = menu_bar.addMenu(self.tr("&Learning"))
 
         self.start_review_action = QAction(self.tr("&Start Review"), self)
@@ -133,13 +128,18 @@ class MainWindow(QMainWindow):
         self.start_review_action.triggered.connect(self.start_review_session)
         learning_menu.addAction(self.start_review_action)
 
-        # Progress view is now always visible, so no menu action is needed for it.
-
         self.show_glossary_action = QAction(self.tr("&Glossary"), self)
         self.show_glossary_action.setShortcut(Qt.CTRL | Qt.Key_G)
         self.show_glossary_action.setStatusTip(self.tr("View the course glossary"))
         self.show_glossary_action.triggered.connect(self.show_glossary_view)
         learning_menu.addAction(self.show_glossary_action)
+
+        # --- View Menu ---
+        view_menu = menu_bar.addMenu(self.tr("&View"))
+        # Add actions to toggle visibility of both dock widgets
+        view_menu.addAction(self.navigation_dock_widget.toggleViewAction())
+        view_menu.addAction(self.progress_dock_widget.toggleViewAction())
+
 
     def _is_course_available(self, action_description_tr: str) -> bool:
         """
@@ -205,24 +205,24 @@ class MainWindow(QMainWindow):
 
     def show_progress_view(self):
         # This method is now obsolete as progress is always visible.
-        # It is no longer connected to any menu action.
         pass
 
     def show_course_overview(self):
         if self.course_load_failed:
             return
 
-        # Refresh the left panel views
+        # Refresh the views inside the docks
         self.course_overview_view.refresh_view()
         self.progress_view.refresh_view()
 
-        # Set the right panel to the placeholder
+        # Set the central widget to the placeholder
         self.right_panel_stack.setCurrentWidget(self.right_panel_placeholder)
         
-        # Enable the left panel for interaction
-        self.left_panel.setEnabled(True)
+        # Enable both dock widgets for interaction
+        self.navigation_dock_widget.setEnabled(True)
+        self.progress_dock_widget.setEnabled(True)
         
-        logger.info("Showing course overview (home state). Left panel enabled.")
+        logger.info("Showing course overview (home state). Dock panels enabled.")
 
 
     def start_lesson(self, lesson_id: str):
@@ -231,10 +231,11 @@ class MainWindow(QMainWindow):
         
         if hasattr(self, "lesson_view") and self.lesson_view:
             logger.info(f"Starting lesson: {lesson_id}")
-            # Disable left panel
-            self.left_panel.setEnabled(False)
+            # Disable both dock widgets
+            self.navigation_dock_widget.setEnabled(False)
+            self.progress_dock_widget.setEnabled(False)
             
-            # Start lesson and switch right panel
+            # Start lesson and switch central widget
             self.lesson_view.start_lesson(lesson_id)
             self.right_panel_stack.setCurrentWidget(self.lesson_view)
         else:
@@ -254,9 +255,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "review_view") and self.review_view:
             self.review_view.start_review_session()
             if self.review_view.total_exercises_in_session > 0:
-                # Disable left panel
-                self.left_panel.setEnabled(False)
-                # Switch right panel
+                # Disable both dock widgets
+                self.navigation_dock_widget.setEnabled(False)
+                self.progress_dock_widget.setEnabled(False)
+                # Switch central widget
                 self.right_panel_stack.setCurrentWidget(self.review_view)
                 logger.info("Started review session.")
         else:
@@ -276,9 +278,10 @@ class MainWindow(QMainWindow):
             return
 
         if hasattr(self, "glossary_view") and self.glossary_view:
-            # Disable left panel
-            self.left_panel.setEnabled(False)
-            # Refresh and switch right panel
+            # Disable both dock widgets
+            self.navigation_dock_widget.setEnabled(False)
+            self.progress_dock_widget.setEnabled(False)
+            # Refresh and switch central widget
             self.glossary_view.refresh_view()
             self.right_panel_stack.setCurrentWidget(self.glossary_view)
             logger.info("Showing glossary view.")
