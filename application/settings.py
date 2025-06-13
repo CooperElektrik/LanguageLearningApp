@@ -7,14 +7,18 @@ ORG_NAME = "LinguaLearnProject" # Used for QStandardPaths, QSettings etc.
 
 # --- File and Directory Names (relative to application root or MEIPASS) ---
 MANIFEST_FILENAME = "manifest.yaml"
+COURSES_DIR = "courses"           # The top-level directory containing all course folders
+ASSETS_DIR = "assets"             # Directory for shared assets like sounds
+SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds") # Sub-directory for sound effects
 LOCALIZATION_DIR = "localization" # Directory containing .qm files
 THEME_DIR = "ui/styles"           # Directory containing .qss files
 DEFAULT_THEME_FILE = "win95_theme.qss" # Default theme file to load
 
-# --- Course Content related ---
-# These might be useful if you need to reference them from settings
-# COURSE_CONTENT_DIR = "courses" # Example if courses were in a subdirectory
-# GLOSSARY_FILENAME_SUFFIX = "_glossary.yaml" # Example
+# --- Sound Settings ---
+SOUND_EFFECTS_ENABLED = False
+SOUND_FILE_CORRECT = "correct.wav"
+SOUND_FILE_INCORRECT = "incorrect.wav"
+SOUND_FILE_COMPLETE = "complete.wav"
 
 # --- Locale Settings ---
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.
@@ -37,6 +41,3 @@ PROGRESS_DATA_SUBDIR = "Progress"
 DEFAULT_FONT_FAMILY = "Arial"
 DEFAULT_FONT_SIZE_NORMAL = 10
 DEFAULT_FONT_SIZE_LARGE = 12
-
-# --- Constants for UI elements or keys if needed centrally ---
-# e.g. VIEW_COURSE_OVERVIEW = "CourseOverviewView"

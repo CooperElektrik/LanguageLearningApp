@@ -191,8 +191,6 @@ class ProgressManager:
             srs_attrs["ease_factor"] = max(1.3, srs_attrs["ease_factor"])
 
         # NEW: Set 'is_initially_learned' if criteria are met and it's not already true
-        # Define "initially learned" as successfully completing the exercise at least once
-        # (i.e., repetitions >= 1 AND a non-failing quality score)
         if not srs_attrs["is_initially_learned"] and srs_attrs["repetitions"] >= 1 and quality_score_sm2 >= 3:
             srs_attrs["is_initially_learned"] = True
             logger.debug(f"Exercise '{srs_attrs.get('exercise_id', 'N/A')}' marked as initially learned.")
@@ -215,11 +213,8 @@ class ProgressManager:
         quality_score_sm2 (0-5) reflects user's self-assessment of recall difficulty.
         """
         srs_attrs = self.exercise_srs_data[exercise_id]
-        # Pass exercise_id to srs_attrs for logging purposes (debugging _calculate_srs_parameters)
         srs_attrs['exercise_id'] = exercise_id
 
-        # If is_correct is False, force a low quality score for SM2 algorithm,
-        # ensuring it's treated as an incorrect answer for SRS progression.
         if not is_correct and quality_score_sm2 >= 3:
             logger.debug(f"Forcing SM2 quality to 0 for objectively incorrect answer '{exercise_id}'.")
             quality_score_sm2 = 0
@@ -304,6 +299,30 @@ class ProgressManager:
 
         return due_exercises[:limit] if limit is not None else due_exercises
 
+    def get_weakest_exercises(
+        self, all_course_exercises: List[Exercise], limit: Optional[int] = None
+    ) -> List[Exercise]:
+        """
+        Returns a list of exercises the user struggles with, sorted by ease factor.
+        Only includes exercises that have been reviewed at least once.
+        """
+        reviewed_exercises = []
+        for exercise in all_course_exercises:
+            srs_attrs = self.exercise_srs_data[exercise.exercise_id]
+            # Only consider exercises that have been seen at least once
+            if srs_attrs["repetitions"] > 0:
+                reviewed_exercises.append(exercise)
+
+        # Sort by ease_factor (ascending), then by last_reviewed (oldest first)
+        reviewed_exercises.sort(
+            key=lambda ex: (
+                self.exercise_srs_data[ex.exercise_id]["ease_factor"],
+                self.exercise_srs_data[ex.exercise_id]["last_reviewed"] or datetime.min,
+            )
+        )
+
+        return reviewed_exercises[:limit] if limit is not None else reviewed_exercises
+
 
     def get_lesson_completion_status(
         self, lesson_exercises: List[Exercise]
@@ -311,7 +330,7 @@ class ProgressManager:
         """
         Determines if a lesson is considered 'completed' for display purposes.
         A lesson is completed if ALL its exercises have been 'initially learned'
-        (i.e., 'is_initially_learned' flag is True for all exercises).
+        (i.e., 'is_initially_learned' flag is True for all of them).
         """
         if not lesson_exercises:
             return True # An empty lesson is considered completed

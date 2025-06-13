@@ -3,12 +3,42 @@
 import sys
 import os
 import logging
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtCore import QUrl
+import settings
 
 logger = logging.getLogger(__name__)
 
 # This global variable will store the application's root directory.
-# It's set by main.py (or another entry point) early in the application's lifecycle.
 _APP_ROOT_DIR = None
+_sound_player = None
+_audio_output = None
+
+def _init_sound_player():
+    """Initializes the shared QMediaPlayer instance for sound effects."""
+    global _sound_player, _audio_output
+    if _sound_player is None:
+        _sound_player = QMediaPlayer()
+        _audio_output = QAudioOutput()
+        _sound_player.setAudioOutput(_audio_output)
+        _audio_output.setVolume(0.5) # Set a reasonable default volume
+
+def play_sound(sound_filename: str):
+    """Plays a sound effect if they are enabled in settings."""
+    if not settings.SOUND_EFFECTS_ENABLED:
+        return
+    
+    _init_sound_player()
+    
+    sound_path_relative = os.path.join(settings.SOUNDS_DIR, sound_filename)
+    sound_path_abs = get_resource_path(sound_path_relative)
+    
+    if os.path.exists(sound_path_abs):
+        _sound_player.setSource(QUrl.fromLocalFile(sound_path_abs))
+        _sound_player.play()
+    else:
+        logger.warning(f"Sound file not found: {sound_path_abs}")
+
 
 def set_app_root_dir(app_root_dir: str):
     """

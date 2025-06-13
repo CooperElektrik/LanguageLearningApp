@@ -3,8 +3,9 @@ dist/
 .vscode/
 application/core/data/
 application/assets
-esperanto_course.yaml
+content.yaml
 manifest.yaml
+glossary.yaml
 *.pyc
 *.wav
 *.mp3

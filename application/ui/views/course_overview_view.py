@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QGroupBox,
     QStyle,
+    QHBoxLayout,
 )
 from PySide6.QtCore import Signal, Qt
 from core.course_manager import CourseManager
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 class CourseOverviewView(QWidget):
     lesson_selected = Signal(str) # lesson_id
     start_review_session_requested = Signal()
+    start_weakest_review_requested = Signal() # New signal
 
     def __init__(self, course_manager: CourseManager, progress_manager: ProgressManager, parent=None):
         super().__init__(parent)
@@ -50,10 +52,19 @@ class CourseOverviewView(QWidget):
         self.due_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         srs_layout.addWidget(self.due_count_label)
 
-        self.start_review_button = QPushButton()
+        review_buttons_layout = QHBoxLayout()
+        self.start_review_button = QPushButton(self.tr("Review Due"))
         self.start_review_button.setObjectName("start_review_button_main")
         self.start_review_button.clicked.connect(self.start_review_session_requested.emit)
-        srs_layout.addWidget(self.start_review_button)
+        review_buttons_layout.addWidget(self.start_review_button)
+
+        self.start_weak_review_button = QPushButton(self.tr("Review Weak"))
+        self.start_weak_review_button.setObjectName("start_weak_review_button")
+        self.start_weak_review_button.setToolTip(self.tr("Review items you struggle with the most."))
+        self.start_weak_review_button.clicked.connect(self.start_weakest_review_requested.emit)
+        review_buttons_layout.addWidget(self.start_weak_review_button)
+
+        srs_layout.addLayout(review_buttons_layout)
         self.main_layout.addWidget(self.srs_groupbox)
 
         # Units and Lessons Scroll Area
@@ -81,7 +92,6 @@ class CourseOverviewView(QWidget):
                 if widget is not None:
                     widget.deleteLater()
                 else:
-                    # If item is a layout, clear it recursively (not strictly needed here but good practice)
                     sub_layout = item.layout()
                     if sub_layout is not None:
                         self._clear_layout(sub_layout)
@@ -98,7 +108,7 @@ class CourseOverviewView(QWidget):
             self.units_layout.addWidget(no_units_label)
             return
 
-        all_course_units_for_unlock_check = units # For clarity, or pass self.course_manager.get_units() directly
+        all_course_units_for_unlock_check = units
 
         for unit in units:
             unit_groupbox = QGroupBox(unit.title)
@@ -122,31 +132,28 @@ class CourseOverviewView(QWidget):
                     lesson_button.setObjectName("lesson_button")
 
                     icon = None
-                    status_property = "locked" # For QSS styling via custom property
+                    status_property = "locked"
                     if is_completed:
-                        icon = self.style().standardIcon(QStyle.SP_DialogApplyButton) # Example: Checkmark like icon
+                        icon = self.style().standardIcon(QStyle.SP_DialogApplyButton)
                         status_property = "completed"
                     elif is_unlocked:
-                        icon = self.style().standardIcon(QStyle.SP_MediaPlay) # Play icon
+                        icon = self.style().standardIcon(QStyle.SP_MediaPlay)
                         status_property = "unlocked"
                     else:
-                        icon = self.style().standardIcon(QStyle.SP_DialogCancelButton) # Example: Lock or NoEntry icon
-                        # status_property remains "locked"
+                        icon = self.style().standardIcon(QStyle.SP_DialogCancelButton)
                     
                     if icon:
                         lesson_button.setIcon(icon)
                     
-                    lesson_button.setProperty("status", status_property) # For QSS: button[status="completed"] {...}
+                    lesson_button.setProperty("status", status_property)
 
-                    if is_unlocked or is_completed: # Clickable if unlocked or completed (to review)
+                    if is_unlocked or is_completed:
                         lesson_button.setEnabled(True)
                         lesson_button.clicked.connect(
-                            # Use a lambda that captures current lesson_id
                             lambda checked=False, lid=lesson.lesson_id: self.lesson_selected.emit(lid)
                         )
-                    else: # Locked
+                    else:
                         lesson_button.setEnabled(False)
-                        # Disabled appearance will be handled by QSS or default Qt style for disabled buttons
 
                     unit_layout.addWidget(lesson_button)
             
@@ -154,32 +161,28 @@ class CourseOverviewView(QWidget):
 
     def refresh_view(self):
         """Refreshes all dynamic content in the view."""
-        if self.course_manager.course is None: # Should not happen if MainWindow handles course_load_failed
+        if self.course_manager.course is None:
             logger.warning("RefreshView called but no course is loaded.")
-            # Display an error or clear the view
             self._clear_layout(self.units_layout)
             self.xp_label.setText(self.tr("Course not loaded."))
             self.due_count_label.setText(self.tr("N/A"))
-            self.start_review_button.setText(self.tr("N/A"))
             self.start_review_button.setEnabled(False)
+            self.start_weak_review_button.setEnabled(False)
             return
 
-        # Refresh XP label
         self.xp_label.setText(self.tr("Total XP: {0}").format(self.progress_manager.get_total_xp()))
 
-        # Refresh SRS Dashboard
         all_exercises = self.course_manager.get_all_exercises()
-        # Get all due exercises for an accurate count, review view will limit actual session size
         due_exercises_count = len(self.progress_manager.get_due_exercises(all_exercises, limit=None)) 
+        weak_exercises_count = len(self.progress_manager.get_weakest_exercises(all_exercises, limit=None))
         
         if due_exercises_count > 0:
             self.due_count_label.setText(self.tr("{0} exercises due for review.").format(due_exercises_count))
             self.start_review_button.setEnabled(True)
-            self.start_review_button.setText(self.tr("Start Review Session"))
         else:
-            self.due_count_label.setText(self.tr("No exercises due for review right now!")) # Simplified
+            self.due_count_label.setText(self.tr("No exercises due for review right now!"))
             self.start_review_button.setEnabled(False)
-            self.start_review_button.setText(self.tr("No Reviews Due"))
 
-        # Re-populate course units (lessons/units)
+        self.start_weak_review_button.setEnabled(weak_exercises_count > 0)
+        
         self._populate_course_units()
