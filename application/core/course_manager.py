@@ -14,6 +14,10 @@ PROMPT_KEY_TRANSLATE_TO_SOURCE = "prompt_translate_to_source" # e.g., "Translate
 PROMPT_KEY_MCQ_TRANSLATION = "prompt_mcq_translation"       # e.g., "Choose the %s translation for: \"%s\" (%s)"
 PROMPT_KEY_FIB = "prompt_fib"                               # e.g., "%s (Hint: %s)"
 PROMPT_KEY_DEFAULT = "prompt_default_exercise_text"         # e.g., "Exercise Prompt: %s"
+PROMPT_KEY_IMAGE_ASSOCIATION = "prompt_image_association"     # e.g., "What is this?"
+PROMPT_KEY_LISTEN_SELECT = "prompt_listen_select"             # e.g., "Select the word you hear:"
+PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"         # e.g., "Put the words in the correct order:"
+PROMPT_KEY_DICTATION = "prompt_dictation"                     # e.g., "Listen and type what you hear."
 
 
 class CourseManager:
@@ -30,8 +34,12 @@ class CourseManager:
         self._answer_checkers: Dict[str, Callable[[Exercise, str], Tuple[bool, str]]] = {
             "translate_to_target": self._check_translation_answer,
             "translate_to_source": self._check_translation_answer,
+            "dictation": self._check_translation_answer,
             "multiple_choice_translation": self._check_multiple_choice_answer,
+            "image_association": self._check_multiple_choice_answer,
+            "listen_and_select": self._check_multiple_choice_answer,
             "fill_in_the_blank": self._check_fill_in_the_blank_answer,
+            "sentence_jumble": self._check_sentence_jumble_answer,
         }
 
         self._load_course_from_manifest()
@@ -144,7 +152,7 @@ class CourseManager:
     def _check_translation_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """Checks answer for translate_to_target/source exercise types."""
         correct_answer_display = exercise.answer
-        is_correct = user_answer.lower() == exercise.answer.lower()
+        is_correct = user_answer.strip().lower() == exercise.answer.lower()
         return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
 
     def _check_multiple_choice_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
@@ -168,6 +176,20 @@ class CourseManager:
         is_correct = user_answer.lower() == correct_answer_display.lower()
         return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
 
+    def _check_sentence_jumble_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+        """Checks answer for sentence_jumble exercise type."""
+        correct_answer_display = exercise.answer
+        # Normalize by removing extra spaces and making lowercase for comparison
+        is_correct = " ".join(user_answer.lower().split()) == " ".join(correct_answer_display.lower().split())
+        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
+
+    def _check_completion_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+        """Checks answers for self-contained exercises like matching or pronunciation."""
+        # These exercises are considered 'correct' when the widget emits its completion signal.
+        # The user_answer is expected to be a marker like "completed".
+        is_correct = user_answer.lower() == "completed"
+        return is_correct, "Correct!" if is_correct else "Activity not completed."
+
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """
         Dispatches to the correct answer checking method based on exercise type.
@@ -185,29 +207,24 @@ class CourseManager:
         Returns a dictionary with a template_key and arguments for formatting the prompt.
         The UI widget (e.g., BaseExerciseWidget) will be responsible for translating the template_key.
         """
+        prompt_text = exercise.prompt or ""
+
         if exercise.type == "translate_to_target":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
-                "args": [self.target_language, exercise.prompt or ""]
-            }
+            return {"template_key": PROMPT_KEY_TRANSLATE_TO_TARGET, "args": [self.target_language, prompt_text]}
         elif exercise.type == "translate_to_source":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
-                "args": [self.source_language, exercise.prompt or ""]
-            }
+            return {"template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE, "args": [self.source_language, prompt_text]}
+        elif exercise.type == "dictation":
+            return {"template_key": PROMPT_KEY_DICTATION, "args": [prompt_text]}
         elif exercise.type == "multiple_choice_translation":
-            return {
-                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
-                "args": [self.target_language, exercise.source_word or "", self.source_language]
-            }
+            return {"template_key": PROMPT_KEY_MCQ_TRANSLATION, "args": [self.target_language, exercise.source_word or "", self.source_language]}
         elif exercise.type == "fill_in_the_blank":
-            return {
-                "template_key": PROMPT_KEY_FIB,
-                "args": [exercise.sentence_template or "", exercise.translation_hint or ""]
-            }
+            return {"template_key": PROMPT_KEY_FIB, "args": [exercise.sentence_template or "", exercise.translation_hint or ""]}
+        elif exercise.type == "image_association":
+            return {"template_key": PROMPT_KEY_IMAGE_ASSOCIATION, "args": [prompt_text]}
+        elif exercise.type == "listen_and_select":
+            return {"template_key": PROMPT_KEY_LISTEN_SELECT, "args": [prompt_text]}
+        elif exercise.type == "sentence_jumble":
+            return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
         
         # Default case for generic prompt or unsupported type
-        return {
-            "template_key": PROMPT_KEY_DEFAULT,
-            "args": [exercise.prompt or ""]
-        }
+        return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}

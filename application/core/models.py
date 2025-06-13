@@ -17,14 +17,13 @@ class ExerciseOption:
             data["correct"] = self.correct
         return data
 
-
 @dataclass
 class Exercise:
     exercise_id: str
     type: str
 
     prompt: Optional[str] = None
-    answer: Optional[str] = None # For translation exercises
+    answer: Optional[str] = None # For translation, dictation, sentence jumble
 
     source_word: Optional[str] = None # For MCQ translation
     options: List[ExerciseOption] = field(default_factory=list) # For MCQ/FIB
@@ -33,8 +32,10 @@ class Exercise:
     correct_option: Optional[str] = None # For FIB and simple MCQ options
     translation_hint: Optional[str] = None # For FIB
 
-    audio_file: Optional[str] = None # Relative path to audio for pronunciation
-    image_file: Optional[str] = None # Relative path to image for visual exercises
+    audio_file: Optional[str] = None # For listening exercises
+    image_file: Optional[str] = None # For visual exercises
+
+    words: Optional[List[str]] = None # For sentence_jumble
 
     # SRS related fields managed by ProgressManager
     last_reviewed: Optional[datetime] = field(default=None, repr=False)
@@ -61,18 +62,17 @@ class Exercise:
         if data.get("next_review_due") is not None and isinstance(data["next_review_due"], datetime):
             data["next_review_due"] = data["next_review_due"].isoformat()
 
-        # Convert ExerciseOption objects in 'options' list
+        # Convert ExerciseOption and MatchingPair objects in lists
         if "options" in data and data["options"]:
             data["options"] = [opt.to_dict() for opt in self.options]
+        if "pairs" in data and data["pairs"]:
+            data["pairs"] = [p.to_dict() for p in self.pairs]
         
         # Remove fields that are not part of basic content, but for internal tracking
-        # 'raw_data' is already excluded by repr=False but good to be explicit for clarity
-        data.pop("raw_data", None) # Ensure raw_data is not serialized in progress
-        data.pop("exercise_id", None) # exercise_id is the key in progress data, not an attribute to save
+        data.pop("raw_data", None)
+        data.pop("exercise_id", None)
 
         # Clean up None values and empty lists from the final dictionary
-        # This will remove fields that are not relevant to a specific exercise type
-        # For example, a 'translate' exercise won't have 'options'
         cleaned_data = {k: v for k, v in data.items() if v is not None and not (isinstance(v, list) and not v)}
         
         return cleaned_data
@@ -88,10 +88,12 @@ class Exercise:
         }
 
         # Add fields based on exercise type
-        if self.type in ["translate_to_target", "translate_to_source"]:
+        if self.type in ["translate_to_target", "translate_to_source", "dictation"]:
             if self.prompt is not None: data["prompt"] = self.prompt
             if self.answer is not None: data["answer"] = self.answer
-        elif self.type == "multiple_choice_translation":
+        elif self.type in ["multiple_choice_translation", "image_association", "listen_and_select"]:
+            # source_word is optional, prompt is more generic
+            if self.prompt is not None: data["prompt"] = self.prompt
             if self.source_word is not None: data["source_word"] = self.source_word
             if self.options: data["options"] = [opt.to_dict() for opt in self.options]
         elif self.type == "fill_in_the_blank":
@@ -99,7 +101,11 @@ class Exercise:
             if self.correct_option is not None: data["correct_option"] = self.correct_option
             if self.options: data["options"] = [opt.text for opt in self.options] # FIB options are just text
             if self.translation_hint is not None: data["translation_hint"] = self.translation_hint
-        
+        elif self.type == "sentence_jumble":
+            if self.prompt is not None: data["prompt"] = self.prompt
+            if self.words: data["words"] = self.words
+            if self.answer is not None: data["answer"] = self.answer
+            
         # Common optional fields
         if self.audio_file is not None: data["audio_file"] = self.audio_file
         if self.image_file is not None: data["image_file"] = self.image_file

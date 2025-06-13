@@ -5,7 +5,6 @@ import random
 from typing import Dict, Any, Optional, List
 
 from .models import Course, Unit, Lesson, Exercise, ExerciseOption
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +40,8 @@ def _parse_exercise_options(options_data: Any, correct_option_text: Optional[str
         elif all(isinstance(opt, str) for opt in options_data):
             # Format: ["Option A", "Option B", "Option C"]
             # Requires correct_option_text to determine correctness
+            if correct_option_text is None:
+                logger.warning(f"Simple options list provided {options_data} but 'correct_option' is missing. Cannot determine correct answer.")
             parsed_options = [
                 ExerciseOption(text=opt, correct=(opt == correct_option_text))
                 for opt in options_data
@@ -75,22 +76,27 @@ def _parse_exercise(
     translation_hint = exercise_data.get("translation_hint")
     audio_file = exercise_data.get("audio_file")
     image_file = exercise_data.get("image_file")
+    words_data = exercise_data.get("words")
+    pairs_data = exercise_data.get("pairs")
 
     options: List[ExerciseOption] = []
-    if ex_type in ["multiple_choice_translation", "fill_in_the_blank"]:
+    if ex_type in ["multiple_choice_translation", "fill_in_the_blank", "image_association", "listen_and_select"]:
         options = _parse_exercise_options(exercise_data.get("options", []), correct_option)
         if not options:
             logger.warning(f"No valid options parsed for {ex_type} exercise {ex_id}.")
 
     # Basic validation for essential fields based on type
-    if ex_type in ["translate_to_target", "translate_to_source"] and (prompt is None or answer is None):
+    if ex_type in ["translate_to_target", "translate_to_source", "dictation"] and (prompt is None or answer is None):
         logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing.")
         return None
-    elif ex_type == "multiple_choice_translation" and (source_word is None or not options):
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'source_word' or 'options' missing/empty.")
+    elif ex_type in ["multiple_choice_translation", "image_association", "listen_and_select"] and (not options):
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'options' are missing/empty.")
         return None
     elif ex_type == "fill_in_the_blank" and (sentence_template is None or correct_option is None or not options):
         logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'sentence_template', 'correct_option' or 'options' missing/empty.")
+        return None
+    elif ex_type == "sentence_jumble" and (not words_data or answer is None):
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'words' or 'answer' is missing/empty.")
         return None
     
     return Exercise(
@@ -105,6 +111,7 @@ def _parse_exercise(
         translation_hint=translation_hint,
         audio_file=audio_file,
         image_file=image_file,
+        words=words_data if isinstance(words_data, list) else None,
         raw_data=exercise_data, # Store original raw data for editor round-trip
     )
 
