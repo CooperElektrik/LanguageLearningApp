@@ -5,6 +5,7 @@ import random
 from typing import Dict, Any, Optional, List
 
 from .models import Course, Unit, Lesson, Exercise, ExerciseOption
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,14 +40,12 @@ def _parse_exercise_options(options_data: Any, correct_option_text: Optional[str
             ]
         elif all(isinstance(opt, str) for opt in options_data):
             # Format: ["Option A", "Option B", "Option C"]
-            # Requires correct_option_text to determine correctness
             if correct_option_text is None:
-                logger.warning(f"Simple options list provided {options_data} but 'correct_option' is missing. Cannot determine correct answer.")
+                logger.warning(f"Simple options list provided {options_data} but 'correct_option' is missing.")
             parsed_options = [
                 ExerciseOption(text=opt, correct=(opt == correct_option_text))
                 for opt in options_data
             ]
-            # Shuffle only if not explicitly ordered or correctness is determined by separate field
             random.shuffle(parsed_options)
     else:
         logger.warning(f"Invalid options data format: {options_data}. Expected a list.")
@@ -68,16 +67,16 @@ def _parse_exercise(
         logger.warning(f"Skipping exercise {ex_id}: 'type' field is missing.")
         return None
 
+    title = exercise_data.get("title")
     prompt = exercise_data.get("prompt")
     answer = exercise_data.get("answer")
     source_word = exercise_data.get("source_word")
     sentence_template = exercise_data.get("sentence_template")
-    correct_option = exercise_data.get("correct_option") # Used for FIB and for determining correct option in simple MCQ lists
+    correct_option = exercise_data.get("correct_option")
     translation_hint = exercise_data.get("translation_hint")
     audio_file = exercise_data.get("audio_file")
     image_file = exercise_data.get("image_file")
     words_data = exercise_data.get("words")
-    pairs_data = exercise_data.get("pairs")
 
     options: List[ExerciseOption] = []
     if ex_type in ["multiple_choice_translation", "fill_in_the_blank", "image_association", "listen_and_select"]:
@@ -98,10 +97,14 @@ def _parse_exercise(
     elif ex_type == "sentence_jumble" and (not words_data or answer is None):
         logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'words' or 'answer' is missing/empty.")
         return None
-    
+    elif ex_type == "context_block" and prompt is None:
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing.")
+        return None
+
     return Exercise(
         exercise_id=ex_id,
         type=ex_type,
+        title=title,
         prompt=prompt,
         answer=answer,
         source_word=source_word,
@@ -112,7 +115,7 @@ def _parse_exercise(
         audio_file=audio_file,
         image_file=image_file,
         words=words_data if isinstance(words_data, list) else None,
-        raw_data=exercise_data, # Store original raw data for editor round-trip
+        raw_data=exercise_data,
     )
 
 
@@ -182,7 +185,7 @@ def load_course_content(
                 exercise_obj = _parse_exercise(
                     ex_data, lesson_obj.lesson_id, i, target_lang, source_lang
                 )
-                if exercise_obj: # Only add if successfully parsed
+                if exercise_obj:
                     lesson_obj.exercises.append(exercise_obj)
                 else:
                     logger.warning(f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping.")

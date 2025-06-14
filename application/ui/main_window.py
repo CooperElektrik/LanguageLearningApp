@@ -18,6 +18,7 @@ from ui.views.progress_view import ProgressView
 from ui.views.glossary_view import GlossaryView
 from ui.views.course_selection_view import CourseSelectionView
 from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
+from ui.dialogs.settings_dialog import SettingsDialog
 
 
 logger = logging.getLogger(__name__)
@@ -107,9 +108,14 @@ class MainWindow(QMainWindow):
     def _setup_menu_bar(self):
         menu_bar = self.menuBar()
         menu_bar.clear() # Clear any previous menu
+
+        file_menu = menu_bar.addMenu(self.tr("&File"))
+        file_menu.addAction(self.tr("&Settings..."), self.show_settings_dialog)
+        file_menu.addSeparator()
+        file_menu.addAction(self.tr("&Quit"), self.close)
         
         learning_menu = menu_bar.addMenu(self.tr("&Learning"))
-        learning_menu.addAction(self.tr("&Start Review"), self.start_review_session, Qt.CTRL | Qt.Key_R)
+        learning_menu.addAction(self.tr("&Start Due Review"), self.start_review_session, Qt.CTRL | Qt.Key_R)
         learning_menu.addAction(self.tr("Review &Weak Items"), self.start_weakest_review_session)
         learning_menu.addAction(self.tr("&Glossary"), self.show_glossary_view, Qt.CTRL | Qt.Key_G)
 
@@ -136,6 +142,11 @@ class MainWindow(QMainWindow):
         self._set_docks_enabled(False)
         self.lesson_view.start_lesson(lesson_id)
         self.right_panel_stack.setCurrentWidget(self.lesson_view)
+
+    def show_settings_dialog(self):
+        """Opens the application settings dialog."""
+        dialog = SettingsDialog(self)
+        dialog.exec()
 
     def start_review_session(self):
         if not self.course_manager: return

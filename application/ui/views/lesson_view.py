@@ -104,6 +104,9 @@ class LessonView(BaseExercisePlayerView): # Inherit from the new base class
         is_initial = self.view_state == LessonViewState.INITIAL_LOAD
 
         self.submit_button.setVisible(is_asking)
+        # Hide the main submit button for widgets that have their own
+        if is_asking and self.current_exercise_obj and self.current_exercise_obj.type == "context_block":
+            self.submit_button.setVisible(False)
         self.submit_button.setEnabled(is_asking)
         
         self.skip_button.setVisible(is_asking and self.view_state != LessonViewState.REVIEWING_MISTAKES)

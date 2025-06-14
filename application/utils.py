@@ -1,10 +1,8 @@
-# application/utils.py
-
 import sys
 import os
 import logging
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QSettings
 import settings
 
 logger = logging.getLogger(__name__)
@@ -18,14 +16,23 @@ def _init_sound_player():
     """Initializes the shared QMediaPlayer instance for sound effects."""
     global _sound_player, _audio_output
     if _sound_player is None:
+        q_settings = QSettings()
         _sound_player = QMediaPlayer()
         _audio_output = QAudioOutput()
         _sound_player.setAudioOutput(_audio_output)
-        _audio_output.setVolume(0.5) # Set a reasonable default volume
+        
+        # Set volume from saved settings
+        volume_int = q_settings.value(settings.QSETTINGS_KEY_SOUND_VOLUME, settings.SOUND_VOLUME_DEFAULT, type=int)
+        volume_float = float(volume_int) / 100.0
+        _audio_output.setVolume(volume_float)
+        logger.debug(f"Sound player initialized with volume: {volume_float}")
 
 def play_sound(sound_filename: str):
     """Plays a sound effect if they are enabled in settings."""
-    if not settings.SOUND_EFFECTS_ENABLED:
+    q_settings = QSettings()
+    is_enabled = q_settings.value(settings.QSETTINGS_KEY_SOUND_ENABLED, settings.SOUND_EFFECTS_ENABLED_DEFAULT, type=bool)
+
+    if not is_enabled:
         return
     
     _init_sound_player()
@@ -38,6 +45,15 @@ def play_sound(sound_filename: str):
         _sound_player.play()
     else:
         logger.warning(f"Sound file not found: {sound_path_abs}")
+
+def update_sound_volume():
+    """Updates the volume of the sound player based on saved settings."""
+    if _audio_output:
+        q_settings = QSettings()
+        volume_int = q_settings.value(settings.QSETTINGS_KEY_SOUND_VOLUME, settings.SOUND_VOLUME_DEFAULT, type=int)
+        volume_float = float(volume_int) / 100.0
+        _audio_output.setVolume(volume_float)
+        logger.debug(f"Sound volume updated to: {volume_float}")
 
 
 def set_app_root_dir(app_root_dir: str):

@@ -15,10 +15,15 @@ THEME_DIR = "ui/styles"           # Directory containing .qss files
 DEFAULT_THEME_FILE = "win95_theme.qss" # Default theme file to load
 
 # --- Sound Settings ---
-SOUND_EFFECTS_ENABLED = False
+SOUND_EFFECTS_ENABLED_DEFAULT = True
+SOUND_VOLUME_DEFAULT = 50 # An integer from 0 to 100
 SOUND_FILE_CORRECT = "correct.wav"
 SOUND_FILE_INCORRECT = "incorrect.wav"
 SOUND_FILE_COMPLETE = "complete.wav"
+
+# --- QSettings Keys ---
+QSETTINGS_KEY_SOUND_ENABLED = "audio/sound_effects_enabled"
+QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
 
 # --- Locale Settings ---
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.

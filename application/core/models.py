@@ -10,8 +10,6 @@ class ExerciseOption:
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the ExerciseOption object to a dictionary."""
-        # Only include 'correct' if it's True, to keep YAML/JSON clean for options
-        # This is fine for simple booleans, but for complex fields, avoid conditional logic.
         data = {"text": self.text}
         if self.correct:
             data["correct"] = self.correct
@@ -22,22 +20,22 @@ class Exercise:
     exercise_id: str
     type: str
 
+    title: Optional[str] = None # For context_block or any other exercise
     prompt: Optional[str] = None
-    answer: Optional[str] = None # For translation, dictation, sentence jumble
+    answer: Optional[str] = None
 
-    source_word: Optional[str] = None # For MCQ translation
-    options: List[ExerciseOption] = field(default_factory=list) # For MCQ/FIB
+    source_word: Optional[str] = None
+    options: List[ExerciseOption] = field(default_factory=list)
 
-    sentence_template: Optional[str] = None # For FIB
-    correct_option: Optional[str] = None # For FIB and simple MCQ options
-    translation_hint: Optional[str] = None # For FIB
+    sentence_template: Optional[str] = None
+    correct_option: Optional[str] = None
+    translation_hint: Optional[str] = None
 
-    audio_file: Optional[str] = None # For listening exercises
-    image_file: Optional[str] = None # For visual exercises
+    audio_file: Optional[str] = None
+    image_file: Optional[str] = None
 
-    words: Optional[List[str]] = None # For sentence_jumble
+    words: Optional[List[str]] = None
 
-    # SRS related fields managed by ProgressManager
     last_reviewed: Optional[datetime] = field(default=None, repr=False)
     next_review_due: Optional[datetime] = field(default=None, repr=False)
     interval_days: int = field(default=0)
@@ -45,34 +43,25 @@ class Exercise:
     repetitions: int = field(default=0)
     correct_in_a_row: int = field(default=0)
 
-    # Stores original raw data, useful for round-tripping in editors
     raw_data: Dict[str, Any] = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the Exercise object to a dictionary for progress saving.
-        Includes all SRS fields and exercise-specific content fields.
-        None values are typically excluded by asdict by default.
         """
         data = asdict(self)
 
-        # Convert datetime objects to ISO format strings for serialization
         if data.get("last_reviewed") is not None and isinstance(data["last_reviewed"], datetime):
             data["last_reviewed"] = data["last_reviewed"].isoformat()
         if data.get("next_review_due") is not None and isinstance(data["next_review_due"], datetime):
             data["next_review_due"] = data["next_review_due"].isoformat()
 
-        # Convert ExerciseOption and MatchingPair objects in lists
         if "options" in data and data["options"]:
             data["options"] = [opt.to_dict() for opt in self.options]
-        if "pairs" in data and data["pairs"]:
-            data["pairs"] = [p.to_dict() for p in self.pairs]
         
-        # Remove fields that are not part of basic content, but for internal tracking
         data.pop("raw_data", None)
         data.pop("exercise_id", None)
 
-        # Clean up None values and empty lists from the final dictionary
         cleaned_data = {k: v for k, v in data.items() if v is not None and not (isinstance(v, list) and not v)}
         
         return cleaned_data
@@ -80,33 +69,34 @@ class Exercise:
     def to_content_dict(self) -> Dict[str, Any]:
         """
         Converts the Exercise object to a dictionary suitable for saving to the
-        course content YAML file. This excludes SRS-specific fields and internal IDs.
-        It focuses on the definitional content of the exercise.
+        course content YAML file.
         """
         data = {
             "type": self.type,
         }
 
-        # Add fields based on exercise type
+        # Add title if it exists, for any type
+        if self.title is not None: data["title"] = self.title
+
         if self.type in ["translate_to_target", "translate_to_source", "dictation"]:
             if self.prompt is not None: data["prompt"] = self.prompt
             if self.answer is not None: data["answer"] = self.answer
         elif self.type in ["multiple_choice_translation", "image_association", "listen_and_select"]:
-            # source_word is optional, prompt is more generic
             if self.prompt is not None: data["prompt"] = self.prompt
             if self.source_word is not None: data["source_word"] = self.source_word
             if self.options: data["options"] = [opt.to_dict() for opt in self.options]
         elif self.type == "fill_in_the_blank":
             if self.sentence_template is not None: data["sentence_template"] = self.sentence_template
             if self.correct_option is not None: data["correct_option"] = self.correct_option
-            if self.options: data["options"] = [opt.text for opt in self.options] # FIB options are just text
+            if self.options: data["options"] = [opt.text for opt in self.options]
             if self.translation_hint is not None: data["translation_hint"] = self.translation_hint
         elif self.type == "sentence_jumble":
             if self.prompt is not None: data["prompt"] = self.prompt
             if self.words: data["words"] = self.words
             if self.answer is not None: data["answer"] = self.answer
-            
-        # Common optional fields
+        elif self.type == "context_block":
+            if self.prompt is not None: data["prompt"] = self.prompt
+
         if self.audio_file is not None: data["audio_file"] = self.audio_file
         if self.image_file is not None: data["image_file"] = self.image_file
         
@@ -118,14 +108,14 @@ class Lesson:
     lesson_id: str
     title: str
     exercises: List[Exercise] = field(default_factory=list)
-    unit_id: Optional[str] = None # For internal linking, not part of lesson's own YAML structure
+    unit_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the Lesson object to a dictionary for content saving."""
         data = {
             "lesson_id": self.lesson_id,
             "title": self.title,
-            "exercises": [ex.to_content_dict() for ex in self.exercises], # Use to_content_dict
+            "exercises": [ex.to_content_dict() for ex in self.exercises],
         }
         return data
 
@@ -156,7 +146,7 @@ class Course:
     author: Optional[str] = None
     description: Optional[str] = None
     units: List[Unit] = field(default_factory=list)
-    content_file: Optional[str] = None # Name of the content file this course was loaded from
+    content_file: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the Course object to a dictionary for content saving (its 'units' part)."""

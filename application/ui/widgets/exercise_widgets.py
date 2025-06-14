@@ -15,11 +15,12 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QHBoxLayout,
     QGridLayout,
-    QFrame
+    QFrame,
+    QTextEdit,
 )
 from PySide6.QtCore import Signal, QUrl, Qt, QTimer
 from PySide6.QtGui import QFont, QPixmap
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaRecorder, QAudioInput, QMediaFormat
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 import utils
 
@@ -33,28 +34,22 @@ from core.course_manager import (
     PROMPT_KEY_IMAGE_ASSOCIATION,
     PROMPT_KEY_LISTEN_SELECT,
     PROMPT_KEY_SENTENCE_JUMBLE,
+    PROMPT_KEY_CONTEXT_BLOCK,
     PROMPT_KEY_DICTATION,
 )
 
 logger = logging.getLogger(__name__)
 
 class BaseExerciseWidget(QWidget):
-    answer_submitted = Signal(str) # Emits the selected/entered answer text
+    answer_submitted = Signal(str)
 
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(parent)
         self.exercise = exercise
         self.course_manager = course_manager
-        # Determine asset base directory more robustly
         self.assets_base_dir = self.course_manager.get_course_manifest_directory()
         if not self.assets_base_dir:
             self.assets_base_dir = self.course_manager.get_course_content_directory()
-            if self.assets_base_dir:
-                logger.warning(
-                    "Asset base directory derived from content directory. Manifest directory is preferred."
-                )
-            else:
-                logger.error(f"Could not determine asset base directory for exercise {self.exercise.exercise_id}. Assets may fail to load.")
         
         self.layout = QVBoxLayout(self)
         self.prompt_label = QLabel()
@@ -91,10 +86,8 @@ class BaseExerciseWidget(QWidget):
                     self.image_label.setPixmap(scaled_pixmap)
                     self.image_label.setVisible(True)
                 else:
-                    logger.warning(f"Failed to load image (pixmap is null): {full_image_path}")
                     self.image_label.setVisible(False)
             else:
-                logger.warning(f"Image file not found: {full_image_path}")
                 self.image_label.setVisible(False)
         else:
             self.image_label.setVisible(False)
@@ -113,7 +106,6 @@ class BaseExerciseWidget(QWidget):
     def _play_audio_file(self, relative_audio_path: str):
         """Plays an audio file specified by a path relative to assets_base_dir."""
         if not relative_audio_path or not self.assets_base_dir:
-            logger.warning("Audio file path or assets base directory is missing.")
             return
 
         self._init_audio_player()
@@ -146,22 +138,19 @@ class BaseExerciseWidget(QWidget):
             PROMPT_KEY_IMAGE_ASSOCIATION: self.tr("%s"),
             PROMPT_KEY_LISTEN_SELECT: self.tr("%s"),
             PROMPT_KEY_SENTENCE_JUMBLE: self.tr("%s"),
+            PROMPT_KEY_CONTEXT_BLOCK: self.tr("%s"),
             PROMPT_KEY_DEFAULT: self.tr("Exercise Prompt: %s") if args else self.tr("Exercise Prompt")
         }
 
-        template_str = template_str_map.get(template_key)
+        template_str = template_str_map.get(template_key, "")
         
-        if template_str is None:
-            logger.warning(f"Unknown prompt template key: {template_key}. Using generic fallback.")
-            template_str = self.tr("Exercise: %s") if args else self.tr("Exercise")
-
         formatted_string = template_str
         if args:
             str_args = tuple(str(arg) for arg in args)
             try:
                 formatted_string = template_str % str_args
             except TypeError:
-                logger.error(f"String formatting error for template key '{template_key}'. Template: '{template_str}', Args: {str_args}.")
+                logger.error(f"String formatting error for template key '{template_key}'.")
                 formatted_string = f"{template_str} ({', '.join(str_args)})"
         
         return formatted_string
@@ -173,11 +162,9 @@ class BaseExerciseWidget(QWidget):
         raise NotImplementedError("Subclasses must implement clear_input")
 
     def set_focus_on_input(self):
-        """Sets focus to the primary input element of the exercise."""
         pass
 
     def stop_media(self):
-        """Stops any playing media."""
         if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlayingState:
             self._media_player.stop()
 
@@ -220,9 +207,6 @@ class TranslationExerciseWidget(BaseExerciseWidget):
 
 
 class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
-    """
-    Base class for exercises that present options as radio buttons (e.g., MCQ, some FIB).
-    """
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         
@@ -232,8 +216,7 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
         options_to_display = self.exercise.options
         if not options_to_display:
             logger.warning(f"No options found for option-based exercise: {self.exercise.exercise_id}")
-            no_options_label = QLabel(self.tr("No options available for this exercise."))
-            options_layout.addWidget(no_options_label)
+            options_layout.addWidget(QLabel(self.tr("No options available for this exercise.")))
         else:
             for i, option_obj in enumerate(options_to_display):
                 rb = QRadioButton(option_obj.text)
@@ -295,8 +278,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
-        formatted_prompt = self._format_prompt_from_data(prompt_data)
-        self.prompt_label.setText(formatted_prompt)
+        self.prompt_label.setText(self._format_prompt_from_data(prompt_data))
 
         self.current_sentence_words: List[str] = []
         self.word_bank_buttons: List[QPushButton] = []
@@ -313,18 +295,9 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         self.layout.addLayout(self.word_bank_layout)
         self._setup_word_bank()
 
-        # Layout for action buttons (Submit, Reset)
-        action_buttons_layout = QHBoxLayout()
-
         self.submit_button = QPushButton(self.tr("Submit Sentence"))
-        self.submit_button.clicked.connect(self.submit_answer)
-        action_buttons_layout.addWidget(self.submit_button)
-
-        self.reset_button = QPushButton(self.tr("Reset"))
-        self.reset_button.clicked.connect(self.clear_input) # Connect to existing clear_input
-        action_buttons_layout.addWidget(self.reset_button)
-
-        self.layout.addLayout(action_buttons_layout)
+        self.submit_button.clicked.connect(lambda: self.answer_submitted.emit(self.get_answer()))
+        self.layout.addWidget(self.submit_button)
 
     def _setup_word_bank(self):
         words = list(self.exercise.words) if self.exercise.words else []
@@ -333,7 +306,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
             button = QPushButton(word)
             button.clicked.connect(lambda checked, w=word, b=button: self._add_word_to_sentence(w, b))
             self.word_bank_buttons.append(button)
-            row, col = divmod(i, 4) # Simple grid layout
+            row, col = divmod(i, 4)
             self.word_bank_layout.addWidget(button, row, col)
         self._update_display()
 
@@ -357,16 +330,47 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
     def get_answer(self) -> str:
         return " ".join(self.current_sentence_words)
 
-    def submit_answer(self):
-        self.answer_submitted.emit(self.get_answer())
+
+class ContextBlockWidget(BaseExerciseWidget):
+    """A widget to display text content, not as an interactive exercise."""
+    def __init__(self, exercise: Exercise, course_manager, parent=None):
+        super().__init__(exercise, course_manager, parent)
+        # Hide the default prompt label as we use a dedicated title and content area
+        self.prompt_label.setVisible(False)
+
+        if self.exercise.title:
+            title_label = QLabel(self.exercise.title)
+            title_label.setObjectName("context_title_label")
+            self.layout.insertWidget(0, title_label)
+
+        content_text = QTextEdit()
+        content_text.setReadOnly(True)
+        content_text.setMarkdown(self.exercise.prompt or "")
+        self.layout.insertWidget(1, content_text)
+
+        continue_button = QPushButton(self.tr("Continue"))
+        continue_button.clicked.connect(lambda: self.answer_submitted.emit("completed"))
+        self.layout.addWidget(continue_button)
+
+    def get_answer(self) -> str:
+        return "completed"
+    
+    def clear_input(self):
+        pass # Nothing to clear
+
+    def set_focus_on_input(self):
+        # Focus the continue button by default
+        self.findChild(QPushButton).setFocus()
+
 
 EXERCISE_WIDGET_MAP: Dict[str, Type[BaseExerciseWidget]] = {
     "translate_to_target": TranslationExerciseWidget,
     "translate_to_source": TranslationExerciseWidget,
     "multiple_choice_translation": MultipleChoiceExerciseWidget,
     "fill_in_the_blank": FillInTheBlankExerciseWidget,
-    "dictation": TranslationExerciseWidget, # Reuses same widget
-    "image_association": MultipleChoiceExerciseWidget, # Reuses same widget
+    "dictation": TranslationExerciseWidget,
+    "image_association": MultipleChoiceExerciseWidget,
     "listen_and_select": ListenSelectExerciseWidget,
     "sentence_jumble": SentenceJumbleExerciseWidget,
+    "context_block": ContextBlockWidget,
 }

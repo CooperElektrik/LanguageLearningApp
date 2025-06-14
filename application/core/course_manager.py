@@ -9,15 +9,16 @@ from . import glossary_loader
 logger = logging.getLogger(__name__)
 
 # Constants for prompt template keys, used for i18n
-PROMPT_KEY_TRANSLATE_TO_TARGET = "prompt_translate_to_target" # e.g., "Translate to %s: \"%s\""
-PROMPT_KEY_TRANSLATE_TO_SOURCE = "prompt_translate_to_source" # e.g., "Translate to %s: \"%s\""
-PROMPT_KEY_MCQ_TRANSLATION = "prompt_mcq_translation"       # e.g., "Choose the %s translation for: \"%s\" (%s)"
-PROMPT_KEY_FIB = "prompt_fib"                               # e.g., "%s (Hint: %s)"
-PROMPT_KEY_DEFAULT = "prompt_default_exercise_text"         # e.g., "Exercise Prompt: %s"
-PROMPT_KEY_IMAGE_ASSOCIATION = "prompt_image_association"     # e.g., "What is this?"
-PROMPT_KEY_LISTEN_SELECT = "prompt_listen_select"             # e.g., "Select the word you hear:"
-PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"         # e.g., "Put the words in the correct order:"
-PROMPT_KEY_DICTATION = "prompt_dictation"                     # e.g., "Listen and type what you hear."
+PROMPT_KEY_TRANSLATE_TO_TARGET = "prompt_translate_to_target"
+PROMPT_KEY_TRANSLATE_TO_SOURCE = "prompt_translate_to_source"
+PROMPT_KEY_MCQ_TRANSLATION = "prompt_mcq_translation"
+PROMPT_KEY_FIB = "prompt_fib"
+PROMPT_KEY_DEFAULT = "prompt_default_exercise_text"
+PROMPT_KEY_IMAGE_ASSOCIATION = "prompt_image_association"
+PROMPT_KEY_LISTEN_SELECT = "prompt_listen_select"
+PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"
+PROMPT_KEY_CONTEXT_BLOCK = "prompt_context_block"
+PROMPT_KEY_DICTATION = "prompt_dictation"
 
 
 class CourseManager:
@@ -40,6 +41,7 @@ class CourseManager:
             "listen_and_select": self._check_multiple_choice_answer,
             "fill_in_the_blank": self._check_fill_in_the_blank_answer,
             "sentence_jumble": self._check_sentence_jumble_answer,
+            "context_block": self._check_completion_answer,
         }
 
         self._load_course_from_manifest()
@@ -47,7 +49,6 @@ class CourseManager:
     def _load_course_from_manifest(self):
         """
         Loads the course manifest and then the associated course content and glossary.
-        Handles errors internally and sets course/manifest_data/glossary attributes.
         """
         self.manifest_data = course_loader.load_manifest(self.manifest_path)
         if not self.manifest_data:
@@ -57,10 +58,9 @@ class CourseManager:
         self.target_language = self.manifest_data.get("target_language", "Unknown Target")
         self.source_language = self.manifest_data.get("source_language", "Unknown Source")
 
-        # --- Load Course Content ---
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
-            logger.error("Manifest does not specify a 'content_file'. Course content cannot be loaded.")
+            logger.error("Manifest does not specify a 'content_file'.")
             return
 
         manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
@@ -81,7 +81,6 @@ class CourseManager:
         else:
             logger.error(f"Failed to load course content from {content_filepath}.")
         
-        # --- Load Glossary ---
         glossary_filename = self.manifest_data.get("glossary_file")
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
@@ -102,7 +101,6 @@ class CourseManager:
             )
             return os.path.dirname(content_filepath)
         elif self.manifest_path and os.path.exists(self.manifest_path):
-            # Fallback to manifest directory if content_file not specified/found
             return os.path.dirname(os.path.abspath(self.manifest_path))
         return None
 
@@ -137,7 +135,7 @@ class CourseManager:
         lesson = self.get_lesson(lesson_id)
         return lesson.exercises if lesson else []
 
-    def get_all_exercises(self) -> List[Exercise]: # Corrected type hint to Exercise
+    def get_all_exercises(self) -> List[Exercise]:
         """Returns a flat list of all Exercise objects across all units and lessons."""
         all_exercises = []
         if self.course:
@@ -150,16 +148,16 @@ class CourseManager:
         return len(self.get_exercises(lesson_id))
 
     def _check_translation_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
-        """Checks answer for translate_to_target/source exercise types."""
+        """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
         is_correct = user_answer.strip().lower() == exercise.answer.lower()
         return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
 
     def _check_multiple_choice_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
-        """Checks answer for multiple_choice_translation exercise type."""
+        """Checks answer for multiple choice exercise types."""
         correct_option = next((opt for opt in exercise.options if opt.correct), None)
         if not correct_option:
-            logger.error(f"No correct option defined for MC exercise {exercise.exercise_id}. Cannot check answer.")
+            logger.error(f"No correct option defined for MC exercise {exercise.exercise_id}.")
             return False, "Error: Exercise configuration issue (no correct answer)."
         
         correct_answer_display = correct_option.text
@@ -170,7 +168,7 @@ class CourseManager:
         """Checks answer for fill_in_the_blank exercise type."""
         correct_answer_display = exercise.correct_option
         if not correct_answer_display:
-            logger.error(f"No correct option defined for FIB exercise {exercise.exercise_id}. Cannot check answer.")
+            logger.error(f"No correct option defined for FIB exercise {exercise.exercise_id}.")
             return False, "Error: Exercise configuration issue (no correct answer)."
         
         is_correct = user_answer.lower() == correct_answer_display.lower()
@@ -179,25 +177,21 @@ class CourseManager:
     def _check_sentence_jumble_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """Checks answer for sentence_jumble exercise type."""
         correct_answer_display = exercise.answer
-        # Normalize by removing extra spaces and making lowercase for comparison
         is_correct = " ".join(user_answer.lower().split()) == " ".join(correct_answer_display.lower().split())
         return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
 
     def _check_completion_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
-        """Checks answers for self-contained exercises like matching or pronunciation."""
-        # These exercises are considered 'correct' when the widget emits its completion signal.
-        # The user_answer is expected to be a marker like "completed".
+        """Checks answers for exercises that are completed via a single action."""
         is_correct = user_answer.lower() == "completed"
-        return is_correct, "Correct!" if is_correct else "Activity not completed."
+        return is_correct, "Continue" if is_correct else "Activity not completed."
 
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """
         Dispatches to the correct answer checking method based on exercise type.
-        Returns (is_correct, feedback_text).
         """
         checker = self._answer_checkers.get(exercise.type)
         if checker:
-            return checker(exercise, user_answer.strip()) # Strip whitespace from user answer
+            return checker(exercise, user_answer.strip())
         else:
             logger.warning(f"Answer checking not implemented for exercise type: {exercise.type} (ID: {exercise.exercise_id})")
             return False, "Cannot check this exercise type."
@@ -205,7 +199,6 @@ class CourseManager:
     def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
         """
         Returns a dictionary with a template_key and arguments for formatting the prompt.
-        The UI widget (e.g., BaseExerciseWidget) will be responsible for translating the template_key.
         """
         prompt_text = exercise.prompt or ""
 
@@ -225,6 +218,7 @@ class CourseManager:
             return {"template_key": PROMPT_KEY_LISTEN_SELECT, "args": [prompt_text]}
         elif exercise.type == "sentence_jumble":
             return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
+        elif exercise.type == "context_block":
+            return {"template_key": PROMPT_KEY_CONTEXT_BLOCK, "args": [exercise.title or ""]}
         
-        # Default case for generic prompt or unsupported type
         return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}
