@@ -24,6 +24,9 @@ class CourseEditorView(QWidget):
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self._setup_warning_label(main_layout)
+
         self._setup_toolbar(main_layout)
         
         content_layout = QHBoxLayout()
@@ -46,6 +49,13 @@ class CourseEditorView(QWidget):
         self.tree_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.tree_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_view.customContextMenuRequested.connect(self._show_context_menu)
+
+    def _setup_warning_label(self, layout):
+        """Adds a warning label to the top of the editor."""
+        self.warning_label = QLabel("Note: This is a basic editor. For full features, use the dedicated Course Editor application.")
+        self.warning_label.setAlignment(Qt.AlignCenter)
+        self.warning_label.setStyleSheet("color: darkred; font-weight: bold; padding: 5px;")
+        layout.addWidget(self.warning_label)
 
     def _setup_toolbar(self, layout):
         toolbar = QToolBar("Editor Toolbar")
