@@ -25,20 +25,22 @@ echo =====================================================================
 echo  LinguaLearn Project Menu
 echo =====================================================================
 echo.
-echo  1. Run Main Application (for Learning or Editing)
-echo  2. Compile Application to EXE (with Nuitka)
-echo  3. Run Automated Tests (with pytest)
-echo  4. Exit
+echo  1. Run Main Application (Learning Mode)
+echo  2. Open Course Editor
+echo  3. Compile Application to EXE (with Nuitka)
+echo  4. Run Automated Tests (with pytest)
+echo  5. Exit
 echo.
 set "choice="
-set /p choice="Enter your choice (1-4): "
+set /p choice="Enter your choice (1-5): "
 
 if "%choice%"=="1" goto runApp
-if "%choice%"=="2" goto compileApp
-if "%choice%"=="3" goto runTests
-if "%choice%"=="4" goto end
+if "%choice%"=="2" goto runEditor
+if "%choice%"=="3" goto compileApp
+if "%choice%"=="4" goto runTests
+if "%choice%"=="5" goto end
 
-echo Invalid choice. Please press any key to try again.
+echo Invalid choice. Please press any key to try again or close the window.
 pause >nul
 goto menu
 
@@ -50,6 +52,17 @@ echo.
 python "%SCRIPT_DIR%\application\main.py"
 echo.
 echo Application closed. Press any key to return to the menu.
+pause >nul
+goto menu
+
+:runEditor
+cls
+echo Starting LinguaLearn Course Editor...
+echo Running: python -m application.tools.main_editor
+echo.
+python -m application.tools.main_editor
+echo.
+echo Editor closed. Press any key to return to the menu.
 pause >nul
 goto menu
 
