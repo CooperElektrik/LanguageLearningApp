@@ -34,11 +34,11 @@ from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QAction, QFont, QActionGroup
 
 try:
-    from core.models import Course, Unit, Lesson, Exercise, ExerciseOption
-    from core.course_loader import load_course_content as load_course_content_from_yaml
-    from tools.dialogs.exercise_preview_dialog import ExercisePreviewDialog
-    from tools.widgets.course_tree_widget import CourseTreeWidget
-    from tools.widgets.glossary_editor_widget import GlossaryEditorWidget
+    from application.core.models import Course, Unit, Lesson, Exercise, ExerciseOption
+    from application.core.course_loader import load_course_content as load_course_content_from_yaml
+    from .dialogs.exercise_preview_dialog import ExercisePreviewDialog
+    from .widgets.course_tree_widget import CourseTreeWidget
+    from application.tools.widgets.glossary_editor_widget import GlossaryEditorWidget
 except ImportError as e:
     logging.error(
         f"Failed to import core or UI widgets for preview dialog. Ensure 'application' directory is on sys.path. Error: {e}"
@@ -67,6 +67,11 @@ from .widgets.exercise_editor_widgets import (
     MultipleChoiceExerciseEditorWidget,
     FillInTheBlankExerciseEditorWidget,
     BaseExerciseEditorWidget,
+    DictationExerciseEditorWidget,
+    ImageAssociationExerciseEditorWidget,
+    ListenAndSelectExerciseEditorWidget,
+    SentenceJumbleExerciseEditorWidget,
+    ContextBlockExerciseEditorWidget,
 )
 from .dialogs.csv_import_dialog import CsvImportDialog
 from .dialogs.package_creation_dialog import PackageCreationDialog
@@ -293,7 +298,12 @@ class EditorWindow(QMainWindow):
             "translate_to_target",
             "translate_to_source",
             "multiple_choice_translation",
-            "fill_in_the_blank"
+            "fill_in_the_blank",
+            "dictation",
+            "image_association",
+            "listen_and_select",
+            "sentence_jumble",
+            "context_block",
         ])
         self.type_filter_combo.currentIndexChanged.connect(
             lambda: self._filter_tree_view(self.search_bar.text())
@@ -515,16 +525,29 @@ class EditorWindow(QMainWindow):
                     elif selected_scope_filter == "Translation Hint Only":
                         item_text_for_search = (exercise.translation_hint or "").lower()
                     else: # "All Text Fields"
-                        item_text_for_search = (
-                            (exercise.prompt or "") +
-                            (exercise.answer or "") +
-                            (exercise.source_word or "") +
-                            (exercise.sentence_template or "") +
-                            (exercise.translation_hint or "") +
-                            # Also include the display text, which might contain the type
-                            item.text(0)
-                        ).lower()
+                        searchable_content = [
+                            exercise.prompt,
+                            exercise.answer,
+                            exercise.source_word,
+                            exercise.sentence_template,
+                            exercise.translation_hint,
+                            exercise.title, # For context_block
+                            item.text(0) # Display text in tree
+                        ]
+                        # For sentence_jumble, exercise.words is a list of strings
+                        if hasattr(exercise, 'words') and isinstance(exercise.words, list):
+                            searchable_content.append(" ".join(exercise.words))
+                        
+                        # For MCQ/Association, exercise.options is a list of ExerciseOption
+                        if hasattr(exercise, 'options') and isinstance(exercise.options, list):
+                            for option_obj in exercise.options:
+                                if hasattr(option_obj, 'text'):
+                                    searchable_content.append(option_obj.text)
 
+                        item_text_for_search = "".join(
+                            str(s).lower() for s in searchable_content if s
+                        )
+                        
                     if search_term not in item_text_for_search:
                         is_item_visible_by_filters = False
 
@@ -761,6 +784,26 @@ class EditorWindow(QMainWindow):
         elif exercise.type == "fill_in_the_blank":
             widget = FillInTheBlankExerciseEditorWidget(
                 exercise, target_lang, source_lang
+            )
+        elif exercise.type == "dictation":
+            widget = DictationExerciseEditorWidget(
+                exercise, target_lang, source_lang, course_root_dir
+            )
+        elif exercise.type == "image_association":
+            widget = ImageAssociationExerciseEditorWidget(
+                exercise, target_lang, source_lang, course_root_dir
+            )
+        elif exercise.type == "listen_and_select":
+            widget = ListenAndSelectExerciseEditorWidget(
+                exercise, target_lang, source_lang, course_root_dir
+            )
+        elif exercise.type == "sentence_jumble":
+            widget = SentenceJumbleExerciseEditorWidget(
+                exercise, target_lang, source_lang # No course_root_dir typically
+            )
+        elif exercise.type == "context_block":
+            widget = ContextBlockExerciseEditorWidget(
+                exercise # No langs or course_root_dir typically
             )
         else:
             widget = QLabel(f"No editor for exercise type: {exercise.type}")
@@ -1132,6 +1175,11 @@ class EditorWindow(QMainWindow):
             "translate_to_source",
             "multiple_choice_translation",
             "fill_in_the_blank",
+            "dictation",
+            "image_association",
+            "listen_and_select",
+            "sentence_jumble",
+            "context_block",
         ]
         item_type_name, ok = QInputDialog.getItem(
             self, "New Exercise", "Select Exercise Type:", ex_types, 0, False
@@ -1260,7 +1308,21 @@ class EditorWindow(QMainWindow):
                     lesson_item.setExpanded(True)
 
                 for idx, exercise in enumerate(lesson.exercises):
-                    ex_display_text = f"[{exercise.type}] {exercise.prompt or exercise.source_word or exercise.sentence_template or 'No Prompt'}"
+                    ex_display_text_content = "No Content"
+                    if exercise.title: # Primarily for context_block
+                        ex_display_text_content = exercise.title
+                    elif exercise.prompt:
+                        ex_display_text_content = exercise.prompt
+                    elif exercise.answer: # For jumble or dictation answer
+                        ex_display_text_content = exercise.answer
+                    elif exercise.source_word: # For MCQ
+                        ex_display_text_content = exercise.source_word
+                    elif exercise.sentence_template: # For FIB
+                        ex_display_text_content = exercise.sentence_template
+                    
+                    if len(ex_display_text_content) > 50: # Truncate if too long
+                        ex_display_text_content = ex_display_text_content[:47] + "..."
+                    ex_display_text = f"[{exercise.type}] {ex_display_text_content}"
                     exercise_item = QTreeWidgetItem(lesson_item, [ex_display_text])
                     exercise_item.setData(0, Qt.UserRole, exercise)
                     exercise_item.setFlags(exercise_item.flags() | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled)

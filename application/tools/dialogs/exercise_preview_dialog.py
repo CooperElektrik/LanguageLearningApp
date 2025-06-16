@@ -24,9 +24,9 @@ from PySide6.QtMultimedia import (
 from typing import Dict, Tuple
 
 try:
-    from core.models import Exercise
+    from application.core.models import Exercise
 
-    from ui.widgets.exercise_widgets import (
+    from application.ui.widgets.exercise_widgets import (
         TranslationExerciseWidget,
         MultipleChoiceExerciseWidget,
         FillInTheBlankExerciseWidget,

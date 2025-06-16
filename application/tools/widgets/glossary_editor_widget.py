@@ -6,10 +6,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
-
-from core.models import GlossaryEntry
-from core.glossary_loader import load_glossary
-from core import yaml_serializer 
+ 
+from application.core.models import GlossaryEntry
+from application.core.glossary_loader import load_glossary
+from application.core import yaml_serializer
 
 from application.tools.dialogs.glossary_entry_editor_dialog import GlossaryEntryEditorDialog
 

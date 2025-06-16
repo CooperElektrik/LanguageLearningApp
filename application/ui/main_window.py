@@ -10,16 +10,16 @@ from PySide6.QtCore import Qt, QCoreApplication, QSettings
 
 from typing import Optional
 
-from core.course_manager import CourseManager
-from core.progress_manager import ProgressManager
-from ui.views.course_overview_view import CourseOverviewView
-from ui.views.lesson_view import LessonView
-from ui.views.review_view import ReviewView
-from ui.views.progress_view import ProgressView
-from ui.views.glossary_view import GlossaryView
-from ui.views.course_selection_view import CourseSelectionView
-from ui.views.course_editor_view import CourseEditorView
-from ui.dialogs.settings_dialog import SettingsDialog
+from application.core.course_manager import CourseManager
+from application.core.progress_manager import ProgressManager
+from application.ui.views.course_overview_view import CourseOverviewView
+from application.ui.views.lesson_view import LessonView
+from application.ui.views.review_view import ReviewView
+from application.ui.views.progress_view import ProgressView
+from application.ui.views.glossary_view import GlossaryView
+from application.ui.views.course_selection_view import CourseSelectionView
+from application.ui.views.course_editor_view import CourseEditorView
+from application.ui.dialogs.settings_dialog import SettingsDialog
 
 logger = logging.getLogger(__name__)
 

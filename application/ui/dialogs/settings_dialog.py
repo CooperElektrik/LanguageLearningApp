@@ -4,9 +4,9 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QHBoxLayout, QWidget
 )
 from PySide6.QtCore import Qt, QSettings
-
-import settings
-import utils
+ 
+from application import settings
+from application import utils
 
 logger = logging.getLogger(__name__)
 

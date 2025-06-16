@@ -5,8 +5,8 @@ import json
 import uuid
 from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem, QMessageBox
 from PySide6.QtCore import Qt, QMimeData, QByteArray, Signal
-from typing import Any, List, Optional, Dict
-from core.models import Course, Unit, Lesson, Exercise
+from typing import Any, List, Optional
+from application.core.models import Course, Unit, Lesson, Exercise
 
 
 logger = logging.getLogger(__name__)

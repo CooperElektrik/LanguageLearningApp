@@ -11,7 +11,7 @@ if project_root not in sys.path:
     logging.info(f"Added '{project_root}' to sys.path for project-wide module imports.")
 
 try:
-    from tools.editor_window import EditorWindow
+    from .editor_window import EditorWindow
 except ImportError as e:
     logging.error(f"Failed to import core editor modules. Please ensure your Python environment is set up correctly. Error: {e}")
     print("If you are running this file directly, ensure your project root is in your Python path.")

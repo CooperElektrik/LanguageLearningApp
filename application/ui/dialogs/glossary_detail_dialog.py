@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
-from core.models import GlossaryEntry
-from core.course_manager import CourseManager
+from application.core.models import GlossaryEntry
+from application.core.course_manager import CourseManager
 
 from typing import Optional
 

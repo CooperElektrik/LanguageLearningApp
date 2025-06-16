@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, Tuple
 import uuid
 
 try:
-    from core.models import Course, Unit, Lesson, Exercise, ExerciseOption
+    from application.core.models import Course, Unit, Lesson, Exercise, ExerciseOption
 except ImportError:
     logging.warning(
         "Could not import models directly. Ensure application/core is on sys.path for standalone testing."

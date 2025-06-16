@@ -15,7 +15,7 @@ from PySide6.QtCore import Signal, Qt
 from typing import Any, Dict
 
 try:
-    from core.models import Course
+    from application.core.models import Course
 except ImportError:
     logging.warning("Could not import Course model in ManifestEditorWidget.")
 
