@@ -34,10 +34,10 @@ def setup_translations(app: QApplication) -> QTranslator:
     """Sets up application translations."""
     locale_name = settings.FORCE_LOCALE if settings.FORCE_LOCALE else QLocale.system().name()
     translator = QTranslator(app)
-    qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"ll_{locale_name}.qm"))
+    qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{locale_name}.qm"))
     if not translator.load(qm_file_path):
         lang_name = locale_name.split('_')[0]
-        qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"ll_{lang_name}.qm"))
+        qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{lang_name}.qm"))
         translator.load(qm_file_path)
     
     if translator.isEmpty():

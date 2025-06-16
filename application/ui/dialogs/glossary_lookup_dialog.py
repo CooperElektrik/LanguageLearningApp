@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from typing import List, Optional
 
-from application.core.models import GlossaryEntry
+from core.models import GlossaryEntry
 
 logger = logging.getLogger(__name__)
 

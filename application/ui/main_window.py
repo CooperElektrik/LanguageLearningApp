@@ -10,16 +10,16 @@ from PySide6.QtCore import Qt, QCoreApplication, QSettings
 
 from typing import Optional
 
-from application.core.course_manager import CourseManager
-from application.core.progress_manager import ProgressManager
-from application.ui.views.course_overview_view import CourseOverviewView
-from application.ui.views.lesson_view import LessonView
-from application.ui.views.review_view import ReviewView
-from application.ui.views.progress_view import ProgressView
-from application.ui.views.glossary_view import GlossaryView
-from application.ui.views.course_selection_view import CourseSelectionView
-from application.ui.views.course_editor_view import CourseEditorView
-from application.ui.dialogs.settings_dialog import SettingsDialog
+from core.course_manager import CourseManager
+from core.progress_manager import ProgressManager
+from ui.views.course_overview_view import CourseOverviewView
+from ui.views.lesson_view import LessonView
+from ui.views.review_view import ReviewView
+from ui.views.progress_view import ProgressView
+from ui.views.glossary_view import GlossaryView
+from ui.views.course_selection_view import CourseSelectionView
+from ui.views.course_editor_view import CourseEditorView
+from ui.dialogs.settings_dialog import SettingsDialog
 
 logger = logging.getLogger(__name__)
 
@@ -140,24 +140,24 @@ class MainWindow(QMainWindow):
         file_menu = self.menuBar().addMenu(self.tr("&File"))
         file_menu.addAction(self.tr("Open Course for Editing..."), self._load_course_for_editing)
         file_menu.addSeparator()
-        file_menu.addAction(self.tr("&Settings..."), self.show_settings_dialog)
+        file_menu.addAction("&Settings...", self.show_settings_dialog)
         file_menu.addSeparator()
-        file_menu.addAction(self.tr("&Quit"), self.close)
+        file_menu.addAction("&Quit", self.close)
 
     def _setup_learning_menu(self):
         """Menu for the main learning mode."""
         # Use the menu bar from the nested QMainWindow for learning mode
         menu_bar = self.learning_widget.menuBar()
         menu_bar.clear()
-        file_menu = menu_bar.addMenu(self.tr("&File"))
+        file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self.tr("Return to Course Selection"), self._return_to_selection_screen)
         file_menu.addSeparator()
-        file_menu.addAction(self.tr("&Settings..."), self.show_settings_dialog)
+        file_menu.addAction("&Settings...", self.show_settings_dialog)
 
-        learning_menu = menu_bar.addMenu(self.tr("&Learning"))
+        learning_menu = menu_bar.addMenu("&Learning")
         learning_menu.addAction(self.tr("Start Due Review"), self.start_review_session)
 
-        view_menu = menu_bar.addMenu(self.tr("&View"))
+        view_menu = menu_bar.addMenu("&View")
         if hasattr(self, "navigation_dock_widget") and self.navigation_dock_widget:
             view_menu.addAction(self.navigation_dock_widget.toggleViewAction())
         if hasattr(self, "progress_dock_widget") and self.progress_dock_widget:

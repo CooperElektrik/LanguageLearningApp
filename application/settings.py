@@ -28,7 +28,7 @@ QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
 # --- Locale Settings ---
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.
 # Set to None to use the system's default locale.
-FORCE_LOCALE = None # Example: "vi" to force Vietnamese for testing
+FORCE_LOCALE = "vi" # Example: "vi" to force Vietnamese for testing
 
 # --- Logging Settings ---
 # Valid levels: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"

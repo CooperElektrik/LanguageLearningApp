@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QSettings
  
-from application import settings
-from application import utils
+import settings
+import utils
 
 logger = logging.getLogger(__name__)
 
