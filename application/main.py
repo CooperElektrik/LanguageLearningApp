@@ -82,7 +82,10 @@ def main():
 
     # The MainWindow now handles the course selection and initialization internally.
     # With project root on sys.path, use absolute import for MainWindow
-    from application.ui.main_window import MainWindow
+    try:
+        from application.ui.main_window import MainWindow
+    except ImportError: # Nuitka will complain without this
+        from ui.main_window import MainWindow
     main_window = MainWindow()
     main_window.show()
 

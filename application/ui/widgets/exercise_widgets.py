@@ -22,19 +22,34 @@ from PySide6.QtCore import Signal, QUrl, Qt, QTimer
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
-from application.core.models import Exercise
-from application.core.course_manager import (
-    PROMPT_KEY_DEFAULT,
-    PROMPT_KEY_FIB,
-    PROMPT_KEY_MCQ_TRANSLATION,
-    PROMPT_KEY_TRANSLATE_TO_SOURCE,
-    PROMPT_KEY_TRANSLATE_TO_TARGET,
-    PROMPT_KEY_IMAGE_ASSOCIATION,
-    PROMPT_KEY_LISTEN_SELECT,
-    PROMPT_KEY_SENTENCE_JUMBLE,
-    PROMPT_KEY_CONTEXT_BLOCK,
-    PROMPT_KEY_DICTATION,
-)
+try:
+    from application.core.models import Exercise
+    from application.core.course_manager import (
+        PROMPT_KEY_DEFAULT,
+        PROMPT_KEY_FIB,
+        PROMPT_KEY_MCQ_TRANSLATION,
+        PROMPT_KEY_TRANSLATE_TO_SOURCE,
+        PROMPT_KEY_TRANSLATE_TO_TARGET,
+        PROMPT_KEY_IMAGE_ASSOCIATION,
+        PROMPT_KEY_LISTEN_SELECT,
+        PROMPT_KEY_SENTENCE_JUMBLE,
+        PROMPT_KEY_CONTEXT_BLOCK,
+        PROMPT_KEY_DICTATION,
+    )
+except ImportError: # This makes Nuitka happy
+    from core.models import Exercise
+    from core.course_manager import (
+        PROMPT_KEY_DEFAULT,
+        PROMPT_KEY_FIB,
+        PROMPT_KEY_MCQ_TRANSLATION,
+        PROMPT_KEY_TRANSLATE_TO_SOURCE,
+        PROMPT_KEY_TRANSLATE_TO_TARGET,
+        PROMPT_KEY_IMAGE_ASSOCIATION,
+        PROMPT_KEY_LISTEN_SELECT,
+        PROMPT_KEY_SENTENCE_JUMBLE,
+        PROMPT_KEY_CONTEXT_BLOCK,
+        PROMPT_KEY_DICTATION,
+    )
 
 logger = logging.getLogger(__name__)
 

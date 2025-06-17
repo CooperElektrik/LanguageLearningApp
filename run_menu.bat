@@ -84,8 +84,6 @@ REM The --include-data-dir="courses=courses" flag is crucial.
 REM It bundles all courses within the 'courses' directory, making the app self-contained.
 python -m nuitka ^
   --standalone ^
-  --onefile ^
-  --windows-disable-console ^
   --enable-plugin=pyside6 ^
   --include-data-dir="courses=courses" ^
   --include-data-dir="assets=assets" ^
