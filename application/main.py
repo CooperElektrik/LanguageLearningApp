@@ -29,8 +29,19 @@ if _project_root not in sys.path:
     # logging.debug(f"Added project root '{_project_root}' to sys.path for main application.")
 
 def setup_logging():
+    # Determine log level. Developer mode forces DEBUG.
+    log_level_setting = settings.LOG_LEVEL.upper()
+    effective_log_level_str = log_level_setting
+
+    # Note: is_developer_mode_active() uses QSettings, which needs OrgName/AppName.
+    # This is why QCoreApplication setup is done before calling setup_logging() in main().
+    if utils.is_developer_mode_active():
+        effective_log_level_str = "DEBUG"
+        # Temporary print as logger is not fully configured yet.
+        print(f"INFO: Developer mode active. Log level forced to DEBUG (was {log_level_setting}).")
+
     logging.basicConfig(
-        level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+        level=getattr(logging, effective_log_level_str, logging.INFO),
         format=settings.LOG_FORMAT,
         handlers=[logging.StreamHandler(sys.stdout)],
     )
@@ -45,12 +56,15 @@ def main():
     splash: Optional[QSplashScreen] = None
     splash_timer: Optional[QElapsedTimer] = None
 
+    # Set Organization and Application Name EARLY for QSettings and other Qt features
+    QCoreApplication.setOrganizationName(settings.ORG_NAME)
+    QCoreApplication.setApplicationName(settings.APP_NAME)
+
     # Logger setup should happen early
     global logger # Make logger accessible globally in this module after setup
-    logger = setup_logging()
+    logger = setup_logging() # Now setup_logging can safely use utils.is_developer_mode_active()
     if _project_root not in sys.path: # Log after logger is available
         logger.debug(f"Project root '{_project_root}' was already in sys.path or just added.")
-
     # --- Splash Screen Setup ---
     try:
         splash_image_path_relative = settings.SPLASH_IMAGE_FILE
@@ -107,9 +121,6 @@ def main():
         logger.error(f"Error during splash screen setup: {e}", exc_info=True)
     # --- End Splash Screen Setup ---
 
-    QCoreApplication.setOrganizationName(settings.ORG_NAME)
-    QCoreApplication.setApplicationName(settings.APP_NAME)
-
     logger.info(f"{settings.APP_NAME} application starting...")
 
     # The MainWindow now handles the course selection and initialization internally.
@@ -129,6 +140,11 @@ def main():
 
     main_window = MainWindow()
     # Initial translation is now handled inside MainWindow's __init__
+
+    if utils.is_developer_mode_active():
+        current_title = main_window.windowTitle()
+        main_window.setWindowTitle(f"{current_title} [DEV MODE]")
+        logger.info("Developer Mode is active. UI indicates this in the window title.")
     
     # --- Finish Splash Screen ---
     if splash and splash_timer:

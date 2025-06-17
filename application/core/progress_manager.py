@@ -6,7 +6,7 @@ from PySide6.QtCore import QStandardPaths
 from collections import defaultdict
 from datetime import datetime, timedelta, date
 
-# Assuming settings.py is in the parent 'application' directory
+from application import utils # For developer mode check
 import settings # For ORG_NAME, APP_NAME, PROGRESS_DATA_SUBDIR
 
 from .models import Exercise, Lesson, Unit # For type hinting
@@ -384,7 +384,12 @@ class ProgressManager:
         1. The first lesson of the first unit is always unlocked.
         2. Any other lesson is unlocked if the immediately preceding lesson (in the same unit) is completed.
         3. The first lesson of any subsequent unit is unlocked if ALL lessons in the immediately preceding unit are completed.
+        4. If Developer Mode is active, all lessons are considered unlocked.
         """
+        if utils.is_developer_mode_active():
+            logger.debug(f"Developer Mode: Lesson '{lesson_id}' is considered unlocked.")
+            return True
+
         all_units = course_manager_ref.get_units()
         
         position = self._find_lesson_position(lesson_id, all_units)

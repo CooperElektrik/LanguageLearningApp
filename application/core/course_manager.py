@@ -5,6 +5,7 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
+from application import utils # For developer mode check
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,15 @@ class CourseManager:
         """
         Loads the course manifest and then the associated course content and glossary.
         """
+        if utils.is_developer_mode_active():
+            # Log course ID if available from manifest_path for better context
+            course_name_for_log = os.path.basename(os.path.dirname(self.manifest_path))
+            logger.info(f"Developer Mode active for CourseManager (course: {course_name_for_log}). Course locking mechanisms (if any) would be bypassed.")
+
         self.manifest_data = course_loader.load_manifest(self.manifest_path)
         if not self.manifest_data:
             logger.error("Failed to load manifest. Course cannot be initialized.")
             return
-
         self.target_language = self.manifest_data.get("target_language", "Unknown Target")
         self.source_language = self.manifest_data.get("source_language", "Unknown Source")
 

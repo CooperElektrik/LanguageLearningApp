@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # This global variable will store the application's root directory.
 _APP_ROOT_DIR = None
 _sound_player = None
+_DEVELOPER_MODE_CACHE: Optional[bool] = None
 _audio_output = None
 
 def _init_sound_player():
@@ -214,3 +215,46 @@ def setup_initial_translation(app: QCoreApplication) -> Optional[QTranslator]:
     
     app.installTranslator(translator)
     return translator
+
+
+def is_developer_mode_active() -> bool:
+    """
+    Checks if developer mode is active.
+    Priority:
+    1. Environment variable (e.g., LINGUALEARN_DEV_MODE=1 or true).
+    2. QSettings.
+    3. Default value from settings.py.
+    The result is cached for the current session after the first check.
+    """
+    global _DEVELOPER_MODE_CACHE
+    if _DEVELOPER_MODE_CACHE is not None:
+        return _DEVELOPER_MODE_CACHE
+
+    # 1. Check environment variable
+    env_value = os.environ.get(settings.ENV_VAR_DEVELOPER_MODE, "").strip().lower()
+    if env_value in ["1", "true", "yes", "on"]:
+        _DEVELOPER_MODE_CACHE = True
+        # Persist to QSettings if activated by env var for this session's QSettings
+        if QCoreApplication.instance() and QCoreApplication.organizationName() and QCoreApplication.applicationName():
+            app_settings = QSettings()
+            app_settings.setValue(settings.QSETTINGS_KEY_DEVELOPER_MODE, True)
+        return True
+    if env_value in ["0", "false", "no", "off"]: # Explicitly disabled by env var
+        _DEVELOPER_MODE_CACHE = False
+        if QCoreApplication.instance() and QCoreApplication.organizationName() and QCoreApplication.applicationName():
+            app_settings = QSettings()
+            app_settings.setValue(settings.QSETTINGS_KEY_DEVELOPER_MODE, False)
+        return False
+
+    # 2. Check QSettings (only if QApplication is initialized with org/app name)
+    if QCoreApplication.instance() and QCoreApplication.organizationName() and QCoreApplication.applicationName():
+        app_settings = QSettings()
+        if app_settings.contains(settings.QSETTINGS_KEY_DEVELOPER_MODE):
+            # QSettings stores bools correctly, but convertFromString might be used by some.
+            val = app_settings.value(settings.QSETTINGS_KEY_DEVELOPER_MODE, settings.DEVELOPER_MODE_DEFAULT, type=bool)
+            _DEVELOPER_MODE_CACHE = val
+            return val
+
+    # 3. Default
+    _DEVELOPER_MODE_CACHE = settings.DEVELOPER_MODE_DEFAULT
+    return _DEVELOPER_MODE_CACHE

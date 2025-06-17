@@ -81,6 +81,16 @@ class SettingsDialog(QDialog):
         ui_layout.addRow(self.reset_ui_button) # Add as a new row
         main_layout.addWidget(ui_group)
 
+        # --- Developer Settings ---
+        self.dev_group = QGroupBox(self.tr("Developer"))
+        dev_layout = QFormLayout(self.dev_group)
+
+        self.dev_mode_checkbox = QCheckBox(self.tr("Enable Developer Mode"))
+        self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
+        dev_layout.addRow(self.dev_mode_checkbox)
+
+        main_layout.addWidget(self.dev_group)
+
         # --- Dialog Buttons ---
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Apply
@@ -164,6 +174,13 @@ class SettingsDialog(QDialog):
         else: # If saved code not found (e.g. qm file removed), default to "System"
             self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE)
 
+        dev_mode_enabled = self.q_settings.value(
+            settings.QSETTINGS_KEY_DEVELOPER_MODE,
+            settings.DEVELOPER_MODE_DEFAULT,
+            type=bool
+        )
+        self.dev_mode_checkbox.setChecked(dev_mode_enabled)
+
     def _update_font_size_label(self, value):
         """Update the font size label when the slider value changes."""
         self.font_size_label.setText(str(value) + " pt")
@@ -182,6 +199,10 @@ class SettingsDialog(QDialog):
         # Reset locale
         self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE) # "System"
         self.locale_changed.emit(settings.DEFAULT_LOCALE)
+
+        # Reset Developer Mode
+        self.dev_mode_checkbox.setChecked(settings.DEVELOPER_MODE_DEFAULT)
+        # Note: Developer mode changes often require a restart to fully apply (e.g., logging)
 
         QMessageBox.information(self, self.tr("UI Settings Reset"), self.tr("Theme, font size and language have been reset to defaults. Click OK or Apply to save."))
         self.retranslateUi() # Ensure dialog itself updates if language was reset
@@ -220,6 +241,11 @@ class SettingsDialog(QDialog):
         self.q_settings.setValue(settings.QSETTINGS_KEY_LOCALE, selected_locale_code)
         self.locale_changed.emit(selected_locale_code)
 
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_DEVELOPER_MODE,
+            self.dev_mode_checkbox.isChecked()
+        )
+
         logger.info("Settings applied.")
 
     def save_settings(self):
@@ -257,6 +283,10 @@ class SettingsDialog(QDialog):
         self.autoshow_hints_checkbox.setText(self.tr("Show hints automatically in exercises"))
         self.reset_ui_button.setText(self.tr("Reset UI Settings to Default"))
 
+        # Developer Settings
+        self.dev_group.setTitle(self.tr("Developer"))
+        self.dev_mode_checkbox.setText(self.tr("Enable Developer Mode"))
+        self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
         # Dialog Buttons - standard buttons usually retranslate automatically.
         # If custom text was set, it would need retranslation.
         logger.debug("SettingsDialog retranslated.")

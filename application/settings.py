@@ -54,6 +54,11 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - [%(name)s:%(lineno)d] - %(message)s"
 # For direct use with logging module:
 LOG_LEVEL_INT = getattr(logging, LOG_LEVEL.upper(), logging.INFO)
 
+# --- Developer Mode Settings ---
+DEVELOPER_MODE_DEFAULT = False
+QSETTINGS_KEY_DEVELOPER_MODE = "developer/developer_mode_enabled"
+ENV_VAR_DEVELOPER_MODE = "LINGUALEARN_DEV_MODE" # Environment variable to activate dev mode (e.g., LINGUALEARN_DEV_MODE=1)
+
 
 # --- Progress Data Settings ---
 # Subdirectory within QStandardPaths.AppDataLocation/ORG_NAME/APP_NAME/ for progress files
