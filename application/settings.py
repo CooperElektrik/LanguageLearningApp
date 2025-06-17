@@ -12,7 +12,10 @@ ASSETS_DIR = "assets"             # Directory for shared assets like sounds
 SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds") # Sub-directory for sound effects
 LOCALIZATION_DIR = "localization" # Directory containing .qm files
 THEME_DIR = "ui/styles"           # Directory containing .qss files
-DEFAULT_THEME_FILE = "win95_theme.qss" # Default theme file to load
+LIGHT_THEME_FILE = "light_theme.qss" # Specific light theme
+DARK_THEME_FILE = "dark_theme.qss"   # Specific dark theme
+WINDOWS_95_FILE = "win95_theme.qss"  # Windows 95'ish theme 
+AVAILABLE_THEMES = {"System": "system_default", "Light": LIGHT_THEME_FILE, "Dark": DARK_THEME_FILE, "Windows 95": WINDOWS_95_FILE} # Name to filename mapping
 
 # --- Sound Settings ---
 SOUND_EFFECTS_ENABLED_DEFAULT = True
@@ -24,6 +27,7 @@ SOUND_FILE_COMPLETE = "complete.wav"
 # --- QSettings Keys ---
 QSETTINGS_KEY_SOUND_ENABLED = "audio/sound_effects_enabled"
 QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
+QSETTINGS_KEY_UI_THEME = "ui/theme" # New key for storing selected theme
 
 # --- Locale Settings ---
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.

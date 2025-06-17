@@ -1,9 +1,9 @@
 import logging
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGroupBox, QCheckBox, QSlider, QLabel,
-    QDialogButtonBox, QHBoxLayout, QWidget
+    QDialogButtonBox, QHBoxLayout, QComboBox, QFormLayout
 )
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import Qt, QSettings, Signal
  
 import settings
 import utils
@@ -11,6 +11,9 @@ import utils
 logger = logging.getLogger(__name__)
 
 class SettingsDialog(QDialog):
+    
+    theme_changed = Signal(str) # Emitted when the theme is changed
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Settings"))
@@ -39,6 +42,16 @@ class SettingsDialog(QDialog):
         
         main_layout.addWidget(audio_group)
 
+        # --- UI Settings ---
+        ui_group = QGroupBox(self.tr("User Interface"))
+        ui_layout = QFormLayout(ui_group)
+
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
+        ui_layout.addRow(self.tr("Theme:"), self.theme_combo)
+        
+        main_layout.addWidget(ui_group)
+
         # --- Dialog Buttons ---
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Apply
@@ -66,6 +79,17 @@ class SettingsDialog(QDialog):
         )
         self.volume_slider.setValue(volume)
 
+        current_theme_name = self.q_settings.value(
+            settings.QSETTINGS_KEY_UI_THEME,
+            "System", # Default to "System" theme
+            type=str
+        )
+        if current_theme_name in settings.AVAILABLE_THEMES:
+            self.theme_combo.setCurrentText(current_theme_name)
+        else: # Handle case where saved theme is no longer available
+            self.theme_combo.setCurrentText("System")
+            logger.warning(f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'.")
+
     def apply_settings(self):
         """Saves the current state of the UI controls to QSettings."""
         self.q_settings.setValue(
@@ -77,6 +101,11 @@ class SettingsDialog(QDialog):
             self.volume_slider.value()
         )
         utils.update_sound_volume() # Ensure live update takes effect if slider was just moved
+        
+        selected_theme_name = self.theme_combo.currentText()
+        self.q_settings.setValue(settings.QSETTINGS_KEY_UI_THEME, selected_theme_name)
+        self.theme_changed.emit(selected_theme_name) # Emit signal AFTER saving
+
         logger.info("Settings applied.")
 
     def save_settings(self):

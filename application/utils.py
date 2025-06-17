@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput # Keep this if used elsewhere
 from PySide6.QtCore import QUrl, QSettings
 import settings
 
@@ -135,3 +135,19 @@ def get_resource_path(relative_path: str) -> str:
     absolute_path = os.path.join(base_path, relative_path)
     logger.debug(f"Resolved resource path: '{relative_path}' -> '{absolute_path}' (Base: '{base_path}')")
     return absolute_path
+
+def apply_stylesheet(app_or_widget, qss_file_path: str):
+    """
+    Loads and applies a QSS stylesheet to the given application or widget.
+    Logs errors if the file is not found or cannot be applied.
+    """
+    if os.path.exists(qss_file_path):
+        try:
+            with open(qss_file_path, "r", encoding="utf-8") as f:
+                style_sheet_content = f.read()
+            app_or_widget.setStyleSheet(style_sheet_content)
+            logger.info(f"Successfully applied stylesheet from: {qss_file_path}")
+        except Exception as e:
+            logger.error(f"Failed to apply stylesheet from {qss_file_path}: {e}")
+    else:
+        logger.error(f"Stylesheet file not found at: {qss_file_path}")

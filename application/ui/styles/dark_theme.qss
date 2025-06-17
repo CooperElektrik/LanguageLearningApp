@@ -1,52 +1,109 @@
+/* Dark Theme for LinguaLearn */
 QWidget {
-    background-color: #2b2b2b;
-    color: #f0f0f0;
-    selection-background-color: #555555;
-    selection-color: #ffffff
+    background-color: #2E2E2E; /* Dark gray background */
+    color: #E0E0E0; /* Light gray text */
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 10pt;
+}
+
+QMainWindow, QDialog {
+    background-color: #2E2E2E;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #4A4A4A; /* Medium-dark gray */
+    color: #E0E0E0;
+    border: 1px solid #5A5A5A;
+    padding: 6px 12px;
+    border-radius: 4px;
+    min-width: 80px;
+}
+QPushButton:hover {
+    background-color: #5A5A5A; /* Slightly lighter on hover */
+    border-color: #6A6A6A;
+}
+QPushButton:pressed {
+    background-color: #3A3A3A; /* Darker when pressed */
+}
+QPushButton:disabled {
+    background-color: #383838;
+    color: #707070;
+    border-color: #484848;
+}
+
+/* Input Fields */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background-color: #3C3C3C; /* Darker input background */
+    color: #E0E0E0;
+    border: 1px solid #5A5A5A;
+    padding: 4px;
+    border-radius: 3px;
+}
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #007ACC; /* Blue border on focus, common in dark themes */
+}
+QComboBox::drop-down {
+    border: none;
+    background-color: #4A4A4A;
+}
+QComboBox::down-arrow {
+    image: url(:/qt-project.org/styles/commonstyle/images/down_arrow.png); /* Consider a custom dark theme arrow */
 }
 
 /* Labels */
 QLabel {
-    color: #f0f0f0;
+    background-color: transparent; /* Ensure labels don't have their own background unless intended */
+    color: #E0E0E0;
+}
+QLabel#prompt_label, QLabel#feedback_label { /* Specific labels if needed */
+    font-size: 12pt;
 }
 
-/* Line Edits and Text Edits */
-QLineEdit, QTextEdit {
-    background-color: #3c3c3c; /* Slightly lighter dark gray */
-    color: #f0f0f0;
-    border: 1px solid #555555;
-    padding: 2px;
-    border-radius: 3px;
-}
-/* Error styling from inline validation */
-QLineEdit[style*="border: 1px solid red;"], QTextEdit[style*="border: 1px solid red;"] {
-    border: 1px solid #ff4d4d; /* Bright red border for errors */
-}
-
-
-/* Push Buttons */
-QPushButton {
-    background-color: #353535; /* Darker gray button */
-    color: #ffffff;
-    border: 1px solid #666666;
+/* GroupBox */
+QGroupBox {
+    background-color: #383838;
+    border: 1px solid #5A5A5A;
     border-radius: 4px;
-    padding: 5px 10px;
+    margin-top: 10px; /* Space for title */
+    padding: 10px;
 }
-QPushButton:hover {
-    background-color: #5a5a5a; /* Lighter on hover */
-    border: 1px solid #777777;
-}
-QPushButton:pressed {
-    background-color: #3a3a3a; /* Darker on press */
-    border: 1px solid #555555;
-}
-QPushButton:disabled {
-    background-color: #333333;
-    color: #999999;
-    border: 1px solid #444444;
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #E0E0E0;
+    left: 10px;
 }
 
-QProgressBar {
-    border-radius: 3px;
-    border: 1px solid #ffffff
+/* ScrollBars */
+QScrollBar:vertical, QScrollBar:horizontal {
+    border: 1px solid #4A4A4A;
+    background: #3C3C3C;
+    width: 12px;
+    height: 12px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #5A5A5A;
+    min-height: 20px;
+    min-width: 20px;
+    border-radius: 6px;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    background: none;
+}
+
+/* TreeView, ListView, TableView */
+QTreeView, QListView, QTableView {
+    background-color: #3C3C3C;
+    border: 1px solid #5A5A5A;
+    alternate-background-color: #424242; /* For alternating row colors */
+}
+QHeaderView::section {
+    background-color: #4A4A4A;
+    color: #E0E0E0;
+    padding: 4px;
+    border: 1px solid #5A5A5A;
 }

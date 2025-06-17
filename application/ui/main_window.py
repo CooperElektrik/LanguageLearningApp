@@ -2,14 +2,15 @@ import sys
 import logging
 import os
 from PySide6.QtWidgets import (
-    QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QFileDialog, QToolBar,
-    QVBoxLayout, QDockWidget
+    QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QFileDialog,
+    QVBoxLayout, QDockWidget, QApplication
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QCoreApplication, QSettings
 
 from typing import Optional
 
+from application import settings as app_settings, utils
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.views.course_overview_view import CourseOverviewView
@@ -45,7 +46,29 @@ class MainWindow(QMainWindow):
         self.learning_widget = None
         self.editor_view = None
 
+        self._load_and_apply_initial_theme()
         self._return_to_selection_screen() # Start in the selection screen
+
+    def _load_and_apply_initial_theme(self):
+        q_settings = QSettings()
+        theme_name = q_settings.value(app_settings.QSETTINGS_KEY_UI_THEME, "System", type=str)
+        self.apply_theme(theme_name)
+
+    def apply_theme(self, theme_name: str):
+        logger.info(f"Attempting to apply theme: {theme_name}")
+        qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)
+
+        if theme_name == "System" or qss_filename == "system_default":
+            QApplication.instance().setStyleSheet("") # Clear stylesheet to use system default
+            logger.info("Applied system default theme.")
+            return
+
+        if qss_filename:
+            theme_abs_path = utils.get_resource_path(os.path.join(app_settings.THEME_DIR, qss_filename))
+            utils.apply_stylesheet(QApplication.instance(), theme_abs_path) # Use a utility for this
+        else:
+            logger.warning(f"Theme '{theme_name}' not found in AVAILABLE_THEMES. Applying system default.")
+            QApplication.instance().setStyleSheet("")
 
     def _load_course_for_learning(self, manifest_path: str):
         """Initializes services and UI for the LEARNING mode."""
@@ -187,6 +210,7 @@ class MainWindow(QMainWindow):
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
+        dialog.theme_changed.connect(self.apply_theme) # Connect to the new signal
         dialog.exec()
 
     # --- Learning Mode Methods ---

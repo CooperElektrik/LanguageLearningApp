@@ -55,28 +55,13 @@ def setup_translations(app: QApplication) -> QTranslator:
     app.installTranslator(translator)
     return translator
 
-
-def apply_application_theme(app: QApplication):
-    """Loads and applies the QSS theme."""
-    theme_abs_path = utils.get_resource_path(os.path.join(settings.THEME_DIR, settings.DEFAULT_THEME_FILE))
-    if os.path.exists(theme_abs_path):
-        try:
-            with open(theme_abs_path, "r", encoding="utf-8") as f:
-                app.setStyleSheet(f.read())
-            logger.info(f"Successfully applied theme from: {theme_abs_path}")
-        except Exception as e:
-            logger.error(f"Failed to apply theme from {theme_abs_path}: {e}")
-    else:
-        logger.error(f"Theme QSS file not found at: {theme_abs_path}")
-
-
 def main():
     app = QApplication(sys.argv)
     QCoreApplication.setOrganizationName(settings.ORG_NAME)
     QCoreApplication.setApplicationName(settings.APP_NAME)
 
     setup_translations(app)
-    apply_application_theme(app)
+    # Theme is now applied by MainWindow after it's initialized and loads settings
     
     logger.info(f"{settings.APP_NAME} application starting...")
 
