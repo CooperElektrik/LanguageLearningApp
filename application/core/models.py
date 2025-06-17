@@ -45,6 +45,10 @@ class Exercise:
 
     raw_data: Dict[str, Any] = field(default_factory=dict, repr=False)
 
+    def has_hint(self) -> bool:
+        """Checks if the exercise has a non-empty translation hint."""
+        return bool(self.translation_hint and self.translation_hint.strip())
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the Exercise object to a dictionary for progress saving.

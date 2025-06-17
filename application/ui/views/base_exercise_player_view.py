@@ -4,13 +4,14 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QProgressBar, QMessageBox, QGroupBox, QTextEdit, QStyle
 )
-from PySide6.QtCore import Signal, Qt, QTimer
+from PySide6.QtCore import Signal, Qt, QTimer, QSettings
 from typing import Optional, Type, Dict # For EXERCISE_WIDGET_MAP type hint
 
 from core.models import Exercise
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.widgets.exercise_widgets import BaseExerciseWidget, EXERCISE_WIDGET_MAP
+import settings as app_settings # For QSettings keys
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,14 @@ class BaseExercisePlayerView(QWidget):
         self.exercise_area_layout = QVBoxLayout(self.exercise_area_container)
         self.main_layout.addWidget(self.exercise_area_container, 1) # Stretch
 
+        # Hint Label (initially hidden)
+        self.hint_label = QLabel("")
+        self.hint_label.setObjectName(f"{self.__class__.__name__}_hint_label")
+        self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hint_label.setWordWrap(True)
+        self.hint_label.setVisible(False) # Start hidden
+        self.main_layout.addWidget(self.hint_label) # Add it before notes or feedback
+
         # Notes Panel
         self.notes_group_box = QGroupBox(self.tr("My Notes"))
         self.notes_group_box.setObjectName(f"{self.__class__.__name__}_notes_groupbox")
@@ -99,6 +108,8 @@ class BaseExercisePlayerView(QWidget):
                 logger.debug(f"Error disconnecting signal during clear: {e}")
                 pass # Signal might not have been connected or widget already deleting
             self.current_exercise_widget.deleteLater()
+        if self.hint_label: # Clear and hide hint
+            self._toggle_hint_visibility(force_show=False)
             self.current_exercise_widget = None
 
     def _load_exercise_widget(self, exercise: Exercise) -> bool:
@@ -108,6 +119,7 @@ class BaseExercisePlayerView(QWidget):
         """
         self._clear_exercise_area() # Clear previous widget first
         self.current_exercise_obj = exercise # Set current exercise context
+        self._toggle_hint_visibility(force_show=False) # Ensure previous hint is hidden
 
         widget_class = EXERCISE_WIDGET_MAP.get(exercise.type)
         if widget_class:
@@ -137,6 +149,39 @@ class BaseExercisePlayerView(QWidget):
             self.feedback_label.setStyleSheet("color: red;")
             self.current_exercise_obj = None # Clear if widget fails to load
             return False
+
+    def _toggle_hint_visibility(self, force_show: Optional[bool] = None):
+        """
+        Toggles or sets the visibility of the hint label.
+        This method is intended to be called by subclasses or internal logic.
+        """
+        if not self.hint_label: # Should not happen if _setup_common_ui ran
+            logger.error("Hint label not initialized in BaseExercisePlayerView.")
+            return
+
+        if not self.current_exercise_obj or not self.current_exercise_obj.has_hint():
+            self.hint_label.setText("")
+            self.hint_label.setVisible(False)
+            return
+
+        if force_show is not None:
+            new_visibility = force_show
+        else:
+            new_visibility = not self.hint_label.isVisible()
+
+        if new_visibility:
+            self.hint_label.setText(self.tr("Hint: {0}").format(self.current_exercise_obj.translation_hint))
+        else:
+            self.hint_label.setText("") # Clear text when hiding
+        self.hint_label.setVisible(new_visibility)
+
+    def _check_and_auto_show_hint(self):
+        """Checks user preference and auto-shows hint if enabled and not already visible."""
+        q_settings = QSettings()
+        autoshow_enabled = q_settings.value(app_settings.QSETTINGS_KEY_AUTOSHOW_HINTS, app_settings.AUTOSHOW_HINTS_DEFAULT, type=bool)
+        if autoshow_enabled and self.current_exercise_obj and self.current_exercise_obj.has_hint() and not self.hint_label.isVisible():
+            self._toggle_hint_visibility(force_show=True)
+            logger.info("Hint automatically shown for the current exercise based on user setting.")
 
     # --- Notes Panel Methods (Common Logic) ---
     def _toggle_notes_panel(self, checked: bool):
@@ -193,6 +238,7 @@ class BaseExercisePlayerView(QWidget):
         self.feedback_label.setText("")
         self.feedback_label.setStyleSheet("")
         
+        self._toggle_hint_visibility(force_show=False) # Hide any visible hint
         self.notes_text_edit.clear()
         if hasattr(self, 'toggle_notes_button') and self.toggle_notes_button: # Check if button exists
             self.toggle_notes_button.setChecked(False) # Hides notes panel if connected to _toggle_notes_panel

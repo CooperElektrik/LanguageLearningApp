@@ -4,7 +4,7 @@ from enum import Enum, auto
 from PySide6.QtWidgets import (
     QLabel, QPushButton, QHBoxLayout, QMessageBox, QStyle, QWidget, QVBoxLayout, QDialog
 )
-from PySide6.QtCore import Signal, QTimer, Qt
+from PySide6.QtCore import Signal, QTimer, Qt, QSettings
 
 from typing import List, Optional
 
@@ -82,6 +82,12 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
         self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
         control_buttons_layout.addWidget(self.toggle_notes_button)
 
+        self.toggle_hint_button = QPushButton(self.tr("Show Hint"))
+        self.toggle_hint_button.setObjectName("toggle_hint_button_review")
+        self.toggle_hint_button.setCheckable(False)
+        self.toggle_hint_button.clicked.connect(self._toggle_hint_visibility_manually)
+        control_buttons_layout.addWidget(self.toggle_hint_button)
+
         self.lookup_button = QPushButton(self.tr("Lookup..."))
         self.lookup_button.setObjectName("lookup_button_review")
         self.lookup_button.clicked.connect(self._handle_lookup_word)
@@ -154,6 +160,19 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
 
         self.toggle_notes_button.setEnabled(not is_session_ended and not is_initial)
         self.lookup_button.setEnabled(not is_session_ended and not is_initial)
+        
+        can_show_hint = is_asking and self.current_exercise_obj and self.current_exercise_obj.has_hint()
+        self.toggle_hint_button.setVisible(can_show_hint)
+        if logger.isEnabledFor(logging.DEBUG): # Conditional logging
+            logger.debug(
+                f"_update_button_states (ReviewView): can_show_hint={can_show_hint}, "
+                f"hint_label.isVisible()={self.hint_label.isVisible() if hasattr(self, 'hint_label') else 'N/A'}, "
+                f"is_asking={is_asking}, current_exercise_obj exists={bool(self.current_exercise_obj)}"
+            )
+        if can_show_hint:
+            self.toggle_hint_button.setText(
+                self.tr("Hide Hint") if self.hint_label.isVisible() else self.tr("Show Hint")
+            )
 
         if is_submitted_or_shown:
             if self._last_submission_was_correct:
@@ -197,6 +216,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
     def _load_next_review_exercise(self):
         super()._save_current_note()
         self.feedback_label.setText("") # Clear feedback label
+        # self._toggle_hint_visibility(force_show=False) # Done by _load_exercise_widget in base
         
         self.feedback_label.setText("")
         self.feedback_label.setStyleSheet("")
@@ -209,14 +229,26 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
         
         if super()._load_exercise_widget(exercise_to_load):
             if self.current_exercise_widget:
-                 self.current_exercise_widget.answer_submitted.connect(self._handle_user_submission_from_widget)
+                self.current_exercise_widget.answer_submitted.connect(self._handle_user_submission_from_widget)
+            
+            self._check_and_auto_show_hint() # Auto-show from base class
+            # Button states (including hint button text) updated at the end of this method
             self.view_state = ReviewState.ASKING_QUESTION
         else:
             self.feedback_label.setText(self.tr("Error loading exercise. Please rate to continue."))
             self.feedback_label.setStyleSheet("color: red;")
             self.view_state = ReviewState.ANSWER_SUBMITTED
         
-        self._update_button_states()
+        # Defer button state update to ensure UI changes (like hint visibility) are processed
+        QTimer.singleShot(0, self._update_button_states)
+
+    def _toggle_hint_visibility_manually(self):
+        """Handles manual click on the Show/Hide Hint button."""
+        if self.current_exercise_obj and self.current_exercise_obj.has_hint():
+            super()._toggle_hint_visibility() # Call base class method
+            self.toggle_hint_button.setText(
+                self.tr("Hide Hint") if self.hint_label.isVisible() else self.tr("Show Hint")
+            )
 
 
     def _handle_user_submission_from_button(self):
@@ -233,6 +265,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
     def _process_submission(self, user_answer: str, was_shown: bool):
         if not self.current_exercise_obj or self.view_state != ReviewState.ASKING_QUESTION:
             return
+        self._toggle_hint_visibility(force_show=False) # Hide hint on submission
 
         if not user_answer.strip() and isinstance(self.current_exercise_widget, TranslationExerciseWidget):
             self.feedback_label.setText(self.tr("Please provide an answer."))
@@ -255,6 +288,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
     def _handle_show_answer(self):
         if not self.current_exercise_obj or self.view_state != ReviewState.ASKING_QUESTION:
             return
+        self._toggle_hint_visibility(force_show=False) # Hide hint when answer is shown
 
         correct_answer_for_display = "N/A"
         if self.current_exercise_obj.type in ["translate_to_target", "translate_to_source"]:
