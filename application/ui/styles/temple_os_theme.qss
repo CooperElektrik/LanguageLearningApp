@@ -1,0 +1,144 @@
+/*
+ *  "God's Holy Temple" Theme for LinguaLearn
+ *  Inspired by the aesthetics of the TempleOS
+ *  For best results, disable font anti-aliasing in your application code.
+*/
+
+QWidget {
+    background-color: #0000A8; /* The Holy Blue */
+    color: #00AAAA;           /* The Holy Cyan */
+    font-family: "Fixedsys", "Courier New", "Terminal", monospace;
+    font-size: 12pt;
+    font-weight: bold; /* Helps mimic bitmap font chunkiness */
+}
+
+QMainWindow, QDialog {
+    background-color: #0000A8;
+}
+
+/* Buttons: Simple bordered text */
+QPushButton {
+    background-color: #0000A8;
+    color: #00AAAA;
+    border: 1px solid #00AAAA;
+    padding: 5px 10px;
+    border-radius: 0px; /* No curves */
+    min-width: 70px;
+}
+QPushButton:hover {
+    background-color: #FFFFFF; /* White highlight on hover */
+    color: #0000A8;
+    border-color: #FFFFFF;
+}
+QPushButton:pressed {
+    background-color: #00AAAA; /* Invert colors on press */
+    color: #0000A8;
+    border-color: #00AAAA;
+}
+QPushButton:disabled {
+    background-color: #0000A8;
+    color: #555555; /* EGA Dark Gray for disabled text */
+    border-color: #555555;
+}
+
+/* Input Fields: Inverted colors for entry */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background-color: #00AAAA; /* Cyan background */
+    color: #0000A8;            /* Blue text */
+    border: 1px solid #00AAAA;
+    padding: 4px;
+    border-radius: 0px;
+    selection-background-color: #FFFFFF; /* Classic text selection */
+    selection-color: #0000A8;
+}
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {
+    border: 1px solid #FFFFFF; /* White border on focus */
+}
+
+/* ComboBox Dropdown */
+QComboBox::drop-down {
+    border: none;
+    background-color: #00AAAA;
+}
+QComboBox::down-arrow {
+    image: none; /* No modern arrow icon */
+}
+QComboBox QAbstractItemView { /* The popup list */
+    background-color: #00AAAA;
+    color: #0000A8;
+    border: 1px solid #FFFFFF;
+    selection-background-color: #FFFFFF;
+    selection-color: #0000A8;
+}
+
+/* Labels: Standard text on the blue background */
+QLabel {
+    background-color: transparent;
+    color: #00AAAA;
+}
+QLabel#prompt_label, QLabel#feedback_label {
+    font-size: 13pt; /* A little bigger for God's words */
+    color: #FFFFFF;  /* White for important text */
+}
+
+/* GroupBox: A simple bordered container */
+QGroupBox {
+    background-color: transparent;
+    border: 1px solid #00AAAA;
+    border-radius: 0px;
+    margin-top: 12px;
+    padding: 10px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    background-color: #0000A8; /* 'Carve' space for the title */
+    color: #FFFFFF; /* White title text */
+    left: 10px;
+}
+
+/* ScrollBars: Blocky and functional */
+QScrollBar:vertical, QScrollBar:horizontal {
+    border: 1px solid #00AAAA;
+    background: #0000A8;
+    width: 16px;  /* Blockier */
+    height: 16px; /* Blockier */
+    margin: 0px;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #00AAAA;
+    min-height: 20px;
+    min-width: 20px;
+    border-radius: 0px;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: 1px solid #00AAAA;
+    background: #FFFFFF; /* White buttons for high contrast */
+    height: 14px;
+    width: 14px;
+}
+QScrollBar::up-arrow, QScrollBar::down-arrow, QScrollBar::left-arrow, QScrollBar::right-arrow {
+    /* We can't easily make these with characters, so we leave them empty */
+    /* They will appear as solid white squares */
+    width: 0px; height: 0px;
+}
+
+/* TreeView, ListView, TableView: A sea of blue and cyan */
+QTreeView, QListView, QTableView {
+    background-color: #0000A8;
+    border: 1px solid #00AAAA;
+    border-radius: 0px;
+    alternate-background-color: #0000A8; /* No alternating colors */
+}
+QHeaderView::section {
+    background-color: #00AAAA; /* Inverted header */
+    color: #0000A8;
+    padding: 4px;
+    border: 1px solid #00AAAA;
+    border-radius: 0px;
+}
+QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {
+    background-color: #FFFFFF; /* White highlight on selection */
+    color: #0000A8;
+}
