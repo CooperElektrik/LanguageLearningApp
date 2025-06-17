@@ -10,7 +10,11 @@ from PySide6.QtCore import Qt, QCoreApplication, QSettings
 
 from typing import Optional
 
-from application import settings as app_settings, utils
+try:
+    from application import settings as app_settings, utils
+except ImportError:
+    import settings as app_settings
+    import utils
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.views.course_overview_view import CourseOverviewView
