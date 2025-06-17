@@ -114,6 +114,9 @@ class BaseExercisePlayerView(QWidget):
             self.current_exercise_widget = widget_class(
                 exercise, self.course_manager, self.exercise_area_container # Parent to container
             )
+            # Trigger autoplay after the widget is created and added to the layout
+            self.current_exercise_widget.trigger_autoplay_audio()
+
             self.exercise_area_layout.addWidget(self.current_exercise_widget)
             
             # Subclasses will connect to self.current_exercise_widget.answer_submitted

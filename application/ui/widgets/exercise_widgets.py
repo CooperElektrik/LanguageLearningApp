@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QTextEdit,
 )
-from PySide6.QtCore import Signal, QUrl, Qt, QTimer
+from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
@@ -36,6 +36,7 @@ try:
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
+    from application import settings as app_settings # For reading autoplay setting
 except ImportError: # This makes Nuitka happy
     from core.models import Exercise
     from core.course_manager import (
@@ -50,6 +51,7 @@ except ImportError: # This makes Nuitka happy
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
+    import settings as app_settings # Fallback for Nuitka
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +181,26 @@ class BaseExerciseWidget(QWidget):
     def stop_media(self):
         if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlayingState:
             self._media_player.stop()
+
+    def trigger_autoplay_audio(self):
+        """
+        Checks the application settings and autoplays the exercise's audio
+        if the feature is enabled and an audio file is associated with the exercise.
+        """
+        if not self.exercise or not self.exercise.audio_file:
+            logger.debug(f"No audio file for exercise {self.exercise.exercise_id if self.exercise else 'N/A'}, skipping autoplay.")
+            return
+
+        q_settings = QSettings()
+        autoplay_enabled = q_settings.value(
+            app_settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
+            app_settings.AUTOPLAY_AUDIO_DEFAULT,
+            type=bool
+        )
+
+        if autoplay_enabled:
+            logger.info(f"Autoplay enabled. Playing audio for exercise: {self.exercise.exercise_id}")
+            self._play_audio_file(self.exercise.audio_file)
 
 
 class TranslationExerciseWidget(BaseExerciseWidget):

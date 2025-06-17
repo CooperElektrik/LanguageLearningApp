@@ -1,7 +1,7 @@
 import logging
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGroupBox, QCheckBox, QSlider, QLabel,
-    QDialogButtonBox, QHBoxLayout, QComboBox, QFormLayout
+    QDialogButtonBox, QHBoxLayout, QComboBox, QFormLayout, QPushButton, QMessageBox
 )
 from PySide6.QtCore import Qt, QSettings, Signal
  
@@ -30,6 +30,10 @@ class SettingsDialog(QDialog):
 
         self.sound_enabled_checkbox = QCheckBox(self.tr("Enable sound effects"))
         audio_layout.addWidget(self.sound_enabled_checkbox)
+
+        self.autoplay_audio_checkbox = QCheckBox(self.tr("Autoplay audio in exercises"))
+        audio_layout.addWidget(self.autoplay_audio_checkbox)
+
 
         volume_layout = QHBoxLayout()
         volume_label = QLabel(self.tr("Volume:"))
@@ -63,6 +67,13 @@ class SettingsDialog(QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
+
+        self.autoshow_hints_checkbox = QCheckBox(self.tr("Show hints automatically in exercises"))
+        ui_layout.addRow(self.autoshow_hints_checkbox) # Add as a new row
+
+        self.reset_ui_button = QPushButton(self.tr("Reset UI Settings to Default"))
+        self.reset_ui_button.clicked.connect(self._reset_ui_settings)
+        ui_layout.addRow(self.reset_ui_button) # Add as a new row
         main_layout.addWidget(ui_group)
 
         # --- Dialog Buttons ---
@@ -84,6 +95,20 @@ class SettingsDialog(QDialog):
             type=bool
         )
         self.sound_enabled_checkbox.setChecked(sound_enabled)
+
+        autoplay_audio_enabled = self.q_settings.value(
+            settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
+            settings.AUTOPLAY_AUDIO_DEFAULT,
+            type=bool
+        )
+        self.autoplay_audio_checkbox.setChecked(autoplay_audio_enabled)
+
+        autoshow_hints_enabled = self.q_settings.value(
+            settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
+            settings.AUTOSHOW_HINTS_DEFAULT,
+            type=bool
+        )
+        self.autoshow_hints_checkbox.setChecked(autoshow_hints_enabled)
 
         volume = self.q_settings.value(
             settings.QSETTINGS_KEY_SOUND_VOLUME, 
@@ -117,11 +142,27 @@ class SettingsDialog(QDialog):
         self.font_size_label.setText(str(value) + " pt")
         self.font_size_changed.emit(value) # Emit as live-update signal
 
+    def _reset_ui_settings(self):
+        """Resets UI related settings (theme, font size) to their defaults and applies them live."""
+        # Reset theme
+        self.theme_combo.setCurrentText("System") # Assuming "System" is the default key
+        self.theme_changed.emit("System")
+
+        # Reset font size
+        self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)
+        # self._update_font_size_label(settings.DEFAULT_FONT_SIZE) # This will also emit font_size_changed
+
+        QMessageBox.information(self, self.tr("UI Settings Reset"), self.tr("Theme and font size have been reset to defaults. Click OK or Apply to save."))
+
     def apply_settings(self):
         """Saves the current state of the UI controls to QSettings."""
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_SOUND_ENABLED, 
             self.sound_enabled_checkbox.isChecked()
+        )
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
+            self.autoplay_audio_checkbox.isChecked()
         )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_SOUND_VOLUME, 
@@ -132,6 +173,10 @@ class SettingsDialog(QDialog):
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_FONT_SIZE, 
             self.font_size_slider.value()
+        )
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
+            self.autoshow_hints_checkbox.isChecked()
         )
         utils.update_sound_volume() # Ensure live update takes effect if slider was just moved
         
