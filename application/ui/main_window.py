@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QFileDialog,
     QVBoxLayout, QDockWidget, QApplication
 )
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QFont
 from PySide6.QtCore import Qt, QCoreApplication, QSettings
 
 from typing import Optional
@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.learning_widget = None
         self.editor_view = None
 
+        self._setup_ui_elements() # Set up early UI related stuff
         self._load_and_apply_initial_theme()
         self._return_to_selection_screen() # Start in the selection screen
 
@@ -69,6 +70,27 @@ class MainWindow(QMainWindow):
         else:
             logger.warning(f"Theme '{theme_name}' not found in AVAILABLE_THEMES. Applying system default.")
             QApplication.instance().setStyleSheet("")
+
+    def apply_font_size(self, new_size: int):
+        """
+        Applies a new base font size to the entire application.
+        """
+        font = QApplication.instance().font()
+        font.setPointSize(new_size)
+        QApplication.instance().setFont(font)
+        logger.info(f"Global font size changed to: {new_size} pt")
+
+    def _setup_ui_elements(self):
+        """
+        Set font before any widgets are created (MainWindow's UI)
+        """
+        q_settings = QSettings()
+        saved_font_size = q_settings.value(
+            app_settings.QSETTINGS_KEY_FONT_SIZE,
+            app_settings.DEFAULT_FONT_SIZE,
+            type=int
+        )
+        self.apply_font_size(saved_font_size) # Apply saved or default font size
 
     def _load_course_for_learning(self, manifest_path: str):
         """Initializes services and UI for the LEARNING mode."""
@@ -211,6 +233,7 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
         dialog.theme_changed.connect(self.apply_theme) # Connect to the new signal
+        dialog.font_size_changed.connect(self.apply_font_size) # Connect font size changes
         dialog.exec()
 
     # --- Learning Mode Methods ---

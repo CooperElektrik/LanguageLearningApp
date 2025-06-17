@@ -5,7 +5,6 @@ QWidget {
     background-color: #c0c0c0; /* Standard Win95 gray */
     color: black;
     font-family: "Cascadia Mono"; /* Fallback fonts */
-    font-size: 8pt; /* Typical Win95 font size */
 }
 
 QMainWindow {

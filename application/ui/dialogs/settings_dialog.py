@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class SettingsDialog(QDialog):
     
     theme_changed = Signal(str) # Emitted when the theme is changed
+    font_size_changed = Signal(int) # Emitted when font size slider changes
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,6 +44,7 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(audio_group)
 
         # --- UI Settings ---
+        # UI Settings (General, then Theme, then Font)
         ui_group = QGroupBox(self.tr("User Interface"))
         ui_layout = QFormLayout(ui_group)
 
@@ -50,6 +52,17 @@ class SettingsDialog(QDialog):
         self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
         ui_layout.addRow(self.tr("Theme:"), self.theme_combo)
         
+        # Font Size controls: label + slider + current value display
+        self.font_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.font_size_slider.setMinimum(8)  # Min font size
+        self.font_size_slider.setMaximum(14)  # Max font size
+        self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)  # Initial value
+        self.font_size_slider.valueChanged.connect(self._update_font_size_label)
+        self.font_size_label = QLabel(str(settings.DEFAULT_FONT_SIZE) + " pt") # Initial label
+        font_size_layout = QHBoxLayout()
+        font_size_layout.addWidget(self.font_size_slider)
+        font_size_layout.addWidget(self.font_size_label)
+        ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
         main_layout.addWidget(ui_group)
 
         # --- Dialog Buttons ---
@@ -77,6 +90,15 @@ class SettingsDialog(QDialog):
             settings.SOUND_VOLUME_DEFAULT, 
             type=int
         )
+        
+        # Load Font Size setting (default if not found)
+        current_font_size = self.q_settings.value(
+            settings.QSETTINGS_KEY_FONT_SIZE, 
+            settings.DEFAULT_FONT_SIZE, 
+            type=int
+        )
+        self.font_size_slider.setValue(current_font_size)
+
         self.volume_slider.setValue(volume)
 
         current_theme_name = self.q_settings.value(
@@ -90,6 +112,11 @@ class SettingsDialog(QDialog):
             self.theme_combo.setCurrentText("System")
             logger.warning(f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'.")
 
+    def _update_font_size_label(self, value):
+        """Update the font size label when the slider value changes."""
+        self.font_size_label.setText(str(value) + " pt")
+        self.font_size_changed.emit(value) # Emit as live-update signal
+
     def apply_settings(self):
         """Saves the current state of the UI controls to QSettings."""
         self.q_settings.setValue(
@@ -99,6 +126,12 @@ class SettingsDialog(QDialog):
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_SOUND_VOLUME, 
             self.volume_slider.value()
+        )
+
+        # Save Font Size setting
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_FONT_SIZE, 
+            self.font_size_slider.value()
         )
         utils.update_sound_volume() # Ensure live update takes effect if slider was just moved
         

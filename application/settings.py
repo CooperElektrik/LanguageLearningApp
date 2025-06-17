@@ -28,6 +28,10 @@ SOUND_FILE_COMPLETE = "complete.wav"
 QSETTINGS_KEY_SOUND_ENABLED = "audio/sound_effects_enabled"
 QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
 QSETTINGS_KEY_UI_THEME = "ui/theme" # New key for storing selected theme
+QSETTINGS_KEY_FONT_SIZE = "ui/font_size" # New key for storing the font size
+
+# --- UI Font Settings ---
+DEFAULT_FONT_SIZE = 10  # Base font size in points
 
 # --- Locale Settings ---
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.

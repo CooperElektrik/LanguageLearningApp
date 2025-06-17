@@ -3,7 +3,6 @@ QWidget {
     background-color: #2E2E2E; /* Dark gray background */
     color: #E0E0E0; /* Light gray text */
     font-family: "Segoe UI", Arial, sans-serif;
-    font-size: 10pt;
 }
 
 QMainWindow, QDialog {
