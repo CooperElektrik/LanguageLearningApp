@@ -8,16 +8,21 @@ try:
     from . import settings
     from . import utils
 except ImportError:
+    # Fallback for scenarios where main.py might be run in an unusual context
+    # or if settings/utils are needed before sys.path is fully configured.
     import settings
-    import utils
+    import utils 
 
-_project_root_for_paths = os.path.dirname(os.path.abspath(__file__))
-utils.set_app_root_dir(_project_root_for_paths)
+# Determine the application directory and the project root
+_application_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_application_dir)
 
-if _project_root_for_paths not in sys.path:
-    sys.path.insert(0, _project_root_for_paths)
+utils.set_app_root_dir(_application_dir) # utils.get_resource_path needs the 'application' dir as its base for relative paths like "ui/styles"
 
-from ui.main_window import MainWindow
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+    # logger is defined after setup_logging, so use print or basicConfig for early debug if needed
+    # logging.debug(f"Added project root '{_project_root}' to sys.path for main application.")
 
 def setup_logging():
     logging.basicConfig(
@@ -29,6 +34,8 @@ def setup_logging():
     return logger
 
 logger = setup_logging()
+if _project_root not in sys.path: # Log after logger is available
+    logger.debug(f"Project root '{_project_root}' was already in sys.path or just added.")
 
 def setup_translations(app: QApplication) -> QTranslator:
     """Sets up application translations."""
@@ -74,6 +81,8 @@ def main():
     logger.info(f"{settings.APP_NAME} application starting...")
 
     # The MainWindow now handles the course selection and initialization internally.
+    # With project root on sys.path, use absolute import for MainWindow
+    from application.ui.main_window import MainWindow
     main_window = MainWindow()
     main_window.show()
 

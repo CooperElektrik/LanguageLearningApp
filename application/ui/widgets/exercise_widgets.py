@@ -22,10 +22,8 @@ from PySide6.QtCore import Signal, QUrl, Qt, QTimer
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
-import utils
-
-from core.models import Exercise
-from core.course_manager import (
+from application.core.models import Exercise
+from application.core.course_manager import (
     PROMPT_KEY_DEFAULT,
     PROMPT_KEY_FIB,
     PROMPT_KEY_MCQ_TRANSLATION,
@@ -85,12 +83,11 @@ class BaseExerciseWidget(QWidget):
                     )
                     self.image_label.setPixmap(scaled_pixmap)
                     self.image_label.setVisible(True)
-                else:
-                    self.image_label.setVisible(False)
-            else:
-                self.image_label.setVisible(False)
-        else:
-            self.image_label.setVisible(False)
+                    return        
+            # self.image_label.setVisible(False)
+            self.image_label.setText(f"Cannot load image: {self.exercise.image_file}")
+            return
+        self.image_label.setVisible(False)
 
     def _init_audio_player(self):
         """Initializes QMediaPlayer and QAudioOutput if not already done."""
