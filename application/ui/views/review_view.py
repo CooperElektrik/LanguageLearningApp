@@ -44,6 +44,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
         self.current_exercise_index: int = -1
         self.total_exercises_in_session: int = 0
         
+        self._current_session_name_for_retranslation: str = "Review Session" # For retranslation
         self._last_submission_was_correct: bool = False
         self.view_state: ReviewState = ReviewState.INITIAL_LOAD
 
@@ -185,6 +186,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
 
     def start_review_session(self, exercises: Optional[List[Exercise]] = None, session_name: str = "Review Session"):
         super()._save_current_note()
+        self._current_session_name_for_retranslation = session_name # Store for retranslation
         self.reset_view()
 
         if exercises is not None:

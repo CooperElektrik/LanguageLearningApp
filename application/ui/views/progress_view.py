@@ -60,9 +60,9 @@ class ProgressView(QWidget):
         self.scroll_content_layout.addWidget(xp_group)
 
         # Streak Section
-        streak_group = QGroupBox(self.tr("Study Streak"))
-        streak_group.setObjectName("streak_groupbox")
-        streak_layout = QVBoxLayout(streak_group)
+        self.streak_group = QGroupBox(self.tr("Study Streak"))
+        self.streak_group.setObjectName("streak_groupbox")
+        streak_layout = QVBoxLayout(self.streak_group)
         
         self.streak_value_label = QLabel() # Text set in refresh_view
         self.streak_value_label.setObjectName("streak_value_label")
@@ -74,7 +74,7 @@ class ProgressView(QWidget):
         
         streak_layout.addWidget(self.streak_value_label)
         streak_layout.addWidget(self.streak_description_label)
-        self.scroll_content_layout.addWidget(streak_group)
+        self.scroll_content_layout.addWidget(self.streak_group)
 
 
         # Achievements Section

@@ -2,7 +2,7 @@ import os
 import yaml
 import logging
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QEvent
 
 import settings
 import utils
@@ -18,13 +18,13 @@ class CourseSelectionView(QWidget):
         self._setup_ui()
         self._find_and_display_courses()
 
-    def _setup_ui(self):
+    def _setup_ui(self): # Renamed to self.title_label
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
-        title_label = QLabel(self.tr("Select a Course"))
-        title_label.setObjectName("course_selection_title_label")
-        main_layout.addWidget(title_label)
+        self.title_label = QLabel(self.tr("Select a Course"))
+        self.title_label.setObjectName("course_selection_title_label")
+        main_layout.addWidget(self.title_label)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -63,3 +63,14 @@ class CourseSelectionView(QWidget):
         
         if not found_courses:
             self.courses_layout.addWidget(QLabel(self.tr("No valid courses found in the courses directory.")))
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        self.title_label.setText(self.tr("Select a Course"))
+        # Course buttons are created dynamically with titles from manifest, so they don't need retranslation here.
+        # The "No valid courses" or "Error" labels are also dynamic.
+        logger.debug("CourseSelectionView retranslated.")

@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="vi_VN">
+<TS version="2.1" language="zh_TW">
 <context>
     <name>BaseExerciseWidget</name>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="133"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="139"/>
         <source>Audio Error</source>
-        <translation>Lỗi âm thanh</translation>
+        <translation>音訊錯誤</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="133"/>
         <source>Cannot prepare audio: {0}</source>
-        <translation>Không thể chuẩn bị âm thanh: {0}</translation>
+        <translation>無法準備音訊：{0}</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="139"/>
         <source>Audio file not found: {0}</source>
-        <translation>Không tìm thấy tập tin âm thanh: {0}</translation>
+        <translation>找不到音訊檔案：{0}</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="147"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="148"/>
         <source>Translate to %s: "%s"</source>
-        <translation>Dịch sang %s: "%s"</translation>
+        <translation>翻譯成 %s：「%s」</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="149"/>
         <source>Choose the %s translation for: "%s" (%s)</source>
-        <translation>Chọn bản dịch %s cho: "%s" (%s)</translation>
+        <translation>為「%s」選擇 %s 翻譯（%s）</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="150"/>
         <source>%s (Hint: %s)</source>
-        <translation>%s (Gợi ý: %s)</translation>
+        <translation>%s（提示：%s）</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="151"/>
@@ -47,12 +47,12 @@
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="156"/>
         <source>Exercise Prompt: %s</source>
-        <translation>Gợi ý bài tập: %s</translation>
+        <translation>練習提示：%s</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="159"/>
         <source>Exercise Prompt</source>
-        <translation>Gợi ý bài tập</translation>
+        <translation>練習提示</translation>
     </message>
 </context>
 <context>
@@ -60,7 +60,7 @@
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="385"/>
         <source>Continue</source>
-        <translation>Tiếp tục</translation>
+        <translation>繼續</translation>
     </message>
 </context>
 <context>
@@ -68,92 +68,92 @@
     <message>
         <location filename="../ui/views/course_editor_view.py" line="156"/>
         <source>Save Successful</source>
-        <translation>Lưu thành công</translation>
+        <translation>儲存成功</translation>
     </message>
     <message>
         <location filename="../ui/views/course_editor_view.py" line="156"/>
         <source>The course has been saved successfully.</source>
-        <translation>Khóa học đã được lưu thành công.</translation>
+        <translation>課程已成功儲存。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_editor_view.py" line="160"/>
         <source>Save Failed</source>
-        <translation>Lưu thất bại</translation>
+        <translation>儲存失敗</translation>
     </message>
     <message>
         <location filename="../ui/views/course_editor_view.py" line="160"/>
         <source>An error occurred while saving the course.
 Check the logs for details.</source>
-        <translation>Đã xảy ra lỗi khi lưu khóa học.
-Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
+        <translation>儲存課程時發生錯誤。
+請檢查日誌以獲取詳細資訊。</translation>
     </message>
 </context>
 <context>
     <name>CourseOverviewView</name>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="172"/>
-        <location filename="../ui/views/course_overview_view.py" line="199"/>
-        <source>Language Course</source>
-        <translation>Khóa học ngôn ngữ</translation>
-    </message>
-    <message>
         <location filename="../ui/views/course_overview_view.py" line="44"/>
         <location filename="../ui/views/course_overview_view.py" line="200"/>
         <source>Daily Review</source>
-        <translation>Ôn tập hàng ngày</translation>
+        <translation>每日複習</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="54"/>
         <location filename="../ui/views/course_overview_view.py" line="201"/>
         <source>Review Due</source>
-        <translation>Đến hạn ôn tập</translation>
+        <translation>到期複習</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="59"/>
         <location filename="../ui/views/course_overview_view.py" line="202"/>
         <source>Review Weak</source>
-        <translation>Ôn tập yếu</translation>
+        <translation>複習弱點</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="61"/>
         <location filename="../ui/views/course_overview_view.py" line="203"/>
         <source>Review items you struggle with the most.</source>
-        <translation>Ôn tập những mục bạn gặp khó khăn nhất.</translation>
+        <translation>複習您最不熟悉的項目。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="104"/>
         <source>No units available in this course.</source>
-        <translation>Không có đơn vị nào trong khóa học này.</translation>
+        <translation>本課程無可用單元。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="117"/>
         <source>This unit has no lessons.</source>
-        <translation>Đơn vị này không có bài học nào.</translation>
+        <translation>此單元沒有課程。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="165"/>
         <source>Course not loaded.</source>
-        <translation>Khóa học chưa được tải.</translation>
+        <translation>課程未載入。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="166"/>
         <source>N/A</source>
-        <translation>Không có sẵn</translation>
+        <translation>不適用</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/course_overview_view.py" line="172"/>
+        <location filename="../ui/views/course_overview_view.py" line="199"/>
+        <source>Language Course</source>
+        <translation>語言課程</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="175"/>
         <source>Total XP: {0}</source>
-        <translation>Tổng XP: {0}</translation>
+        <translation>總經驗值：{0}</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="182"/>
         <source>{0} exercises due for review.</source>
-        <translation>Có {0} bài tập đến hạn ôn tập.</translation>
+        <translation>有 {0} 個練習待複習。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="185"/>
         <source>No exercises due for review right now!</source>
-        <translation>Hiện tại không có bài tập nào đến hạn ôn tập!</translation>
+        <translation>目前沒有練習待複習！</translation>
     </message>
 </context>
 <context>
@@ -162,17 +162,17 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
         <location filename="../ui/views/course_selection_view.py" line="25"/>
         <location filename="../ui/views/course_selection_view.py" line="73"/>
         <source>Select a Course</source>
-        <translation>Chọn khóa học</translation>
+        <translation>選擇課程</translation>
     </message>
     <message>
         <location filename="../ui/views/course_selection_view.py" line="42"/>
         <source>Error: Courses directory not found.</source>
-        <translation>Lỗi: Không tìm thấy thư mục khóa học.</translation>
+        <translation>錯誤：找不到課程目錄。</translation>
     </message>
     <message>
         <location filename="../ui/views/course_selection_view.py" line="65"/>
         <source>No valid courses found in the courses directory.</source>
-        <translation>Không tìm thấy khóa học hợp lệ nào trong thư mục khóa học.</translation>
+        <translation>在課程目錄中找不到有效的課程。</translation>
     </message>
 </context>
 <context>
@@ -181,39 +181,39 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
         <location filename="../ui/views/glossary_view.py" line="34"/>
         <location filename="../ui/views/glossary_view.py" line="149"/>
         <source>← Back to Course Overview</source>
-        <translation>← Trở lại Tổng quan khóa học</translation>
+        <translation>← 返回課程總覽</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="42"/>
         <location filename="../ui/views/glossary_view.py" line="150"/>
         <source>Glossary</source>
-        <translation>Bảng chú giải</translation>
+        <translation>詞彙表</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="53"/>
         <location filename="../ui/views/glossary_view.py" line="151"/>
         <source>Search words, translations, examples...</source>
-        <translation>Tìm kiếm từ, bản dịch, ví dụ...</translation>
+        <translation>搜尋單字、翻譯、例句...</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="84"/>
         <source>No glossary entries found matching your search.</source>
-        <translation>Không tìm thấy mục nào trong bảng chú giải phù hợp với tìm kiếm của bạn.</translation>
+        <translation>沒有找到符合您搜尋條件的詞彙表項目。</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="86"/>
         <source>No glossary entries available for this course.</source>
-        <translation>Không có mục nào trong bảng chú giải cho khóa học này.</translation>
+        <translation>本課程沒有可用的詞彙表項目。</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="97"/>
         <source>Double-click to see details for '{0}'</source>
-        <translation>Nhấp đúp để xem chi tiết cho '{0}'</translation>
+        <translation>雙擊查看「{0}」的詳細資訊</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="138"/>
         <source>No glossary entries</source>
-        <translation>Không có mục nào trong bảng chú giải</translation>
+        <translation>無詞彙表項目</translation>
     </message>
 </context>
 <context>
@@ -222,137 +222,137 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
         <location filename="../ui/views/lesson_view.py" line="52"/>
         <location filename="../ui/views/lesson_view.py" line="387"/>
         <source>← Back to Lessons</source>
-        <translation>← Trở lại Bài học</translation>
+        <translation>← 返回課程列表</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="57"/>
         <location filename="../ui/views/lesson_view.py" line="388"/>
         <source>Lesson Title</source>
-        <translation>Tên bài học</translation>
+        <translation>課程標題</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="62"/>
         <location filename="../ui/views/lesson_view.py" line="356"/>
         <location filename="../ui/views/lesson_view.py" line="390"/>
         <source>%v / %m Steps</source>
-        <translation>%v / %m Bước</translation>
+        <translation>%v / %m 步驟</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="72"/>
         <location filename="../ui/views/lesson_view.py" line="138"/>
         <location filename="../ui/views/lesson_view.py" line="222"/>
         <source>Show Hint</source>
-        <translation>Hiện gợi ý</translation>
+        <translation>顯示提示</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="78"/>
         <location filename="../ui/views/lesson_view.py" line="394"/>
         <source>Lookup...</source>
-        <translation>Tra cứu...</translation>
+        <translation>查閱...</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="85"/>
         <location filename="../ui/views/lesson_view.py" line="395"/>
         <source>Skip</source>
-        <translation>Bỏ qua</translation>
+        <translation>跳過</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="90"/>
         <location filename="../ui/views/lesson_view.py" line="396"/>
         <source>Submit</source>
-        <translation>Gửi</translation>
+        <translation>提交</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="95"/>
         <source>Continue</source>
-        <translation>Tiếp tục</translation>
+        <translation>繼續</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="137"/>
         <location filename="../ui/views/lesson_view.py" line="221"/>
         <source>Hide Hint</source>
-        <translation>Ẩn gợi ý</translation>
+        <translation>隱藏提示</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="143"/>
         <source>Finish Lesson 🎉</source>
-        <translation>Hoàn thành bài học 🎉</translation>
+        <translation>完成課程 🎉</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="145"/>
         <source>Review Mistakes →</source>
-        <translation>Ôn tập lỗi sai →</translation>
+        <translation>複習錯誤 →</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="147"/>
         <source>Next Exercise →</source>
-        <translation>Bài tập tiếp theo →</translation>
+        <translation>下一個練習 →</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="150"/>
         <source>Back to Overview</source>
-        <translation>Trở lại Tổng quan</translation>
+        <translation>返回總覽</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="165"/>
         <source>Error: Could not load lesson data.</source>
-        <translation>Lỗi: Không thể tải dữ liệu bài học.</translation>
+        <translation>錯誤：無法載入課程資料。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="209"/>
         <source>Error loading exercise. Skipping.</source>
-        <translation>Lỗi khi tải bài tập. Bỏ qua.</translation>
+        <translation>載入練習時發生錯誤。跳過。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="249"/>
         <source>Skipped. Correct answer: {0}</source>
-        <translation>Đã bỏ qua. Đáp án đúng: {0}</translation>
+        <translation>已跳過。正確答案：{0}</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="255"/>
         <source>Please provide an answer.</source>
-        <translation>Vui lòng cung cấp một câu trả lời.</translation>
+        <translation>請提供答案。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="307"/>
         <source>Skip Exercise</source>
-        <translation>Bỏ qua bài tập</translation>
+        <translation>跳過練習</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="308"/>
         <source>Are you sure you want to skip this exercise? It will be marked for earlier review.</source>
-        <translation>Bạn có chắc chắn muốn bỏ qua bài tập này không? Nó sẽ được đánh dấu để ôn tập sớm hơn.</translation>
+        <translation>您確定要跳過此練習嗎？它將被標記為提前複習。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="321"/>
         <location filename="../ui/views/lesson_view.py" line="403"/>
         <source>Reviewing Mistakes</source>
-        <translation>Ôn tập lỗi sai</translation>
+        <translation>複習錯誤</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="322"/>
         <source>Let's go over the exercises you had trouble with.</source>
-        <translation>Hãy cùng xem lại những bài tập bạn gặp khó khăn.</translation>
+        <translation>讓我們複習一下您遇到的練習問題。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="332"/>
         <source>Lesson '{0}' completed!</source>
-        <translation>Bài học '{0}' đã hoàn thành!</translation>
+        <translation>課程「{0}」已完成！</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="355"/>
         <source>Lesson</source>
-        <translation>Bài học</translation>
+        <translation>課程</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="366"/>
         <source>Glossary Empty</source>
-        <translation>Bảng chú giải trống</translation>
+        <translation>詞彙表為空</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="366"/>
         <source>No glossary entries for this course.</source>
-        <translation>Không có mục nào trong bảng chú giải cho khóa học này.</translation>
+        <translation>本課程沒有詞彙表項目。</translation>
     </message>
 </context>
 <context>
@@ -360,7 +360,7 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="298"/>
         <source>🔊 Play Audio</source>
-        <translation>🔊 Phát âm thanh</translation>
+        <translation>🔊 播放音訊</translation>
     </message>
 </context>
 <context>
@@ -370,65 +370,65 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
         <location filename="../ui/main_window.py" line="219"/>
         <location filename="../ui/main_window.py" line="328"/>
         <source>LinguaLearn</source>
-        <translation>LinguaLearn</translation>
+        <translation>語言學習</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="105"/>
         <location filename="../ui/main_window.py" line="120"/>
         <source>Course Load Error</source>
-        <translation>Lỗi tải khóa học</translation>
+        <translation>課程載入錯誤</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="105"/>
         <source>Failed to load course.</source>
-        <translation>Không thể tải khóa học.</translation>
+        <translation>載入課程失敗。</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="115"/>
         <source>Open Course Manifest</source>
-        <translation>Mở tệp kê khai khóa học</translation>
+        <translation>開啟課程清單</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="120"/>
         <source>Failed to load selected course for editing.</source>
-        <translation>Không thể tải khóa học đã chọn để chỉnh sửa.</translation>
+        <translation>載入所選課程進行編輯失敗。</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="137"/>
         <location filename="../ui/main_window.py" line="338"/>
         <source>Course Navigation</source>
-        <translation>Điều hướng khóa học</translation>
+        <translation>課程導航</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="142"/>
         <location filename="../ui/main_window.py" line="340"/>
         <source>Progress</source>
-        <translation>Tiến độ</translation>
+        <translation>進度</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="154"/>
         <source>Select a lesson or start a review.</source>
-        <translation>Chọn một bài học hoặc bắt đầu ôn tập.</translation>
+        <translation>選擇一個課程或開始複習。</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="191"/>
         <source>&amp;File</source>
-        <translation>&amp;Tệp tin</translation>
+        <translation>檔案(&amp;F)</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="192"/>
         <source>Open Course for Editing...</source>
-        <translation>Mở khóa học để chỉnh sửa...</translation>
+        <translation>開啟課程進行編輯...</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="204"/>
         <source>Return to Course Selection</source>
-        <translation>Trở lại chọn khóa học</translation>
+        <translation>返回課程選擇</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="209"/>
         <source>Start Due Review</source>
-        <translation>Bắt đầu ôn tập đến hạn</translation>
+        <translation>開始到期複習</translation>
     </message>
 </context>
 <context>
@@ -436,87 +436,87 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/views/progress_view.py" line="52"/>
         <source>Total Experience (XP)</source>
-        <translation>Tổng kinh nghiệm (XP)</translation>
+        <translation>總經驗值 (XP)</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="63"/>
         <source>Study Streak</source>
-        <translation>Chuỗi học tập</translation>
+        <translation>學習連勝</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="81"/>
         <source>Achievements</source>
-        <translation>Thành tích</translation>
+        <translation>成就</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="88"/>
         <source>First Step</source>
-        <translation>Bước đầu tiên</translation>
+        <translation>第一步</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="88"/>
         <source>Complete your first lesson.</source>
-        <translation>Hoàn thành bài học đầu tiên của bạn.</translation>
+        <translation>完成您的第一個課程。</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="90"/>
         <source>XP Enthusiast</source>
-        <translation>Người hâm mộ XP</translation>
+        <translation>經驗值愛好者</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="90"/>
         <source>Reach 1000 XP.</source>
-        <translation>Đạt 1000 XP.</translation>
+        <translation>達到 1000 經驗值。</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="92"/>
         <source>7-Day Streak</source>
-        <translation>Chuỗi 7 ngày</translation>
+        <translation>7天連勝</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="92"/>
         <source>Study for 7 consecutive days.</source>
-        <translation>Học trong 7 ngày liên tiếp.</translation>
+        <translation>連續學習7天。</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="94"/>
         <source>30-Day Streak</source>
-        <translation>Chuỗi 30 ngày</translation>
+        <translation>30天連勝</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="94"/>
         <source>Study for 30 consecutive days.</source>
-        <translation>Học trong 30 ngày liên tiếp.</translation>
+        <translation>連續學習30天。</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="96"/>
         <source>Lesson Master</source>
-        <translation>Bậc thầy bài học</translation>
+        <translation>課程大師</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="96"/>
         <source>Complete all lessons in the course.</source>
-        <translation>Hoàn thành tất cả các bài học trong khóa học.</translation>
+        <translation>完成課程中所有課程。</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="183"/>
         <source>{0} XP</source>
-        <translation>{0} XP</translation>
+        <translation>{0} 經驗值</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="186"/>
         <source>{0} Days</source>
-        <translation>{0} Ngày</translation>
+        <translation>{0} 天</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="190"/>
         <source>Keep up the consistent work!</source>
-        <translation>Hãy duy trì sự kiên trì!</translation>
+        <translation>保持持續的努力！</translation>
     </message>
     <message>
         <location filename="../ui/views/progress_view.py" line="193"/>
         <source>Start a new streak today!</source>
-        <translation>Hãy bắt đầu một chuỗi mới ngay hôm nay!</translation>
+        <translation>今天開始新的連勝！</translation>
     </message>
 </context>
 <context>
@@ -524,7 +524,7 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="253"/>
         <source>No options available for this exercise.</source>
-        <translation>Không có tùy chọn nào cho bài tập này.</translation>
+        <translation>此練習沒有可用的選項。</translation>
     </message>
 </context>
 <context>
@@ -532,113 +532,113 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/views/review_view.py" line="58"/>
         <source>← Back to Overview</source>
-        <translation>← Trở lại Tổng quan</translation>
+        <translation>← 返回總覽</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="63"/>
         <location filename="../ui/views/review_view.py" line="202"/>
         <location filename="../ui/views/review_view.py" line="351"/>
         <source>Review Session</source>
-        <translation>Phiên ôn tập</translation>
+        <translation>複習會話</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="69"/>
         <location filename="../ui/views/review_view.py" line="352"/>
         <source>Review Progress: %v / %m</source>
-        <translation>Tiến độ ôn tập: %v / %m</translation>
+        <translation>複習進度：%v / %m</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="86"/>
         <location filename="../ui/views/review_view.py" line="176"/>
         <location filename="../ui/views/review_view.py" line="253"/>
         <source>Show Hint</source>
-        <translation>Hiện gợi ý</translation>
+        <translation>顯示提示</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="92"/>
         <source>Lookup...</source>
-        <translation>Tra cứu...</translation>
+        <translation>查閱...</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="99"/>
         <source>Submit Answer</source>
-        <translation>Gửi câu trả lời</translation>
+        <translation>提交答案</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="104"/>
         <source>Show Answer</source>
-        <translation>Hiển thị câu trả lời</translation>
+        <translation>顯示答案</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="116"/>
         <source>Again (1)</source>
-        <translation>Lại (1)</translation>
+        <translation>再讀一次 (1)</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="120"/>
         <source>Hard (2)</source>
-        <translation>Khó (2)</translation>
+        <translation>困難 (2)</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="124"/>
         <source>Good (3)</source>
-        <translation>Tốt (3)</translation>
+        <translation>良好 (3)</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="128"/>
         <source>Easy (4)</source>
-        <translation>Dễ (4)</translation>
+        <translation>簡單 (4)</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="175"/>
         <location filename="../ui/views/review_view.py" line="252"/>
         <source>Hide Hint</source>
-        <translation>Ẩn gợi ý</translation>
+        <translation>隱藏提示</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="202"/>
         <source>No exercises to review in this session!</source>
-        <translation>Không có bài tập nào để ôn tập trong phiên này!</translation>
+        <translation>本會話沒有要複習的練習！</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="210"/>
         <source>{0} ({1} exercises)</source>
-        <translation>{0} ({1} bài tập)</translation>
+        <translation>{0} ({1} 個練習)</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="240"/>
         <source>Error loading exercise. Please rate to continue.</source>
-        <translation>Lỗi khi tải bài tập. Vui lòng đánh giá để tiếp tục.</translation>
+        <translation>載入練習時發生錯誤。請評分以繼續。</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="273"/>
         <source>Please provide an answer.</source>
-        <translation>Vui lòng cung cấp một câu trả lời.</translation>
+        <translation>請提供答案。</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="304"/>
         <source>Correct answer: {0}</source>
-        <translation>Đáp án đúng: {0}</translation>
+        <translation>正確答案：{0}</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="337"/>
         <source>Review Session Complete</source>
-        <translation>Phiên ôn tập hoàn tất</translation>
+        <translation>複習會話完成</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="338"/>
         <source>You've completed this review session! Total exercises: {0}</source>
-        <translation>Bạn đã hoàn thành phiên ôn tập này! Tổng số bài tập: {0}</translation>
+        <translation>您已完成本次複習會話！總練習數：{0}</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="362"/>
         <source>Glossary Empty</source>
-        <translation>Bảng chú giải trống</translation>
+        <translation>詞彙表為空</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="362"/>
         <source>No glossary entries available for this course.</source>
-        <translation>Không có mục nào trong bảng chú giải cho khóa học này.</translation>
+        <translation>本課程沒有可用的詞彙表項目。</translation>
     </message>
 </context>
 <context>
@@ -646,17 +646,17 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="320"/>
         <source>Your sentence will appear here.</source>
-        <translation>Câu của bạn sẽ xuất hiện ở đây.</translation>
+        <translation>您的句子將會出現在這裡。</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="332"/>
         <source>Submit Sentence</source>
-        <translation>Gửi câu</translation>
+        <translation>提交句子</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="356"/>
         <source>Click words below to build your sentence.</source>
-        <translation>Nhấp vào các từ bên dưới để tạo câu của bạn.</translation>
+        <translation>點擊下方單字來組成您的句子。</translation>
     </message>
 </context>
 <context>
@@ -665,74 +665,74 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
         <location filename="../ui/dialogs/settings_dialog.py" line="21"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="236"/>
         <source>Settings</source>
-        <translation>Cài đặt</translation>
+        <translation>設定</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="29"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="239"/>
         <source>Audio</source>
-        <translation>Âm thanh</translation>
+        <translation>音訊</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="32"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="240"/>
         <source>Enable sound effects</source>
-        <translation>Bật hiệu ứng âm thanh</translation>
+        <translation>啟用音效</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="35"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="241"/>
         <source>Autoplay audio in exercises</source>
-        <translation>Tự động phát âm thanh trong bài tập</translation>
+        <translation>在練習中自動播放音訊</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="40"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="244"/>
         <source>Volume:</source>
-        <translation>Âm lượng:</translation>
+        <translation>音量：</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="53"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="252"/>
         <source>User Interface</source>
-        <translation>Giao diện người dùng</translation>
+        <translation>使用者介面</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="58"/>
         <source>Theme:</source>
-        <translation>Chủ đề:</translation>
+        <translation>主題：</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="62"/>
         <source>Language:</source>
-        <translation>Ngôn ngữ:</translation>
+        <translation>語言：</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="74"/>
         <source>Font Size:</source>
-        <translation>Cỡ chữ:</translation>
+        <translation>字體大小：</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="76"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="257"/>
         <source>Show hints automatically in exercises</source>
-        <translation>Tự động hiển thị gợi ý trong bài tập</translation>
+        <translation>在練習中自動顯示提示</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="79"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="258"/>
         <source>Reset UI Settings to Default</source>
-        <translation>Đặt lại cài đặt giao diện người dùng về mặc định</translation>
+        <translation>重設使用者介面設定為預設值</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="186"/>
         <source>UI Settings Reset</source>
-        <translation>Cài đặt giao diện người dùng đã được đặt lại</translation>
+        <translation>使用者介面設定已重設</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="186"/>
         <source>Theme, font size and language have been reset to defaults. Click OK or Apply to save.</source>
-        <translation>Chủ đề, cỡ chữ và ngôn ngữ đã được đặt lại về mặc định. Nhấp OK hoặc Áp dụng để lưu.</translation>
+        <translation>主題、字體大小和語言已重設為預設值。點擊確定或應用以儲存。</translation>
     </message>
 </context>
 <context>
@@ -740,7 +740,7 @@ Vui lòng kiểm tra nhật ký để biết chi tiết.</translation>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="215"/>
         <source>🔊 Play Audio</source>
-        <translation>🔊 Phát âm thanh</translation>
+        <translation>🔊 播放音訊</translation>
     </message>
 </context>
 </TS>

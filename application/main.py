@@ -1,8 +1,10 @@
 import sys
 import os
 import logging
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QTranslator, QLocale, QCoreApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtCore import QTranslator, QLocale, QCoreApplication, QSettings
+
+from typing import Optional
 
 try:
     from . import settings
@@ -33,36 +35,17 @@ def setup_logging():
     logger = logging.getLogger(__name__)
     return logger
 
-logger = setup_logging()
-if _project_root not in sys.path: # Log after logger is available
-    logger.debug(f"Project root '{_project_root}' was already in sys.path or just added.")
-
-def setup_translations(app: QApplication) -> QTranslator:
-    """Sets up application translations."""
-    locale_name = settings.FORCE_LOCALE if settings.FORCE_LOCALE else QLocale.system().name()
-    translator = QTranslator(app)
-    qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{locale_name}.qm"))
-    if not translator.load(qm_file_path):
-        lang_name = locale_name.split('_')[0]
-        qm_file_path = utils.get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{lang_name}.qm"))
-        translator.load(qm_file_path)
-    
-    if translator.isEmpty():
-        logger.warning(f"Could not load translation file. Running in default (English).")
-    else:
-        logger.info(f"Loaded translation file: {qm_file_path}")
-    
-    app.installTranslator(translator)
-    return translator
-
 def main():
+    # Logger setup should happen early
+    global logger # Make logger accessible globally in this module after setup
+    logger = setup_logging()
+    if _project_root not in sys.path: # Log after logger is available
+        logger.debug(f"Project root '{_project_root}' was already in sys.path or just added.")
+
     app = QApplication(sys.argv)
     QCoreApplication.setOrganizationName(settings.ORG_NAME)
     QCoreApplication.setApplicationName(settings.APP_NAME)
 
-    setup_translations(app)
-    # Theme is now applied by MainWindow after it's initialized and loads settings
-    
     logger.info(f"{settings.APP_NAME} application starting...")
 
     # The MainWindow now handles the course selection and initialization internally.
@@ -72,6 +55,7 @@ def main():
     except ImportError: # Nuitka will complain without this
         from ui.main_window import MainWindow
     main_window = MainWindow()
+    # Initial translation is now handled inside MainWindow's __init__
     main_window.show()
 
     logger.info("Application main window shown.")

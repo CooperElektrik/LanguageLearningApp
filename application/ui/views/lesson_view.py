@@ -4,7 +4,7 @@ from enum import Enum, auto
 from PySide6.QtWidgets import (
     QLabel, QPushButton, QHBoxLayout, QMessageBox, QStyle, QWidget, QDialog
 )
-from PySide6.QtCore import Signal, Qt, QSettings, QTimer
+from PySide6.QtCore import Signal, Qt, QSettings, QTimer, QEvent
 
 from typing import Optional, List
 
@@ -375,3 +375,31 @@ class LessonView(BaseExercisePlayerView): # Inherit from the new base class
         if found_entry:
             dialog = GlossaryDetailDialog(found_entry, self.course_manager, self)
             dialog.exec()
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        super().retranslateUi() # Call base class retranslate
+
+        self.back_button.setText(self.tr("← Back to Lessons"))
+        self.lesson_title_label.setText(self.tr("Lesson Title") if not self.current_lesson else self.current_lesson.title) # Keep current title if lesson loaded
+        
+        self.progress_bar.setFormat(self.tr("%v / %m Steps"))
+
+        # toggle_notes_button text is set by icon and tooltip in base
+        # self.toggle_hint_button text is updated in _update_button_states
+        self.lookup_button.setText(self.tr("Lookup..."))
+        self.skip_button.setText(self.tr("Skip"))
+        self.submit_button.setText(self.tr("Submit"))
+        # self.next_button text is updated in _update_button_states
+
+        # Update texts that depend on state
+        self._update_button_states()
+
+        if self.view_state == LessonViewState.REVIEWING_MISTAKES:
+             self.lesson_title_label.setText(self.tr("Reviewing Mistakes"))
+        
+        logger.debug("LessonView retranslated.")

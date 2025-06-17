@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem,
     QDialogButtonBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 from typing import List, Optional
 
 from core.models import GlossaryEntry
@@ -91,3 +91,15 @@ class GlossaryLookupDialog(QDialog):
             return
             
         super().keyPressEvent(event)
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        self.setWindowTitle(self.tr("Glossary Lookup"))
+        self.search_input.setPlaceholderText(self.tr("Start typing to search..."))
+        # List items are dynamically generated, their "No entries" text is handled in _update_suggestions
+        self._update_suggestions(self.search_input.text()) # Re-filter to update any "No entries" message
+        logger.debug("GlossaryLookupDialog retranslated.")

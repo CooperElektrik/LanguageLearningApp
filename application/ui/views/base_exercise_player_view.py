@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QProgressBar, QMessageBox, QGroupBox, QTextEdit, QStyle
 )
-from PySide6.QtCore import Signal, Qt, QTimer, QSettings
+from PySide6.QtCore import Signal, Qt, QTimer, QSettings, QEvent
 from typing import Optional, Type, Dict # For EXERCISE_WIDGET_MAP type hint
 
 from core.models import Exercise
@@ -254,3 +254,20 @@ class BaseExercisePlayerView(QWidget):
     # - Their specific state management (Enum and _update_button_states methods)
     # - Their exercise loading and progression logic (e.g., start_session(), _load_next_exercise())
     # - How they connect to self.current_exercise_widget.answer_submitted
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        """Retranslates common UI elements in the base player view."""
+        self.notes_group_box.setTitle(self.tr("My Notes"))
+        self.notes_text_edit.setPlaceholderText(self.tr("Type your personal notes for this exercise here..."))
+        
+        # If hint is visible, retranslate it
+        if self.hint_label.isVisible() and self.current_exercise_obj and self.current_exercise_obj.has_hint():
+            self.hint_label.setText(self.tr("Hint: {0}").format(self.current_exercise_obj.translation_hint))
+        
+        self._update_notes_button_indicator() # This uses self.tr() for tooltips
+        logger.debug(f"{self.__class__.__name__} common elements retranslated.")

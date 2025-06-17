@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit,
     QListWidget, QListWidgetItem, QFrame, QStyle
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QEvent
 
 from typing import List
 
@@ -39,10 +39,10 @@ class GlossaryView(QWidget):
         main_layout.addLayout(top_bar_layout)
 
         # Title
-        title_label = QLabel(self.tr("Glossary"))
-        title_label.setObjectName("glossary_title_label")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(title_label)
+        self.title_label = QLabel(self.tr("Glossary"))
+        self.title_label.setObjectName("glossary_title_label")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.title_label)
 
         # Separator
         main_layout.addWidget(self._create_separator())
@@ -139,3 +139,16 @@ class GlossaryView(QWidget):
             pass # Do nothing for "no entries" messages
         else:
             logger.warning(f"Clicked item in glossary list without valid GlossaryEntry data: {item.text()}")
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        self.back_button.setText(self.tr("← Back to Course Overview"))
+        self.title_label.setText(self.tr("Glossary"))
+        self.search_bar.setPlaceholderText(self.tr("Search words, translations, examples..."))
+        
+        self.refresh_view() # Repopulates list with potentially new "No entries" text
+        logger.debug("GlossaryView retranslated.")

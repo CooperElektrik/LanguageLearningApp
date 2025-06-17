@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit,
     QFormLayout, QDialogButtonBox, QMessageBox, QFrame, QScrollArea, QWidget
 )
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QUrl, QEvent
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 from core.models import GlossaryEntry
@@ -69,24 +69,27 @@ class GlossaryDetailDialog(QDialog):
 
         # Part of Speech
         self.pos_label = QLabel()
+        self.pos_label_title = QLabel(self.tr("Part of Speech:"))
         self.pos_label.setObjectName("detail_pos_label")
-        content_layout.addRow(QLabel(self.tr("Part of Speech:")), self.pos_label)
+        content_layout.addRow(self.pos_label_title, self.pos_label)
 
         # Example Sentence
         self.example_sentence_text = QTextEdit()
+        self.example_sentence_title = QLabel(self.tr("Example Sentence:"))
         self.example_sentence_text.setObjectName("detail_example_text")
         self.example_sentence_text.setReadOnly(True)
         self.example_sentence_text.setFrameShape(QFrame.Shape.NoFrame)
         self.example_sentence_text.setMinimumHeight(80)
-        content_layout.addRow(QLabel(self.tr("Example Sentence:")), self.example_sentence_text)
+        content_layout.addRow(self.example_sentence_title, self.example_sentence_text)
 
         # Notes
         self.notes_text = QTextEdit()
+        self.notes_text_title = QLabel(self.tr("Notes:"))
         self.notes_text.setObjectName("detail_notes_text")
         self.notes_text.setReadOnly(True)
         self.notes_text.setFrameShape(QFrame.Shape.NoFrame)
         self.notes_text.setMinimumHeight(80)
-        content_layout.addRow(QLabel(self.tr("Notes:")), self.notes_text)
+        content_layout.addRow(self.notes_text_title, self.notes_text)
 
         # Audio Playback
         audio_layout = QHBoxLayout()
@@ -95,7 +98,8 @@ class GlossaryDetailDialog(QDialog):
         self.play_audio_button.clicked.connect(self._play_audio)
         audio_layout.addWidget(self.play_audio_button)
         audio_layout.addStretch(1)
-        content_layout.addRow(QLabel(self.tr("Pronunciation:")), audio_layout)
+        self.pronunciation_title = QLabel(self.tr("Pronunciation:"))
+        content_layout.addRow(self.pronunciation_title, audio_layout)
 
         # OK Button
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
@@ -187,3 +191,22 @@ class GlossaryDetailDialog(QDialog):
         if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self._media_player.stop()
         super().closeEvent(event)
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        self.setWindowTitle(self.tr("Glossary Entry: {0}").format(self.entry.word))
+        
+        self.pos_label_title.setText(self.tr("Part of Speech:"))
+        self.example_sentence_title.setText(self.tr("Example Sentence:"))
+        self.notes_text_title.setText(self.tr("Notes:"))
+        self.pronunciation_title.setText(self.tr("Pronunciation:"))
+
+        # Reload data to update N/A texts and button text
+        self._load_entry_data()
+        
+        # Standard buttons (OK) usually retranslate automatically.
+        logger.debug("GlossaryDetailDialog retranslated.")

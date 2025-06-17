@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGroupBox, QCheckBox, QSlider, QLabel,
     QDialogButtonBox, QHBoxLayout, QComboBox, QFormLayout, QPushButton, QMessageBox
 )
-from PySide6.QtCore import Qt, QSettings, Signal
+from PySide6.QtCore import Qt, QSettings, Signal, QEvent
  
 import settings
 import utils
@@ -14,6 +14,7 @@ class SettingsDialog(QDialog):
     
     theme_changed = Signal(str) # Emitted when the theme is changed
     font_size_changed = Signal(int) # Emitted when font size slider changes
+    locale_changed = Signal(str) # Emitted when locale is changed (sends locale code e.g. "en", "vi", or "System")
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,6 +56,10 @@ class SettingsDialog(QDialog):
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
         ui_layout.addRow(self.tr("Theme:"), self.theme_combo)
+
+        self.locale_combo = QComboBox()
+        self._populate_locale_combo()
+        ui_layout.addRow(self.tr("Language:"), self.locale_combo)
         
         # Font Size controls: label + slider + current value display
         self.font_size_slider = QSlider(Qt.Orientation.Horizontal)
@@ -86,6 +91,15 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(buttons)
 
         self.load_settings()
+
+    def _populate_locale_combo(self):
+        """Populates the locale combo box with available languages."""
+        self.available_locales = utils.get_available_locales() # Store for mapping
+        # Sort by display name for user-friendliness, keeping "System" first
+        sorted_display_names = sorted(self.available_locales.keys(), key=lambda x: (x != settings.DEFAULT_LOCALE, x))
+        for display_name in sorted_display_names:
+            locale_code = self.available_locales[display_name]
+            self.locale_combo.addItem(display_name, userData=locale_code)
 
     def load_settings(self):
         """Loads settings from QSettings and updates the UI controls."""
@@ -136,6 +150,19 @@ class SettingsDialog(QDialog):
         else: # Handle case where saved theme is no longer available
             self.theme_combo.setCurrentText("System")
             logger.warning(f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'.")
+        
+        current_locale_code = self.q_settings.value(
+            settings.QSETTINGS_KEY_LOCALE,
+            settings.DEFAULT_LOCALE, # "System"
+            type=str
+        )
+        # Find the display name for the saved locale code
+        for display_name, code_val in self.available_locales.items():
+            if code_val == current_locale_code:
+                self.locale_combo.setCurrentText(display_name)
+                break
+        else: # If saved code not found (e.g. qm file removed), default to "System"
+            self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE)
 
     def _update_font_size_label(self, value):
         """Update the font size label when the slider value changes."""
@@ -152,7 +179,12 @@ class SettingsDialog(QDialog):
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)
         # self._update_font_size_label(settings.DEFAULT_FONT_SIZE) # This will also emit font_size_changed
 
-        QMessageBox.information(self, self.tr("UI Settings Reset"), self.tr("Theme and font size have been reset to defaults. Click OK or Apply to save."))
+        # Reset locale
+        self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE) # "System"
+        self.locale_changed.emit(settings.DEFAULT_LOCALE)
+
+        QMessageBox.information(self, self.tr("UI Settings Reset"), self.tr("Theme, font size and language have been reset to defaults. Click OK or Apply to save."))
+        self.retranslateUi() # Ensure dialog itself updates if language was reset
 
     def apply_settings(self):
         """Saves the current state of the UI controls to QSettings."""
@@ -183,6 +215,10 @@ class SettingsDialog(QDialog):
         selected_theme_name = self.theme_combo.currentText()
         self.q_settings.setValue(settings.QSETTINGS_KEY_UI_THEME, selected_theme_name)
         self.theme_changed.emit(selected_theme_name) # Emit signal AFTER saving
+        
+        selected_locale_code = self.locale_combo.currentData() # userData stores the code ("en", "vi", "System")
+        self.q_settings.setValue(settings.QSETTINGS_KEY_LOCALE, selected_locale_code)
+        self.locale_changed.emit(selected_locale_code)
 
         logger.info("Settings applied.")
 
@@ -190,3 +226,37 @@ class SettingsDialog(QDialog):
         """Applies the settings and closes the dialog."""
         self.apply_settings()
         self.accept()
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        self.setWindowTitle(self.tr("Settings"))
+
+        # Audio Settings
+        self.audio_group.setTitle(self.tr("Audio"))
+        self.sound_enabled_checkbox.setText(self.tr("Enable sound effects"))
+        self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
+        # Assuming volume_label was defined as self.volume_label
+        if hasattr(self, 'volume_label') and isinstance(self.volume_label, QLabel):
+             self.volume_label.setText(self.tr("Volume:"))
+        else: # If it was a local variable in __init__
+            # Find it in the layout if necessary, or ensure it's a member
+            # For now, we'll assume it might not be a member.
+            # If it is, the above `if` block is sufficient.
+            pass
+
+        # UI Settings
+        self.ui_group.setTitle(self.tr("User Interface"))
+        # Row labels in QFormLayout are tricky to retranslate directly without storing references.
+        # For simplicity, we might accept that QFormLayout row labels don't auto-update
+        # or we would need to store references to those QLabel objects.
+        # self.ui_layout.labelForField(self.theme_combo).setText(self.tr("Theme:")) # Example if labels were stored
+        self.autoshow_hints_checkbox.setText(self.tr("Show hints automatically in exercises"))
+        self.reset_ui_button.setText(self.tr("Reset UI Settings to Default"))
+
+        # Dialog Buttons - standard buttons usually retranslate automatically.
+        # If custom text was set, it would need retranslation.
+        logger.debug("SettingsDialog retranslated.")

@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QFileDialog,
     QVBoxLayout, QDockWidget, QApplication
 )
-from PySide6.QtGui import QAction, QFont
-from PySide6.QtCore import Qt, QCoreApplication, QSettings
+from PySide6.QtGui import QAction, QFont, QGuiApplication, QCloseEvent
+from PySide6.QtCore import Qt, QCoreApplication, QSettings, QTranslator, QLocale, QEvent
 
 from typing import Optional
 
@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.course_manager: Optional[CourseManager] = None
         self.progress_manager: Optional[ProgressManager] = None
+        self.current_translator: Optional[QTranslator] = None # Store the active translator
         
         self.setWindowTitle(self.tr("LinguaLearn"))
         self.setGeometry(100, 100, 1024, 768)
@@ -50,6 +51,7 @@ class MainWindow(QMainWindow):
         self.learning_widget = None
         self.editor_view = None
 
+        self.current_translator = utils.setup_initial_translation(QApplication.instance())
         self._setup_ui_elements() # Set up early UI related stuff
         self._load_and_apply_initial_theme()
         self._return_to_selection_screen() # Start in the selection screen
@@ -237,8 +239,42 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
         dialog.theme_changed.connect(self.apply_theme) # Connect to the new signal
+        dialog.locale_changed.connect(self.apply_locale)
         dialog.font_size_changed.connect(self.apply_font_size) # Connect font size changes
         dialog.exec()
+
+    def apply_locale(self, locale_code: str):
+        """Applies a new locale to the application."""
+        app = QApplication.instance()
+        if self.current_translator:
+            app.removeTranslator(self.current_translator)
+            self.current_translator = None
+            logger.debug("Removed existing translator.")
+
+        actual_locale_to_load = ""
+        if locale_code == app_settings.DEFAULT_LOCALE: # "System"
+            actual_locale_to_load = app_settings.FORCE_LOCALE if app_settings.FORCE_LOCALE else QLocale.system().name()
+        else:
+            actual_locale_to_load = locale_code
+
+        new_translator = QTranslator(app)
+        qm_file_path = utils.get_resource_path(os.path.join(app_settings.LOCALIZATION_DIR, f"app_{actual_locale_to_load}.qm"))
+        
+        loaded_successfully = new_translator.load(qm_file_path)
+        if not loaded_successfully: # Try short code if full (e.g. en_US) failed
+            short_locale_code = actual_locale_to_load.split('_')[0]
+            if short_locale_code != actual_locale_to_load:
+                qm_file_path = utils.get_resource_path(os.path.join(app_settings.LOCALIZATION_DIR, f"app_{short_locale_code}.qm"))
+                loaded_successfully = new_translator.load(qm_file_path)
+
+        if loaded_successfully:
+            app.installTranslator(new_translator)
+            self.current_translator = new_translator
+            logger.info(f"Successfully loaded and installed translator for locale code: {actual_locale_to_load} from {qm_file_path}")
+        else:
+            logger.warning(f"Failed to load translator for locale code: {actual_locale_to_load}. Tried path: {qm_file_path}. UI might not update.")
+            
+        self._retranslate_main_window_ui()
 
     # --- Learning Mode Methods ---
     def show_course_overview(self):
@@ -261,7 +297,7 @@ class MainWindow(QMainWindow):
             self.learning_ui_views["central_stack"].setCurrentWidget(review_view)
 
     # --- Overridden Events ---
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent): # Added type hint
         if self.progress_manager:
             self.progress_manager.save_progress()
         
@@ -272,3 +308,49 @@ class MainWindow(QMainWindow):
                 return
 
         super().closeEvent(event)
+
+    def changeEvent(self, event: QEvent): # Add changeEvent for MainWindow itself
+        if event.type() == QEvent.Type.LanguageChange:
+            logger.debug("MainWindow received LanguageChange event.")
+            self._retranslate_main_window_ui()
+        super().changeEvent(event)
+
+    def _retranslate_main_window_ui(self):
+        """Retranslates parts of the MainWindow UI that might not update automatically."""
+        # Window Title
+        current_title = self.windowTitle()
+        if self.course_manager and self.course_manager.course:
+            self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
+        elif self.editor_view:
+             # Assuming editor_view has a way to get its course title
+            pass # self.setWindowTitle(f"LL Editor - {self.editor_view.get_course_title()}")
+        else:
+            self.setWindowTitle(self.tr("LinguaLearn"))
+
+        # Menus (re-creating them is a common way to ensure re-translation)
+        if self.main_stack.currentWidget() == self.course_selection_view:
+            self._setup_file_menu()
+        elif self.main_stack.currentWidget() == self.learning_widget:
+            self._setup_learning_menu()
+
+        # Dock widget titles (if they exist and are set directly)
+        if hasattr(self, 'navigation_dock_widget') and self.navigation_dock_widget:
+            self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
+        if hasattr(self, 'progress_dock_widget') and self.progress_dock_widget:
+            self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
+        
+        # Retranslate currently visible views if they have a retranslateUi method
+        # This is a fallback / explicit call, QEvent.LanguageChange should handle most of it.
+        current_main_widget = self.main_stack.currentWidget()
+        if hasattr(current_main_widget, 'retranslateUi'):
+            logger.debug(f"Explicitly calling retranslateUi for {current_main_widget.__class__.__name__}")
+            current_main_widget.retranslateUi()
+        
+        if self.learning_widget and self.learning_widget.isVisible():
+            # The learning_widget is a QMainWindow, its menuBar should update.
+            # Its internal views (overview, progress, lesson, etc.) should handle their own retranslation via changeEvent.
+            pass
+
+        # Inform child views if necessary (more advanced)
+        # For now, rely on QEvent.LanguageChange and the restart prompt.
+        logger.debug("MainWindow UI elements re-translation attempted.")

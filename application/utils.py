@@ -1,8 +1,10 @@
 import sys
 import os
 import logging
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput # Keep this if used elsewhere
-from PySide6.QtCore import QUrl, QSettings
+from typing import Optional
+
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtCore import QUrl, QSettings, QLocale, QTranslator, QCoreApplication
 import settings
 
 logger = logging.getLogger(__name__)
@@ -151,3 +153,64 @@ def apply_stylesheet(app_or_widget, qss_file_path: str):
             logger.error(f"Failed to apply stylesheet from {qss_file_path}: {e}")
     else:
         logger.error(f"Stylesheet file not found at: {qss_file_path}")
+
+
+def get_available_locales() -> dict[str, str]:
+    """
+    Scans the localization directory for available .qm files and returns a dictionary
+    mapping display names (e.g., "English", "Tiếng Việt") to locale codes (e.g., "en", "vi").
+    Includes a "System" default.
+    """
+    locales = {settings.DEFAULT_LOCALE: settings.DEFAULT_LOCALE}  # e.g. {"System": "System"}
+    localization_dir_abs = get_resource_path(settings.LOCALIZATION_DIR)
+
+    if not os.path.isdir(localization_dir_abs):
+        logger.warning(f"Localization directory not found: {localization_dir_abs}")
+        return locales
+
+    for filename in os.listdir(localization_dir_abs):
+        if filename.startswith("app_") and filename.endswith(".qm"):
+            locale_code_full = filename[len("app_"):-len(".qm")] # e.g., "en_US", "vi"
+            locale_code_short = locale_code_full.split('_')[0] # e.g., "en", "vi"
+            
+            # Get native language name for display
+            try:
+                locale_obj = QLocale(locale_code_full)
+                native_lang_name = locale_obj.nativeLanguageName().capitalize()
+                if native_lang_name and locale_code_short not in locales.values(): # Add if not already present by short code
+                    locales[native_lang_name] = locale_code_short # Store short code for loading
+            except Exception as e:
+                logger.warning(f"Could not get native name for locale code {locale_code_full}: {e}")
+                locales[locale_code_full] = locale_code_short # Fallback to code
+    return locales
+
+
+def setup_initial_translation(app: QCoreApplication) -> Optional[QTranslator]:
+    """
+    Sets up application translations based on saved preference or system default.
+    Returns the loaded translator instance or None.
+    """
+    q_settings = QSettings() # QCoreApplication.instance() should provide this context
+
+    user_locale_pref = q_settings.value(settings.QSETTINGS_KEY_LOCALE, settings.DEFAULT_LOCALE, type=str)
+
+    if user_locale_pref == settings.DEFAULT_LOCALE: # "System"
+        locale_name_to_load = settings.FORCE_LOCALE if settings.FORCE_LOCALE else QLocale.system().name()
+    else:
+        locale_name_to_load = user_locale_pref
+
+    translator = QTranslator(app)
+    qm_file_path = get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{locale_name_to_load}.qm"))
+    if not translator.load(qm_file_path):
+        lang_name = locale_name_to_load.split('_')[0] # Try short version (e.g., "en" from "en_US")
+        qm_file_path_short = get_resource_path(os.path.join(settings.LOCALIZATION_DIR, f"app_{lang_name}.qm"))
+        translator.load(qm_file_path_short) # Attempt to load short version
+    
+    if translator.isEmpty():
+        logger.warning(f"Could not load translation file for '{locale_name_to_load}' (tried {qm_file_path}). Running in default (English).")
+        return None
+    else:
+        logger.info(f"Loaded translation file: {qm_file_path if os.path.exists(qm_file_path) else qm_file_path_short}")
+    
+    app.installTranslator(translator)
+    return translator

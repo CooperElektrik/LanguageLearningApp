@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QStyle,
     QHBoxLayout,
-)
-from PySide6.QtCore import Signal, Qt
+) # Add QEvent
+from PySide6.QtCore import Signal, Qt, QEvent # Add QEvent
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 
@@ -29,12 +29,10 @@ class CourseOverviewView(QWidget):
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Course Title
-        title_label = QLabel(
-            self.course_manager.get_course_title() or self.tr("Language Course")
-        )
-        title_label.setObjectName("course_title_label") # For QSS
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_layout.addWidget(title_label)
+        self.course_title_label = QLabel() # Will be set in refresh_view or retranslateUi
+        self.course_title_label.setObjectName("course_title_label") # For QSS
+        self.course_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_layout.addWidget(self.course_title_label)
 
         # XP Label
         self.xp_label = QLabel()
@@ -169,6 +167,10 @@ class CourseOverviewView(QWidget):
             self.start_review_button.setEnabled(False)
             self.start_weak_review_button.setEnabled(False)
             return
+        
+        # Set course title (can be retranslated)
+        self.course_title_label.setText(self.course_manager.get_course_title() or self.tr("Language Course"))
+
 
         self.xp_label.setText(self.tr("Total XP: {0}").format(self.progress_manager.get_total_xp()))
 
@@ -186,3 +188,21 @@ class CourseOverviewView(QWidget):
         self.start_weak_review_button.setEnabled(weak_exercises_count > 0)
         
         self._populate_course_units()
+
+    def changeEvent(self, event: QEvent):
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
+
+    def retranslateUi(self):
+        # Retranslate static parts
+        self.course_title_label.setText(self.course_manager.get_course_title() or self.tr("Language Course"))
+        self.srs_groupbox.setTitle(self.tr("Daily Review"))
+        self.start_review_button.setText(self.tr("Review Due"))
+        self.start_weak_review_button.setText(self.tr("Review Weak"))
+        self.start_weak_review_button.setToolTip(self.tr("Review items you struggle with the most."))
+
+        # Refresh dynamic parts that also contain translatable strings
+        self.refresh_view() # This will re-populate units/lessons and update due_count_label, xp_label
+        
+        logger.debug("CourseOverviewView retranslated.")

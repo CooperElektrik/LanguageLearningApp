@@ -32,6 +32,7 @@ QSETTINGS_KEY_UI_THEME = "ui/theme" # New key for storing selected theme
 QSETTINGS_KEY_FONT_SIZE = "ui/font_size" 
 QSETTINGS_KEY_AUTOPLAY_AUDIO = "audio/autoplay_audio_enabled"
 QSETTINGS_KEY_AUTOSHOW_HINTS = "ui/autoshow_hints_enabled"
+QSETTINGS_KEY_LOCALE = "ui/locale"
 
 # --- UI Font Settings ---
 DEFAULT_FONT_SIZE = 10  # Base font size in points
@@ -42,6 +43,7 @@ AUTOSHOW_HINTS_DEFAULT = False # Default for automatically showing hints
 # Set to a specific locale string (e.g., "vi", "fr_FR", "en_US") to override system locale for testing.
 # Set to None to use the system's default locale.
 FORCE_LOCALE = None # Example: "vi" to force Vietnamese for testing
+DEFAULT_LOCALE = "System" # Represents using the system's locale or English fallback
 
 # --- Logging Settings ---
 # Valid levels: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
