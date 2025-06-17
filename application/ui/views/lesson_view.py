@@ -163,6 +163,8 @@ class LessonView(BaseExercisePlayerView): # Inherit from the new base class
     def _load_next_exercise_in_lesson(self):
         """Loads the next exercise in the current session, or finishes the lesson."""
         self._save_current_note()
+        self.feedback_label.setText("") # Clear feedback label
+        self.feedback_label.setStyleSheet("")
 
         if self.current_exercise_index >= len(self.exercises_in_session):
             if self.view_state == LessonViewState.REVIEWING_MISTAKES or not self.mistakes_queue:

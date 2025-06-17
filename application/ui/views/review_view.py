@@ -196,6 +196,7 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
 
     def _load_next_review_exercise(self):
         super()._save_current_note()
+        self.feedback_label.setText("") # Clear feedback label
         
         self.feedback_label.setText("")
         self.feedback_label.setStyleSheet("")
