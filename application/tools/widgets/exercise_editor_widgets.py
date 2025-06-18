@@ -824,6 +824,22 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
         # Context blocks are language-agnostic and typically don't have direct assets from root
         super().__init__(exercise, target_language="N/A", source_language="N/A", course_root_dir=None, parent=parent)
         self._add_input_field("Title (Optional)", exercise.title or "", lambda text: setattr(self.exercise, 'title', text.strip() or None) or self.data_changed.emit())
+
+        # Add the image file input field, similar to other widgets
+        image_layout = QHBoxLayout()
+        image_label = QLabel("Image File (Optional):")
+        self.image_file_input = QLineEdit(self.exercise.image_file or "")
+        self.image_file_input.setPlaceholderText("e.g., assets/images/lesson_intro.png")
+        self.image_file_input.textChanged.connect(self._update_image_file)
+
+        browse_image_button = QPushButton("Browse...")
+        browse_image_button.clicked.connect(self._browse_image_file)
+
+        image_layout.addWidget(image_label)
+        image_layout.addWidget(self.image_file_input, 1)
+        image_layout.addWidget(browse_image_button)
+        self.layout.addLayout(image_layout)
+
         self.layout.addWidget(QLabel("Content (Markdown supported): *"))
         self.prompt_input = QTextEdit(exercise.prompt or "") # 'prompt' field holds the content
         self.prompt_input.textChanged.connect(self._update_prompt_content)
@@ -834,6 +850,18 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
         self.exercise.prompt = self.prompt_input.toPlainText().strip() or None # Content is stored in 'prompt'
         self.data_changed.emit()
         self._validate_input_field(self.prompt_input, True) # Validate content as required
+
+    def _update_image_file(self, text: str):
+        self.exercise.image_file = text.strip().replace("\\", "/") or None
+        self.data_changed.emit()
+
+    def _browse_image_file(self):
+        if not self.course_root_dir:
+            QMessageBox.warning(self, "Browse Image", "Course root directory not set. Cannot browse assets.")
+            return
+        dialog = AssetManagerDialog(self.course_root_dir, "image", self)
+        dialog.asset_selected.connect(self.image_file_input.setText)
+        dialog.exec()
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():
