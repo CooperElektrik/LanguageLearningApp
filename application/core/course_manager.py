@@ -1,3 +1,4 @@
+
 import os
 import logging
 from typing import Optional, List, Tuple, Any, Dict, Callable
@@ -29,6 +30,9 @@ class CourseManager:
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
         self.glossary: List[GlossaryEntry] = []
+        # NEW: A map for efficient, case-insensitive glossary lookups.
+        # Key: lowercase word, Value: GlossaryEntry object.
+        self.glossary_map: Dict[str, GlossaryEntry] = {}
 
         self.manifest_path = manifest_path
 
@@ -90,8 +94,21 @@ class CourseManager:
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
             self.glossary = glossary_loader.load_glossary(glossary_filepath)
+            self._build_glossary_map() # NEW: Build the lookup map
         else:
             logger.info("Manifest does not specify a 'glossary_file'. Skipping glossary loading.")
+
+    def _build_glossary_map(self):
+        """Populates the glossary_map for fast word lookups."""
+        self.glossary_map = {entry.word.lower(): entry for entry in self.glossary}
+        logger.info(f"Built glossary map with {len(self.glossary_map)} unique entries.")
+
+    def get_glossary_entry_by_word(self, word: str) -> Optional[GlossaryEntry]:
+        """
+        Efficiently retrieves a glossary entry by word (case-insensitive).
+        Returns None if the word is not found in the glossary.
+        """
+        return self.glossary_map.get(word.lower())
 
     def get_glossary_entries(self) -> List[GlossaryEntry]:
         """Returns the loaded glossary entries."""

@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import random
+import re
 from typing import Any, Dict, Optional, Type, List
 
 from PySide6.QtWidgets import (
@@ -16,7 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QGridLayout,
     QFrame,
-    QTextEdit,
+    QTextBrowser,
 )
 from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings
 from PySide6.QtGui import QFont, QPixmap
@@ -25,6 +26,7 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 try:
     from application.core.models import Exercise
     from application.core.course_manager import (
+        CourseManager, # Import full class for type hinting
         PROMPT_KEY_DEFAULT,
         PROMPT_KEY_FIB,
         PROMPT_KEY_MCQ_TRANSLATION,
@@ -37,9 +39,11 @@ try:
         PROMPT_KEY_DICTATION,
     )
     from application import settings as app_settings # For reading autoplay setting
+    from application.ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog # Import for context block
 except ImportError: # This makes Nuitka happy
     from core.models import Exercise
     from core.course_manager import (
+        CourseManager,
         PROMPT_KEY_DEFAULT,
         PROMPT_KEY_FIB,
         PROMPT_KEY_MCQ_TRANSLATION,
@@ -52,6 +56,7 @@ except ImportError: # This makes Nuitka happy
         PROMPT_KEY_DICTATION,
     )
     import settings as app_settings # Fallback for Nuitka
+    from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
 
 logger = logging.getLogger(__name__)
 
@@ -367,7 +372,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
 
 class ContextBlockWidget(BaseExerciseWidget):
     """A widget to display text content, not as an interactive exercise."""
-    def __init__(self, exercise: Exercise, course_manager, parent=None):
+    def __init__(self, exercise: Exercise, course_manager: CourseManager, parent=None):
         super().__init__(exercise, course_manager, parent)
         # Hide the default prompt label as we use a dedicated title and content area
         self.prompt_label.setVisible(False)
@@ -377,19 +382,73 @@ class ContextBlockWidget(BaseExerciseWidget):
             title_label.setObjectName("context_title_label")
             self.layout.insertWidget(0, title_label)
 
-        content_text = QTextEdit()
-        content_text.setReadOnly(True)
-        content_text.setMarkdown(self.exercise.prompt or "")
-        self.layout.insertWidget(1, content_text)
+        self.content_text = QTextBrowser()
+        self.content_text.setReadOnly(True)
+        self.content_text.setOpenLinks(False)
+        self.content_text.anchorClicked.connect(self._handle_glossary_link_clicked)
+
+        interactive_text = self._create_interactive_glossary_text(self.exercise.prompt or "")
+        self.content_text.setMarkdown(interactive_text)
+        self.layout.insertWidget(1, self.content_text)
 
         continue_button = QPushButton(self.tr("Continue"))
         continue_button.clicked.connect(lambda: self.answer_submitted.emit("completed"))
         self.layout.addWidget(continue_button)
 
-    def get_answer(self) -> str:
+    def _create_interactive_glossary_text(self, text: str) -> str:
+        """Processes text to find glossary words and wrap them in Markdown links."""
+        if not text or not self.course_manager.glossary_map:
+            return text
+
+        # Regex to find words, preserving punctuation
+        # Captures sequences of word characters OR single non-word characters
+        parts = re.findall(r'(\w+|[^\w\s])', text)
+        result_parts = []
+        for part in parts:
+            entry = self.course_manager.get_glossary_entry_by_word(part)
+            if entry:
+                # Create a Markdown link with a custom "glossary" scheme
+                # The word is encoded in the link for the click handler
+                link = f"[{part}](glossary://{part})"
+                result_parts.append(link)
+            else:
+                result_parts.append(part)
+        
+        # Rejoin parts. This is a simplified join; a more complex one might handle spacing better.
+        return " ".join(result_parts).replace(" .", ".").replace(" ,", ",").replace(" ?", "?").replace(" !", "!")
+
+    def _handle_glossary_link_clicked(self, url: QUrl):
+        """Handles clicks on glossary:// links in the text."""
+        if url.scheme() == "glossary":
+            word_from_host = url.host() # This might be Punycode, e.g., "xn--thy-ihz"
+            
+            actual_word_to_lookup = word_from_host
+            # Check if it looks like Punycode (starts with "xn--") and try to decode
+            if word_from_host.startswith("xn--"):
+                try:
+                    # Punycode is ASCII, so encode to ASCII bytes then decode using 'idna'
+                    actual_word_to_lookup = word_from_host.encode('ascii').decode('idna')
+                    logger.debug(f"Decoded Punycode host '{word_from_host}' to '{actual_word_to_lookup}' for glossary lookup.")
+                except UnicodeError:
+                    # If it's not valid Punycode (e.g., an ASCII string that happens to start with xn--
+                    # but isn't a valid encoding of a non-ASCII string), use the host as is.
+                    logger.warning(
+                        f"Host '{word_from_host}' starts with 'xn--' but failed to decode as IDNA. "
+                        f"Using it as is for glossary lookup."
+                    )
+                    # actual_word_to_lookup remains word_from_host
+            
+            entry = self.course_manager.get_glossary_entry_by_word(actual_word_to_lookup)
+            if entry:
+                dialog = GlossaryDetailDialog(entry, self.course_manager, self.window()) # Parent to the main window
+                dialog.exec()
+            else:
+                logger.warning(f"Glossary link clicked for '{word_from_host}' (attempted lookup: '{actual_word_to_lookup}'), but no entry found.")
+
+    def get_answer(self) -> str: # Ensure this method and others are correctly indented
         return "completed"
     
-    def clear_input(self):
+    def clear_input(self): # Ensure this method and others are correctly indented
         pass # Nothing to clear
 
     def set_focus_on_input(self):
