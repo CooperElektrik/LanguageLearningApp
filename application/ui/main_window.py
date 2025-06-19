@@ -27,6 +27,7 @@ from PySide6.QtCore import (
     QEvent,
     QTimer,
 )
+from PySide6.QtMultimedia import QMediaDevices
 
 from typing import Optional
 
@@ -37,6 +38,7 @@ except ImportError:
     import utils
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
+from core.whisper_manager import WhisperManager
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
 from ui.views.review_view import ReviewView
@@ -45,6 +47,7 @@ from ui.views.glossary_view import GlossaryView
 from ui.views.course_selection_view import CourseSelectionView
 from ui.views.course_editor_view import CourseEditorView
 from ui.dialogs.settings_dialog import SettingsDialog
+from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +57,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.course_manager: Optional[CourseManager] = None
         self.progress_manager: Optional[ProgressManager] = None
+        self.whisper_manager = WhisperManager(self)
         self.current_translator: Optional[QTranslator] = (
             None  # Store the active translator
         )
@@ -155,6 +159,9 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(
             150, self._check_and_show_onboarding
         )  # Small delay for UI to settle
+        QTimer.singleShot(
+            200, self._check_and_show_initial_setup
+        )
 
     def _load_course_for_editing(self):  # Keep existing definition
         """Opens a file dialog and loads a course into the EDITOR mode."""
@@ -211,8 +218,8 @@ class MainWindow(QMainWindow):
         self.learning_ui_views = {
             "overview": course_overview_view,
             "progress": progress_view,
-            "lesson": LessonView(self.course_manager, self.progress_manager),
-            "review": ReviewView(self.course_manager, self.progress_manager),
+            "lesson": LessonView(self.course_manager, self.progress_manager, self.whisper_manager),
+            "review": ReviewView(self.course_manager, self.progress_manager, self.whisper_manager),
             "glossary": GlossaryView(self.course_manager),
             "placeholder": QLabel(
                 self.tr("Select a lesson or start a review."), alignment=Qt.AlignCenter
@@ -314,7 +321,7 @@ class MainWindow(QMainWindow):
         self.progress_manager = None
 
     def show_settings_dialog(self):
-        dialog = SettingsDialog(self)
+        dialog = SettingsDialog(self.whisper_manager, self) # Pass the manager
         dialog.theme_changed.connect(self.apply_theme)  # Connect to the new signal
         dialog.locale_changed.connect(self.apply_locale)
         dialog.font_size_changed.connect(
@@ -370,6 +377,23 @@ class MainWindow(QMainWindow):
             )
 
         self._retranslate_main_window_ui()
+
+
+    def _check_and_show_initial_setup(self):
+        """Checks if the initial audio setup has been done and shows the dialog if not."""
+        q_settings = QSettings()
+        setup_done = q_settings.value(app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool)
+        
+        # Only show if not done, and if there are any audio input devices.
+        if not setup_done and QMediaDevices.audioInputs():
+            logger.info("Initial audio setup not completed. Showing setup dialog.")
+            dialog = InitialAudioSetupDialog(self)
+            dialog.exec()
+            # After this, settings are saved. The app will use them on the next exercise.
+        elif not QMediaDevices.audioInputs():
+            logger.warning("Initial audio setup skipped: No audio input devices found.")
+            # Mark as done so we don't check again this session
+            q_settings.setValue(app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, True)
 
     def _check_and_show_onboarding(self):
         """Checks if onboarding has been seen and shows it if not."""
@@ -436,6 +460,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent):  # Added type hint
         if self.progress_manager:
             self.progress_manager.save_progress()
+
+        self.whisper_manager.unload_model()
 
         if self.editor_view and self.editor_view.is_dirty:
             self.editor_view.close_editor()

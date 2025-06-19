@@ -20,6 +20,7 @@ import utils
 from core.models import Exercise
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
+from core.whisper_manager import WhisperManager
 from ui.views.base_exercise_player_view import BaseExercisePlayerView
 from ui.widgets.exercise_widgets import TranslationExerciseWidget
 from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
@@ -45,9 +46,10 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         self,
         course_manager: CourseManager,
         progress_manager: ProgressManager,
+        whisper_manager: WhisperManager,
         parent=None,
     ):
-        super().__init__(course_manager, progress_manager, parent)
+        super().__init__(course_manager, progress_manager, whisper_manager, parent)
 
         self.exercises_in_session: List[Exercise] = []
         self.current_exercise_index: int = -1

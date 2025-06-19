@@ -47,6 +47,7 @@ QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN = (
 )
 QSETTINGS_KEY_LOCALE = "ui/locale"
 QSETTINGS_KEY_AUDIO_INPUT_DEVICE = "audio/input_device"
+QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE = "onboarding/initial_audio_setup_v1"
 # These are for Whisper Transcription
 QSETTINGS_KEY_WHISPER_MODEL = "audio/whisper_model_selection"
 WHISPER_MODELS_AVAILABLE = ["base", "small", "medium"] # Or include .en versions like "base.en"

@@ -567,16 +567,14 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
     transcription_ready = Signal(str) # Recognized text
     transcription_error = Signal(str)
 
-    def __init__(self, exercise: Exercise, course_manager: CourseManager, parent=None):
+    def __init__(self, exercise: Exercise, course_manager: CourseManager, whisper_manager: WhisperManager, parent=None):
         super().__init__(exercise, course_manager, parent)
-        self.whisper_manager = WhisperManager(self) # Instance of your manager
+        self.whisper_manager = whisper_manager # Use the passed-in manager
         self._audio_recorder: Optional[QAudioSource] = None
         self._audio_buffer: Optional[QByteArray] = None 
         self._qbuffer: Optional[QBuffer] = None
         self._temp_audio_file: Optional[tempfile.NamedTemporaryFile] = None
         self._is_recording = False
-        self._current_transcription_task: Optional[TranscriptionTask] = None
-        self._current_transcription_thread: Optional[QThread] = None
 
 
         # --- UI Setup ---
@@ -590,6 +588,12 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.play_ref_button = QPushButton(self.tr("🔊 Play Reference"))
             self.play_ref_button.clicked.connect(lambda: self._play_audio_file(self.exercise.audio_file))
             self.layout.insertWidget(self.layout.indexOf(self.target_text_label) + 1, self.play_ref_button)
+
+        # This button is shown if the model isn't loaded yet
+        self.load_model_button = QPushButton() # Text set dynamically
+        self.load_model_button.setObjectName("load_model_button")
+        self.load_model_button.clicked.connect(self._handle_load_model_click)
+        self.layout.addWidget(self.load_model_button)
 
         self.record_button = QPushButton(self.tr("🎤 Record"))
         self.record_button.setCheckable(True)
@@ -605,25 +609,35 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.transcribed_text_label.setWordWrap(True)
         self.layout.addWidget(self.transcribed_text_label)
         
-        self.whisper_manager.model_loading_started.connect(self._on_model_loading_started)
-        self.whisper_manager.model_loading_finished.connect(self._on_model_loading_finished)
-        self.whisper_manager.model_unloaded.connect(self._on_model_unloaded)
+        self.whisper_manager.modelLoadingStarted.connect(self._on_model_loading_started)
+        self.whisper_manager.modelLoadingFinished.connect(self._on_model_loading_finished)
+        self.whisper_manager.modelUnloaded.connect(self._on_model_unloaded)
 
         # Initial check for Whisper model
-        self._check_whisper_availability()
+        self._update_ui_for_model_state()
 
-    def _check_whisper_availability(self):
-        current_model = self.whisper_manager.get_selected_model_name()
-        if not current_model or current_model.lower() == "none":
-            self.record_button.setEnabled(False)
-            self.record_button.setText(self.tr("Pronunciation Disabled (No Model)"))
+    def _update_ui_for_model_state(self):
+        """Updates visibility of Record vs Load Model buttons based on manager state."""
+        target_model = self.whisper_manager.get_selected_model_name()
+        loaded_model = self.whisper_manager.get_loaded_model_name()
+
+        if not target_model or target_model.lower() == "none":
+            self.load_model_button.setVisible(False)
+            self.record_button.setVisible(False)
             self.status_label.setText(self.tr("Please select a Whisper model in Settings to enable pronunciation practice."))
-        else:
-            # If a model is selected, enable the button but status might be 'loading'
-            self.record_button.setEnabled(True) 
-            self.record_button.setText(self.tr("🎤 Record")) # Reset text
-            self.status_label.setText(self.tr("Tap record and speak clearly.")) # Reset status
-
+        elif self.whisper_manager.is_loading():
+             self._on_model_loading_started(target_model)
+        elif target_model == loaded_model: # Model is selected and loaded
+            self.load_model_button.setVisible(False)
+            self.record_button.setVisible(True)
+            self.record_button.setEnabled(True)
+            self.status_label.setText(self.tr("Tap record to speak."))
+        else: # Model is selected but not loaded
+            self.load_model_button.setText(self.tr("Load Model: {0}").format(target_model))
+            self.load_model_button.setVisible(True)
+            self.load_model_button.setEnabled(True)
+            self.record_button.setVisible(False)
+            self.status_label.setText(self.tr("Model must be loaded before recording."))
 
     def _init_audio_recorder(self):
         if self._audio_recorder:
@@ -639,7 +653,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         selected_device_info: Optional[QAudioDevice] = None
         if preferred_device_id_str: # If a preference is set
             for device in QMediaDevices.audioInputs():
-                if device.id().toString() == preferred_device_id_str:
+                if device.id().toStdString() == preferred_device_id_str:
                     selected_device_info = device
                     logger.info(f"Using preferred audio input device: {selected_device_info.description()}")
                     break
@@ -662,7 +676,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             audio_format.setSampleFormat(QAudioFormat.SampleFormat.Int16) # 16-bit PCM
 
             self._audio_recorder = QAudioSource(selected_device_info, audio_format, self) 
-            self._audio_recorder.errorOccurred.connect(self._handle_audio_error) 
+            # self._audio_recorder.errorOccurred.connect(self._handle_audio_error) 
             return True
         else:
             self.status_label.setText(self.tr("No audio input device found!"))
@@ -672,17 +686,20 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
     def _on_model_loading_started(self, model_name: str):
         self.record_button.setEnabled(False)
+        self.load_model_button.setEnabled(False)
+        self.load_model_button.setVisible(True)
+        self.record_button.setVisible(False)
         self.status_label.setText(self.tr("Loading pronunciation model ({0})...").format(model_name))
 
     def _on_model_loading_finished(self, model_name: str, success: bool):
-        self.record_button.setEnabled(success)
-        if success:
-            self.status_label.setText(self.tr("Model '{0}' loaded. Tap record.").format(model_name))
-        else:
-            self.status_label.setText(self.tr("Failed to load model '{0}'. Pronunciation disabled.").format(model_name))
+        self._update_ui_for_model_state()
 
     def _on_model_unloaded(self, model_name: str):
-        self._check_whisper_availability() # Re-check, will likely disable button
+        self._update_ui_for_model_state()
+
+    def _handle_load_model_click(self):
+        target_model = self.whisper_manager.get_selected_model_name()
+        self.whisper_manager.load_model(target_model)
 
     def _handle_record_toggle(self, checked: bool):
         if checked: # Start recording
@@ -755,14 +772,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.record_button.setEnabled(True)
             return
 
-        self.transcription_started.emit()
-        thread, task = self.whisper_manager.transcribe_audio(audio_file_path, self.exercise.exercise_id)
+        task = self.whisper_manager.transcribe_audio(audio_file_path, self.exercise.exercise_id)
 
-        if thread and task:
-            self._current_transcription_thread = thread
-            self._current_transcription_task = task
-            task.finished.connect(self._on_transcription_finished)
-            task.error.connect(self._on_transcription_error)
+        if task:
+            task.signals.finished.connect(self._on_transcription_finished)
+            task.signals.error.connect(self._on_transcription_error)
         else: # Transcription not started (e.g., Whisper disabled or manager busy)
             self.status_label.setText(self.tr("Transcription service not available or disabled."))
             self.record_button.setEnabled(True)
@@ -810,12 +824,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         super().stop_media() # Stops reference audio if playing
         if self._is_recording and self._audio_recorder:
             self._audio_recorder.stop()
-            self._is_recording = False
             logger.info("Recording stopped by stop_media call.")
-        
-        if self._current_transcription_thread and self._current_transcription_thread.isRunning():
-            self.whisper_manager.stop_transcription()
-            logger.info("Transcription stopped by stop_media call.")
         
         # Clean up temp file if widget is being destroyed/cleared
         if self._temp_audio_file:

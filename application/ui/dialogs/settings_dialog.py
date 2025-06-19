@@ -19,6 +19,8 @@ from PySide6.QtCore import Qt, QSettings, Signal, QEvent
 import settings
 import utils
 
+from core.whisper_manager import WhisperManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +32,9 @@ class SettingsDialog(QDialog):
         str
     )  # Emitted when locale is changed (sends locale code e.g. "en", "vi", or "System")
 
-    def __init__(self, parent=None):
+    def __init__(self, whisper_manager: WhisperManager, parent=None):
         super().__init__(parent)
+        self.whisper_manager = whisper_manager
         self.setWindowTitle(self.tr("Settings"))
         self.setMinimumWidth(400)
 
@@ -56,6 +59,10 @@ class SettingsDialog(QDialog):
         self.whisper_model_combo = QComboBox()
         self.whisper_model_combo.addItems(["None"] + settings.WHISPER_MODELS_AVAILABLE) # "None" to disable
         self.pronunciation_settings_layout.addRow(self.tr("Whisper Model:"), self.whisper_model_combo)
+
+        self.unload_model_button = QPushButton(self.tr("Unload Model from Memory"))
+        self.unload_model_button.clicked.connect(self._unload_model)
+        self.pronunciation_settings_layout.addRow(self.unload_model_button)
 
         self.audio_input_device_combo = QComboBox()
         self._populate_audio_input_devices()
@@ -374,6 +381,8 @@ class SettingsDialog(QDialog):
         # Audio Settings
         self.audio_group.setTitle(self.tr("Audio"))
         self.sound_enabled_checkbox.setText(self.tr("Enable sound effects"))
+
+        self.unload_model_button.setText(self.tr("Unload Model from Memory"))
         
         self.pronunciation_settings_group.setTitle(self.tr("Pronunciation & Microphone"))
         # Retranslate labels within the QFormLayout for pronunciation settings
@@ -431,3 +440,8 @@ class SettingsDialog(QDialog):
                 "The onboarding message flag has been reset.\nThe welcome guide will be shown the next time you load a course."
             ),
         )
+
+    def _unload_model(self):
+        loaded_model = self.whisper_manager.get_loaded_model_name()
+        self.whisper_manager.unload_model()
+        QMessageBox.information(self, self.tr("Model Unloaded"), self.tr("Model '{0}' has been unloaded from memory.").format(loaded_model or "None"))
