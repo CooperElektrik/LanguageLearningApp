@@ -1,6 +1,8 @@
 import os
 import logging
 import re
+import markdown
+import urllib.parse
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextBrowser,
     QFormLayout, QDialogButtonBox, QMessageBox, QFrame, QScrollArea, QWidget
@@ -90,6 +92,8 @@ class GlossaryDetailDialog(QDialog):
         self.notes_text_title = QLabel(self.tr("Notes:"))
         self.notes_text.setObjectName("detail_notes_text")
         self.notes_text.setReadOnly(True)
+        self.notes_text.setOpenLinks(False)
+        self.notes_text.anchorClicked.connect(self._handle_glossary_link_clicked)
         self.notes_text.setFrameShape(QFrame.Shape.NoFrame)
         self.notes_text.setMinimumHeight(80)
         content_layout.addRow(self.notes_text_title, self.notes_text)
@@ -146,13 +150,22 @@ class GlossaryDetailDialog(QDialog):
         self.translation_label.setText(self.entry.translation)
         self.pos_label.setText(self.entry.part_of_speech or self.tr("N/A"))
 
-        if self.entry.example_sentence:
-            interactive_example = self._create_interactive_glossary_text(self.entry.example_sentence)
-            self.example_sentence_text.setMarkdown(interactive_example)
-        else:
-            self.example_sentence_text.setPlainText(self.tr("N/A"))
+        # Prepare and set HTML for example sentence, processing for links once
+        original_example_sentence = self.entry.example_sentence or self.tr("N/A")
+        markdown_example_with_links = self._prepare_content_with_glossary_links(original_example_sentence)
+        # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
+        html_example = markdown.markdown(markdown_example_with_links, extensions=['extra', 'nl2br']) 
+        logger.debug(f"Glossary Example Input MD: '''{markdown_example_with_links}'''")
+        logger.debug(f"Glossary Example Output HTML: '''{html_example}'''")
+        self.example_sentence_text.setHtml(html_example)
 
-        self.notes_text.setPlainText(self.entry.notes or self.tr("N/A"))
+        # Prepare and set HTML for notes
+        original_notes = (self.entry.notes or self.tr("N/A")).strip()
+        markdown_notes_with_links = self._prepare_content_with_glossary_links(original_notes) # Ensure notes are also processed
+        html_notes = markdown.markdown(markdown_notes_with_links, extensions=['extra', 'nl2br']) 
+        logger.debug(f"Glossary Notes Input MD: '''{markdown_notes_with_links}'''")
+        logger.debug(f"Glossary Notes Output HTML: '''{html_notes}'''")
+        self.notes_text.setHtml(html_notes)
 
         if not self.entry.audio_file:
             self.play_audio_button.setEnabled(False)
@@ -161,17 +174,63 @@ class GlossaryDetailDialog(QDialog):
             self.play_audio_button.setEnabled(True)
             self.play_audio_button.setText(self.tr("🔊 Play Audio"))
 
+    def _prepare_content_with_glossary_links(self, original_content: str) -> str:
+        """
+        Parses the content, finds words in the glossary, and wraps them in
+        Markdown link format for the QTextBrowser to handle.
+        """
+        glossary_entries = self.course_manager.get_glossary_entries()
+        if not glossary_entries:
+            return original_content
+
+        # Create a regex pattern that matches any of the glossary words, ensuring whole word matching
+        # We sort by length descending to match longer phrases first (e.g., "ice cream" before "ice").
+        # Filter out empty words to prevent issues and improve performance.
+        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
+
+        if not sorted_words:
+            return original_content
+
+        # Escape special regex characters in words
+        escaped_words = [re.escape(word) for word in sorted_words]
+        pattern = r"\b(" + "|".join(escaped_words) + r")\b"
+        
+        def replace_with_link(match):
+            word = match.group(1)
+            # Don't link the current entry's word to itself
+            if word.lower() == self.entry.word.lower():
+                return word # Return the original word, not a link
+
+            encoded_word = urllib.parse.quote(word, encoding='utf-8', safe='')
+            return f"[{word}](glossary:{encoded_word})"
+
+        try:
+            # We use re.sub with a function to perform the replacement
+            linked_content = re.sub(pattern, replace_with_link, original_content, flags=re.IGNORECASE)
+            return linked_content
+        except re.error as e:
+            logger.error(f"Regex error while creating glossary links: {e}")
+            return original_content
+
     def _handle_glossary_link_clicked(self, url: QUrl):
         """Handles clicks on glossary:// links, opening a new detail dialog."""
+        logger.debug(f"Glossary link clicked: {url.toString()}")
         if url.scheme() == "glossary":
-            word = url.host()
-            entry = self.course_manager.get_glossary_entry_by_word(word)
+            # For scheme:path, url.path() returns the path component.
+            # QUrl automatically handles percent-decoding.
+            decoded_word = url.path()
+
+            if not decoded_word:
+                logger.warning(f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}")
+                return
+            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
+            entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
                 # Open a new dialog for the clicked entry
                 new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
                 new_dialog.exec()
             else:
-                logger.warning(f"Glossary link clicked for '{word}', but no entry found.")
+                logger.warning(f"Glossary link clicked for decoded word '{decoded_word}', but no entry found.")
 
     def _init_audio_player(self):
         """Initializes QMediaPlayer and QAudioOutput if not already done."""

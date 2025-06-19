@@ -3,6 +3,8 @@ import os
 import sys
 import random
 import re
+import markdown
+import urllib.parse
 from typing import Any, Dict, Optional, Type, List
 
 from PySide6.QtWidgets import (
@@ -382,68 +384,76 @@ class ContextBlockWidget(BaseExerciseWidget):
             title_label.setObjectName("context_title_label")
             self.layout.insertWidget(0, title_label)
 
+        # Clean the input slightly and prepare links
+        cleaned_prompt = (self.exercise.prompt or "").strip()
+        markdown_with_links = self._prepare_content_with_glossary_links(cleaned_prompt)
+        
+        # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
+        html_content = markdown.markdown(markdown_with_links, extensions=['extra', 'nl2br'])
+        logger.debug(f"ContextBlock Input MD: '''{markdown_with_links}'''")
+        logger.debug(f"ContextBlock Output HTML: '''{html_content}'''")
+
         self.content_text = QTextBrowser()
         self.content_text.setReadOnly(True)
         self.content_text.setOpenLinks(False)
         self.content_text.anchorClicked.connect(self._handle_glossary_link_clicked)
 
-        interactive_text = self._create_interactive_glossary_text(self.exercise.prompt or "")
-        self.content_text.setMarkdown(interactive_text)
+        self.content_text.setHtml(html_content)
         self.layout.insertWidget(1, self.content_text)
 
         continue_button = QPushButton(self.tr("Continue"))
         continue_button.clicked.connect(lambda: self.answer_submitted.emit("completed"))
         self.layout.addWidget(continue_button)
+    
+    def _prepare_content_with_glossary_links(self, original_content: str) -> str:
+        """
+        Parses the content, finds words in the glossary, and wraps them in
+        Markdown link format for the QTextBrowser to handle.
+        """
+        glossary_entries = self.course_manager.get_glossary_entries()
+        if not glossary_entries:
+            return original_content
 
-    def _create_interactive_glossary_text(self, text: str) -> str:
-        """Processes text to find glossary words and wrap them in Markdown links."""
-        if not text or not self.course_manager.glossary_map:
-            return text
-
-        # Regex to find words, preserving punctuation
-        # Captures sequences of word characters OR single non-word characters
-        parts = re.findall(r'(\w+|[^\w\s])', text)
-        result_parts = []
-        for part in parts:
-            entry = self.course_manager.get_glossary_entry_by_word(part)
-            if entry:
-                # Create a Markdown link with a custom "glossary" scheme
-                # The word is encoded in the link for the click handler
-                link = f"[{part}](glossary://{part})"
-                result_parts.append(link)
-            else:
-                result_parts.append(part)
+        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
+        if not sorted_words:
+            return original_content
+        escaped_words = [re.escape(word) for word in sorted_words]
+        pattern = r"\b(" + "|".join(escaped_words) + r")\b"
         
-        # Rejoin parts. This is a simplified join; a more complex one might handle spacing better.
-        return " ".join(result_parts).replace(" .", ".").replace(" ,", ",").replace(" ?", "?").replace(" !", "!")
+        def replace_with_link(match):
+            word = match.group(1)
+            encoded_word = urllib.parse.quote(word, encoding='utf-8', safe='')
+            return f"[{word}](glossary:{encoded_word})"
+
+        try:
+            # We use re.sub with a function to perform the replacement
+            linked_content = re.sub(pattern, replace_with_link, original_content, flags=re.IGNORECASE)
+            return linked_content
+        except re.error as e:
+            logger.error(f"Regex error while creating glossary links: {e}")
+            return original_content
+
 
     def _handle_glossary_link_clicked(self, url: QUrl):
-        """Handles clicks on glossary:// links in the text."""
+        """Handles clicks on glossary:// links, opening a new detail dialog."""
+        logger.debug(f"_handle_glossary_link_clicked called with url: {url.toString()}")
         if url.scheme() == "glossary":
-            word_from_host = url.host() # This might be Punycode, e.g., "xn--thy-ihz"
+            # For scheme:path, url.path() returns the path component.
+            # QUrl automatically handles percent-decoding.
+            decoded_word = url.path()
+
+            if not decoded_word:
+                logger.warning(f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}")
+                return
             
-            actual_word_to_lookup = word_from_host
-            # Check if it looks like Punycode (starts with "xn--") and try to decode
-            if word_from_host.startswith("xn--"):
-                try:
-                    # Punycode is ASCII, so encode to ASCII bytes then decode using 'idna'
-                    actual_word_to_lookup = word_from_host.encode('ascii').decode('idna')
-                    logger.debug(f"Decoded Punycode host '{word_from_host}' to '{actual_word_to_lookup}' for glossary lookup.")
-                except UnicodeError:
-                    # If it's not valid Punycode (e.g., an ASCII string that happens to start with xn--
-                    # but isn't a valid encoding of a non-ASCII string), use the host as is.
-                    logger.warning(
-                        f"Host '{word_from_host}' starts with 'xn--' but failed to decode as IDNA. "
-                        f"Using it as is for glossary lookup."
-                    )
-                    # actual_word_to_lookup remains word_from_host
-            
-            entry = self.course_manager.get_glossary_entry_by_word(actual_word_to_lookup)
+            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
+            entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
-                dialog = GlossaryDetailDialog(entry, self.course_manager, self.window()) # Parent to the main window
-                dialog.exec()
+                # Open a new dialog for the clicked entry
+                new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
+                new_dialog.exec()
             else:
-                logger.warning(f"Glossary link clicked for '{word_from_host}' (attempted lookup: '{actual_word_to_lookup}'), but no entry found.")
+                logger.warning(f"Glossary link clicked for decoded word '{decoded_word}', but no entry found.")
 
     def get_answer(self) -> str: # Ensure this method and others are correctly indented
         return "completed"

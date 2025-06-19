@@ -113,6 +113,17 @@ class CourseManager:
     def get_glossary_entries(self) -> List[GlossaryEntry]:
         """Returns the loaded glossary entries."""
         return self.glossary
+    
+    def get_glossary_entry_by_word(self, word: str) -> Optional[GlossaryEntry]:
+        """
+        Finds a glossary entry by its 'word' field, case-insensitively.
+        Returns the first match or None.
+        """
+        word_lower = word.lower()
+        for entry in self.glossary:
+            if entry.word.lower() == word_lower:
+                return entry
+        return None
 
     def get_course_content_directory(self) -> Optional[str]:
         """Returns the directory where the current course's content file is located."""
