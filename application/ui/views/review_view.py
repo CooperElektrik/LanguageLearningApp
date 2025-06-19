@@ -322,6 +322,10 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             settings.SOUND_FILE_CORRECT if is_correct else settings.SOUND_FILE_INCORRECT
         )
 
+        if not is_correct and self.current_exercise_obj.explanation:
+            current_feedback = self.feedback_label.text()
+            self.feedback_label.setText(current_feedback + self.tr("\n\nExplanation: {0}").format(self.current_exercise_obj.explanation))
+
         self._last_submission_was_correct = is_correct
         self.view_state = ReviewState.ANSWER_SUBMITTED
         self._update_button_states()
@@ -353,9 +357,11 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         elif self.current_exercise_obj.type == "fill_in_the_blank":
             correct_answer_for_display = self.current_exercise_obj.correct_option
 
-        self.feedback_label.setText(
-            self.tr("Correct answer: {0}").format(correct_answer_for_display or "N/A")
-        )
+        feedback_message = self.tr("Correct answer: {0}").format(correct_answer_for_display or "N/A")
+        if self.current_exercise_obj.explanation:
+            feedback_message += self.tr("\n\nExplanation: {0}").format(self.current_exercise_obj.explanation)
+        
+        self.feedback_label.setText(feedback_message)
         self.feedback_label.setStyleSheet("color: blue;")
 
         self._last_submission_was_correct = False

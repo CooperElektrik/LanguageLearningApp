@@ -81,6 +81,7 @@ def _parse_exercise(
     audio_file = exercise_data.get("audio_file")
     image_file = exercise_data.get("image_file")
     words_data = exercise_data.get("words")
+    explanation_text = exercise_data.get("explanation")
 
     options: List[ExerciseOption] = []
     if ex_type in [
@@ -144,6 +145,7 @@ def _parse_exercise(
         audio_file=audio_file,
         image_file=image_file,
         words=words_data if isinstance(words_data, list) else None,
+        explanation=explanation_text,
         raw_data=exercise_data,
     )
 

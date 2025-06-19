@@ -35,6 +35,8 @@ class Exercise:
     audio_file: Optional[str] = None
     image_file: Optional[str] = None
 
+    explanation: Optional[str] = None
+
     words: Optional[List[str]] = None
 
     last_reviewed: Optional[datetime] = field(default=None, repr=False)
@@ -132,6 +134,9 @@ class Exercise:
             data["audio_file"] = self.audio_file
         if self.image_file is not None:
             data["image_file"] = self.image_file
+
+        if self.explanation is not None:
+            data["explanation"] = self.explanation
 
         return data
 
