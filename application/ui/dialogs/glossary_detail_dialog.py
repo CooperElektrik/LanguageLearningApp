@@ -4,8 +4,18 @@ import re
 import markdown
 import urllib.parse
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTextBrowser,
-    QFormLayout, QDialogButtonBox, QMessageBox, QFrame, QScrollArea, QWidget
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextBrowser,
+    QFormLayout,
+    QDialogButtonBox,
+    QMessageBox,
+    QFrame,
+    QScrollArea,
+    QWidget,
 )
 from PySide6.QtCore import Qt, QUrl, QEvent
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -19,11 +29,16 @@ logger = logging.getLogger(__name__)
 
 
 class GlossaryDetailDialog(QDialog):
-    def __init__(self, entry: GlossaryEntry, course_manager: CourseManager, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        entry: GlossaryEntry,
+        course_manager: CourseManager,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Glossary Entry: {0}").format(entry.word))
         self.setMinimumSize(500, 400)
-        
+
         self.entry = entry
         self.course_manager = course_manager
 
@@ -59,13 +74,15 @@ class GlossaryDetailDialog(QDialog):
         scroll_area = QScrollArea()
         scroll_area.setObjectName("detail_scroll_area")
         scroll_area.setWidgetResizable(True)
-        
+
         content_widget = QWidget()
         content_widget.setObjectName("detail_content_widget")
         content_layout = QFormLayout(content_widget)
         content_layout.setObjectName("detail_content_form_layout")
         content_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        content_layout.setFormAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        content_layout.setFormAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
         content_layout.setContentsMargins(10, 10, 10, 10)
         scroll_area.setWidget(content_widget)
         main_layout.addWidget(scroll_area)
@@ -84,7 +101,9 @@ class GlossaryDetailDialog(QDialog):
         self.example_sentence_text.setFrameShape(QFrame.Shape.NoFrame)
         self.example_sentence_text.setMinimumHeight(80)
         self.example_sentence_text.setOpenLinks(False)
-        self.example_sentence_text.anchorClicked.connect(self._handle_glossary_link_clicked)
+        self.example_sentence_text.anchorClicked.connect(
+            self._handle_glossary_link_clicked
+        )
         content_layout.addRow(self.example_sentence_title, self.example_sentence_text)
 
         # Notes
@@ -113,7 +132,7 @@ class GlossaryDetailDialog(QDialog):
         buttons.setObjectName("detail_dialog_button_box")
         buttons.accepted.connect(self.accept)
         main_layout.addWidget(buttons)
-    
+
     def _create_separator(self) -> QFrame:
         """Creates a horizontal separator line."""
         separator = QFrame()
@@ -127,7 +146,7 @@ class GlossaryDetailDialog(QDialog):
         if not text or not self.course_manager.glossary_map:
             return text
 
-        parts = re.findall(r'(\w+|[^\w\s])', text)
+        parts = re.findall(r"(\w+|[^\w\s])", text)
         result_parts = []
         for part in parts:
             # Don't link the current entry's word to itself
@@ -141,8 +160,14 @@ class GlossaryDetailDialog(QDialog):
                 result_parts.append(link)
             else:
                 result_parts.append(part)
-        
-        return " ".join(result_parts).replace(" .", ".").replace(" ,", ",").replace(" ?", "?").replace(" !", "!")
+
+        return (
+            " ".join(result_parts)
+            .replace(" .", ".")
+            .replace(" ,", ",")
+            .replace(" ?", "?")
+            .replace(" !", "!")
+        )
 
     def _load_entry_data(self):
         """Populates the UI fields with data from the GlossaryEntry."""
@@ -152,17 +177,25 @@ class GlossaryDetailDialog(QDialog):
 
         # Prepare and set HTML for example sentence, processing for links once
         original_example_sentence = self.entry.example_sentence or self.tr("N/A")
-        markdown_example_with_links = self._prepare_content_with_glossary_links(original_example_sentence)
+        markdown_example_with_links = self._prepare_content_with_glossary_links(
+            original_example_sentence
+        )
         # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
-        html_example = markdown.markdown(markdown_example_with_links, extensions=['extra', 'nl2br']) 
+        html_example = markdown.markdown(
+            markdown_example_with_links, extensions=["extra", "nl2br"]
+        )
         logger.debug(f"Glossary Example Input MD: '''{markdown_example_with_links}'''")
         logger.debug(f"Glossary Example Output HTML: '''{html_example}'''")
         self.example_sentence_text.setHtml(html_example)
 
         # Prepare and set HTML for notes
         original_notes = (self.entry.notes or self.tr("N/A")).strip()
-        markdown_notes_with_links = self._prepare_content_with_glossary_links(original_notes) # Ensure notes are also processed
-        html_notes = markdown.markdown(markdown_notes_with_links, extensions=['extra', 'nl2br']) 
+        markdown_notes_with_links = self._prepare_content_with_glossary_links(
+            original_notes
+        )  # Ensure notes are also processed
+        html_notes = markdown.markdown(
+            markdown_notes_with_links, extensions=["extra", "nl2br"]
+        )
         logger.debug(f"Glossary Notes Input MD: '''{markdown_notes_with_links}'''")
         logger.debug(f"Glossary Notes Output HTML: '''{html_notes}'''")
         self.notes_text.setHtml(html_notes)
@@ -186,7 +219,9 @@ class GlossaryDetailDialog(QDialog):
         # Create a regex pattern that matches any of the glossary words, ensuring whole word matching
         # We sort by length descending to match longer phrases first (e.g., "ice cream" before "ice").
         # Filter out empty words to prevent issues and improve performance.
-        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
+        sorted_words = sorted(
+            [e.word for e in glossary_entries if e.word], key=len, reverse=True
+        )
 
         if not sorted_words:
             return original_content
@@ -194,19 +229,21 @@ class GlossaryDetailDialog(QDialog):
         # Escape special regex characters in words
         escaped_words = [re.escape(word) for word in sorted_words]
         pattern = r"\b(" + "|".join(escaped_words) + r")\b"
-        
+
         def replace_with_link(match):
             word = match.group(1)
             # Don't link the current entry's word to itself
             if word.lower() == self.entry.word.lower():
-                return word # Return the original word, not a link
+                return word  # Return the original word, not a link
 
-            encoded_word = urllib.parse.quote(word, encoding='utf-8', safe='')
+            encoded_word = urllib.parse.quote(word, encoding="utf-8", safe="")
             return f"[{word}](glossary:{encoded_word})"
 
         try:
             # We use re.sub with a function to perform the replacement
-            linked_content = re.sub(pattern, replace_with_link, original_content, flags=re.IGNORECASE)
+            linked_content = re.sub(
+                pattern, replace_with_link, original_content, flags=re.IGNORECASE
+            )
             return linked_content
         except re.error as e:
             logger.error(f"Regex error while creating glossary links: {e}")
@@ -221,16 +258,24 @@ class GlossaryDetailDialog(QDialog):
             decoded_word = url.path()
 
             if not decoded_word:
-                logger.warning(f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}")
+                logger.warning(
+                    f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}"
+                )
                 return
-            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
+            logger.debug(
+                f"Attempting to find glossary entry for decoded word: '{decoded_word}'"
+            )
             entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
                 # Open a new dialog for the clicked entry
-                new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
+                new_dialog = GlossaryDetailDialog(
+                    entry, self.course_manager, self.window()
+                )
                 new_dialog.exec()
             else:
-                logger.warning(f"Glossary link clicked for decoded word '{decoded_word}', but no entry found.")
+                logger.warning(
+                    f"Glossary link clicked for decoded word '{decoded_word}', but no entry found."
+                )
 
     def _init_audio_player(self):
         """Initializes QMediaPlayer and QAudioOutput if not already done."""
@@ -246,7 +291,7 @@ class GlossaryDetailDialog(QDialog):
         QMessageBox.warning(
             self,
             self.tr("Audio Playback Error"),
-            self.tr("An audio error occurred: {0}").format(error_string)
+            self.tr("An audio error occurred: {0}").format(error_string),
         )
 
     def _play_audio(self):
@@ -262,39 +307,70 @@ class GlossaryDetailDialog(QDialog):
         if not assets_base_dir:
             assets_base_dir = self.course_manager.get_course_content_directory()
             if not assets_base_dir:
-                logger.error("Could not determine asset base directory for audio playback.")
-                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Could not determine asset base directory for audio."))
+                logger.error(
+                    "Could not determine asset base directory for audio playback."
+                )
+                QMessageBox.warning(
+                    self,
+                    self.tr("Audio Error"),
+                    self.tr("Could not determine asset base directory for audio."),
+                )
                 return
-        
+
         full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
 
         if os.path.exists(full_audio_path):
             self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
-            
+
             # Check for errors after attempting to set the source
             if self._media_player.error() != QMediaPlayer.Error.NoError:
                 error_string = self._media_player.errorString()
-                logger.error(f"Error setting media source {full_audio_path}: {error_string}")
-                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot prepare audio: {0}").format(error_string))
+                logger.error(
+                    f"Error setting media source {full_audio_path}: {error_string}"
+                )
+                QMessageBox.warning(
+                    self,
+                    self.tr("Audio Error"),
+                    self.tr("Cannot prepare audio: {0}").format(error_string),
+                )
                 return
 
             self._media_player.play()
 
             # Check playback state and errors after attempting to play
-            if self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            if (
+                self._media_player.playbackState()
+                == QMediaPlayer.PlaybackState.PlayingState
+            ):
                 logger.info(f"Playing glossary audio: {full_audio_path}")
             elif self._media_player.error() != QMediaPlayer.Error.NoError:
                 error_string = self._media_player.errorString()
                 logger.error(f"Error playing audio {full_audio_path}: {error_string}")
-                QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot play audio: {0}").format(error_string))
+                QMessageBox.warning(
+                    self,
+                    self.tr("Audio Error"),
+                    self.tr("Cannot play audio: {0}").format(error_string),
+                )
 
         else:
-            logger.error(f"Audio file not found: {full_audio_path} for entry '{self.entry.word}'")
-            QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Audio file not found at path:\n{0}\n\nPlease check course assets and paths.").format(full_audio_path))
+            logger.error(
+                f"Audio file not found: {full_audio_path} for entry '{self.entry.word}'"
+            )
+            QMessageBox.warning(
+                self,
+                self.tr("Audio Error"),
+                self.tr(
+                    "Audio file not found at path:\n{0}\n\nPlease check course assets and paths."
+                ).format(full_audio_path),
+            )
 
     def closeEvent(self, event):
         """Stops any playing audio when the dialog is closed."""
-        if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+        if (
+            self._media_player
+            and self._media_player.playbackState()
+            == QMediaPlayer.PlaybackState.PlayingState
+        ):
             self._media_player.stop()
         super().closeEvent(event)
 
@@ -305,7 +381,7 @@ class GlossaryDetailDialog(QDialog):
 
     def retranslateUi(self):
         self.setWindowTitle(self.tr("Glossary Entry: {0}").format(self.entry.word))
-        
+
         self.pos_label_title.setText(self.tr("Part of Speech:"))
         self.example_sentence_title.setText(self.tr("Example Sentence:"))
         self.notes_text_title.setText(self.tr("Notes:"))
@@ -313,6 +389,6 @@ class GlossaryDetailDialog(QDialog):
 
         # Reload data to update N/A texts and button text
         self._load_entry_data()
-        
+
         # Standard buttons (OK) usually retranslate automatically.
         logger.debug("GlossaryDetailDialog retranslated.")

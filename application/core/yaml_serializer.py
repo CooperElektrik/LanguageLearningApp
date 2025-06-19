@@ -36,7 +36,9 @@ def save_course_to_yaml(course: Course, filepath: str):
     except IOError as e:
         logger.error(f"Error writing course content file {filepath}: {e}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred while saving course content {filepath}: {e}")
+        logger.error(
+            f"An unexpected error occurred while saving course content {filepath}: {e}"
+        )
     return False
 
 
@@ -44,13 +46,17 @@ def save_manifest_to_yaml(manifest_data: Dict[str, Any], filepath: str):
     """Saves manifest data to a YAML file."""
     try:
         with open(filepath, "w", encoding="utf-8") as f:
-            yaml.safe_dump(manifest_data, f, indent=2, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(
+                manifest_data, f, indent=2, sort_keys=False, allow_unicode=True
+            )
         logger.info(f"Manifest saved successfully to {filepath}")
         return True
     except IOError as e:
         logger.error(f"Error writing manifest file {filepath}: {e}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred while saving manifest {filepath}: {e}")
+        logger.error(
+            f"An unexpected error occurred while saving manifest {filepath}: {e}"
+        )
     return False
 
 
@@ -59,7 +65,9 @@ def save_glossary_to_yaml(glossary_entries: List[GlossaryEntry], filepath: str):
     glossary_data_to_save = [entry.to_dict() for entry in glossary_entries]
     try:
         with open(filepath, "w", encoding="utf-8") as f:
-            yaml.safe_dump(glossary_data_to_save, f, indent=2, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(
+                glossary_data_to_save, f, indent=2, sort_keys=False, allow_unicode=True
+            )
         logger.info(f"Glossary saved successfully to {filepath}")
         return True
     except IOError as e:

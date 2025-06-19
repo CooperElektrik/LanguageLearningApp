@@ -1,7 +1,11 @@
 import logging
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem,
-    QDialogButtonBox
+    QDialog,
+    QVBoxLayout,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QDialogButtonBox,
 )
 from PySide6.QtCore import Qt, QEvent
 from typing import List, Optional
@@ -10,8 +14,10 @@ from core.models import GlossaryEntry
 
 logger = logging.getLogger(__name__)
 
+
 class GlossaryLookupDialog(QDialog):
     """A dialog for searching and selecting a glossary entry with autocomplete."""
+
     def __init__(self, all_entries: List[GlossaryEntry], parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Glossary Lookup"))
@@ -34,7 +40,7 @@ class GlossaryLookupDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
         buttons.rejected.connect(self.reject)
         main_layout.addWidget(buttons)
-        
+
         # Initial population
         self._update_suggestions("")
         self.search_input.setFocus()
@@ -48,8 +54,10 @@ class GlossaryLookupDialog(QDialog):
             filtered = self.all_entries
         else:
             filtered = [
-                entry for entry in self.all_entries 
-                if search_term in entry.word.lower() or search_term in entry.translation.lower()
+                entry
+                for entry in self.all_entries
+                if search_term in entry.word.lower()
+                or search_term in entry.translation.lower()
             ]
 
         for entry in filtered:
@@ -68,7 +76,7 @@ class GlossaryLookupDialog(QDialog):
         elif self.suggestions_list.count() > 0:
             item = self.suggestions_list.item(0)
         else:
-            return # No item to select, do nothing
+            return  # No item to select, do nothing
 
         self.selected_entry = item.data(Qt.ItemDataRole.UserRole)
         self.accept()
@@ -76,20 +84,27 @@ class GlossaryLookupDialog(QDialog):
     def get_selected_entry(self) -> Optional[GlossaryEntry]:
         """Returns the entry that was selected by the user."""
         return self.selected_entry
-        
+
     def keyPressEvent(self, event):
         """Enhances keyboard navigation between the search input and the list."""
         # If user is in the search box and presses Down, focus the list
-        if self.search_input.hasFocus() and event.key() == Qt.Key.Key_Down and self.suggestions_list.count() > 0:
+        if (
+            self.search_input.hasFocus()
+            and event.key() == Qt.Key.Key_Down
+            and self.suggestions_list.count() > 0
+        ):
             self.suggestions_list.setFocus()
             self.suggestions_list.setCurrentRow(0)
             return
 
         # If user presses Enter in the search box, trigger acceptance
-        if self.search_input.hasFocus() and event.key() in [Qt.Key.Key_Return, Qt.Key.Key_Enter]:
+        if self.search_input.hasFocus() and event.key() in [
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ]:
             self._accept_selection()
             return
-            
+
         super().keyPressEvent(event)
 
     def changeEvent(self, event: QEvent):
@@ -101,5 +116,7 @@ class GlossaryLookupDialog(QDialog):
         self.setWindowTitle(self.tr("Glossary Lookup"))
         self.search_input.setPlaceholderText(self.tr("Start typing to search..."))
         # List items are dynamically generated, their "No entries" text is handled in _update_suggestions
-        self._update_suggestions(self.search_input.text()) # Re-filter to update any "No entries" message
+        self._update_suggestions(
+            self.search_input.text()
+        )  # Re-filter to update any "No entries" message
         logger.debug("GlossaryLookupDialog retranslated.")

@@ -1,7 +1,15 @@
 import os
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTextEdit, QFormLayout, QDialogButtonBox, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTextEdit,
+    QFormLayout,
+    QDialogButtonBox,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -11,15 +19,21 @@ from .asset_manager_dialog import AssetManagerDialog
 
 from typing import Optional
 
+
 class GlossaryEntryEditorDialog(QDialog):
-    def __init__(self, entry: Optional[GlossaryEntry] = None, course_root_dir: str = "", parent=None):
+    def __init__(
+        self,
+        entry: Optional[GlossaryEntry] = None,
+        course_root_dir: str = "",
+        parent=None,
+    ):
         super().__init__(parent)
         self.setWindowTitle("Edit Glossary Entry")
         self.setMinimumSize(400, 300)
 
         self.original_entry = entry
         self.course_root_dir = course_root_dir
-        self.edited_entry: Optional[GlossaryEntry] = None # To store the edited data
+        self.edited_entry: Optional[GlossaryEntry] = None  # To store the edited data
 
         self._setup_ui()
         if entry:
@@ -54,7 +68,9 @@ class GlossaryEntryEditorDialog(QDialog):
         # Audio file input with browse button
         audio_layout = QHBoxLayout()
         self.audio_file_input = QLineEdit()
-        self.audio_file_input.setPlaceholderText("e.g., assets/audio/saluton.mp3 (relative to course root)")
+        self.audio_file_input.setPlaceholderText(
+            "e.g., assets/audio/saluton.mp3 (relative to course root)"
+        )
         audio_layout.addWidget(self.audio_file_input)
         browse_audio_button = QPushButton("Browse...")
         browse_audio_button.clicked.connect(self._browse_audio_file)
@@ -79,10 +95,12 @@ class GlossaryEntryEditorDialog(QDialog):
     def _browse_audio_file(self):
         if not self.course_root_dir:
             QMessageBox.warning(
-                self, "Browse Audio", "Course root directory is not set. Please save the manifest first."
+                self,
+                "Browse Audio",
+                "Course root directory is not set. Please save the manifest first.",
             )
             return
-        
+
         dialog = AssetManagerDialog(self.course_root_dir, "audio", self)
         if dialog.exec() == QDialog.Accepted:
             selected_path = dialog.selected_asset_path
@@ -95,9 +113,11 @@ class GlossaryEntryEditorDialog(QDialog):
             QMessageBox.warning(self, "Validation Error", "Word cannot be empty.")
             return
         if not self.translation_input.text().strip():
-            QMessageBox.warning(self, "Validation Error", "Translation cannot be empty.")
+            QMessageBox.warning(
+                self, "Validation Error", "Translation cannot be empty."
+            )
             return
-        
+
         self.edited_entry = GlossaryEntry(
             word=self.word_input.text().strip(),
             translation=self.translation_input.text().strip(),

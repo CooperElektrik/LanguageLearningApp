@@ -15,12 +15,13 @@ class ExerciseOption:
             data["correct"] = self.correct
         return data
 
+
 @dataclass
 class Exercise:
     exercise_id: str
     type: str
 
-    title: Optional[str] = None # For context_block or any other exercise
+    title: Optional[str] = None  # For context_block or any other exercise
     prompt: Optional[str] = None
     answer: Optional[str] = None
 
@@ -55,19 +56,27 @@ class Exercise:
         """
         data = asdict(self)
 
-        if data.get("last_reviewed") is not None and isinstance(data["last_reviewed"], datetime):
+        if data.get("last_reviewed") is not None and isinstance(
+            data["last_reviewed"], datetime
+        ):
             data["last_reviewed"] = data["last_reviewed"].isoformat()
-        if data.get("next_review_due") is not None and isinstance(data["next_review_due"], datetime):
+        if data.get("next_review_due") is not None and isinstance(
+            data["next_review_due"], datetime
+        ):
             data["next_review_due"] = data["next_review_due"].isoformat()
 
         if "options" in data and data["options"]:
             data["options"] = [opt.to_dict() for opt in self.options]
-        
+
         data.pop("raw_data", None)
         data.pop("exercise_id", None)
 
-        cleaned_data = {k: v for k, v in data.items() if v is not None and not (isinstance(v, list) and not v)}
-        
+        cleaned_data = {
+            k: v
+            for k, v in data.items()
+            if v is not None and not (isinstance(v, list) and not v)
+        }
+
         return cleaned_data
 
     def to_content_dict(self) -> Dict[str, Any]:
@@ -80,30 +89,50 @@ class Exercise:
         }
 
         # Add title if it exists, for any type
-        if self.title is not None: data["title"] = self.title
+        if self.title is not None:
+            data["title"] = self.title
 
         if self.type in ["translate_to_target", "translate_to_source", "dictation"]:
-            if self.prompt is not None: data["prompt"] = self.prompt
-            if self.answer is not None: data["answer"] = self.answer
-        elif self.type in ["multiple_choice_translation", "image_association", "listen_and_select"]:
-            if self.prompt is not None: data["prompt"] = self.prompt
-            if self.source_word is not None: data["source_word"] = self.source_word
-            if self.options: data["options"] = [opt.to_dict() for opt in self.options]
+            if self.prompt is not None:
+                data["prompt"] = self.prompt
+            if self.answer is not None:
+                data["answer"] = self.answer
+        elif self.type in [
+            "multiple_choice_translation",
+            "image_association",
+            "listen_and_select",
+        ]:
+            if self.prompt is not None:
+                data["prompt"] = self.prompt
+            if self.source_word is not None:
+                data["source_word"] = self.source_word
+            if self.options:
+                data["options"] = [opt.to_dict() for opt in self.options]
         elif self.type == "fill_in_the_blank":
-            if self.sentence_template is not None: data["sentence_template"] = self.sentence_template
-            if self.correct_option is not None: data["correct_option"] = self.correct_option
-            if self.options: data["options"] = [opt.text for opt in self.options]
-            if self.translation_hint is not None: data["translation_hint"] = self.translation_hint
+            if self.sentence_template is not None:
+                data["sentence_template"] = self.sentence_template
+            if self.correct_option is not None:
+                data["correct_option"] = self.correct_option
+            if self.options:
+                data["options"] = [opt.text for opt in self.options]
+            if self.translation_hint is not None:
+                data["translation_hint"] = self.translation_hint
         elif self.type == "sentence_jumble":
-            if self.prompt is not None: data["prompt"] = self.prompt
-            if self.words: data["words"] = self.words
-            if self.answer is not None: data["answer"] = self.answer
+            if self.prompt is not None:
+                data["prompt"] = self.prompt
+            if self.words:
+                data["words"] = self.words
+            if self.answer is not None:
+                data["answer"] = self.answer
         elif self.type == "context_block":
-            if self.prompt is not None: data["prompt"] = self.prompt
+            if self.prompt is not None:
+                data["prompt"] = self.prompt
 
-        if self.audio_file is not None: data["audio_file"] = self.audio_file
-        if self.image_file is not None: data["image_file"] = self.image_file
-        
+        if self.audio_file is not None:
+            data["audio_file"] = self.audio_file
+        if self.image_file is not None:
+            data["image_file"] = self.image_file
+
         return data
 
 
@@ -155,6 +184,7 @@ class Course:
     def to_dict(self) -> Dict[str, Any]:
         """Converts the Course object to a dictionary for content saving (its 'units' part)."""
         return {"units": [unit.to_dict() for unit in self.units]}
+
 
 @dataclass
 class GlossaryEntry:

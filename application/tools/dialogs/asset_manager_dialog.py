@@ -4,8 +4,18 @@ import os
 import logging
 import shutil
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QPushButton, QFileDialog, QMessageBox, QWidget, QGridLayout, QSizePolicy
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QFileDialog,
+    QMessageBox,
+    QWidget,
+    QGridLayout,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal
 from PySide6.QtGui import QPixmap, QIcon
@@ -15,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Define a custom MIME type for dragging asset paths
 _ASSET_PATH_MIME_TYPE = "application/x-ll-asset-path"
+
 
 class AssetManagerDialog(QDialog):
     # Signal to emit the selected asset's relative path
@@ -34,7 +45,7 @@ class AssetManagerDialog(QDialog):
         self.asset_type = asset_type
         self.asset_subdir = os.path.join("assets", f"{self.asset_type}s")
         self.full_asset_dir = os.path.join(self.course_root_dir, self.asset_subdir)
-        self.selected_asset_path: Optional[str] = None # Stores the relative path
+        self.selected_asset_path: Optional[str] = None  # Stores the relative path
 
         self.setWindowTitle(f"Manage {asset_type.capitalize()} Assets")
         self.setMinimumSize(700, 500)
@@ -56,13 +67,17 @@ class AssetManagerDialog(QDialog):
         self.asset_list_widget.setViewMode(QListWidget.IconMode)
         self.asset_list_widget.setGridSize(QSize(120, 120))
         self.asset_list_widget.setIconSize(QSize(64, 64))
-        self.asset_list_widget.setMovement(QListWidget.Static) # Items won't move around visually
+        self.asset_list_widget.setMovement(
+            QListWidget.Static
+        )  # Items won't move around visually
         self.asset_list_widget.setSpacing(10)
         self.asset_list_widget.setWordWrap(True)
         self.asset_list_widget.setSelectionMode(QListWidget.SingleSelection)
 
-        self.asset_list_widget.itemDoubleClicked.connect(self._handle_double_click_select)
-        
+        self.asset_list_widget.itemDoubleClicked.connect(
+            self._handle_double_click_select
+        )
+
         main_layout.addWidget(self.asset_list_widget)
 
         # Action buttons for managing assets
@@ -94,18 +109,22 @@ class AssetManagerDialog(QDialog):
                 os.makedirs(self.full_asset_dir, exist_ok=True)
                 logger.info(f"Created asset directory: {self.full_asset_dir}")
             except OSError as e:
-                QMessageBox.critical(self, "Directory Error", f"Could not create asset directory: {e}")
+                QMessageBox.critical(
+                    self, "Directory Error", f"Could not create asset directory: {e}"
+                )
                 return
 
         for filename in os.listdir(self.full_asset_dir):
-            if filename.startswith("."): # Ignore hidden files like .DS_Store
+            if filename.startswith("."):  # Ignore hidden files like .DS_Store
                 continue
 
             full_path = os.path.join(self.full_asset_dir, filename)
-            relative_path = os.path.join(self.asset_subdir, filename).replace(os.sep, '/')
+            relative_path = os.path.join(self.asset_subdir, filename).replace(
+                os.sep, "/"
+            )
 
             item = QListWidgetItem(filename)
-            item.setData(Qt.UserRole, relative_path) # Store relative path in UserRole
+            item.setData(Qt.UserRole, relative_path)  # Store relative path in UserRole
 
             icon = QIcon()
             if self.asset_type == "image":
@@ -113,21 +132,24 @@ class AssetManagerDialog(QDialog):
                 if not pixmap.isNull():
                     icon.addPixmap(pixmap)
                 else:
-                    icon = self.style().standardIcon(self.style().StandardPixmap.SP_MessageBoxWarning) # Fallback icon
+                    icon = self.style().standardIcon(
+                        self.style().StandardPixmap.SP_MessageBoxWarning
+                    )  # Fallback icon
             elif self.asset_type == "audio":
-                icon = self.style().standardIcon(self.style().StandardPixmap.SP_MediaVolume) # Generic audio icon
-            
+                icon = self.style().standardIcon(
+                    self.style().StandardPixmap.SP_MediaVolume
+                )  # Generic audio icon
+
             item.setIcon(icon)
             self.asset_list_widget.addItem(item)
-        
-        self.asset_list_widget.sortItems(Qt.AscendingOrder) # Sort alphabetically
 
+        self.asset_list_widget.sortItems(Qt.AscendingOrder)  # Sort alphabetically
 
     def _import_asset(self):
         # Determine initial directory for file dialog
         initial_dir = self.course_root_dir
         if not os.path.exists(initial_dir):
-            initial_dir = os.path.expanduser("~") # Fallback to home directory
+            initial_dir = os.path.expanduser("~")  # Fallback to home directory
 
         filters = ""
         if self.asset_type == "image":
@@ -136,7 +158,10 @@ class AssetManagerDialog(QDialog):
             filters = "Audio Files (*.mp3 *.wav *.ogg);;All Files (*)"
 
         source_file_path, _ = QFileDialog.getOpenFileName(
-            self, f"Select {self.asset_type.capitalize()} File to Import", initial_dir, filters
+            self,
+            f"Select {self.asset_type.capitalize()} File to Import",
+            initial_dir,
+            filters,
         )
         if not source_file_path:
             return
@@ -146,9 +171,10 @@ class AssetManagerDialog(QDialog):
 
         if os.path.exists(target_full_path):
             reply = QMessageBox.question(
-                self, "File Exists",
+                self,
+                "File Exists",
                 f"A file named '{target_file_name}' already exists in the assets folder. Overwrite?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.Yes | QMessageBox.No,
             )
             if reply == QMessageBox.No:
                 return
@@ -156,15 +182,21 @@ class AssetManagerDialog(QDialog):
         try:
             shutil.copy2(source_file_path, target_full_path)
             logger.info(f"Imported asset '{source_file_path}' to '{target_full_path}'")
-            self._populate_asset_list() # Refresh list after import
-            QMessageBox.information(self, "Import Successful", f"'{target_file_name}' imported successfully.")
+            self._populate_asset_list()  # Refresh list after import
+            QMessageBox.information(
+                self,
+                "Import Successful",
+                f"'{target_file_name}' imported successfully.",
+            )
         except Exception as e:
             QMessageBox.critical(self, "Import Error", f"Failed to import asset: {e}")
 
     def _delete_selected_asset(self):
         selected_items = self.asset_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(self, "No Selection", "Please select an asset to delete.")
+            QMessageBox.information(
+                self, "No Selection", "Please select an asset to delete."
+            )
             return
 
         item_to_delete = selected_items[0]
@@ -173,9 +205,10 @@ class AssetManagerDialog(QDialog):
         full_path = os.path.join(self.full_asset_dir, filename)
 
         reply = QMessageBox.question(
-            self, "Confirm Delete",
+            self,
+            "Confirm Delete",
             f"Are you sure you want to delete '{filename}'?\nThis action cannot be undone.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
         if reply == QMessageBox.No:
             return
@@ -183,8 +216,10 @@ class AssetManagerDialog(QDialog):
         try:
             os.remove(full_path)
             logger.info(f"Deleted asset: {full_path}")
-            self._populate_asset_list() # Refresh list after deletion
-            QMessageBox.information(self, "Delete Successful", f"'{filename}' deleted successfully.")
+            self._populate_asset_list()  # Refresh list after deletion
+            QMessageBox.information(
+                self, "Delete Successful", f"'{filename}' deleted successfully."
+            )
         except Exception as e:
             QMessageBox.critical(self, "Delete Error", f"Failed to delete asset: {e}")
 
@@ -198,9 +233,11 @@ class AssetManagerDialog(QDialog):
         """Handle 'Select Asset' button click."""
         selected_items = self.asset_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(self, "No Selection", "Please select an asset to select.")
+            QMessageBox.information(
+                self, "No Selection", "Please select an asset to select."
+            )
             return
-        
+
         self.selected_asset_path = selected_items[0].data(Qt.UserRole)
         self.asset_selected.emit(self.selected_asset_path)
         self.accept()

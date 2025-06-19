@@ -5,10 +5,16 @@ from core.models import Course, Unit, Lesson, Exercise, ExerciseOption, Glossary
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 
+
 @pytest.fixture
 def sample_course_data():
     """Provides a sample in-memory Course object for testing."""
-    ex1 = Exercise(exercise_id="u1l1_ex1", type="translate_to_target", prompt="Hello", answer="Xin chào")
+    ex1 = Exercise(
+        exercise_id="u1l1_ex1",
+        type="translate_to_target",
+        prompt="Hello",
+        answer="Xin chào",
+    )
     ex2 = Exercise(
         exercise_id="u1l1_ex2",
         type="multiple_choice_translation",
@@ -16,10 +22,15 @@ def sample_course_data():
         options=[
             ExerciseOption(text="con chó", correct=False),
             ExerciseOption(text="con mèo", correct=True),
-        ]
+        ],
     )
-    ex3 = Exercise(exercise_id="u1l2_ex1", type="sentence_jumble", words=["Tôi", "ăn", "táo"], answer="Tôi ăn táo")
-    
+    ex3 = Exercise(
+        exercise_id="u1l2_ex1",
+        type="sentence_jumble",
+        words=["Tôi", "ăn", "táo"],
+        answer="Tôi ăn táo",
+    )
+
     lesson1 = Lesson(lesson_id="u1l1", title="Greetings", exercises=[ex1, ex2])
     lesson2 = Lesson(lesson_id="u1l2", title="Sentences", exercises=[ex3])
     unit1 = Unit(unit_id="unit1", title="Basics", lessons=[lesson1, lesson2])
@@ -30,9 +41,10 @@ def sample_course_data():
         target_language="Vietnamese",
         source_language="English",
         version="1.0.0",
-        units=[unit1]
+        units=[unit1],
     )
     return course
+
 
 @pytest.fixture
 def temp_course_files(tmp_path, sample_course_data):
@@ -48,7 +60,7 @@ def temp_course_files(tmp_path, sample_course_data):
         "target_language": sample_course_data.target_language,
         "source_language": sample_course_data.source_language,
         "content_file": "content.yaml",
-        "glossary_file": "glossary.yaml"
+        "glossary_file": "glossary.yaml",
     }
     manifest_path = course_dir / "manifest.yaml"
     with open(manifest_path, "w", encoding="utf-8") as f:
@@ -59,7 +71,7 @@ def temp_course_files(tmp_path, sample_course_data):
     content_path = course_dir / "content.yaml"
     with open(content_path, "w", encoding="utf-8") as f:
         yaml.dump(content_data, f)
-        
+
     # --- Create glossary.yaml ---
     glossary_data = [
         {"word": "Xin chào", "translation": "Hello"},
@@ -71,14 +83,16 @@ def temp_course_files(tmp_path, sample_course_data):
 
     return str(manifest_path)
 
+
 @pytest.fixture
 def course_manager(temp_course_files):
     """Provides an initialized CourseManager instance."""
     return CourseManager(manifest_path=temp_course_files)
 
+
 @pytest.fixture
 def progress_manager(course_manager, tmp_path):
     """Provides an initialized ProgressManager instance in a temporary directory."""
     # Point QStandardPaths to our temp dir for this test
-    os.environ['XDG_DATA_HOME'] = str(tmp_path)
+    os.environ["XDG_DATA_HOME"] = str(tmp_path)
     return ProgressManager(course_id=course_manager.course.course_id)

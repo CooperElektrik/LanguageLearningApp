@@ -266,7 +266,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
                 else self.image_file_input.setText(path)
             )
         )
-        dialog.exec() # Show the dialog
+        dialog.exec()  # Show the dialog
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.prompt or not self.exercise.prompt.strip():
@@ -311,7 +311,13 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
         source_language: str,
         parent=None,
     ):
-        super().__init__(exercise, target_language, source_language, getattr(parent, 'course_root_dir', None), parent)
+        super().__init__(
+            exercise,
+            target_language,
+            source_language,
+            getattr(parent, "course_root_dir", None),
+            parent,
+        )
 
         self.source_word_input = self._add_input_field(
             f"Source Word ({source_language})",
@@ -469,22 +475,28 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
 
 class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
     """Editor for image_association."""
+
     def __init__(
         self,
         exercise: Exercise,
         target_language: str,
         source_language: str,
-        course_root_dir: Optional[str], # Added course_root_dir
+        course_root_dir: Optional[str],  # Added course_root_dir
         parent=None,
     ):
         # Call BaseExerciseEditorWidget's __init__ directly, not MultipleChoiceExerciseEditorWidget's
-        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
+        super().__init__(
+            exercise, target_language, source_language, course_root_dir, parent
+        )
         # Prompt (re-add as it's not in Base but needed here)
         self.prompt_input = self._add_input_field(
-            "Prompt", # General prompt, not language specific like MCQ's source_word
+            "Prompt",  # General prompt, not language specific like MCQ's source_word
             exercise.prompt or "",
-            lambda text: setattr(self.exercise, 'prompt', text.strip() if text.strip() else None) or self.data_changed.emit(),
-            is_required=True, # Prompt is usually required for association
+            lambda text: setattr(
+                self.exercise, "prompt", text.strip() if text.strip() else None
+            )
+            or self.data_changed.emit(),
+            is_required=True,  # Prompt is usually required for association
             placeholder_text="e.g., Which image matches the sound?",
         )
 
@@ -496,7 +508,9 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
         asset_layout = QHBoxLayout()
         asset_label = QLabel(self.asset_label_text)
         self.asset_file_input = QLineEdit(current_asset_file)
-        self.asset_file_input.setPlaceholderText(f"e.g., assets/{self.asset_type_for_browser}s/example.png")
+        self.asset_file_input.setPlaceholderText(
+            f"e.g., assets/{self.asset_type_for_browser}s/example.png"
+        )
         self.asset_file_input.textChanged.connect(self._update_asset_file)
         browse_button = QPushButton("Browse...")
         browse_button.clicked.connect(self._browse_asset)
@@ -507,7 +521,9 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
 
         # The rest is similar to MultipleChoiceExerciseEditorWidget for options
         self.layout.addWidget(self._create_separator())
-        self.layout.addWidget(QLabel(f"Options ({target_language}):")) # Options are in target language
+        self.layout.addWidget(
+            QLabel(f"Options ({target_language}):")
+        )  # Options are in target language
 
         self.options_list_widget = QListWidget()
         self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option)
@@ -531,8 +547,8 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.options_validation_label.setStyleSheet("color: orange;")
         self.layout.addWidget(self.options_validation_label)
 
-        self._populate_options_list() # From MCQ
-        self._validate_mcq_options() # From MCQ
+        self._populate_options_list()  # From MCQ
+        self._validate_mcq_options()  # From MCQ
         self.layout.addStretch(1)
 
     def _update_asset_file(self, text: str):
@@ -543,9 +559,15 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
     def _browse_asset(self):
         # Uses self.course_root_dir from BaseExerciseEditorWidget
         if not self.course_root_dir:
-            QMessageBox.warning(self, "Browse Asset", "Course root directory not set. Cannot browse assets.")
+            QMessageBox.warning(
+                self,
+                "Browse Asset",
+                "Course root directory not set. Cannot browse assets.",
+            )
             return
-        dialog = AssetManagerDialog(self.course_root_dir, self.asset_type_for_browser, self)
+        dialog = AssetManagerDialog(
+            self.course_root_dir, self.asset_type_for_browser, self
+        )
         dialog.asset_selected.connect(self.asset_file_input.setText)
         dialog.exec()
 
@@ -557,7 +579,7 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
     # For simplicity, let's assume these methods are available via a common mixin or copied.
     # The current structure of AssociationExerciseEditorWidget in the input already re-implements these.
 
-    def _populate_options_list(self): # Copied from MultipleChoiceExerciseEditorWidget
+    def _populate_options_list(self):  # Copied from MultipleChoiceExerciseEditorWidget
         self.options_list_widget.clear()
         for option_obj in self.exercise.options:
             item_text = option_obj.text
@@ -568,24 +590,30 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
             self.options_list_widget.addItem(list_item)
         self._validate_mcq_options()
 
-    def _validate_mcq_options(self): # Copied from MultipleChoiceExerciseEditorWidget
+    def _validate_mcq_options(self):  # Copied from MultipleChoiceExerciseEditorWidget
         if not self.exercise.options:
-            self.options_validation_label.setText("Warning: At least one option is recommended.")
+            self.options_validation_label.setText(
+                "Warning: At least one option is recommended."
+            )
             self.options_validation_label.setStyleSheet("color: orange;")
             return
 
         correct_count = sum(1 for opt in self.exercise.options if opt.correct)
         if correct_count == 0:
-            self.options_validation_label.setText("Error: No option marked as correct. Please mark one.")
+            self.options_validation_label.setText(
+                "Error: No option marked as correct. Please mark one."
+            )
             self.options_validation_label.setStyleSheet("color: red;")
         elif correct_count > 1:
-            self.options_validation_label.setText(f"Error: {correct_count} options marked correct. Please mark exactly one.")
+            self.options_validation_label.setText(
+                f"Error: {correct_count} options marked correct. Please mark exactly one."
+            )
             self.options_validation_label.setStyleSheet("color: red;")
         else:
             self.options_validation_label.setText("")
             self.options_validation_label.setStyleSheet("color: green;")
 
-    def _add_option_dialog(self): # Copied from MultipleChoiceExerciseEditorWidget
+    def _add_option_dialog(self):  # Copied from MultipleChoiceExerciseEditorWidget
         dialog = MultipleChoiceOptionEditDialog(parent=self)
         if dialog.exec() == QDialog.Accepted:
             text, is_correct = dialog.get_data()
@@ -598,35 +626,47 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
                 self._populate_options_list()
                 self.data_changed.emit()
 
-    def _edit_selected_option(self): # Copied from MultipleChoiceExerciseEditorWidget
+    def _edit_selected_option(self):  # Copied from MultipleChoiceExerciseEditorWidget
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(self, "Edit Option", "Please select an option to edit.")
+            QMessageBox.information(
+                self, "Edit Option", "Please select an option to edit."
+            )
             return
         current_item = selected_items[0]
         option_obj: ExerciseOption = current_item.data(Qt.UserRole)
-        dialog = MultipleChoiceOptionEditDialog(option_text=option_obj.text, is_correct=option_obj.correct, parent=self)
+        dialog = MultipleChoiceOptionEditDialog(
+            option_text=option_obj.text, is_correct=option_obj.correct, parent=self
+        )
         if dialog.exec() == QDialog.Accepted:
             text, is_correct = dialog.get_data()
             if text is not None:
                 option_obj.text = text
                 if is_correct:
                     for opt in self.exercise.options:
-                        if opt is not option_obj: opt.correct = False
+                        if opt is not option_obj:
+                            opt.correct = False
                     option_obj.correct = True
                 else:
                     option_obj.correct = False
                 self._populate_options_list()
                 self.data_changed.emit()
 
-    def _delete_selected_option(self): # Copied from MultipleChoiceExerciseEditorWidget
+    def _delete_selected_option(self):  # Copied from MultipleChoiceExerciseEditorWidget
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(self, "Delete Option", "Please select an option to delete.")
+            QMessageBox.information(
+                self, "Delete Option", "Please select an option to delete."
+            )
             return
         current_item = selected_items[0]
         option_obj: ExerciseOption = current_item.data(Qt.UserRole)
-        reply = QMessageBox.question(self, "Delete Option", f"Are you sure you want to delete option: '{option_obj.text}'?", QMessageBox.Yes | QMessageBox.No)
+        reply = QMessageBox.question(
+            self,
+            "Delete Option",
+            f"Are you sure you want to delete option: '{option_obj.text}'?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
         if reply == QMessageBox.Yes:
             self.exercise.options.remove(option_obj)
             self._populate_options_list()
@@ -650,8 +690,11 @@ class ImageAssociationExerciseEditorWidget(BaseExerciseEditorWidget):
         return True, ""
 
 
-class ListenAndSelectExerciseEditorWidget(ImageAssociationExerciseEditorWidget): # Inherits option handling
+class ListenAndSelectExerciseEditorWidget(
+    ImageAssociationExerciseEditorWidget
+):  # Inherits option handling
     """Editor for listen_and_select. Similar to ImageAssociation but with Audio."""
+
     def __init__(
         self,
         exercise: Exercise,
@@ -661,12 +704,17 @@ class ListenAndSelectExerciseEditorWidget(ImageAssociationExerciseEditorWidget):
         parent=None,
     ):
         # Call BaseExerciseEditorWidget's __init__ directly
-        BaseExerciseEditorWidget.__init__(self, exercise, target_language, source_language, course_root_dir, parent)
+        BaseExerciseEditorWidget.__init__(
+            self, exercise, target_language, source_language, course_root_dir, parent
+        )
 
         self.prompt_input = self._add_input_field(
             "Prompt",
             exercise.prompt or "",
-            lambda text: setattr(self.exercise, 'prompt', text.strip() if text.strip() else None) or self.data_changed.emit(),
+            lambda text: setattr(
+                self.exercise, "prompt", text.strip() if text.strip() else None
+            )
+            or self.data_changed.emit(),
             is_required=True,
             placeholder_text="e.g., Which option matches the sound?",
         )
@@ -679,10 +727,16 @@ class ListenAndSelectExerciseEditorWidget(ImageAssociationExerciseEditorWidget):
         asset_layout = QHBoxLayout()
         asset_label = QLabel(self.asset_label_text)
         self.asset_file_input = QLineEdit(current_asset_file)
-        self.asset_file_input.setPlaceholderText(f"e.g., assets/{self.asset_type_for_browser}s/example.mp3")
-        self.asset_file_input.textChanged.connect(self._update_asset_file) # Uses overridden _update_asset_file
+        self.asset_file_input.setPlaceholderText(
+            f"e.g., assets/{self.asset_type_for_browser}s/example.mp3"
+        )
+        self.asset_file_input.textChanged.connect(
+            self._update_asset_file
+        )  # Uses overridden _update_asset_file
         browse_button = QPushButton("Browse...")
-        browse_button.clicked.connect(self._browse_asset) # Uses inherited _browse_asset
+        browse_button.clicked.connect(
+            self._browse_asset
+        )  # Uses inherited _browse_asset
         asset_layout.addWidget(asset_label)
         asset_layout.addWidget(self.asset_file_input, 1)
         asset_layout.addWidget(browse_button)
@@ -714,12 +768,12 @@ class ListenAndSelectExerciseEditorWidget(ImageAssociationExerciseEditorWidget):
         self._validate_mcq_options()
         self.layout.addStretch(1)
 
-    def _update_asset_file(self, text: str): # Override for audio_file
+    def _update_asset_file(self, text: str):  # Override for audio_file
         path = text.strip().replace("\\", "/") or None
         self.exercise.audio_file = path
         self.data_changed.emit()
 
-    def validate(self) -> tuple[bool, str]: # Override for audio_file if needed
+    def validate(self) -> tuple[bool, str]:  # Override for audio_file if needed
         is_valid, msg = super().validate()
         if not is_valid:
             return is_valid, msg
@@ -730,29 +784,62 @@ class ListenAndSelectExerciseEditorWidget(ImageAssociationExerciseEditorWidget):
 
 
 class SentenceJumbleExerciseEditorWidget(BaseExerciseEditorWidget):
-    def __init__(self, exercise: Exercise, target_language: str, source_language: str, parent=None):
-        super().__init__(exercise, target_language, source_language, course_root_dir=None, parent=parent)
-        self._add_input_field("Prompt (Optional)", exercise.prompt or "", lambda text: setattr(self.exercise, 'prompt', text.strip() or None) or self.data_changed.emit())
-        self._add_input_field(f"Correct Answer (Full Sentence in {target_language})", exercise.answer or "", lambda text: setattr(self.exercise, 'answer', text.strip() or None) or self.data_changed.emit(), is_required=True)
-        
-        self.layout.addWidget(QLabel(f"Words/Phrases to Jumble (one per line, in {target_language}): *"))
+    def __init__(
+        self,
+        exercise: Exercise,
+        target_language: str,
+        source_language: str,
+        parent=None,
+    ):
+        super().__init__(
+            exercise,
+            target_language,
+            source_language,
+            course_root_dir=None,
+            parent=parent,
+        )
+        self._add_input_field(
+            "Prompt (Optional)",
+            exercise.prompt or "",
+            lambda text: setattr(self.exercise, "prompt", text.strip() or None)
+            or self.data_changed.emit(),
+        )
+        self._add_input_field(
+            f"Correct Answer (Full Sentence in {target_language})",
+            exercise.answer or "",
+            lambda text: setattr(self.exercise, "answer", text.strip() or None)
+            or self.data_changed.emit(),
+            is_required=True,
+        )
+
+        self.layout.addWidget(
+            QLabel(f"Words/Phrases to Jumble (one per line, in {target_language}): *")
+        )
         self.words_input = QTextEdit("\n".join(exercise.words or []))
         self.words_input.textChanged.connect(self._update_words)
         self.layout.addWidget(self.words_input)
         self.layout.addStretch(1)
 
     def _update_words(self):
-        self.exercise.words = [line.strip() for line in self.words_input.toPlainText().split("\n") if line.strip()]
+        self.exercise.words = [
+            line.strip()
+            for line in self.words_input.toPlainText().split("\n")
+            if line.strip()
+        ]
         self.data_changed.emit()
-        self._validate_input_field(self.words_input, True) # Basic validation for non-empty
+        self._validate_input_field(
+            self.words_input, True
+        )  # Basic validation for non-empty
 
-    def _validate_input_field(self, input_widget, is_required: bool): # Override for QTextEdit specific to words
+    def _validate_input_field(
+        self, input_widget, is_required: bool
+    ):  # Override for QTextEdit specific to words
         if isinstance(input_widget, QTextEdit) and input_widget == self.words_input:
             if is_required and not self.exercise.words:
                 input_widget.setStyleSheet("border: 1px solid red;")
             else:
                 input_widget.setStyleSheet("")
-        else: # Call super for other QLineEdit fields if any, or general handling
+        else:  # Call super for other QLineEdit fields if any, or general handling
             super()._validate_input_field(input_widget, is_required)
         self.data_changed.emit()
 
@@ -765,29 +852,42 @@ class SentenceJumbleExerciseEditorWidget(BaseExerciseEditorWidget):
 
 
 class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
-    def __init__(self, exercise: Exercise, target_language: str, source_language: str, course_root_dir: Optional[str], parent=None):
-        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
+    def __init__(
+        self,
+        exercise: Exercise,
+        target_language: str,
+        source_language: str,
+        course_root_dir: Optional[str],
+        parent=None,
+    ):
+        super().__init__(
+            exercise, target_language, source_language, course_root_dir, parent
+        )
 
         self._add_input_field(
             f"Instruction/Prompt ({target_language}, Optional)",
             exercise.prompt or "",
-            lambda text: setattr(self.exercise, 'prompt', text.strip() or None) or self.data_changed.emit(),
+            lambda text: setattr(self.exercise, "prompt", text.strip() or None)
+            or self.data_changed.emit(),
             is_multiline=True,
-            placeholder_text="e.g., Listen and write what you hear."
+            placeholder_text="e.g., Listen and write what you hear.",
         )
         self._add_input_field(
             f"Correct Transcription ({target_language})",
             exercise.answer or "",
-            lambda text: setattr(self.exercise, 'answer', text.strip() or None) or self.data_changed.emit(),
+            lambda text: setattr(self.exercise, "answer", text.strip() or None)
+            or self.data_changed.emit(),
             is_multiline=True,
             is_required=True,
-            placeholder_text="The sentence that will be spoken and should be typed."
+            placeholder_text="The sentence that will be spoken and should be typed.",
         )
 
         audio_layout = QHBoxLayout()
-        audio_label = QLabel("Audio File (of transcription): *") # Marked as important
+        audio_label = QLabel("Audio File (of transcription): *")  # Marked as important
         self.audio_file_input = QLineEdit(self.exercise.audio_file or "")
-        self.audio_file_input.setPlaceholderText("e.g., assets/sounds/dictation_sentence.mp3")
+        self.audio_file_input.setPlaceholderText(
+            "e.g., assets/sounds/dictation_sentence.mp3"
+        )
         self.audio_file_input.textChanged.connect(self._update_audio_file)
         browse_audio_button = QPushButton("Browse...")
         browse_audio_button.clicked.connect(self._browse_audio)
@@ -800,11 +900,17 @@ class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
     def _update_audio_file(self, text: str):
         self.exercise.audio_file = text.strip().replace("\\", "/") or None
         self.data_changed.emit()
-        self._validate_input_field(self.audio_file_input, True) # Validate audio file as required
+        self._validate_input_field(
+            self.audio_file_input, True
+        )  # Validate audio file as required
 
     def _browse_audio(self):
         if not self.course_root_dir:
-            QMessageBox.warning(self, "Browse Audio", "Course root directory not set. Cannot browse assets.")
+            QMessageBox.warning(
+                self,
+                "Browse Audio",
+                "Course root directory not set. Cannot browse assets.",
+            )
             return
         dialog = AssetManagerDialog(self.course_root_dir, "audio", self)
         dialog.asset_selected.connect(self.audio_file_input.setText)
@@ -822,8 +928,19 @@ class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
 class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
     def __init__(self, exercise: Exercise, parent=None):
         # Context blocks are language-agnostic and typically don't have direct assets from root
-        super().__init__(exercise, target_language="N/A", source_language="N/A", course_root_dir=None, parent=parent)
-        self._add_input_field("Title (Optional)", exercise.title or "", lambda text: setattr(self.exercise, 'title', text.strip() or None) or self.data_changed.emit())
+        super().__init__(
+            exercise,
+            target_language="N/A",
+            source_language="N/A",
+            course_root_dir=None,
+            parent=parent,
+        )
+        self._add_input_field(
+            "Title (Optional)",
+            exercise.title or "",
+            lambda text: setattr(self.exercise, "title", text.strip() or None)
+            or self.data_changed.emit(),
+        )
 
         # Add the image file input field, similar to other widgets
         image_layout = QHBoxLayout()
@@ -841,15 +958,21 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
         self.layout.addLayout(image_layout)
 
         self.layout.addWidget(QLabel("Content (Markdown supported): *"))
-        self.prompt_input = QTextEdit(exercise.prompt or "") # 'prompt' field holds the content
+        self.prompt_input = QTextEdit(
+            exercise.prompt or ""
+        )  # 'prompt' field holds the content
         self.prompt_input.textChanged.connect(self._update_prompt_content)
         self.layout.addWidget(self.prompt_input)
         self.layout.addStretch(1)
 
     def _update_prompt_content(self):
-        self.exercise.prompt = self.prompt_input.toPlainText().strip() or None # Content is stored in 'prompt'
+        self.exercise.prompt = (
+            self.prompt_input.toPlainText().strip() or None
+        )  # Content is stored in 'prompt'
         self.data_changed.emit()
-        self._validate_input_field(self.prompt_input, True) # Validate content as required
+        self._validate_input_field(
+            self.prompt_input, True
+        )  # Validate content as required
 
     def _update_image_file(self, text: str):
         self.exercise.image_file = text.strip().replace("\\", "/") or None
@@ -857,7 +980,11 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
 
     def _browse_image_file(self):
         if not self.course_root_dir:
-            QMessageBox.warning(self, "Browse Image", "Course root directory not set. Cannot browse assets.")
+            QMessageBox.warning(
+                self,
+                "Browse Image",
+                "Course root directory not set. Cannot browse assets.",
+            )
             return
         dialog = AssetManagerDialog(self.course_root_dir, "image", self)
         dialog.asset_selected.connect(self.image_file_input.setText)
@@ -868,6 +995,7 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
             return False, "Content for the context block cannot be empty."
         return True, ""
 
+
 class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
     def __init__(
         self,
@@ -876,7 +1004,13 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         source_language: str,
         parent=None,
     ):
-        super().__init__(exercise, target_language, source_language, getattr(parent, 'course_root_dir', None), parent)
+        super().__init__(
+            exercise,
+            target_language,
+            source_language,
+            getattr(parent, "course_root_dir", None),
+            parent,
+        )
 
         self.template_input = self._add_input_field(
             f"Sentence Template ({target_language}) (use __BLANK__)",

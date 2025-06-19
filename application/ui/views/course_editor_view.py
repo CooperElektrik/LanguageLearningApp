@@ -1,8 +1,17 @@
 import logging
 import os
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QTreeView, QStackedWidget, QPushButton,
-    QMessageBox, QToolBar, QMenu, QInputDialog, QLabel
+    QWidget,
+    QHBoxLayout,
+    QVBoxLayout,
+    QTreeView,
+    QStackedWidget,
+    QPushButton,
+    QMessageBox,
+    QToolBar,
+    QMenu,
+    QInputDialog,
+    QLabel,
 )
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QIcon, QAction
 from PySide6.QtCore import Qt, Signal
@@ -14,21 +23,22 @@ from core import yaml_serializer
 
 logger = logging.getLogger(__name__)
 
+
 class CourseEditorView(QWidget):
     editor_closed = Signal()
 
     def __init__(self, course_manager: CourseManager, parent=None):
         super().__init__(parent)
         self.course_manager = course_manager
-        self.is_dirty = False # To track unsaved changes
+        self.is_dirty = False  # To track unsaved changes
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         self._setup_warning_label(main_layout)
 
         self._setup_toolbar(main_layout)
-        
+
         content_layout = QHBoxLayout()
         main_layout.addLayout(content_layout)
 
@@ -46,15 +56,21 @@ class CourseEditorView(QWidget):
         self._setup_forms()
         self._populate_tree()
 
-        self.tree_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
+        self.tree_view.selectionModel().selectionChanged.connect(
+            self._on_selection_changed
+        )
         self.tree_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_view.customContextMenuRequested.connect(self._show_context_menu)
 
     def _setup_warning_label(self, layout):
         """Adds a warning label to the top of the editor."""
-        self.warning_label = QLabel("Note: This is a basic editor. For full features, use the dedicated Course Editor application.")
+        self.warning_label = QLabel(
+            "Note: This is a basic editor. For full features, use the dedicated Course Editor application."
+        )
         self.warning_label.setAlignment(Qt.AlignCenter)
-        self.warning_label.setStyleSheet("color: darkred; font-weight: bold; padding: 5px;")
+        self.warning_label.setStyleSheet(
+            "color: darkred; font-weight: bold; padding: 5px;"
+        )
         layout.addWidget(self.warning_label)
 
     def _setup_toolbar(self, layout):
@@ -80,7 +96,7 @@ class CourseEditorView(QWidget):
         self.form_stack.addWidget(self.lesson_form)
         self.exercise_form = ExerciseEditorForm()
         self.form_stack.addWidget(self.exercise_form)
-        
+
         # Connect data changed signals to a single handler
         self.unit_form.data_changed.connect(self._on_data_changed)
         self.lesson_form.data_changed.connect(self._on_data_changed)
@@ -90,7 +106,8 @@ class CourseEditorView(QWidget):
         self.tree_model.clear()
         root_item = self.tree_model.invisibleRootItem()
         course = self.course_manager.course
-        if not course: return
+        if not course:
+            return
 
         for unit in course.units:
             unit_item = QStandardItem(f"Unit: {unit.title}")
@@ -110,7 +127,7 @@ class CourseEditorView(QWidget):
         if not selected.indexes():
             self.form_stack.setCurrentWidget(self.welcome_widget)
             return
-        
+
         index = selected.indexes()[0]
         item = self.tree_model.itemFromIndex(index)
         data_obj = item.data(Qt.UserRole)
@@ -129,7 +146,7 @@ class CourseEditorView(QWidget):
 
     def _show_context_menu(self, position):
         # Basic context menu for adding/deleting items
-        pass # To be implemented later for full functionality
+        pass  # To be implemented later for full functionality
 
     def save_course(self):
         """Saves the entire course (content, glossary, manifest) to their files."""
@@ -143,43 +160,63 @@ class CourseEditorView(QWidget):
             # Save course content
             if content_filename:
                 content_filepath = os.path.join(manifest_dir, content_filename)
-                yaml_serializer.save_course_to_yaml(self.course_manager.course, content_filepath)
-            
+                yaml_serializer.save_course_to_yaml(
+                    self.course_manager.course, content_filepath
+                )
+
             # Save glossary
             if glossary_filename:
                 glossary_filepath = os.path.join(manifest_dir, glossary_filename)
-                yaml_serializer.save_glossary_to_yaml(self.course_manager.glossary, glossary_filepath)
-            
+                yaml_serializer.save_glossary_to_yaml(
+                    self.course_manager.glossary, glossary_filepath
+                )
+
             # Save manifest (in case any top-level keys were changed, though we don't support that yet)
-            yaml_serializer.save_manifest_to_yaml(self.course_manager.manifest_data, self.course_manager.manifest_path)
-            
-            QMessageBox.information(self, self.tr("Save Successful"), self.tr("The course has been saved successfully."))
+            yaml_serializer.save_manifest_to_yaml(
+                self.course_manager.manifest_data, self.course_manager.manifest_path
+            )
+
+            QMessageBox.information(
+                self,
+                self.tr("Save Successful"),
+                self.tr("The course has been saved successfully."),
+            )
             self.is_dirty = False
         except Exception as e:
             logger.error(f"Failed to save course: {e}", exc_info=True)
-            QMessageBox.critical(self, self.tr("Save Failed"), self.tr("An error occurred while saving the course.\nCheck the logs for details."))
+            QMessageBox.critical(
+                self,
+                self.tr("Save Failed"),
+                self.tr(
+                    "An error occurred while saving the course.\nCheck the logs for details."
+                ),
+            )
 
     def close_editor(self):
         if self.is_dirty:
-            reply = QMessageBox.question(self, "Unsaved Changes",
+            reply = QMessageBox.question(
+                self,
+                "Unsaved Changes",
                 "You have unsaved changes. Do you want to save before closing?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+            )
             if reply == QMessageBox.Save:
                 self.save_course()
             elif reply == QMessageBox.Cancel:
                 return
         self.editor_closed.emit()
-    
+
     def _on_data_changed(self):
         """Marks the state as dirty and updates the text of the selected tree item."""
         self.is_dirty = True
-        
+
         indexes = self.tree_view.selectionModel().selectedIndexes()
-        if not indexes: return
-        
+        if not indexes:
+            return
+
         item = self.tree_model.itemFromIndex(indexes[0])
         data_obj = item.data(Qt.UserRole)
-        
+
         # Update the display text in the tree
         if isinstance(data_obj, Unit):
             item.setText(f"Unit: {data_obj.title}")

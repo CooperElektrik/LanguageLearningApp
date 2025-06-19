@@ -1,4 +1,3 @@
-
 import os
 import logging
 from typing import Optional, List, Tuple, Any, Dict, Callable
@@ -6,7 +5,7 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
-from application import utils # For developer mode check
+from application import utils  # For developer mode check
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,9 @@ class CourseManager:
         self.manifest_path = manifest_path
 
         # Initialize answer checker dispatch map
-        self._answer_checkers: Dict[str, Callable[[Exercise, str], Tuple[bool, str]]] = {
+        self._answer_checkers: Dict[
+            str, Callable[[Exercise, str], Tuple[bool, str]]
+        ] = {
             "translate_to_target": self._check_translation_answer,
             "translate_to_source": self._check_translation_answer,
             "dictation": self._check_translation_answer,
@@ -58,14 +59,20 @@ class CourseManager:
         if utils.is_developer_mode_active():
             # Log course ID if available from manifest_path for better context
             course_name_for_log = os.path.basename(os.path.dirname(self.manifest_path))
-            logger.info(f"Developer Mode active for CourseManager (course: {course_name_for_log}). Course locking mechanisms (if any) would be bypassed.")
+            logger.info(
+                f"Developer Mode active for CourseManager (course: {course_name_for_log}). Course locking mechanisms (if any) would be bypassed."
+            )
 
         self.manifest_data = course_loader.load_manifest(self.manifest_path)
         if not self.manifest_data:
             logger.error("Failed to load manifest. Course cannot be initialized.")
             return
-        self.target_language = self.manifest_data.get("target_language", "Unknown Target")
-        self.source_language = self.manifest_data.get("source_language", "Unknown Source")
+        self.target_language = self.manifest_data.get(
+            "target_language", "Unknown Target"
+        )
+        self.source_language = self.manifest_data.get(
+            "source_language", "Unknown Source"
+        )
 
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
@@ -86,17 +93,21 @@ class CourseManager:
             self.manifest_data.get("description"),
         )
         if self.course:
-            logger.info(f"Course '{self.course.title}' content loaded successfully from {content_filepath}.")
+            logger.info(
+                f"Course '{self.course.title}' content loaded successfully from {content_filepath}."
+            )
         else:
             logger.error(f"Failed to load course content from {content_filepath}.")
-        
+
         glossary_filename = self.manifest_data.get("glossary_file")
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
             self.glossary = glossary_loader.load_glossary(glossary_filepath)
-            self._build_glossary_map() # NEW: Build the lookup map
+            self._build_glossary_map()  # NEW: Build the lookup map
         else:
-            logger.info("Manifest does not specify a 'glossary_file'. Skipping glossary loading.")
+            logger.info(
+                "Manifest does not specify a 'glossary_file'. Skipping glossary loading."
+            )
 
     def _build_glossary_map(self):
         """Populates the glossary_map for fast word lookups."""
@@ -113,7 +124,7 @@ class CourseManager:
     def get_glossary_entries(self) -> List[GlossaryEntry]:
         """Returns the loaded glossary entries."""
         return self.glossary
-    
+
     def get_glossary_entry_by_word(self, word: str) -> Optional[GlossaryEntry]:
         """
         Finds a glossary entry by its 'word' field, case-insensitively.
@@ -180,40 +191,72 @@ class CourseManager:
     def get_lesson_exercise_count(self, lesson_id: str) -> int:
         return len(self.get_exercises(lesson_id))
 
-    def _check_translation_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def _check_translation_answer(
+        self, exercise: Exercise, user_answer: str
+    ) -> Tuple[bool, str]:
         """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
         is_correct = user_answer.strip().lower() == exercise.answer.lower()
-        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
+        return is_correct, (
+            f"Correct: {correct_answer_display}"
+            if is_correct
+            else f"Incorrect. Correct: {correct_answer_display}"
+        )
 
-    def _check_multiple_choice_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def _check_multiple_choice_answer(
+        self, exercise: Exercise, user_answer: str
+    ) -> Tuple[bool, str]:
         """Checks answer for multiple choice exercise types."""
         correct_option = next((opt for opt in exercise.options if opt.correct), None)
         if not correct_option:
-            logger.error(f"No correct option defined for MC exercise {exercise.exercise_id}.")
+            logger.error(
+                f"No correct option defined for MC exercise {exercise.exercise_id}."
+            )
             return False, "Error: Exercise configuration issue (no correct answer)."
-        
+
         correct_answer_display = correct_option.text
         is_correct = user_answer.lower() == correct_option.text.lower()
-        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
+        return is_correct, (
+            f"Correct: {correct_answer_display}"
+            if is_correct
+            else f"Incorrect. Correct: {correct_answer_display}"
+        )
 
-    def _check_fill_in_the_blank_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def _check_fill_in_the_blank_answer(
+        self, exercise: Exercise, user_answer: str
+    ) -> Tuple[bool, str]:
         """Checks answer for fill_in_the_blank exercise type."""
         correct_answer_display = exercise.correct_option
         if not correct_answer_display:
-            logger.error(f"No correct option defined for FIB exercise {exercise.exercise_id}.")
+            logger.error(
+                f"No correct option defined for FIB exercise {exercise.exercise_id}."
+            )
             return False, "Error: Exercise configuration issue (no correct answer)."
-        
-        is_correct = user_answer.lower() == correct_answer_display.lower()
-        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
 
-    def _check_sentence_jumble_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+        is_correct = user_answer.lower() == correct_answer_display.lower()
+        return is_correct, (
+            f"Correct: {correct_answer_display}"
+            if is_correct
+            else f"Incorrect. Correct: {correct_answer_display}"
+        )
+
+    def _check_sentence_jumble_answer(
+        self, exercise: Exercise, user_answer: str
+    ) -> Tuple[bool, str]:
         """Checks answer for sentence_jumble exercise type."""
         correct_answer_display = exercise.answer
-        is_correct = " ".join(user_answer.lower().split()) == " ".join(correct_answer_display.lower().split())
-        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}"
+        is_correct = " ".join(user_answer.lower().split()) == " ".join(
+            correct_answer_display.lower().split()
+        )
+        return is_correct, (
+            f"Correct: {correct_answer_display}"
+            if is_correct
+            else f"Incorrect. Correct: {correct_answer_display}"
+        )
 
-    def _check_completion_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def _check_completion_answer(
+        self, exercise: Exercise, user_answer: str
+    ) -> Tuple[bool, str]:
         """Checks answers for exercises that are completed via a single action."""
         is_correct = user_answer.lower() == "completed"
         return is_correct, "Continue" if is_correct else "Activity not completed."
@@ -226,7 +269,9 @@ class CourseManager:
         if checker:
             return checker(exercise, user_answer.strip())
         else:
-            logger.warning(f"Answer checking not implemented for exercise type: {exercise.type} (ID: {exercise.exercise_id})")
+            logger.warning(
+                f"Answer checking not implemented for exercise type: {exercise.type} (ID: {exercise.exercise_id})"
+            )
             return False, "Cannot check this exercise type."
 
     def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
@@ -236,15 +281,34 @@ class CourseManager:
         prompt_text = exercise.prompt or ""
 
         if exercise.type == "translate_to_target":
-            return {"template_key": PROMPT_KEY_TRANSLATE_TO_TARGET, "args": [self.target_language, prompt_text]}
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
+                "args": [self.target_language, prompt_text],
+            }
         elif exercise.type == "translate_to_source":
-            return {"template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE, "args": [self.source_language, prompt_text]}
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
+                "args": [self.source_language, prompt_text],
+            }
         elif exercise.type == "dictation":
             return {"template_key": PROMPT_KEY_DICTATION, "args": [prompt_text]}
         elif exercise.type == "multiple_choice_translation":
-            return {"template_key": PROMPT_KEY_MCQ_TRANSLATION, "args": [self.target_language, exercise.source_word or "", self.source_language]}
+            return {
+                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
+                "args": [
+                    self.target_language,
+                    exercise.source_word or "",
+                    self.source_language,
+                ],
+            }
         elif exercise.type == "fill_in_the_blank":
-            return {"template_key": PROMPT_KEY_FIB, "args": [exercise.sentence_template or "", exercise.translation_hint or ""]}
+            return {
+                "template_key": PROMPT_KEY_FIB,
+                "args": [
+                    exercise.sentence_template or "",
+                    exercise.translation_hint or "",
+                ],
+            }
         elif exercise.type == "image_association":
             return {"template_key": PROMPT_KEY_IMAGE_ASSOCIATION, "args": [prompt_text]}
         elif exercise.type == "listen_and_select":
@@ -252,6 +316,9 @@ class CourseManager:
         elif exercise.type == "sentence_jumble":
             return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
         elif exercise.type == "context_block":
-            return {"template_key": PROMPT_KEY_CONTEXT_BLOCK, "args": [exercise.title or ""]}
-        
+            return {
+                "template_key": PROMPT_KEY_CONTEXT_BLOCK,
+                "args": [exercise.title or ""],
+            }
+
         return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}

@@ -14,13 +14,17 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
     Returns an empty list if the file is not found or parsing fails.
     """
     if not os.path.exists(glossary_path):
-        logger.info(f"Glossary file not found at expected path: {glossary_path}. Returning empty list.")
+        logger.info(
+            f"Glossary file not found at expected path: {glossary_path}. Returning empty list."
+        )
         return []
 
     try:
         with open(glossary_path, "r", encoding="utf-8") as f:
             raw_glossary_data = yaml.safe_load(f)
-    except FileNotFoundError: # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears
+    except (
+        FileNotFoundError
+    ):  # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears
         logger.error(f"Glossary file not found: {glossary_path}")
         return []
     except yaml.YAMLError as e:
@@ -45,16 +49,16 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
                 f"Skipping malformed glossary entry at index {i} in {glossary_path}: Expected dictionary, got {type(entry_data).__name__}."
             )
             continue
-        
+
         word = entry_data.get("word")
         translation = entry_data.get("translation")
-        
+
         if not word or not translation:
             logger.warning(
                 f"Skipping malformed glossary entry at index {i} in {glossary_path}: Missing 'word' or 'translation'. Data: {entry_data}"
             )
             continue
-        
+
         try:
             glossary_entries.append(
                 GlossaryEntry(
@@ -67,7 +71,11 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
                 )
             )
         except Exception as e:
-            logger.warning(f"Error creating GlossaryEntry from entry at index {i} in {glossary_path}: {e}. Data: {entry_data}")
+            logger.warning(
+                f"Error creating GlossaryEntry from entry at index {i} in {glossary_path}: {e}. Data: {entry_data}"
+            )
 
-    logger.info(f"Loaded {len(glossary_entries)} glossary entries from {glossary_path}.")
+    logger.info(
+        f"Loaded {len(glossary_entries)} glossary entries from {glossary_path}."
+    )
     return glossary_entries

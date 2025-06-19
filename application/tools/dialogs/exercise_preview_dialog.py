@@ -28,7 +28,7 @@ try:
         PROMPT_KEY_MCQ_TRANSLATION,
         PROMPT_KEY_SENTENCE_JUMBLE,
         PROMPT_KEY_TRANSLATE_TO_SOURCE,
-        PROMPT_KEY_TRANSLATE_TO_TARGET
+        PROMPT_KEY_TRANSLATE_TO_TARGET,
     )
 
     from application.ui.widgets.exercise_widgets import (
@@ -38,10 +38,13 @@ try:
         BaseExerciseWidget,
         ListenSelectExerciseWidget,
         SentenceJumbleExerciseWidget,
-        ContextBlockWidget
+        ContextBlockWidget,
     )
 except ImportError as e:
-    logging.error(f"Failed to import core or UI widgets for preview dialog. Error: {e}", stack_info=True)
+    logging.error(
+        f"Failed to import core or UI widgets for preview dialog. Error: {e}",
+        stack_info=True,
+    )
 
     class Exercise:
         pass
@@ -102,7 +105,7 @@ class MockCourseManager(QObject):
             or exercise.sentence_template
             or "Exercise Prompt (no text)"
         )
-    
+
     def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
         """
         Returns a dictionary with a template_key and arguments for formatting the prompt.
@@ -110,15 +113,34 @@ class MockCourseManager(QObject):
         prompt_text = exercise.prompt or ""
 
         if exercise.type == "translate_to_target":
-            return {"template_key": PROMPT_KEY_TRANSLATE_TO_TARGET, "args": [self.target_language, prompt_text]}
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
+                "args": [self.target_language, prompt_text],
+            }
         elif exercise.type == "translate_to_source":
-            return {"template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE, "args": [self.source_language, prompt_text]}
+            return {
+                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
+                "args": [self.source_language, prompt_text],
+            }
         elif exercise.type == "dictation":
             return {"template_key": PROMPT_KEY_DICTATION, "args": [prompt_text]}
         elif exercise.type == "multiple_choice_translation":
-            return {"template_key": PROMPT_KEY_MCQ_TRANSLATION, "args": [self.target_language, exercise.source_word or "", self.source_language]}
+            return {
+                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
+                "args": [
+                    self.target_language,
+                    exercise.source_word or "",
+                    self.source_language,
+                ],
+            }
         elif exercise.type == "fill_in_the_blank":
-            return {"template_key": PROMPT_KEY_FIB, "args": [exercise.sentence_template or "", exercise.translation_hint or ""]}
+            return {
+                "template_key": PROMPT_KEY_FIB,
+                "args": [
+                    exercise.sentence_template or "",
+                    exercise.translation_hint or "",
+                ],
+            }
         elif exercise.type == "image_association":
             return {"template_key": PROMPT_KEY_IMAGE_ASSOCIATION, "args": [prompt_text]}
         elif exercise.type == "listen_and_select":
@@ -126,8 +148,11 @@ class MockCourseManager(QObject):
         elif exercise.type == "sentence_jumble":
             return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
         elif exercise.type == "context_block":
-            return {"template_key": PROMPT_KEY_CONTEXT_BLOCK, "args": [exercise.title or ""]}
-        
+            return {
+                "template_key": PROMPT_KEY_CONTEXT_BLOCK,
+                "args": [exercise.title or ""],
+            }
+
         return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}
 
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
@@ -200,7 +225,7 @@ class ExercisePreviewDialog(QDialog):
             )
         elif (
             self.exercise.type == "multiple_choice_translation"
-            or self.exercise.type == "image_association"   
+            or self.exercise.type == "image_association"
         ):
             self.current_exercise_widget = MultipleChoiceExerciseWidget(
                 self.exercise, self.mock_course_manager
@@ -210,9 +235,13 @@ class ExercisePreviewDialog(QDialog):
                 self.exercise, self.mock_course_manager
             )
         elif self.exercise.type == "sentence_jumble":
-            self.current_exercise_widget = SentenceJumbleExerciseWidget(self.exercise, self.mock_course_manager)
+            self.current_exercise_widget = SentenceJumbleExerciseWidget(
+                self.exercise, self.mock_course_manager
+            )
         elif self.exercise.type == "context_block":
-            self.current_exercise_widget = ContextBlockWidget(self.exercise, self.mock_course_manager)
+            self.current_exercise_widget = ContextBlockWidget(
+                self.exercise, self.mock_course_manager
+            )
         elif self.exercise.type == "listen_and_select":
             self.current_exercise_widget = ListenSelectExerciseWidget(
                 self.exercise, self.mock_course_manager

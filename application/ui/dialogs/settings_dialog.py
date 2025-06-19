@@ -1,26 +1,39 @@
 import logging
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QGroupBox, QCheckBox, QSlider, QLabel,
-    QDialogButtonBox, QHBoxLayout, QComboBox, QFormLayout, QPushButton, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QGroupBox,
+    QCheckBox,
+    QSlider,
+    QLabel,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QComboBox,
+    QFormLayout,
+    QPushButton,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, QSettings, Signal, QEvent
- 
+
 import settings
 import utils
 
 logger = logging.getLogger(__name__)
 
+
 class SettingsDialog(QDialog):
-    
-    theme_changed = Signal(str) # Emitted when the theme is changed
-    font_size_changed = Signal(int) # Emitted when font size slider changes
-    locale_changed = Signal(str) # Emitted when locale is changed (sends locale code e.g. "en", "vi", or "System")
+
+    theme_changed = Signal(str)  # Emitted when the theme is changed
+    font_size_changed = Signal(int)  # Emitted when font size slider changes
+    locale_changed = Signal(
+        str
+    )  # Emitted when locale is changed (sends locale code e.g. "en", "vi", or "System")
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Settings"))
         self.setMinimumWidth(400)
-        
+
         self.q_settings = QSettings()
 
         main_layout = QVBoxLayout(self)
@@ -35,17 +48,18 @@ class SettingsDialog(QDialog):
         self.autoplay_audio_checkbox = QCheckBox(self.tr("Autoplay audio in exercises"))
         audio_layout.addWidget(self.autoplay_audio_checkbox)
 
-
         volume_layout = QHBoxLayout()
         volume_label = QLabel(self.tr("Volume:"))
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
-        self.volume_slider.valueChanged.connect(utils.update_sound_volume) # Live update
-        
+        self.volume_slider.valueChanged.connect(
+            utils.update_sound_volume
+        )  # Live update
+
         volume_layout.addWidget(volume_label)
         volume_layout.addWidget(self.volume_slider)
         audio_layout.addLayout(volume_layout)
-        
+
         main_layout.addWidget(audio_group)
 
         # --- UI Settings ---
@@ -60,25 +74,29 @@ class SettingsDialog(QDialog):
         self.locale_combo = QComboBox()
         self._populate_locale_combo()
         ui_layout.addRow(self.tr("Language:"), self.locale_combo)
-        
+
         # Font Size controls: label + slider + current value display
         self.font_size_slider = QSlider(Qt.Orientation.Horizontal)
         self.font_size_slider.setMinimum(8)  # Min font size
         self.font_size_slider.setMaximum(14)  # Max font size
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)  # Initial value
         self.font_size_slider.valueChanged.connect(self._update_font_size_label)
-        self.font_size_label = QLabel(str(settings.DEFAULT_FONT_SIZE) + " pt") # Initial label
+        self.font_size_label = QLabel(
+            str(settings.DEFAULT_FONT_SIZE) + " pt"
+        )  # Initial label
         font_size_layout = QHBoxLayout()
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
 
-        self.autoshow_hints_checkbox = QCheckBox(self.tr("Show hints automatically in exercises"))
-        ui_layout.addRow(self.autoshow_hints_checkbox) # Add as a new row
+        self.autoshow_hints_checkbox = QCheckBox(
+            self.tr("Show hints automatically in exercises")
+        )
+        ui_layout.addRow(self.autoshow_hints_checkbox)  # Add as a new row
 
         self.reset_ui_button = QPushButton(self.tr("Reset UI Settings to Default"))
         self.reset_ui_button.clicked.connect(self._reset_ui_settings)
-        ui_layout.addRow(self.reset_ui_button) # Add as a new row
+        ui_layout.addRow(self.reset_ui_button)  # Add as a new row
         main_layout.addWidget(ui_group)
 
         # --- Developer Settings ---
@@ -86,11 +104,21 @@ class SettingsDialog(QDialog):
         dev_layout = QFormLayout(self.dev_group)
 
         self.dev_mode_checkbox = QCheckBox(self.tr("Enable Developer Mode"))
-        self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
+        self.dev_mode_checkbox.setToolTip(
+            self.tr(
+                "Requires application restart to take full effect for logging and some startup features."
+            )
+        )
         dev_layout.addRow(self.dev_mode_checkbox)
 
-        self.reset_onboarding_button = QPushButton(self.tr("Reset Onboarding Message Flag"))
-        self.reset_onboarding_button.setToolTip(self.tr("Allows the onboarding message to be shown again the next time a course is loaded."))
+        self.reset_onboarding_button = QPushButton(
+            self.tr("Reset Onboarding Message Flag")
+        )
+        self.reset_onboarding_button.setToolTip(
+            self.tr(
+                "Allows the onboarding message to be shown again the next time a course is loaded."
+            )
+        )
         self.reset_onboarding_button.clicked.connect(self._reset_onboarding_flag)
         dev_layout.addRow(self.reset_onboarding_button)
 
@@ -98,20 +126,27 @@ class SettingsDialog(QDialog):
 
         # --- Dialog Buttons ---
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Apply
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+            | QDialogButtonBox.StandardButton.Apply
         )
         buttons.accepted.connect(self.save_settings)
         buttons.rejected.connect(self.reject)
-        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.apply_settings)
+        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
+            self.apply_settings
+        )
         main_layout.addWidget(buttons)
 
         self.load_settings()
 
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
-        self.available_locales = utils.get_available_locales() # Store for mapping
+        self.available_locales = utils.get_available_locales()  # Store for mapping
         # Sort by display name for user-friendliness, keeping "System" first
-        sorted_display_names = sorted(self.available_locales.keys(), key=lambda x: (x != settings.DEFAULT_LOCALE, x))
+        sorted_display_names = sorted(
+            self.available_locales.keys(),
+            key=lambda x: (x != settings.DEFAULT_LOCALE, x),
+        )
         for display_name in sorted_display_names:
             locale_code = self.available_locales[display_name]
             self.locale_combo.addItem(display_name, userData=locale_code)
@@ -119,37 +154,33 @@ class SettingsDialog(QDialog):
     def load_settings(self):
         """Loads settings from QSettings and updates the UI controls."""
         sound_enabled = self.q_settings.value(
-            settings.QSETTINGS_KEY_SOUND_ENABLED, 
-            settings.SOUND_EFFECTS_ENABLED_DEFAULT, 
-            type=bool
+            settings.QSETTINGS_KEY_SOUND_ENABLED,
+            settings.SOUND_EFFECTS_ENABLED_DEFAULT,
+            type=bool,
         )
         self.sound_enabled_checkbox.setChecked(sound_enabled)
 
         autoplay_audio_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
             settings.AUTOPLAY_AUDIO_DEFAULT,
-            type=bool
+            type=bool,
         )
         self.autoplay_audio_checkbox.setChecked(autoplay_audio_enabled)
 
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
             settings.AUTOSHOW_HINTS_DEFAULT,
-            type=bool
+            type=bool,
         )
         self.autoshow_hints_checkbox.setChecked(autoshow_hints_enabled)
 
         volume = self.q_settings.value(
-            settings.QSETTINGS_KEY_SOUND_VOLUME, 
-            settings.SOUND_VOLUME_DEFAULT, 
-            type=int
+            settings.QSETTINGS_KEY_SOUND_VOLUME, settings.SOUND_VOLUME_DEFAULT, type=int
         )
-        
+
         # Load Font Size setting (default if not found)
         current_font_size = self.q_settings.value(
-            settings.QSETTINGS_KEY_FONT_SIZE, 
-            settings.DEFAULT_FONT_SIZE, 
-            type=int
+            settings.QSETTINGS_KEY_FONT_SIZE, settings.DEFAULT_FONT_SIZE, type=int
         )
         self.font_size_slider.setValue(current_font_size)
 
@@ -157,44 +188,46 @@ class SettingsDialog(QDialog):
 
         current_theme_name = self.q_settings.value(
             settings.QSETTINGS_KEY_UI_THEME,
-            "System", # Default to "System" theme
-            type=str
+            "System",  # Default to "System" theme
+            type=str,
         )
         if current_theme_name in settings.AVAILABLE_THEMES:
             self.theme_combo.setCurrentText(current_theme_name)
-        else: # Handle case where saved theme is no longer available
+        else:  # Handle case where saved theme is no longer available
             self.theme_combo.setCurrentText("System")
-            logger.warning(f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'.")
-        
+            logger.warning(
+                f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'."
+            )
+
         current_locale_code = self.q_settings.value(
-            settings.QSETTINGS_KEY_LOCALE,
-            settings.DEFAULT_LOCALE, # "System"
-            type=str
+            settings.QSETTINGS_KEY_LOCALE, settings.DEFAULT_LOCALE, type=str  # "System"
         )
         # Find the display name for the saved locale code
         for display_name, code_val in self.available_locales.items():
             if code_val == current_locale_code:
                 self.locale_combo.setCurrentText(display_name)
                 break
-        else: # If saved code not found (e.g. qm file removed), default to "System"
+        else:  # If saved code not found (e.g. qm file removed), default to "System"
             self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE)
 
         dev_mode_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_DEVELOPER_MODE,
             settings.DEVELOPER_MODE_DEFAULT,
-            type=bool
+            type=bool,
         )
         self.dev_mode_checkbox.setChecked(dev_mode_enabled)
 
     def _update_font_size_label(self, value):
         """Update the font size label when the slider value changes."""
         self.font_size_label.setText(str(value) + " pt")
-        self.font_size_changed.emit(value) # Emit as live-update signal
+        self.font_size_changed.emit(value)  # Emit as live-update signal
 
     def _reset_ui_settings(self):
         """Resets UI related settings (theme, font size) to their defaults and applies them live."""
         # Reset theme
-        self.theme_combo.setCurrentText("System") # Assuming "System" is the default key
+        self.theme_combo.setCurrentText(
+            "System"
+        )  # Assuming "System" is the default key
         self.theme_changed.emit("System")
 
         # Reset font size
@@ -202,53 +235,58 @@ class SettingsDialog(QDialog):
         # self._update_font_size_label(settings.DEFAULT_FONT_SIZE) # This will also emit font_size_changed
 
         # Reset locale
-        self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE) # "System"
+        self.locale_combo.setCurrentText(settings.DEFAULT_LOCALE)  # "System"
         self.locale_changed.emit(settings.DEFAULT_LOCALE)
 
         # Reset Developer Mode
         self.dev_mode_checkbox.setChecked(settings.DEVELOPER_MODE_DEFAULT)
         # Note: Developer mode changes often require a restart to fully apply (e.g., logging)
 
-        QMessageBox.information(self, self.tr("UI Settings Reset"), self.tr("Theme, font size and language have been reset to defaults. Click OK or Apply to save."))
-        self.retranslateUi() # Ensure dialog itself updates if language was reset
+        QMessageBox.information(
+            self,
+            self.tr("UI Settings Reset"),
+            self.tr(
+                "Theme, font size and language have been reset to defaults. Click OK or Apply to save."
+            ),
+        )
+        self.retranslateUi()  # Ensure dialog itself updates if language was reset
 
     def apply_settings(self):
         """Saves the current state of the UI controls to QSettings."""
         self.q_settings.setValue(
-            settings.QSETTINGS_KEY_SOUND_ENABLED, 
-            self.sound_enabled_checkbox.isChecked()
+            settings.QSETTINGS_KEY_SOUND_ENABLED,
+            self.sound_enabled_checkbox.isChecked(),
         )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
-            self.autoplay_audio_checkbox.isChecked()
+            self.autoplay_audio_checkbox.isChecked(),
         )
         self.q_settings.setValue(
-            settings.QSETTINGS_KEY_SOUND_VOLUME, 
-            self.volume_slider.value()
+            settings.QSETTINGS_KEY_SOUND_VOLUME, self.volume_slider.value()
         )
 
         # Save Font Size setting
         self.q_settings.setValue(
-            settings.QSETTINGS_KEY_FONT_SIZE, 
-            self.font_size_slider.value()
+            settings.QSETTINGS_KEY_FONT_SIZE, self.font_size_slider.value()
         )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
-            self.autoshow_hints_checkbox.isChecked()
+            self.autoshow_hints_checkbox.isChecked(),
         )
-        utils.update_sound_volume() # Ensure live update takes effect if slider was just moved
-        
+        utils.update_sound_volume()  # Ensure live update takes effect if slider was just moved
+
         selected_theme_name = self.theme_combo.currentText()
         self.q_settings.setValue(settings.QSETTINGS_KEY_UI_THEME, selected_theme_name)
-        self.theme_changed.emit(selected_theme_name) # Emit signal AFTER saving
-        
-        selected_locale_code = self.locale_combo.currentData() # userData stores the code ("en", "vi", "System")
+        self.theme_changed.emit(selected_theme_name)  # Emit signal AFTER saving
+
+        selected_locale_code = (
+            self.locale_combo.currentData()
+        )  # userData stores the code ("en", "vi", "System")
         self.q_settings.setValue(settings.QSETTINGS_KEY_LOCALE, selected_locale_code)
         self.locale_changed.emit(selected_locale_code)
 
         self.q_settings.setValue(
-            settings.QSETTINGS_KEY_DEVELOPER_MODE,
-            self.dev_mode_checkbox.isChecked()
+            settings.QSETTINGS_KEY_DEVELOPER_MODE, self.dev_mode_checkbox.isChecked()
         )
 
         logger.info("Settings applied.")
@@ -271,9 +309,9 @@ class SettingsDialog(QDialog):
         self.sound_enabled_checkbox.setText(self.tr("Enable sound effects"))
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label
-        if hasattr(self, 'volume_label') and isinstance(self.volume_label, QLabel):
-             self.volume_label.setText(self.tr("Volume:"))
-        else: # If it was a local variable in __init__
+        if hasattr(self, "volume_label") and isinstance(self.volume_label, QLabel):
+            self.volume_label.setText(self.tr("Volume:"))
+        else:  # If it was a local variable in __init__
             # Find it in the layout if necessary, or ensure it's a member
             # For now, we'll assume it might not be a member.
             # If it is, the above `if` block is sufficient.
@@ -285,15 +323,25 @@ class SettingsDialog(QDialog):
         # For simplicity, we might accept that QFormLayout row labels don't auto-update
         # or we would need to store references to those QLabel objects.
         # self.ui_layout.labelForField(self.theme_combo).setText(self.tr("Theme:")) # Example if labels were stored
-        self.autoshow_hints_checkbox.setText(self.tr("Show hints automatically in exercises"))
+        self.autoshow_hints_checkbox.setText(
+            self.tr("Show hints automatically in exercises")
+        )
         self.reset_ui_button.setText(self.tr("Reset UI Settings to Default"))
 
         # Developer Settings
         self.dev_group.setTitle(self.tr("Developer"))
         self.dev_mode_checkbox.setText(self.tr("Enable Developer Mode"))
         self.reset_onboarding_button.setText(self.tr("Reset Onboarding Message Flag"))
-        self.reset_onboarding_button.setToolTip(self.tr("Allows the onboarding message to be shown again the next time a course is loaded."))
-        self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
+        self.reset_onboarding_button.setToolTip(
+            self.tr(
+                "Allows the onboarding message to be shown again the next time a course is loaded."
+            )
+        )
+        self.dev_mode_checkbox.setToolTip(
+            self.tr(
+                "Requires application restart to take full effect for logging and some startup features."
+            )
+        )
         # Dialog Buttons - standard buttons usually retranslate automatically.
         # If custom text was set, it would need retranslation.
         logger.debug("SettingsDialog retranslated.")
@@ -301,9 +349,13 @@ class SettingsDialog(QDialog):
     def _reset_onboarding_flag(self):
         """Resets the onboarding seen flag in QSettings."""
         self.q_settings.setValue(settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, False)
-        logger.info("Onboarding message flag has been reset. It will show again on the next course load.")
+        logger.info(
+            "Onboarding message flag has been reset. It will show again on the next course load."
+        )
         QMessageBox.information(
             self,
             self.tr("Onboarding Reset"),
-            self.tr("The onboarding message flag has been reset.\nThe welcome guide will be shown the next time you load a course.")
+            self.tr(
+                "The onboarding message flag has been reset.\nThe welcome guide will be shown the next time you load a course."
+            ),
         )

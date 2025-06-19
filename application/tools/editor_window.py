@@ -28,14 +28,16 @@ from PySide6.QtWidgets import (
     QStyle,
     QToolBar,
     QApplication,
-    QGroupBox
+    QGroupBox,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QAction, QFont, QActionGroup
 
 try:
     from application.core.models import Course, Unit, Lesson, Exercise, ExerciseOption
-    from application.core.course_loader import load_course_content as load_course_content_from_yaml
+    from application.core.course_loader import (
+        load_course_content as load_course_content_from_yaml,
+    )
     from .dialogs.exercise_preview_dialog import ExercisePreviewDialog
     from .widgets.course_tree_widget import CourseTreeWidget
     from application.tools.widgets.glossary_editor_widget import GlossaryEditorWidget
@@ -293,18 +295,20 @@ class EditorWindow(QMainWindow):
         type_filter_layout = QHBoxLayout()
         type_filter_layout.addWidget(QLabel("Type:"))
         self.type_filter_combo = QComboBox()
-        self.type_filter_combo.addItems([
-            "All Types",
-            "translate_to_target",
-            "translate_to_source",
-            "multiple_choice_translation",
-            "fill_in_the_blank",
-            "dictation",
-            "image_association",
-            "listen_and_select",
-            "sentence_jumble",
-            "context_block",
-        ])
+        self.type_filter_combo.addItems(
+            [
+                "All Types",
+                "translate_to_target",
+                "translate_to_source",
+                "multiple_choice_translation",
+                "fill_in_the_blank",
+                "dictation",
+                "image_association",
+                "listen_and_select",
+                "sentence_jumble",
+                "context_block",
+            ]
+        )
         self.type_filter_combo.currentIndexChanged.connect(
             lambda: self._filter_tree_view(self.search_bar.text())
         )
@@ -315,15 +319,17 @@ class EditorWindow(QMainWindow):
         asset_filter_layout = QHBoxLayout()
         asset_filter_layout.addWidget(QLabel("Assets:"))
         self.asset_filter_combo = QComboBox()
-        self.asset_filter_combo.addItems([
-            "Any Asset Status",
-            "Has Audio",
-            "No Audio",
-            "Has Image",
-            "No Image",
-            "Has Both Audio & Image",
-            "Missing Any Asset" # Assumes if either audio or image is missing
-        ])
+        self.asset_filter_combo.addItems(
+            [
+                "Any Asset Status",
+                "Has Audio",
+                "No Audio",
+                "Has Image",
+                "No Image",
+                "Has Both Audio & Image",
+                "Missing Any Asset",  # Assumes if either audio or image is missing
+            ]
+        )
         self.asset_filter_combo.currentIndexChanged.connect(
             lambda: self._filter_tree_view(self.search_bar.text())
         )
@@ -334,14 +340,16 @@ class EditorWindow(QMainWindow):
         scope_filter_layout = QHBoxLayout()
         scope_filter_layout.addWidget(QLabel("Search In:"))
         self.scope_filter_combo = QComboBox()
-        self.scope_filter_combo.addItems([
-            "All Text Fields",
-            "Prompt Only",
-            "Answer Only",
-            "Source Word Only",
-            "Sentence Template Only",
-            "Translation Hint Only"
-        ])
+        self.scope_filter_combo.addItems(
+            [
+                "All Text Fields",
+                "Prompt Only",
+                "Answer Only",
+                "Source Word Only",
+                "Sentence Template Only",
+                "Translation Hint Only",
+            ]
+        )
         self.scope_filter_combo.currentIndexChanged.connect(
             lambda: self._filter_tree_view(self.search_bar.text())
         )
@@ -447,8 +455,8 @@ class EditorWindow(QMainWindow):
     def _clear_advanced_filters(self):
         """Resets all advanced filter combo boxes to their default selections."""
         self.type_filter_combo.setCurrentIndex(0)  # "All Types"
-        self.asset_filter_combo.setCurrentIndex(0) # "Any Asset Status"
-        self.scope_filter_combo.setCurrentIndex(0) # "All Text Fields"
+        self.asset_filter_combo.setCurrentIndex(0)  # "Any Asset Status"
+        self.scope_filter_combo.setCurrentIndex(0)  # "All Text Fields"
         # The _filter_tree_view will be called automatically by the currentIndexChanged signals.
         self.status_bar.showMessage("Advanced filters cleared.", 2000)
 
@@ -477,8 +485,10 @@ class EditorWindow(QMainWindow):
         self.tree_widget.setCurrentItem(None)
 
         # First pass: Determine visibility of each item based on all filters
-        iterator = QTreeWidgetItemIterator(self.tree_widget, QTreeWidgetItemIterator.All)
-        items_to_potentially_show_parents_for = [] # Collect items that become visible
+        iterator = QTreeWidgetItemIterator(
+            self.tree_widget, QTreeWidgetItemIterator.All
+        )
+        items_to_potentially_show_parents_for = []  # Collect items that become visible
 
         while iterator.value():
             item = iterator.value()
@@ -487,7 +497,9 @@ class EditorWindow(QMainWindow):
             is_item_visible_by_filters = True
 
             # Items like "Manifest Info" or root items of a tree
-            if not item_data or (isinstance(item_data, dict) and item_data.get("type") == "manifest"):
+            if not item_data or (
+                isinstance(item_data, dict) and item_data.get("type") == "manifest"
+            ):
                 # Manifest item is special, only hide if search term is active and doesn't match its text
                 if search_term and search_term not in item.text(0).lower():
                     is_item_visible_by_filters = False
@@ -510,10 +522,12 @@ class EditorWindow(QMainWindow):
             # Exercises: Apply all filters
             if isinstance(item_data, Exercise):
                 exercise = item_data
-                item_text_for_search = "" # Default to empty
+                item_text_for_search = ""  # Default to empty
 
                 # Apply Search Scope Filter
-                if search_term: # Only consider scope if a search term is actually provided
+                if (
+                    search_term
+                ):  # Only consider scope if a search term is actually provided
                     if selected_scope_filter == "Prompt Only":
                         item_text_for_search = (exercise.prompt or "").lower()
                     elif selected_scope_filter == "Answer Only":
@@ -521,33 +535,39 @@ class EditorWindow(QMainWindow):
                     elif selected_scope_filter == "Source Word Only":
                         item_text_for_search = (exercise.source_word or "").lower()
                     elif selected_scope_filter == "Sentence Template Only":
-                        item_text_for_search = (exercise.sentence_template or "").lower()
+                        item_text_for_search = (
+                            exercise.sentence_template or ""
+                        ).lower()
                     elif selected_scope_filter == "Translation Hint Only":
                         item_text_for_search = (exercise.translation_hint or "").lower()
-                    else: # "All Text Fields"
+                    else:  # "All Text Fields"
                         searchable_content = [
                             exercise.prompt,
                             exercise.answer,
                             exercise.source_word,
                             exercise.sentence_template,
                             exercise.translation_hint,
-                            exercise.title, # For context_block
-                            item.text(0) # Display text in tree
+                            exercise.title,  # For context_block
+                            item.text(0),  # Display text in tree
                         ]
                         # For sentence_jumble, exercise.words is a list of strings
-                        if hasattr(exercise, 'words') and isinstance(exercise.words, list):
+                        if hasattr(exercise, "words") and isinstance(
+                            exercise.words, list
+                        ):
                             searchable_content.append(" ".join(exercise.words))
-                        
+
                         # For MCQ/Association, exercise.options is a list of ExerciseOption
-                        if hasattr(exercise, 'options') and isinstance(exercise.options, list):
+                        if hasattr(exercise, "options") and isinstance(
+                            exercise.options, list
+                        ):
                             for option_obj in exercise.options:
-                                if hasattr(option_obj, 'text'):
+                                if hasattr(option_obj, "text"):
                                     searchable_content.append(option_obj.text)
 
                         item_text_for_search = "".join(
                             str(s).lower() for s in searchable_content if s
                         )
-                        
+
                     if search_term not in item_text_for_search:
                         is_item_visible_by_filters = False
 
@@ -559,7 +579,10 @@ class EditorWindow(QMainWindow):
                         is_item_visible_by_filters = False
 
                 # Apply Asset Presence Filter
-                if is_item_visible_by_filters and selected_asset_filter != "Any Asset Status":
+                if (
+                    is_item_visible_by_filters
+                    and selected_asset_filter != "Any Asset Status"
+                ):
                     has_audio = bool(exercise.audio_file)
                     has_image = bool(exercise.image_file)
 
@@ -571,16 +594,20 @@ class EditorWindow(QMainWindow):
                         is_item_visible_by_filters = False
                     elif selected_asset_filter == "No Image" and has_image:
                         is_item_visible_by_filters = False
-                    elif selected_asset_filter == "Has Both Audio & Image" and not (has_audio and has_image):
+                    elif selected_asset_filter == "Has Both Audio & Image" and not (
+                        has_audio and has_image
+                    ):
                         is_item_visible_by_filters = False
-                    elif selected_asset_filter == "Missing Any Asset" and (has_audio or has_image): # If either is present, it's not "missing any"
+                    elif selected_asset_filter == "Missing Any Asset" and (
+                        has_audio or has_image
+                    ):  # If either is present, it's not "missing any"
                         is_item_visible_by_filters = False
 
                 item.setHidden(not is_item_visible_by_filters)
                 if is_item_visible_by_filters:
                     items_to_potentially_show_parents_for.append(item)
 
-            iterator += 1 # Move to the next item
+            iterator += 1  # Move to the next item
 
         # Second pass: Ensure parents of visible children are also visible and expanded
         for item in items_to_potentially_show_parents_for:
@@ -592,14 +619,19 @@ class EditorWindow(QMainWindow):
                 parent_data_id = id(parent.data(0, Qt.UserRole))
                 if parent_data_id in expanded_state and expanded_state[parent_data_id]:
                     parent.setExpanded(True)
-                elif item.isExpanded() or not item.isHidden(): # If child was expanded or is now visible, expand parent
+                elif (
+                    item.isExpanded() or not item.isHidden()
+                ):  # If child was expanded or is now visible, expand parent
                     parent.setExpanded(True)
                 parent = parent.parent()
 
         # Restore previous selection if it's still visible
         if selected_item_data:
             self._expand_and_select_item(selected_item_data)
-        elif self.tree_widget.topLevelItem(0) and not self.tree_widget.topLevelItem(0).isHidden():
+        elif (
+            self.tree_widget.topLevelItem(0)
+            and not self.tree_widget.topLevelItem(0).isHidden()
+        ):
             # If nothing was selected or selected item became hidden, select manifest info if visible
             self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
 
@@ -657,7 +689,10 @@ class EditorWindow(QMainWindow):
     def _clear_editor_pane(self):
         for i in reversed(range(self.detail_editor_stacked_widget.count())):
             widget = self.detail_editor_stacked_widget.widget(i)
-            if widget is not self.manifest_editor and widget is not self.glossary_editor:
+            if (
+                widget is not self.manifest_editor
+                and widget is not self.glossary_editor
+            ):
                 self.detail_editor_stacked_widget.removeWidget(widget)
                 widget.deleteLater()
         self.current_editor_widget = None
@@ -799,11 +834,11 @@ class EditorWindow(QMainWindow):
             )
         elif exercise.type == "sentence_jumble":
             widget = SentenceJumbleExerciseEditorWidget(
-                exercise, target_lang, source_lang # No course_root_dir typically
+                exercise, target_lang, source_lang  # No course_root_dir typically
             )
         elif exercise.type == "context_block":
             widget = ContextBlockExerciseEditorWidget(
-                exercise # No langs or course_root_dir typically
+                exercise  # No langs or course_root_dir typically
             )
         else:
             widget = QLabel(f"No editor for exercise type: {exercise.type}")
@@ -1267,7 +1302,11 @@ class EditorWindow(QMainWindow):
         manifest_item = QTreeWidgetItem(self.tree_widget, ["Manifest Info"])
         manifest_item.setData(0, Qt.UserRole, manifest_item_data)
         manifest_item.setFont(0, QFont("Arial", 11, QFont.Bold))
-        manifest_item.setFlags(manifest_item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
+        manifest_item.setFlags(
+            manifest_item.flags()
+            & ~Qt.ItemFlag.ItemIsDragEnabled
+            & ~Qt.ItemFlag.ItemIsDropEnabled
+        )
         if (
             id(manifest_item_data) in expanded_items_data
             and expanded_items_data[id(manifest_item_data)]
@@ -1279,10 +1318,16 @@ class EditorWindow(QMainWindow):
         glossary_item.setData(0, Qt.UserRole, glossary_item_data)
         glossary_item.setFont(0, QFont("Arial", 11, QFont.Bold))
         # Glossary item itself is not draggable/droppable, only its content.
-        glossary_item.setFlags(glossary_item.flags() & ~Qt.ItemFlag.ItemIsDragEnabled & ~Qt.ItemFlag.ItemIsDropEnabled)
+        glossary_item.setFlags(
+            glossary_item.flags()
+            & ~Qt.ItemFlag.ItemIsDragEnabled
+            & ~Qt.ItemFlag.ItemIsDropEnabled
+        )
         # Place after Manifest Info
-        self.tree_widget.insertTopLevelItem(self.tree_widget.indexOfTopLevelItem(manifest_item) + 1, glossary_item)
-        
+        self.tree_widget.insertTopLevelItem(
+            self.tree_widget.indexOfTopLevelItem(manifest_item) + 1, glossary_item
+        )
+
         if (
             id(glossary_item_data) in expanded_items_data
             and expanded_items_data[id(glossary_item_data)]
@@ -1293,14 +1338,22 @@ class EditorWindow(QMainWindow):
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
             unit_item.setFont(0, QFont("Arial", 10, QFont.Bold))
-            unit_item.setFlags(unit_item.flags() | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled)
+            unit_item.setFlags(
+                unit_item.flags()
+                | Qt.ItemFlag.ItemIsDragEnabled
+                | Qt.ItemFlag.ItemIsDropEnabled
+            )
             if id(unit) in expanded_items_data and expanded_items_data[id(unit)]:
                 unit_item.setExpanded(True)
 
             for lesson in unit.lessons:
                 lesson_item = QTreeWidgetItem(unit_item, [lesson.title])
                 lesson_item.setData(0, Qt.UserRole, lesson)
-                lesson_item.setFlags(lesson_item.flags() | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled)
+                lesson_item.setFlags(
+                    lesson_item.flags()
+                    | Qt.ItemFlag.ItemIsDragEnabled
+                    | Qt.ItemFlag.ItemIsDropEnabled
+                )
                 if (
                     id(lesson) in expanded_items_data
                     and expanded_items_data[id(lesson)]
@@ -1309,23 +1362,27 @@ class EditorWindow(QMainWindow):
 
                 for idx, exercise in enumerate(lesson.exercises):
                     ex_display_text_content = "No Content"
-                    if exercise.title: # Primarily for context_block
+                    if exercise.title:  # Primarily for context_block
                         ex_display_text_content = exercise.title
                     elif exercise.prompt:
                         ex_display_text_content = exercise.prompt
-                    elif exercise.answer: # For jumble or dictation answer
+                    elif exercise.answer:  # For jumble or dictation answer
                         ex_display_text_content = exercise.answer
-                    elif exercise.source_word: # For MCQ
+                    elif exercise.source_word:  # For MCQ
                         ex_display_text_content = exercise.source_word
-                    elif exercise.sentence_template: # For FIB
+                    elif exercise.sentence_template:  # For FIB
                         ex_display_text_content = exercise.sentence_template
-                    
-                    if len(ex_display_text_content) > 50: # Truncate if too long
+
+                    if len(ex_display_text_content) > 50:  # Truncate if too long
                         ex_display_text_content = ex_display_text_content[:47] + "..."
                     ex_display_text = f"[{exercise.type}] {ex_display_text_content}"
                     exercise_item = QTreeWidgetItem(lesson_item, [ex_display_text])
                     exercise_item.setData(0, Qt.UserRole, exercise)
-                    exercise_item.setFlags(exercise_item.flags() | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled)
+                    exercise_item.setFlags(
+                        exercise_item.flags()
+                        | Qt.ItemIsDragEnabled
+                        | Qt.ItemIsDropEnabled
+                    )
 
         if selected_item_data:
             self._expand_and_select_item(selected_item_data)
@@ -1476,9 +1533,15 @@ class EditorWindow(QMainWindow):
 
         # It's better to always attempt to save glossary if it's been loaded
         # so changes in its tab are saved.
-        if self.glossary_editor.glossary_entries: # Only attempt if there's glossary data
-            if not self.glossary_editor.save_glossary_data(self.manifest_data, self.current_manifest_path):
-                QMessageBox.critical(self, "Save Error", "Failed to save glossary file.")
+        if (
+            self.glossary_editor.glossary_entries
+        ):  # Only attempt if there's glossary data
+            if not self.glossary_editor.save_glossary_data(
+                self.manifest_data, self.current_manifest_path
+            ):
+                QMessageBox.critical(
+                    self, "Save Error", "Failed to save glossary file."
+                )
                 return False
 
         if not save_manifest(self.manifest_data, manifest_file):

@@ -141,7 +141,7 @@ def _process_translation_csv_internal(
 
         # Handle dictation audio files
         if exercise_type == "dictation":
-            audio_file = row.get(audio_file_col) # Use the passed audio_file_col
+            audio_file = row.get(audio_file_col)  # Use the passed audio_file_col
             if audio_file:
                 exercise_data["audio_file"] = audio_file
     messages.append(
@@ -202,7 +202,7 @@ def _process_association_csv_internal(
     target_lesson_dict: Dict[str, Any],
     exercise_type: str,
     prompt_col: str,
-    asset_col: str, # 'image_file' or 'audio_file'
+    asset_col: str,  # 'image_file' or 'audio_file'
     correct_option_col: str,
     incorrect_options_cols: List[str],
     messages: List[str],
@@ -213,19 +213,27 @@ def _process_association_csv_internal(
         asset_path = row.get(asset_col)
         correct_option_text = row.get(correct_option_col)
 
-        if not all([prompt, correct_option_text]): # Asset path can be optional for prompt
-            messages.append(f"Warning: Skipping row {row_num + 1}, missing prompt or correct_option data.")
+        if not all(
+            [prompt, correct_option_text]
+        ):  # Asset path can be optional for prompt
+            messages.append(
+                f"Warning: Skipping row {row_num + 1}, missing prompt or correct_option data."
+            )
             continue
 
         options = [{"text": correct_option_text, "correct": True}]
         incorrects = [row.get(col) for col in incorrect_options_cols if row.get(col)]
-        if not incorrects: # Allow association with only one correct option if no incorrects are provided
-            messages.append(f"Info: Row {row_num + 1} for '{prompt}' has no incorrect options from columns: {incorrect_options_cols}.")
-        
+        if (
+            not incorrects
+        ):  # Allow association with only one correct option if no incorrects are provided
+            messages.append(
+                f"Info: Row {row_num + 1} for '{prompt}' has no incorrect options from columns: {incorrect_options_cols}."
+            )
+
         for inc_opt in incorrects:
             options.append({"text": inc_opt, "correct": False})
 
-        exercise_data = { "type": exercise_type, "prompt": prompt, "options": options }
+        exercise_data = {"type": exercise_type, "prompt": prompt, "options": options}
         if exercise_type == "image_association" and asset_path:
             exercise_data["image_file"] = asset_path
         elif exercise_type == "listen_and_select" and asset_path:
@@ -247,16 +255,23 @@ def _process_jumble_csv_internal(
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
-        prompt = row.get(prompt_col) # Prompt can be optional for jumble
+        prompt = row.get(prompt_col)  # Prompt can be optional for jumble
         words_str = row.get(words_col)
         answer = row.get(answer_col)
 
         if not all([words_str, answer]):
-            messages.append(f"Warning: Skipping row {row_num + 1}, missing 'words' or 'answer' for jumble.")
+            messages.append(
+                f"Warning: Skipping row {row_num + 1}, missing 'words' or 'answer' for jumble."
+            )
             continue
-        
-        exercise_data = {"type": "sentence_jumble", "words": words_str.split(), "answer": answer}
-        if prompt: exercise_data["prompt"] = prompt
+
+        exercise_data = {
+            "type": "sentence_jumble",
+            "words": words_str.split(),
+            "answer": answer,
+        }
+        if prompt:
+            exercise_data["prompt"] = prompt
         target_lesson_dict["exercises"].append(exercise_data)
         count += 1
     messages.append(f"Info: Added {count} 'sentence_jumble' exercises.")
@@ -264,13 +279,23 @@ def _process_jumble_csv_internal(
 
 
 def _process_context_csv_internal(
-    csv_reader_instance, target_lesson_dict: Dict[str, Any], title_col: str, prompt_col: str, messages: List[str]
+    csv_reader_instance,
+    target_lesson_dict: Dict[str, Any],
+    title_col: str,
+    prompt_col: str,
+    messages: List[str],
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
-        exercise_data = {"type": "context_block", "title": row.get(title_col), "prompt": row.get(prompt_col)}
-        if not exercise_data["prompt"]: # Prompt (content) is essential
-            messages.append(f"Warning: Skipping row {row_num + 1} for context_block, missing content/prompt.")
+        exercise_data = {
+            "type": "context_block",
+            "title": row.get(title_col),
+            "prompt": row.get(prompt_col),
+        }
+        if not exercise_data["prompt"]:  # Prompt (content) is essential
+            messages.append(
+                f"Warning: Skipping row {row_num + 1} for context_block, missing content/prompt."
+            )
             continue
         target_lesson_dict["exercises"].append(exercise_data)
         count += 1
@@ -290,10 +315,10 @@ def import_csv_data(
     answer_col: str = "answer",
     source_word_col: str = "source_word",
     correct_option_col: str = "correct_option",
-    audio_file_col: str = "audio_file", # Added for dictation
-    image_file_col: str = "image_file", # Added for image_association
-    words_col: str = "words",           # Added for sentence_jumble
-    title_col: str = "title",           # Added for context_block
+    audio_file_col: str = "audio_file",  # Added for dictation
+    image_file_col: str = "image_file",  # Added for image_association
+    words_col: str = "words",  # Added for sentence_jumble
+    title_col: str = "title",  # Added for context_block
     incorrect_options_cols: Optional[List[str]] = None,
     incorrect_options_prefix: str = "incorrect_option_",
 ) -> Tuple[bool, List[str]]:
@@ -327,11 +352,17 @@ def import_csv_data(
 
             fieldnames = reader[0].keys() if reader else []
 
-            if exercise_type in ["translate_to_target", "translate_to_source", "dictation"]:
+            if exercise_type in [
+                "translate_to_target",
+                "translate_to_source",
+                "dictation",
+            ]:
                 required_cols = [prompt_col, answer_col]
                 if exercise_type == "dictation" and audio_file_col not in fieldnames:
-                    messages.append(f"Warning: For 'dictation', '{audio_file_col}' column is recommended but not found. Proceeding without audio if not present in rows.")
-                
+                    messages.append(
+                        f"Warning: For 'dictation', '{audio_file_col}' column is recommended but not found. Proceeding without audio if not present in rows."
+                    )
+
                 if not all(col in fieldnames for col in required_cols):
                     messages.append(
                         f"Error: CSV missing required columns for {exercise_type}: {', '.join(required_cols)}. Found: {list(fieldnames)}"
@@ -345,7 +376,7 @@ def import_csv_data(
                     answer_col,
                     messages,
                     # Pass audio_file_col for dictation
-                    audio_file_col if exercise_type == "dictation" else None 
+                    audio_file_col if exercise_type == "dictation" else None,
                 )
 
             elif exercise_type == "multiple_choice_translation":
@@ -387,40 +418,72 @@ def import_csv_data(
                 )
             elif exercise_type == "image_association":
                 required_cols = [prompt_col, image_file_col, correct_option_col]
-                if not all(col in fieldnames for col in [prompt_col, correct_option_col]): # image_file_col can be optional
-                     messages.append(f"Error: CSV missing required columns for image_association: '{prompt_col}', '{correct_option_col}'. Found: {list(fieldnames)}")
-                     return False, messages
+                if not all(
+                    col in fieldnames for col in [prompt_col, correct_option_col]
+                ):  # image_file_col can be optional
+                    messages.append(
+                        f"Error: CSV missing required columns for image_association: '{prompt_col}', '{correct_option_col}'. Found: {list(fieldnames)}"
+                    )
+                    return False, messages
                 if image_file_col not in fieldnames:
-                    messages.append(f"Warning: For 'image_association', '{image_file_col}' column not found. Exercises will be created without images if not present in rows.")
+                    messages.append(
+                        f"Warning: For 'image_association', '{image_file_col}' column not found. Exercises will be created without images if not present in rows."
+                    )
                 _process_association_csv_internal(
-                    reader, target_lesson, exercise_type, prompt_col, image_file_col, 
-                    correct_option_col, incorrect_options_cols or [], messages # Pass empty list if None
+                    reader,
+                    target_lesson,
+                    exercise_type,
+                    prompt_col,
+                    image_file_col,
+                    correct_option_col,
+                    incorrect_options_cols or [],
+                    messages,  # Pass empty list if None
                 )
             elif exercise_type == "listen_and_select":
                 required_cols = [prompt_col, audio_file_col, correct_option_col]
-                if not all(col in fieldnames for col in [prompt_col, correct_option_col]): # audio_file_col can be optional
-                     messages.append(f"Error: CSV missing required columns for listen_and_select: '{prompt_col}', '{correct_option_col}'. Found: {list(fieldnames)}")
-                     return False, messages
+                if not all(
+                    col in fieldnames for col in [prompt_col, correct_option_col]
+                ):  # audio_file_col can be optional
+                    messages.append(
+                        f"Error: CSV missing required columns for listen_and_select: '{prompt_col}', '{correct_option_col}'. Found: {list(fieldnames)}"
+                    )
+                    return False, messages
                 if audio_file_col not in fieldnames:
-                    messages.append(f"Warning: For 'listen_and_select', '{audio_file_col}' column not found. Exercises will be created without audio if not present in rows.")
+                    messages.append(
+                        f"Warning: For 'listen_and_select', '{audio_file_col}' column not found. Exercises will be created without audio if not present in rows."
+                    )
                 _process_association_csv_internal(
-                    reader, target_lesson, exercise_type, prompt_col, audio_file_col, 
-                    correct_option_col, incorrect_options_cols or [], messages # Pass empty list if None
+                    reader,
+                    target_lesson,
+                    exercise_type,
+                    prompt_col,
+                    audio_file_col,
+                    correct_option_col,
+                    incorrect_options_cols or [],
+                    messages,  # Pass empty list if None
                 )
             elif exercise_type == "sentence_jumble":
-                 required_cols = [words_col, answer_col] # prompt_col is optional
-                 if not all(col in fieldnames for col in required_cols):
-                     messages.append(f"Error: CSV missing required columns for sentence_jumble: '{words_col}', '{answer_col}'. Found: {list(fieldnames)}")
-                     return False, messages
-                 if prompt_col not in fieldnames:
-                     messages.append(f"Warning: For 'sentence_jumble', '{prompt_col}' column not found. Exercises will be created without prompts if not present in rows.")
-                 _process_jumble_csv_internal(reader, target_lesson, prompt_col, words_col, answer_col, messages)
+                required_cols = [words_col, answer_col]  # prompt_col is optional
+                if not all(col in fieldnames for col in required_cols):
+                    messages.append(
+                        f"Error: CSV missing required columns for sentence_jumble: '{words_col}', '{answer_col}'. Found: {list(fieldnames)}"
+                    )
+                    return False, messages
+                if prompt_col not in fieldnames:
+                    messages.append(
+                        f"Warning: For 'sentence_jumble', '{prompt_col}' column not found. Exercises will be created without prompts if not present in rows."
+                    )
+                _process_jumble_csv_internal(
+                    reader, target_lesson, prompt_col, words_col, answer_col, messages
+                )
 
             elif exercise_type == "context_block":
-                required_cols = [prompt_col] # title_col is optional
-                if prompt_col not in fieldnames: # Prompt (content) is essential
-                     messages.append(f"Error: CSV missing required column for context_block: '{prompt_col}'. Found: {list(fieldnames)}")
-                     return False, messages
+                required_cols = [prompt_col]  # title_col is optional
+                if prompt_col not in fieldnames:  # Prompt (content) is essential
+                    messages.append(
+                        f"Error: CSV missing required column for context_block: '{prompt_col}'. Found: {list(fieldnames)}"
+                    )
+                    return False, messages
                 _process_context_csv_internal(
                     reader, target_lesson, title_col, prompt_col, messages
                 )

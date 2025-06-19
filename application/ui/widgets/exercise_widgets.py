@@ -22,13 +22,13 @@ from PySide6.QtWidgets import (
     QTextBrowser,
 )
 from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings
-from PySide6.QtGui import QFont, QPixmap, QKeyEvent # Added QKeyEvent
+from PySide6.QtGui import QFont, QPixmap, QKeyEvent  # Added QKeyEvent
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 try:
     from application.core.models import Exercise
     from application.core.course_manager import (
-        CourseManager, # Import full class for type hinting
+        CourseManager,  # Import full class for type hinting
         PROMPT_KEY_DEFAULT,
         PROMPT_KEY_FIB,
         PROMPT_KEY_MCQ_TRANSLATION,
@@ -40,9 +40,11 @@ try:
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
-    from application import settings as app_settings # For reading autoplay setting
-    from application.ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog # Import for context block
-except ImportError: # This makes Nuitka happy
+    from application import settings as app_settings  # For reading autoplay setting
+    from application.ui.dialogs.glossary_detail_dialog import (
+        GlossaryDetailDialog,
+    )  # Import for context block
+except ImportError:  # This makes Nuitka happy
     from core.models import Exercise
     from core.course_manager import (
         CourseManager,
@@ -57,10 +59,11 @@ except ImportError: # This makes Nuitka happy
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
-    import settings as app_settings # Fallback for Nuitka
+    import settings as app_settings  # Fallback for Nuitka
     from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
 
 logger = logging.getLogger(__name__)
+
 
 class BaseExerciseWidget(QWidget):
     answer_submitted = Signal(str)
@@ -72,7 +75,7 @@ class BaseExerciseWidget(QWidget):
         self.assets_base_dir = self.course_manager.get_course_manifest_directory()
         if not self.assets_base_dir:
             self.assets_base_dir = self.course_manager.get_course_content_directory()
-        
+
         self.layout = QVBoxLayout(self)
         self.prompt_label = QLabel()
         self.prompt_label.setObjectName("prompt_label")
@@ -87,15 +90,16 @@ class BaseExerciseWidget(QWidget):
         self.image_label.setScaledContents(False)
         self._setup_image()
         self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
-        
+
         self._media_player: Optional[QMediaPlayer] = None
         self._audio_output: Optional[QAudioOutput] = None
 
-
     def _setup_image(self):
         if self.exercise.image_file and self.assets_base_dir:
-            full_image_path = os.path.join(self.assets_base_dir, self.exercise.image_file)
-            
+            full_image_path = os.path.join(
+                self.assets_base_dir, self.exercise.image_file
+            )
+
             if os.path.exists(full_image_path):
                 pixmap = QPixmap(full_image_path)
                 if not pixmap.isNull():
@@ -107,7 +111,7 @@ class BaseExerciseWidget(QWidget):
                     )
                     self.image_label.setPixmap(scaled_pixmap)
                     self.image_label.setVisible(True)
-                    return        
+                    return
             # self.image_label.setVisible(False)
             self.image_label.setText(f"Cannot load image: {self.exercise.image_file}")
             return
@@ -135,45 +139,66 @@ class BaseExerciseWidget(QWidget):
 
         if os.path.exists(full_audio_path):
             self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
-            if self._media_player.mediaStatus() == QMediaPlayer.NoMedia and self._media_player.error() != QMediaPlayer.NoError:
-                 logger.error(f"Error setting media source for {full_audio_path}: {self._media_player.errorString()}")
-                 QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Cannot prepare audio: {0}").format(self._media_player.errorString()))
-                 return
+            if (
+                self._media_player.mediaStatus() == QMediaPlayer.NoMedia
+                and self._media_player.error() != QMediaPlayer.NoError
+            ):
+                logger.error(
+                    f"Error setting media source for {full_audio_path}: {self._media_player.errorString()}"
+                )
+                QMessageBox.warning(
+                    self,
+                    self.tr("Audio Error"),
+                    self.tr("Cannot prepare audio: {0}").format(
+                        self._media_player.errorString()
+                    ),
+                )
+                return
 
             self._media_player.play()
         else:
             logger.error(f"Audio file not found: {full_audio_path}")
-            QMessageBox.warning(self, self.tr("Audio Error"), self.tr("Audio file not found: {0}").format(relative_audio_path))
+            QMessageBox.warning(
+                self,
+                self.tr("Audio Error"),
+                self.tr("Audio file not found: {0}").format(relative_audio_path),
+            )
 
     def _format_prompt_from_data(self, prompt_data: Dict[str, Any]) -> str:
         """Helper to format the prompt using tr() and arguments from prompt_data."""
         template_key = prompt_data.get("template_key", PROMPT_KEY_DEFAULT)
         args = prompt_data.get("args", [])
-        
+
         template_str_map = {
-            PROMPT_KEY_TRANSLATE_TO_TARGET: self.tr("Translate to %s: \"%s\""),
-            PROMPT_KEY_TRANSLATE_TO_SOURCE: self.tr("Translate to %s: \"%s\""),
-            PROMPT_KEY_MCQ_TRANSLATION: self.tr("Choose the %s translation for: \"%s\" (%s)"),
+            PROMPT_KEY_TRANSLATE_TO_TARGET: self.tr('Translate to %s: "%s"'),
+            PROMPT_KEY_TRANSLATE_TO_SOURCE: self.tr('Translate to %s: "%s"'),
+            PROMPT_KEY_MCQ_TRANSLATION: self.tr(
+                'Choose the %s translation for: "%s" (%s)'
+            ),
             PROMPT_KEY_FIB: self.tr("%s (Hint: %s)"),
             PROMPT_KEY_DICTATION: self.tr("%s"),
             PROMPT_KEY_IMAGE_ASSOCIATION: self.tr("%s"),
             PROMPT_KEY_LISTEN_SELECT: self.tr("%s"),
             PROMPT_KEY_SENTENCE_JUMBLE: self.tr("%s"),
             PROMPT_KEY_CONTEXT_BLOCK: self.tr("%s"),
-            PROMPT_KEY_DEFAULT: self.tr("Exercise Prompt: %s") if args else self.tr("Exercise Prompt")
+            PROMPT_KEY_DEFAULT: (
+                self.tr("Exercise Prompt: %s") if args else self.tr("Exercise Prompt")
+            ),
         }
 
         template_str = template_str_map.get(template_key, "")
-        
+
         formatted_string = template_str
         if args:
             str_args = tuple(str(arg) for arg in args)
             try:
                 formatted_string = template_str % str_args
             except TypeError:
-                logger.error(f"String formatting error for template key '{template_key}'.")
+                logger.error(
+                    f"String formatting error for template key '{template_key}'."
+                )
                 formatted_string = f"{template_str} ({', '.join(str_args)})"
-        
+
         return formatted_string
 
     def get_answer(self) -> str:
@@ -186,7 +211,10 @@ class BaseExerciseWidget(QWidget):
         pass
 
     def stop_media(self):
-        if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlayingState:
+        if (
+            self._media_player
+            and self._media_player.playbackState() == QMediaPlayer.PlayingState
+        ):
             self._media_player.stop()
 
     def trigger_autoplay_audio(self):
@@ -195,18 +223,22 @@ class BaseExerciseWidget(QWidget):
         if the feature is enabled and an audio file is associated with the exercise.
         """
         if not self.exercise or not self.exercise.audio_file:
-            logger.debug(f"No audio file for exercise {self.exercise.exercise_id if self.exercise else 'N/A'}, skipping autoplay.")
+            logger.debug(
+                f"No audio file for exercise {self.exercise.exercise_id if self.exercise else 'N/A'}, skipping autoplay."
+            )
             return
 
         q_settings = QSettings()
         autoplay_enabled = q_settings.value(
             app_settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
             app_settings.AUTOPLAY_AUDIO_DEFAULT,
-            type=bool
+            type=bool,
         )
 
         if autoplay_enabled:
-            logger.info(f"Autoplay enabled. Playing audio for exercise: {self.exercise.exercise_id}")
+            logger.info(
+                f"Autoplay enabled. Playing audio for exercise: {self.exercise.exercise_id}"
+            )
             self._play_audio_file(self.exercise.audio_file)
 
 
@@ -229,7 +261,6 @@ class TranslationExerciseWidget(BaseExerciseWidget):
                 insert_index = self.layout.indexOf(self.image_label) + 1
             self.layout.insertWidget(insert_index, self.play_audio_button)
 
-
         self.answer_input = QLineEdit()
         self.answer_input.setObjectName("answer_input_text")
         self.layout.addWidget(self.answer_input)
@@ -250,14 +281,18 @@ class TranslationExerciseWidget(BaseExerciseWidget):
 class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
-        
+
         self.options_group = QButtonGroup(self)
         options_layout = QVBoxLayout()
 
         options_to_display = self.exercise.options
         if not options_to_display:
-            logger.warning(f"No options found for option-based exercise: {self.exercise.exercise_id}")
-            options_layout.addWidget(QLabel(self.tr("No options available for this exercise.")))
+            logger.warning(
+                f"No options found for option-based exercise: {self.exercise.exercise_id}"
+            )
+            options_layout.addWidget(
+                QLabel(self.tr("No options available for this exercise."))
+            )
         else:
             for i, option_obj in enumerate(options_to_display):
                 rb = QRadioButton(option_obj.text)
@@ -290,19 +325,28 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
         key = event.key()
         # Map Qt.Key_1 to Qt.Key_9 to indices 0-8
         key_to_index_map = {
-            Qt.Key_1: 0, Qt.Key_2: 1, Qt.Key_3: 2, Qt.Key_4: 3,
-            Qt.Key_5: 4, Qt.Key_6: 5, Qt.Key_7: 6, Qt.Key_8: 7, Qt.Key_9: 8,
+            Qt.Key_1: 0,
+            Qt.Key_2: 1,
+            Qt.Key_3: 2,
+            Qt.Key_4: 3,
+            Qt.Key_5: 4,
+            Qt.Key_6: 5,
+            Qt.Key_7: 6,
+            Qt.Key_8: 7,
+            Qt.Key_9: 8,
         }
 
         if key in key_to_index_map:
             option_index = key_to_index_map[key]
             if 0 <= option_index < len(self.options_group.buttons()):
                 button_to_select = self.options_group.buttons()[option_index]
-                if button_to_select.isEnabled(): # Only if the option is selectable
+                if button_to_select.isEnabled():  # Only if the option is selectable
                     # Setting checked will trigger the QButtonGroup.buttonClicked signal
                     # which is already connected to self.answer_submitted
                     button_to_select.setChecked(True)
-                    logger.debug(f"Option {option_index + 1} ('{button_to_select.text()}') selected via keyboard shortcut.")
+                    logger.debug(
+                        f"Option {option_index + 1} ('{button_to_select.text()}') selected via keyboard shortcut."
+                    )
                     event.accept()
                     return
         super().keyPressEvent(event)
@@ -315,10 +359,11 @@ class MultipleChoiceExerciseWidget(RadioButtonOptionExerciseWidget):
         formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
 
+
 class ListenSelectExerciseWidget(RadioButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
-        
+
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
         formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
@@ -326,9 +371,12 @@ class ListenSelectExerciseWidget(RadioButtonOptionExerciseWidget):
         if self.exercise.audio_file:
             self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
             self.play_audio_button.setObjectName("play_audio_button")
-            self.play_audio_button.clicked.connect(lambda: self._play_audio_file(self.exercise.audio_file))
+            self.play_audio_button.clicked.connect(
+                lambda: self._play_audio_file(self.exercise.audio_file)
+            )
             insert_index = self.layout.indexOf(self.prompt_label) + 1
             self.layout.insertWidget(insert_index, self.play_audio_button)
+
 
 class FillInTheBlankExerciseWidget(RadioButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
@@ -336,6 +384,7 @@ class FillInTheBlankExerciseWidget(RadioButtonOptionExerciseWidget):
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
         formatted_prompt = self._format_prompt_from_data(prompt_data)
         self.prompt_label.setText(formatted_prompt)
+
 
 class SentenceJumbleExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
@@ -351,7 +400,8 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         self.sentence_display.setWordWrap(True)
         self.layout.addWidget(self.sentence_display)
 
-        separator = QFrame(); separator.setFrameShape(QFrame.Shape.HLine)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
         self.layout.addWidget(separator)
 
         self.word_bank_layout = QGridLayout()
@@ -359,7 +409,9 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         self._setup_word_bank()
 
         self.submit_button = QPushButton(self.tr("Submit Sentence"))
-        self.submit_button.clicked.connect(lambda: self.answer_submitted.emit(self.get_answer()))
+        self.submit_button.clicked.connect(
+            lambda: self.answer_submitted.emit(self.get_answer())
+        )
         self.layout.addWidget(self.submit_button)
 
     def _setup_word_bank(self):
@@ -367,7 +419,9 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         random.shuffle(words)
         for i, word in enumerate(words):
             button = QPushButton(word)
-            button.clicked.connect(lambda checked, w=word, b=button: self._add_word_to_sentence(w, b))
+            button.clicked.connect(
+                lambda checked, w=word, b=button: self._add_word_to_sentence(w, b)
+            )
             self.word_bank_buttons.append(button)
             row, col = divmod(i, 4)
             self.word_bank_layout.addWidget(button, row, col)
@@ -382,7 +436,9 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         if self.current_sentence_words:
             self.sentence_display.setText(" ".join(self.current_sentence_words))
         else:
-            self.sentence_display.setText(self.tr("Click words below to build your sentence."))
+            self.sentence_display.setText(
+                self.tr("Click words below to build your sentence.")
+            )
 
     def clear_input(self):
         self.current_sentence_words = []
@@ -396,6 +452,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
 
 class ContextBlockWidget(BaseExerciseWidget):
     """A widget to display text content, not as an interactive exercise."""
+
     def __init__(self, exercise: Exercise, course_manager: CourseManager, parent=None):
         super().__init__(exercise, course_manager, parent)
         # Hide the default prompt label as we use a dedicated title and content area
@@ -409,9 +466,11 @@ class ContextBlockWidget(BaseExerciseWidget):
         # Clean the input slightly and prepare links
         cleaned_prompt = (self.exercise.prompt or "").strip()
         markdown_with_links = self._prepare_content_with_glossary_links(cleaned_prompt)
-        
+
         # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
-        html_content = markdown.markdown(markdown_with_links, extensions=['extra', 'nl2br'])
+        html_content = markdown.markdown(
+            markdown_with_links, extensions=["extra", "nl2br"]
+        )
         logger.debug(f"ContextBlock Input MD: '''{markdown_with_links}'''")
         logger.debug(f"ContextBlock Output HTML: '''{html_content}'''")
 
@@ -426,7 +485,7 @@ class ContextBlockWidget(BaseExerciseWidget):
         continue_button = QPushButton(self.tr("Continue"))
         continue_button.clicked.connect(lambda: self.answer_submitted.emit("completed"))
         self.layout.addWidget(continue_button)
-    
+
     def _prepare_content_with_glossary_links(self, original_content: str) -> str:
         """
         Parses the content, finds words in the glossary, and wraps them in
@@ -436,25 +495,28 @@ class ContextBlockWidget(BaseExerciseWidget):
         if not glossary_entries:
             return original_content
 
-        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
+        sorted_words = sorted(
+            [e.word for e in glossary_entries if e.word], key=len, reverse=True
+        )
         if not sorted_words:
             return original_content
         escaped_words = [re.escape(word) for word in sorted_words]
         pattern = r"\b(" + "|".join(escaped_words) + r")\b"
-        
+
         def replace_with_link(match):
             word = match.group(1)
-            encoded_word = urllib.parse.quote(word, encoding='utf-8', safe='')
+            encoded_word = urllib.parse.quote(word, encoding="utf-8", safe="")
             return f"[{word}](glossary:{encoded_word})"
 
         try:
             # We use re.sub with a function to perform the replacement
-            linked_content = re.sub(pattern, replace_with_link, original_content, flags=re.IGNORECASE)
+            linked_content = re.sub(
+                pattern, replace_with_link, original_content, flags=re.IGNORECASE
+            )
             return linked_content
         except re.error as e:
             logger.error(f"Regex error while creating glossary links: {e}")
             return original_content
-
 
     def _handle_glossary_link_clicked(self, url: QUrl):
         """Handles clicks on glossary:// links, opening a new detail dialog."""
@@ -465,23 +527,31 @@ class ContextBlockWidget(BaseExerciseWidget):
             decoded_word = url.path()
 
             if not decoded_word:
-                logger.warning(f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}")
+                logger.warning(
+                    f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}"
+                )
                 return
-            
-            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
+
+            logger.debug(
+                f"Attempting to find glossary entry for decoded word: '{decoded_word}'"
+            )
             entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
                 # Open a new dialog for the clicked entry
-                new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
+                new_dialog = GlossaryDetailDialog(
+                    entry, self.course_manager, self.window()
+                )
                 new_dialog.exec()
             else:
-                logger.warning(f"Glossary link clicked for decoded word '{decoded_word}', but no entry found.")
+                logger.warning(
+                    f"Glossary link clicked for decoded word '{decoded_word}', but no entry found."
+                )
 
-    def get_answer(self) -> str: # Ensure this method and others are correctly indented
+    def get_answer(self) -> str:  # Ensure this method and others are correctly indented
         return "completed"
-    
-    def clear_input(self): # Ensure this method and others are correctly indented
-        pass # Nothing to clear
+
+    def clear_input(self):  # Ensure this method and others are correctly indented
+        pass  # Nothing to clear
 
     def set_focus_on_input(self):
         # Focus the continue button by default

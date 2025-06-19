@@ -28,7 +28,9 @@ def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _parse_exercise_options(options_data: Any, correct_option_text: Optional[str] = None) -> List[ExerciseOption]:
+def _parse_exercise_options(
+    options_data: Any, correct_option_text: Optional[str] = None
+) -> List[ExerciseOption]:
     """Helper to parse options data into a list of ExerciseOption objects."""
     parsed_options = []
     if isinstance(options_data, list):
@@ -41,7 +43,9 @@ def _parse_exercise_options(options_data: Any, correct_option_text: Optional[str
         elif all(isinstance(opt, str) for opt in options_data):
             # Format: ["Option A", "Option B", "Option C"]
             if correct_option_text is None:
-                logger.warning(f"Simple options list provided {options_data} but 'correct_option' is missing.")
+                logger.warning(
+                    f"Simple options list provided {options_data} but 'correct_option' is missing."
+                )
             parsed_options = [
                 ExerciseOption(text=opt, correct=(opt == correct_option_text))
                 for opt in options_data
@@ -79,26 +83,51 @@ def _parse_exercise(
     words_data = exercise_data.get("words")
 
     options: List[ExerciseOption] = []
-    if ex_type in ["multiple_choice_translation", "fill_in_the_blank", "image_association", "listen_and_select"]:
-        options = _parse_exercise_options(exercise_data.get("options", []), correct_option)
+    if ex_type in [
+        "multiple_choice_translation",
+        "fill_in_the_blank",
+        "image_association",
+        "listen_and_select",
+    ]:
+        options = _parse_exercise_options(
+            exercise_data.get("options", []), correct_option
+        )
         if not options:
             logger.warning(f"No valid options parsed for {ex_type} exercise {ex_id}.")
 
     # Basic validation for essential fields based on type
-    if ex_type in ["translate_to_target", "translate_to_source", "dictation"] and (prompt is None or answer is None):
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing.")
+    if ex_type in ["translate_to_target", "translate_to_source", "dictation"] and (
+        prompt is None or answer is None
+    ):
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing."
+        )
         return None
-    elif ex_type in ["multiple_choice_translation", "image_association", "listen_and_select"] and (not options):
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'options' are missing/empty.")
+    elif ex_type in [
+        "multiple_choice_translation",
+        "image_association",
+        "listen_and_select",
+    ] and (not options):
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'options' are missing/empty."
+        )
         return None
-    elif ex_type == "fill_in_the_blank" and (sentence_template is None or correct_option is None or not options):
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'sentence_template', 'correct_option' or 'options' missing/empty.")
+    elif ex_type == "fill_in_the_blank" and (
+        sentence_template is None or correct_option is None or not options
+    ):
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'sentence_template', 'correct_option' or 'options' missing/empty."
+        )
         return None
     elif ex_type == "sentence_jumble" and (not words_data or answer is None):
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'words' or 'answer' is missing/empty.")
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'words' or 'answer' is missing/empty."
+        )
         return None
     elif ex_type == "context_block" and prompt is None:
-        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing.")
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing."
+        )
         return None
 
     return Exercise(
@@ -166,7 +195,9 @@ def load_course_content(
         unit_id = unit_data.get("unit_id")
         unit_title = unit_data.get("title")
         if not unit_id or not unit_title:
-            logger.warning(f"Skipping malformed unit: {unit_data}. Missing unit_id or title.")
+            logger.warning(
+                f"Skipping malformed unit: {unit_data}. Missing unit_id or title."
+            )
             continue
         unit_obj = Unit(unit_id=unit_id, title=unit_title)
 
@@ -174,7 +205,9 @@ def load_course_content(
             lesson_id = lesson_data.get("lesson_id")
             lesson_title = lesson_data.get("title")
             if not lesson_id or not lesson_title:
-                logger.warning(f"Skipping malformed lesson in unit {unit_id}: {lesson_data}. Missing lesson_id or title.")
+                logger.warning(
+                    f"Skipping malformed lesson in unit {unit_id}: {lesson_data}. Missing lesson_id or title."
+                )
                 continue
             lesson_obj = Lesson(
                 lesson_id=lesson_id,
@@ -188,7 +221,9 @@ def load_course_content(
                 if exercise_obj:
                     lesson_obj.exercises.append(exercise_obj)
                 else:
-                    logger.warning(f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping.")
+                    logger.warning(
+                        f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping."
+                    )
             unit_obj.lessons.append(lesson_obj)
         course.units.append(unit_obj)
 

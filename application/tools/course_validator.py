@@ -178,11 +178,23 @@ def _validate_exercise_fib_internal(
 def _validate_exercise_jumble_internal(
     exercise: Exercise, path_prefix: str, errors_list: List[str]
 ):
-    if not exercise.words or not isinstance(exercise.words, list) or len(exercise.words) == 0:
+    if (
+        not exercise.words
+        or not isinstance(exercise.words, list)
+        or len(exercise.words) == 0
+    ):
         _collect_error(errors_list, "Missing or empty 'words' list.", path_prefix)
 
-    if not exercise.answer or not isinstance(exercise.answer, str) or not exercise.answer.strip():
-        _collect_error(errors_list, "Missing or empty 'answer' (the correct sentence).", path_prefix)
+    if (
+        not exercise.answer
+        or not isinstance(exercise.answer, str)
+        or not exercise.answer.strip()
+    ):
+        _collect_error(
+            errors_list,
+            "Missing or empty 'answer' (the correct sentence).",
+            path_prefix,
+        )
 
 
 def _validate_exercise_association_internal(
@@ -192,16 +204,32 @@ def _validate_exercise_association_internal(
     _validate_exercise_mcq_internal(exercise, path_prefix, errors_list)
     # Add specific checks for image/audio presence
     if exercise.type == "image_association" and not exercise.image_file:
-        _collect_error(errors_list, "Warning: 'image_association' type usually has an 'image_file'.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Warning: 'image_association' type usually has an 'image_file'.",
+            path_prefix,
+        )
     if exercise.type == "listen_and_select" and not exercise.audio_file:
-        _collect_error(errors_list, "Warning: 'listen_and_select' type usually has an 'audio_file'.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Warning: 'listen_and_select' type usually has an 'audio_file'.",
+            path_prefix,
+        )
 
 
 def _validate_exercise_context_internal(
     exercise: Exercise, path_prefix: str, errors_list: List[str]
 ):
-    if not exercise.prompt or not isinstance(exercise.prompt, str) or not exercise.prompt.strip():
-        _collect_error(errors_list, "Missing or empty 'prompt' (which holds the context content).", path_prefix)
+    if (
+        not exercise.prompt
+        or not isinstance(exercise.prompt, str)
+        or not exercise.prompt.strip()
+    ):
+        _collect_error(
+            errors_list,
+            "Missing or empty 'prompt' (which holds the context content).",
+            path_prefix,
+        )
 
 
 def _validate_exercise_dictation_internal(
@@ -210,7 +238,11 @@ def _validate_exercise_dictation_internal(
     # Same as translation, but check for audio file
     _validate_exercise_translation_internal(exercise, path_prefix, errors_list)
     if not exercise.audio_file:
-        _collect_error(errors_list, "Warning: 'dictation' type usually has an 'audio_file'.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Warning: 'dictation' type usually has an 'audio_file'.",
+            path_prefix,
+        )
 
 
 def _validate_exercise_internal(
