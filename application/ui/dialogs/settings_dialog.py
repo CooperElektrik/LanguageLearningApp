@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QMessageBox,
 )
+from PySide6.QtMultimedia import QMediaDevices # Added for audio device listing
 from PySide6.QtCore import Qt, QSettings, Signal, QEvent
 
 import settings
@@ -47,6 +48,20 @@ class SettingsDialog(QDialog):
 
         self.autoplay_audio_checkbox = QCheckBox(self.tr("Autoplay audio in exercises"))
         audio_layout.addWidget(self.autoplay_audio_checkbox)
+
+        # Pronunciation/Microphone settings group (new, within Audio)
+        self.pronunciation_settings_group = QGroupBox(self.tr("Pronunciation & Microphone"))
+        self.pronunciation_settings_layout = QFormLayout(self.pronunciation_settings_group)
+        
+        self.whisper_model_combo = QComboBox()
+        self.whisper_model_combo.addItems(["None"] + settings.WHISPER_MODELS_AVAILABLE) # "None" to disable
+        self.pronunciation_settings_layout.addRow(self.tr("Whisper Model:"), self.whisper_model_combo)
+
+        self.audio_input_device_combo = QComboBox()
+        self._populate_audio_input_devices()
+        self.pronunciation_settings_layout.addRow(self.tr("Microphone Input Device:"), self.audio_input_device_combo)
+        
+        audio_layout.addWidget(self.pronunciation_settings_group) # Add the new sub-group to the main audio layout
 
         volume_layout = QHBoxLayout()
         volume_label = QLabel(self.tr("Volume:"))
@@ -139,6 +154,19 @@ class SettingsDialog(QDialog):
 
         self.load_settings()
 
+    def _populate_audio_input_devices(self):
+        """Populates the audio input device combo box."""
+        # QMediaDevices is imported at the top of the file
+
+        self.audio_input_device_combo.clear()
+        default_device_info = QMediaDevices.defaultAudioInput() # QAudioDevice object
+        default_device_id_str = default_device_info.id().toStdString() if not default_device_info.isNull() else ""
+
+        for device in QMediaDevices.audioInputs():
+            # Store device.id().toStdString() (str) as userData, display description()
+            self.audio_input_device_combo.addItem(device.description(), userData=device.id().toStdString())
+            if device.id().toStdString() == default_device_id_str:
+                self.audio_input_device_combo.setCurrentText(device.description()) # Set default
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
         self.available_locales = utils.get_available_locales()  # Store for mapping
@@ -166,6 +194,35 @@ class SettingsDialog(QDialog):
             type=bool,
         )
         self.autoplay_audio_checkbox.setChecked(autoplay_audio_enabled)
+
+        # Load preferred audio input device
+        default_audio_input_id = ""
+        default_device_info = QMediaDevices.defaultAudioInput()
+        if not default_device_info.isNull():
+            default_audio_input_id = default_device_info.id().toStdString()
+
+        preferred_device_id = self.q_settings.value(
+            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE,
+            default_audio_input_id, 
+            type=str
+        )
+        # Find and set the selected device in the combo box
+        index = self.audio_input_device_combo.findData(preferred_device_id)
+        if index != -1:
+            self.audio_input_device_combo.setCurrentIndex(index)
+        elif default_audio_input_id: # Fallback to current system default if saved one not found
+            logger.warning(f"Preferred audio input device ID '{preferred_device_id}' not found. Defaulting to system default.")
+            default_index = self.audio_input_device_combo.findData(default_audio_input_id)
+            if default_index != -1:
+                self.audio_input_device_combo.setCurrentIndex(default_index)
+        else:
+            logger.warning(f"Preferred audio input device ID '{preferred_device_id}' not found and no system default available.")
+
+        current_whisper_model = self.q_settings.value(
+            settings.QSETTINGS_KEY_WHISPER_MODEL,
+            settings.WHISPER_MODEL_DEFAULT, type=str
+        )
+        self.whisper_model_combo.setCurrentText(current_whisper_model if current_whisper_model else "None")
 
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
@@ -261,6 +318,16 @@ class SettingsDialog(QDialog):
             settings.QSETTINGS_KEY_AUTOPLAY_AUDIO,
             self.autoplay_audio_checkbox.isChecked(),
         )
+        # Save selected audio input device
+        selected_device_id = self.audio_input_device_combo.currentData() # This is the ID string
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE,
+            selected_device_id
+        )
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_WHISPER_MODEL,
+            self.whisper_model_combo.currentText() if self.whisper_model_combo.currentText() != "None" else ""
+        )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_SOUND_VOLUME, self.volume_slider.value()
         )
@@ -307,15 +374,20 @@ class SettingsDialog(QDialog):
         # Audio Settings
         self.audio_group.setTitle(self.tr("Audio"))
         self.sound_enabled_checkbox.setText(self.tr("Enable sound effects"))
+        
+        self.pronunciation_settings_group.setTitle(self.tr("Pronunciation & Microphone"))
+        # Retranslate labels within the QFormLayout for pronunciation settings
+        whisper_label = self.pronunciation_settings_layout.labelForField(self.whisper_model_combo)
+        if whisper_label:
+            whisper_label.setText(self.tr("Whisper Model:"))
+        mic_label = self.pronunciation_settings_layout.labelForField(self.audio_input_device_combo)
+        if mic_label:
+            mic_label.setText(self.tr("Microphone Input Device:"))
+
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label
         if hasattr(self, "volume_label") and isinstance(self.volume_label, QLabel):
             self.volume_label.setText(self.tr("Volume:"))
-        else:  # If it was a local variable in __init__
-            # Find it in the layout if necessary, or ensure it's a member
-            # For now, we'll assume it might not be a member.
-            # If it is, the above `if` block is sufficient.
-            pass
 
         # UI Settings
         self.ui_group.setTitle(self.tr("User Interface"))

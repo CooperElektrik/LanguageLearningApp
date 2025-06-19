@@ -82,6 +82,7 @@ def _parse_exercise(
     image_file = exercise_data.get("image_file")
     words_data = exercise_data.get("words")
     explanation_text = exercise_data.get("explanation")
+    target_pron_text = exercise_data.get("target_pronunciation_text")
 
     options: List[ExerciseOption] = []
     if ex_type in [
@@ -130,6 +131,12 @@ def _parse_exercise(
             f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing."
         )
         return None
+    elif ex_type == "pronunciation_practice" and target_pron_text is None:
+        logger.warning(
+            f"Skipping {ex_type} exercise {ex_id}: 'target_pronunciation_text' is missing."
+        )
+        return None
+
 
     return Exercise(
         exercise_id=ex_id,
@@ -146,6 +153,7 @@ def _parse_exercise(
         image_file=image_file,
         words=words_data if isinstance(words_data, list) else None,
         explanation=explanation_text,
+        target_pronunciation_text=target_pron_text,
         raw_data=exercise_data,
     )
 

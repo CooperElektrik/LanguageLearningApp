@@ -37,6 +37,8 @@ class Exercise:
 
     explanation: Optional[str] = None
 
+    target_pronunciation_text: Optional[str] = None
+
     words: Optional[List[str]] = None
 
     last_reviewed: Optional[datetime] = field(default=None, repr=False)
@@ -129,7 +131,9 @@ class Exercise:
         elif self.type == "context_block":
             if self.prompt is not None:
                 data["prompt"] = self.prompt
-
+        elif self.type == "pronunciation_practice":
+            if self.prompt is not None:
+                data["prompt"] = self.prompt
         if self.audio_file is not None:
             data["audio_file"] = self.audio_file
         if self.image_file is not None:

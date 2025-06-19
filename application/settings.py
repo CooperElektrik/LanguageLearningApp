@@ -46,6 +46,11 @@ QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN = (
     "onboarding/global_seen_v1"  # v1 for future updates
 )
 QSETTINGS_KEY_LOCALE = "ui/locale"
+QSETTINGS_KEY_AUDIO_INPUT_DEVICE = "audio/input_device"
+# These are for Whisper Transcription
+QSETTINGS_KEY_WHISPER_MODEL = "audio/whisper_model_selection"
+WHISPER_MODELS_AVAILABLE = ["base", "small", "medium"] # Or include .en versions like "base.en"
+WHISPER_MODEL_DEFAULT = "small" # A good balance
 
 # --- UI Font Settings ---
 DEFAULT_FONT_SIZE = 10  # Base font size in points

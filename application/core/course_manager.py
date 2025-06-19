@@ -48,6 +48,7 @@ class CourseManager:
             "fill_in_the_blank": self._check_fill_in_the_blank_answer,
             "sentence_jumble": self._check_sentence_jumble_answer,
             "context_block": self._check_completion_answer,
+            "pronunciation_practice": self._check_pronunciation_answer,
         }
 
         self._load_course_from_manifest()
@@ -260,6 +261,12 @@ class CourseManager:
         """Checks answers for exercises that are completed via a single action."""
         is_correct = user_answer.lower() == "completed"
         return is_correct, "Continue" if is_correct else "Activity not completed."
+    
+    def _check_pronunciation_answer(self, exercise: Exercise, user_transcription: str) -> Tuple[bool, str]:
+        """Checks answer for pronunciation exercises by comparing transcription."""
+        is_correct = user_transcription.strip().lower() == exercise.target_pronunciation_text.strip().lower()
+        feedback = f"Target: {exercise.target_pronunciation_text}\nYou said: {user_transcription}"
+        return is_correct, feedback
 
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """
@@ -268,6 +275,8 @@ class CourseManager:
         checker = self._answer_checkers.get(exercise.type)
         if checker:
             return checker(exercise, user_answer.strip())
+        elif exercise.type == "pronunciation_practice":
+            return self._check_pronunciation_answer(exercise, user_answer.strip())
         else:
             logger.warning(
                 f"Answer checking not implemented for exercise type: {exercise.type} (ID: {exercise.exercise_id})"
