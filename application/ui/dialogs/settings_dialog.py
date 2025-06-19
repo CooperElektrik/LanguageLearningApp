@@ -89,6 +89,11 @@ class SettingsDialog(QDialog):
         self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
         dev_layout.addRow(self.dev_mode_checkbox)
 
+        self.reset_onboarding_button = QPushButton(self.tr("Reset Onboarding Message Flag"))
+        self.reset_onboarding_button.setToolTip(self.tr("Allows the onboarding message to be shown again the next time a course is loaded."))
+        self.reset_onboarding_button.clicked.connect(self._reset_onboarding_flag)
+        dev_layout.addRow(self.reset_onboarding_button)
+
         main_layout.addWidget(self.dev_group)
 
         # --- Dialog Buttons ---
@@ -286,7 +291,19 @@ class SettingsDialog(QDialog):
         # Developer Settings
         self.dev_group.setTitle(self.tr("Developer"))
         self.dev_mode_checkbox.setText(self.tr("Enable Developer Mode"))
+        self.reset_onboarding_button.setText(self.tr("Reset Onboarding Message Flag"))
+        self.reset_onboarding_button.setToolTip(self.tr("Allows the onboarding message to be shown again the next time a course is loaded."))
         self.dev_mode_checkbox.setToolTip(self.tr("Requires application restart to take full effect for logging and some startup features."))
         # Dialog Buttons - standard buttons usually retranslate automatically.
         # If custom text was set, it would need retranslation.
         logger.debug("SettingsDialog retranslated.")
+
+    def _reset_onboarding_flag(self):
+        """Resets the onboarding seen flag in QSettings."""
+        self.q_settings.setValue(settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, False)
+        logger.info("Onboarding message flag has been reset. It will show again on the next course load.")
+        QMessageBox.information(
+            self,
+            self.tr("Onboarding Reset"),
+            self.tr("The onboarding message flag has been reset.\nThe welcome guide will be shown the next time you load a course.")
+        )

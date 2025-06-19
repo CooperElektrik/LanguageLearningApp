@@ -16,6 +16,7 @@ from core.progress_manager import ProgressManager
 from ui.views.base_exercise_player_view import BaseExercisePlayerView
 from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
 from ..dialogs.glossary_lookup_dialog import GlossaryLookupDialog
+from PySide6.QtGui import QKeyEvent # Added for keyPressEvent
 
 logger = logging.getLogger(__name__)
 
@@ -403,3 +404,9 @@ class LessonView(BaseExercisePlayerView): # Inherit from the new base class
              self.lesson_title_label.setText(self.tr("Reviewing Mistakes"))
         
         logger.debug("LessonView retranslated.")
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Handles keyboard shortcuts specific to LessonView."""
+        # Add any lesson-specific shortcuts here if needed in the future
+        # For now, just pass to base for common shortcuts like Ctrl+H, Ctrl+N
+        super().keyPressEvent(event)

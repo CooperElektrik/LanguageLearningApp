@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QMessageBox, QLabel, QWidget, QFileDialog,
     QVBoxLayout, QDockWidget, QApplication
 )
-from PySide6.QtGui import QAction, QFont, QGuiApplication, QCloseEvent
-from PySide6.QtCore import Qt, QCoreApplication, QSettings, QTranslator, QLocale, QEvent
+from PySide6.QtGui import QAction, QFont, QGuiApplication, QCloseEvent # Keep QCloseEvent
+from PySide6.QtCore import Qt, QCoreApplication, QSettings, QTranslator, QLocale, QEvent, QTimer
 
 from typing import Optional
 
@@ -108,9 +108,12 @@ class MainWindow(QMainWindow):
         
         self._setup_learning_ui()
         self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
-        self.show_course_overview()
+        self.show_course_overview() # Shows the central placeholder
 
-    def _load_course_for_editing(self):
+        # Check and show onboarding AFTER learning UI is set up and visible
+        QTimer.singleShot(150, self._check_and_show_onboarding) # Small delay for UI to settle
+
+    def _load_course_for_editing(self): # Keep existing definition
         """Opens a file dialog and loads a course into the EDITOR mode."""
         manifest_path, _ = QFileDialog.getOpenFileName(self, self.tr("Open Course Manifest"), "", "YAML Files (*.yaml)")
         if not manifest_path: return
@@ -275,6 +278,36 @@ class MainWindow(QMainWindow):
             logger.warning(f"Failed to load translator for locale code: {actual_locale_to_load}. Tried path: {qm_file_path}. UI might not update.")
             
         self._retranslate_main_window_ui()
+
+    def _check_and_show_onboarding(self):
+        """Checks if onboarding has been seen and shows it if not."""
+        if not self.learning_widget or not self.learning_widget.isVisible():
+            # If learning widget isn't ready, try again shortly
+            QTimer.singleShot(250, self._check_and_show_onboarding)
+            return
+
+        q_settings = QSettings()
+        onboarding_seen = q_settings.value(app_settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, False, type=bool)
+
+        if not onboarding_seen:
+            logger.info("First time loading a course or onboarding not seen. Displaying onboarding message.")
+            
+            title = self.tr("Welcome to LinguaLearn!")
+            message = self.tr(
+                "Welcome to your language course!\n\n"
+                "Here's a quick guide to the interface:\n\n"
+                "• Left Panel (Course Navigation):\n"
+                "  - Displays course units and lessons. Click a lesson to start.\n"
+                "  - Use 'Review Due' or 'Review Weak' to practice.\n\n"
+                "• Right Panel (Progress):\n"
+                "  - Shows your XP, study streak, and achievements.\n\n"
+                "• Central Area: Lessons and review exercises appear here.\n\n"
+                "Happy learning!"
+            )
+            QMessageBox.information(self.learning_widget, title, message) # Parent to learning_widget
+            
+            q_settings.setValue(app_settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, True)
+            logger.info("Onboarding message shown and flag set.")
 
     # --- Learning Mode Methods ---
     def show_course_overview(self):

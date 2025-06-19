@@ -34,6 +34,7 @@ QSETTINGS_KEY_UI_THEME = "ui/theme" # New key for storing selected theme
 QSETTINGS_KEY_FONT_SIZE = "ui/font_size" 
 QSETTINGS_KEY_AUTOPLAY_AUDIO = "audio/autoplay_audio_enabled"
 QSETTINGS_KEY_AUTOSHOW_HINTS = "ui/autoshow_hints_enabled"
+QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN = "onboarding/global_seen_v1" # v1 for future updates
 QSETTINGS_KEY_LOCALE = "ui/locale"
 
 # --- UI Font Settings ---

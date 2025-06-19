@@ -4,7 +4,7 @@ from enum import Enum, auto
 from PySide6.QtWidgets import (
     QLabel, QPushButton, QHBoxLayout, QMessageBox, QStyle, QWidget, QVBoxLayout, QDialog
 )
-from PySide6.QtCore import Signal, QTimer, Qt, QSettings
+from PySide6.QtCore import Signal, QTimer, Qt, QSettings, QEvent
 
 from typing import List, Optional
 
@@ -17,6 +17,7 @@ from ui.views.base_exercise_player_view import BaseExercisePlayerView
 from ui.widgets.exercise_widgets import TranslationExerciseWidget
 from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
 from ..dialogs.glossary_lookup_dialog import GlossaryLookupDialog
+from PySide6.QtGui import QKeyEvent # Added for keyPressEvent
 
 logger = logging.getLogger(__name__)
 
@@ -370,3 +371,25 @@ class ReviewView(BaseExercisePlayerView): # Inherit from BaseExercisePlayerView
             if found_entry:
                 dialog = GlossaryDetailDialog(found_entry, self.course_manager, self)
                 dialog.exec()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Handles keyboard shortcuts specific to ReviewView, like rating."""
+        if self.view_state == ReviewState.ANSWER_SUBMITTED:
+            key_map = {
+                Qt.Key_1: 0,  # Again
+                Qt.Key_2: 3,  # Hard
+                Qt.Key_3: 4,  # Good
+                Qt.Key_4: 5,  # Easy
+            }
+            if event.key() in key_map:
+                if self.rating_buttons_widget.isVisible(): # Ensure rating buttons are active
+                    quality_score = key_map[event.key()]
+                    logger.debug(f"Rating key '{event.text()}' pressed, calling _handle_rating({quality_score})")
+                    self._handle_rating(quality_score)
+                    event.accept()
+                    return
+        
+        # Pass unhandled events to the base class (for Ctrl+H, Ctrl+N)
+        super().keyPressEvent(event)
+
+    # Note: changeEvent for retranslation is already in the base class and inherited.

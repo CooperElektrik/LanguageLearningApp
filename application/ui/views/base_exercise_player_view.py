@@ -12,6 +12,7 @@ from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from ui.widgets.exercise_widgets import BaseExerciseWidget, EXERCISE_WIDGET_MAP
 import settings as app_settings # For QSettings keys
+from PySide6.QtGui import QKeyEvent # Added for keyPressEvent
 
 logger = logging.getLogger(__name__)
 
@@ -271,3 +272,20 @@ class BaseExercisePlayerView(QWidget):
         
         self._update_notes_button_indicator() # This uses self.tr() for tooltips
         logger.debug(f"{self.__class__.__name__} common elements retranslated.")
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Handles common keyboard shortcuts for the exercise player."""
+        if event.modifiers() == Qt.ControlModifier:
+            if event.key() == Qt.Key_H:
+                # Check if the specific view (LessonView or ReviewView) has this button
+                if hasattr(self, 'toggle_hint_button') and self.toggle_hint_button and self.toggle_hint_button.isVisible():
+                    self.toggle_hint_button.click() # Simulate a click to ensure all logic (text change etc.) runs
+                    event.accept()
+                    return
+            elif event.key() == Qt.Key_N:
+                # Check if the specific view has this button
+                if hasattr(self, 'toggle_notes_button') and self.toggle_notes_button:
+                    self.toggle_notes_button.setChecked(not self.toggle_notes_button.isChecked())
+                    event.accept()
+                    return
+        super().keyPressEvent(event) # Pass to parent or for further processing if not handled

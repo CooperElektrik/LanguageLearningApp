@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QTextBrowser,
 )
 from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QFont, QPixmap, QKeyEvent # Added QKeyEvent
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 try:
@@ -284,6 +284,28 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
     def set_focus_on_input(self):
         if self.options_group.buttons():
             self.options_group.buttons()[0].setFocus()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Handles number key presses for selecting options."""
+        key = event.key()
+        # Map Qt.Key_1 to Qt.Key_9 to indices 0-8
+        key_to_index_map = {
+            Qt.Key_1: 0, Qt.Key_2: 1, Qt.Key_3: 2, Qt.Key_4: 3,
+            Qt.Key_5: 4, Qt.Key_6: 5, Qt.Key_7: 6, Qt.Key_8: 7, Qt.Key_9: 8,
+        }
+
+        if key in key_to_index_map:
+            option_index = key_to_index_map[key]
+            if 0 <= option_index < len(self.options_group.buttons()):
+                button_to_select = self.options_group.buttons()[option_index]
+                if button_to_select.isEnabled(): # Only if the option is selectable
+                    # Setting checked will trigger the QButtonGroup.buttonClicked signal
+                    # which is already connected to self.answer_submitted
+                    button_to_select.setChecked(True)
+                    logger.debug(f"Option {option_index + 1} ('{button_to_select.text()}') selected via keyboard shortcut.")
+                    event.accept()
+                    return
+        super().keyPressEvent(event)
 
 
 class MultipleChoiceExerciseWidget(RadioButtonOptionExerciseWidget):
