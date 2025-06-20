@@ -83,6 +83,7 @@ def _parse_exercise(
     words_data = exercise_data.get("words")
     explanation_text = exercise_data.get("explanation")
     target_pron_text = exercise_data.get("target_pronunciation_text")
+    allowed_lev_dist = exercise_data.get("allowed_levenshtein_distance")
 
     options: List[ExerciseOption] = []
     if ex_type in [
@@ -154,6 +155,7 @@ def _parse_exercise(
         words=words_data if isinstance(words_data, list) else None,
         explanation=explanation_text,
         target_pronunciation_text=target_pron_text,
+        allowed_levenshtein_distance=allowed_lev_dist,
         raw_data=exercise_data,
     )
 

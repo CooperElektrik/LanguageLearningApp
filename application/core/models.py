@@ -39,6 +39,8 @@ class Exercise:
 
     target_pronunciation_text: Optional[str] = None
 
+    allowed_levenshtein_distance: Optional[int] = None
+
     words: Optional[List[str]] = None
 
     last_reviewed: Optional[datetime] = field(default=None, repr=False)
@@ -138,9 +140,10 @@ class Exercise:
             data["audio_file"] = self.audio_file
         if self.image_file is not None:
             data["image_file"] = self.image_file
-
         if self.explanation is not None:
             data["explanation"] = self.explanation
+        if self.allowed_levenshtein_distance is not None:
+            data["allowed_levenshtein_distance"] = self.allowed_levenshtein_distance
 
         return data
 

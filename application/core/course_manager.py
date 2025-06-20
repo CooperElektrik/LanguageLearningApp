@@ -1,5 +1,6 @@
 import os
 import logging
+import Levenshtein
 from typing import Optional, List, Tuple, Any, Dict, Callable
 
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
@@ -21,6 +22,9 @@ PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"
 PROMPT_KEY_CONTEXT_BLOCK = "prompt_context_block"
 PROMPT_KEY_DICTATION = "prompt_dictation"
 
+DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE = 1 # For most text-based inputs
+PRONUNCIATION_LEVENSHTEIN_TOLERANCE = 5 # More lenient for transcriptions
+DICTATION_LEVENSHTEIN_TOLERANCE = 2
 
 class CourseManager:
     def __init__(self, manifest_path: str):
@@ -191,18 +195,51 @@ class CourseManager:
 
     def get_lesson_exercise_count(self, lesson_id: str) -> int:
         return len(self.get_exercises(lesson_id))
+    
+    def _normalize_answer_for_comparison(self, text: str, for_pronunciation: bool = False) -> str:
+        """Normalizes text for comparison (lowercase, strip, optionally remove punctuation)."""
+        text_norm = text.lower().strip()
+        if for_pronunciation:
+            # For pronunciation, be more aggressive with punctuation removal
+            import string
+            # Remove all standard punctuation
+            text_norm = text_norm.translate(str.maketrans('', '', string.punctuation))
+            # Optional: normalize whitespace to single spaces if multiple spaces might occur
+            text_norm = " ".join(text_norm.split())
+        return text_norm
+
+    def _get_effective_tolerance(self, exercise: Exercise) -> int:
+        """Determines the Levenshtein tolerance for a given exercise."""
+        if exercise.allowed_levenshtein_distance is not None:
+            return exercise.allowed_levenshtein_distance
+        if exercise.type == "pronunciation_practice":
+            return PRONUNCIATION_LEVENSHTEIN_TOLERANCE
+        if exercise.type == "dictation":
+            return DICTATION_LEVENSHTEIN_TOLERANCE
+        # Add other type-specific defaults here if needed
+        return DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE
+
 
     def _check_translation_answer(
         self, exercise: Exercise, user_answer: str
     ) -> Tuple[bool, str]:
         """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
-        is_correct = user_answer.strip().lower() == exercise.answer.lower()
-        return is_correct, (
-            f"Correct: {correct_answer_display}"
-            if is_correct
-            else f"Incorrect. Correct: {correct_answer_display}"
-        )
+        
+        user_answer_norm = self._normalize_answer_for_comparison(user_answer, for_pronunciation=(exercise.type == "dictation"))
+        correct_answer_norm = self._normalize_answer_for_comparison(exercise.answer, for_pronunciation=(exercise.type == "dictation"))
+        
+        tolerance = self._get_effective_tolerance(exercise)
+        distance = Levenshtein.distance(user_answer_norm, correct_answer_norm)
+        is_correct_exact = (user_answer_norm == correct_answer_norm)
+        is_correct_fuzzy = (distance <= tolerance)
+
+        if is_correct_exact:
+            return True, f"Correct: {correct_answer_display}"
+        elif is_correct_fuzzy:
+            return True, f"Accepted (close match). Correct: {correct_answer_display}. You wrote: {user_answer}"
+        else:
+            return False, f"Incorrect. Correct: {correct_answer_display}. You wrote: {user_answer}"
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
@@ -234,26 +271,32 @@ class CourseManager:
             )
             return False, "Error: Exercise configuration issue (no correct answer)."
 
-        is_correct = user_answer.lower() == correct_answer_display.lower()
-        return is_correct, (
-            f"Correct: {correct_answer_display}"
-            if is_correct
-            else f"Incorrect. Correct: {correct_answer_display}"
-        )
+        user_answer_norm = self._normalize_answer_for_comparison(user_answer)
+        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
+        
+        tolerance = self._get_effective_tolerance(exercise)
+        distance = Levenshtein.distance(user_answer_norm, correct_answer_norm)
+        is_correct_exact = (user_answer_norm == correct_answer_norm)
+        is_correct_fuzzy = (distance <= tolerance)
+
+        if is_correct_exact:
+            return True, f"Correct: {correct_answer_display}"
+        elif is_correct_fuzzy:
+            return True, f"Accepted (close match). Correct: {correct_answer_display}. You wrote: {user_answer}"
+        else:
+            return False, f"Incorrect. Correct: {correct_answer_display}. You wrote: {user_answer}"
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
     ) -> Tuple[bool, str]:
         """Checks answer for sentence_jumble exercise type."""
         correct_answer_display = exercise.answer
-        is_correct = " ".join(user_answer.lower().split()) == " ".join(
-            correct_answer_display.lower().split()
-        )
-        return is_correct, (
-            f"Correct: {correct_answer_display}"
-            if is_correct
-            else f"Incorrect. Correct: {correct_answer_display}"
-        )
+        # For jumble, user_answer is already space-joined. We compare normalized strings.
+        user_answer_norm = self._normalize_answer_for_comparison(user_answer)
+        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
+
+        is_correct = (user_answer_norm == correct_answer_norm) # Jumble should usually be exact order
+        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}. You arranged: {user_answer}"
 
     def _check_completion_answer(
         self, exercise: Exercise, user_answer: str
@@ -264,9 +307,24 @@ class CourseManager:
     
     def _check_pronunciation_answer(self, exercise: Exercise, user_transcription: str) -> Tuple[bool, str]:
         """Checks answer for pronunciation exercises by comparing transcription."""
-        is_correct = user_transcription.strip().lower() == exercise.target_pronunciation_text.strip().lower()
-        feedback = f"Target: {exercise.target_pronunciation_text}\nYou said: {user_transcription}"
-        return is_correct, feedback
+        target_text_display = exercise.target_pronunciation_text
+
+        user_transcription_norm = self._normalize_answer_for_comparison(user_transcription, for_pronunciation=True)
+        target_text_norm = self._normalize_answer_for_comparison(target_text_display, for_pronunciation=True)
+
+        tolerance = self._get_effective_tolerance(exercise)
+        distance = Levenshtein.distance(user_transcription_norm, target_text_norm)
+        is_correct_exact = (user_transcription_norm == target_text_norm)
+        is_correct_fuzzy = (distance <= tolerance)
+        
+        base_feedback = f"Target: {target_text_display}\nYou said: {user_transcription}"
+
+        if is_correct_exact:
+            return True, f"Excellent match!\n{base_feedback}"
+        elif is_correct_fuzzy:
+            return True, f"Good (close match)!\n{base_feedback}"
+        else:
+            return False, f"Needs improvement.\n{base_feedback}\n(Difference: {distance}, Allowed: {tolerance})"
 
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """
