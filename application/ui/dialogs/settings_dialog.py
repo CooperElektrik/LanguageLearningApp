@@ -57,7 +57,7 @@ class SettingsDialog(QDialog):
         self.pronunciation_settings_layout = QFormLayout(self.pronunciation_settings_group)
         
         self.whisper_model_combo = QComboBox()
-        self.whisper_model_combo.addItems(["None"] + settings.WHISPER_MODELS_AVAILABLE) # "None" to disable
+        self._populate_whisper_models()
         self.pronunciation_settings_layout.addRow(self.tr("Whisper Model:"), self.whisper_model_combo)
 
         self.unload_model_button = QPushButton(self.tr("Unload Model from Memory"))
@@ -67,6 +67,14 @@ class SettingsDialog(QDialog):
         self.audio_input_device_combo = QComboBox()
         self._populate_audio_input_devices()
         self.pronunciation_settings_layout.addRow(self.tr("Microphone Input Device:"), self.audio_input_device_combo)
+
+        # Add a note about CUDA build requirements
+        cuda_note_label = QLabel(self.tr(
+            "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+        ))
+        cuda_note_label.setWordWrap(True)
+        self.pronunciation_settings_layout.addRow(cuda_note_label) # Add as a new row in the form layout
+
         
         audio_layout.addWidget(self.pronunciation_settings_group) # Add the new sub-group to the main audio layout
 
@@ -160,6 +168,21 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(buttons)
 
         self.load_settings()
+
+    def _populate_whisper_models(self):
+        """Populates the Whisper model combo box with detailed tooltips."""
+        self.whisper_model_combo.addItem("None", userData="None") # Option to disable
+
+        for model_name, info in settings.WHISPER_MODEL_INFO.items():
+            self.whisper_model_combo.addItem(model_name, userData=model_name)
+            # Set the tooltip for the item we just added
+            tooltip_text = self.tr(
+                "Model: {model_name}\n"
+                "Size: {size}\n"
+                "Parameters: {params}\n"
+                "Recommended Device: {device_rec}"
+            ).format(**info, model_name=model_name)
+            self.whisper_model_combo.setItemData(self.whisper_model_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
 
     def _populate_audio_input_devices(self):
         """Populates the audio input device combo box."""

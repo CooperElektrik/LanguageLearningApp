@@ -6,6 +6,7 @@ import re
 import markdown
 import urllib.parse
 import tempfile
+import difflib
 from typing import Any, Dict, Optional, Type, List
 
 from PySide6.QtWidgets import (
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QFrame,
     QTextBrowser,
+    QGroupBox
 )
 from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings, QThread, QByteArray, QIODevice, QBuffer
 from PySide6.QtGui import QFont, QPixmap, QKeyEvent  # Added QKeyEvent
@@ -569,45 +571,59 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
     def __init__(self, exercise: Exercise, course_manager: CourseManager, whisper_manager: WhisperManager, parent=None):
         super().__init__(exercise, course_manager, parent)
-        self.whisper_manager = whisper_manager # Use the passed-in manager
+        self.whisper_manager = whisper_manager
         self._audio_recorder: Optional[QAudioSource] = None
-        self._audio_buffer: Optional[QByteArray] = None 
+        self._audio_buffer: Optional[QByteArray] = None
         self._qbuffer: Optional[QBuffer] = None
         self._temp_audio_file: Optional[tempfile.NamedTemporaryFile] = None
         self._is_recording = False
-
 
         # --- UI Setup ---
         self.target_text_label = QLabel(self.tr("Please pronounce: ") + f"<b>{self.exercise.target_pronunciation_text}</b>")
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
         self.layout.insertWidget(self.layout.indexOf(self.prompt_label) + 1, self.target_text_label)
-        self.prompt_label.setVisible(False) # Hide generic prompt, use target_text_label
+        self.prompt_label.setVisible(False)
 
         if self.exercise.audio_file:
             self.play_ref_button = QPushButton(self.tr("🔊 Play Reference"))
             self.play_ref_button.clicked.connect(lambda: self._play_audio_file(self.exercise.audio_file))
             self.layout.insertWidget(self.layout.indexOf(self.target_text_label) + 1, self.play_ref_button)
 
-        # This button is shown if the model isn't loaded yet
-        self.load_model_button = QPushButton() # Text set dynamically
+        # Action Buttons
+        action_layout = QHBoxLayout()
+        self.load_model_button = QPushButton()
         self.load_model_button.setObjectName("load_model_button")
         self.load_model_button.clicked.connect(self._handle_load_model_click)
-        self.layout.addWidget(self.load_model_button)
+        action_layout.addWidget(self.load_model_button)
 
         self.record_button = QPushButton(self.tr("🎤 Record"))
         self.record_button.setCheckable(True)
         self.record_button.toggled.connect(self._handle_record_toggle)
-        self.layout.addWidget(self.record_button)
+        action_layout.addWidget(self.record_button)
+        self.layout.addLayout(action_layout)
 
         self.status_label = QLabel(self.tr("Tap record and speak clearly."))
         self.status_label.setObjectName("pronunciation_status_label")
         self.layout.addWidget(self.status_label)
 
-        self.transcribed_text_label = QLabel("")
-        self.transcribed_text_label.setObjectName("pronunciation_result_label")
-        self.transcribed_text_label.setWordWrap(True)
-        self.layout.addWidget(self.transcribed_text_label)
+        # --- Rich Feedback Area ---
+        self.feedback_group = QGroupBox(self.tr("Transcription Feedback"))
+        feedback_layout = QVBoxLayout(self.feedback_group)
+        self.confidence_browser = QTextBrowser()
+        self.confidence_browser.setOpenExternalLinks(False)
+        self.diff_browser = QTextBrowser()
+        self.diff_browser.setOpenExternalLinks(False)
+        feedback_layout.addWidget(QLabel(self.tr("Your speech (colored by confidence):")))
+        feedback_layout.addWidget(self.confidence_browser)
+        feedback_layout.addWidget(QLabel(self.tr("Comparison with target text:")))
+        feedback_layout.addWidget(self.diff_browser)
+        
+        self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
+        self.try_again_button.clicked.connect(self.clear_input)
+        feedback_layout.addWidget(self.try_again_button)
+        
+        self.layout.addWidget(self.feedback_group)
         
         self.whisper_manager.modelLoadingStarted.connect(self._on_model_loading_started)
         self.whisper_manager.modelLoadingFinished.connect(self._on_model_loading_finished)
@@ -707,7 +723,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 self.record_button.setChecked(False) # Revert button state
                 return
 
-            self.transcribed_text_label.setText("")
+            self.feedback_group.setVisible(False)
             self.status_label.setText(self.tr("Recording... Speak now!"))
             self.record_button.setText(self.tr("⏹️ Stop Recording"))
             
@@ -782,15 +798,73 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.record_button.setEnabled(True)
 
 
-    def _on_transcription_finished(self, exercise_id: str, recognized_text: str):
-        if exercise_id != self.exercise.exercise_id: return # Stale signal
+    def _on_transcription_finished(self, exercise_id: str, segments, info):
+        if exercise_id != self.exercise.exercise_id: return
 
-        self.status_label.setText(self.tr("Transcription complete."))
-        self.transcribed_text_label.setText(f"You said: <b>{recognized_text}</b>")
-        self.record_button.setEnabled(True)
-        self.transcription_ready.emit(recognized_text)
+        all_words = []
+        full_text = ""
+        # Consume the generator to get all words
+        segment_list = list(segments)
+        for segment in segment_list:
+            full_text += segment.text
+            if segment.words:
+                all_words.extend(segment.words)
+
+        full_text = full_text.strip()
         
-        self.answer_submitted.emit(recognized_text) # Submit recognized text as the "answer"
+        self.status_label.setText(self.tr("Transcription complete. Review your feedback below."))
+        self.record_button.setEnabled(True)
+        self.feedback_group.setVisible(True)
+        
+        # 1. Generate and display confidence HTML
+        confidence_html = self._generate_confidence_html(all_words)
+        self.confidence_browser.setHtml(confidence_html)
+        
+        # 2. Generate and display diff HTML
+        target_text = self.exercise.target_pronunciation_text
+        diff_html = self._generate_diff_html(target_text, full_text)
+        self.diff_browser.setHtml(diff_html)
+        
+        self.transcription_ready.emit(full_text)
+        self.answer_submitted.emit(full_text)
+
+    def _generate_confidence_html(self, words: list) -> str:
+        """Generates HTML with words colored by their transcription confidence."""
+        if not words: return "<i>No speech detected.</i>"
+        
+        html_parts = []
+        for word in words:
+            prob = word.probability
+            if prob > 0.9:
+                color = "#006400"  # DarkGreen
+            elif prob > 0.7:
+                color = "#DAA520"  # GoldenRod
+            elif prob > 0.5:
+                color = "#FF8C00"  # DarkOrange
+            else:
+                color = "#DC143C"  # Crimson
+            html_parts.append(f'<span style="color: {color};">{word.word}</span>')
+        
+        return "".join(html_parts)
+
+    def _generate_diff_html(self, target_str: str, user_str: str) -> str:
+        """Generates HTML showing a visual diff between two strings."""
+        target_str_norm = self.course_manager._normalize_answer_for_comparison(target_str, for_pronunciation=True)
+        user_str_norm = self.course_manager._normalize_answer_for_comparison(user_str, for_pronunciation=True)
+
+        matcher = difflib.SequenceMatcher(None, target_str_norm.split(), user_str_norm.split())
+        html_parts = []
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                html_parts.append(" ".join(matcher.a[i1:i2]))
+            else:
+                if tag in ('delete', 'replace'):
+                    deleted_text = " ".join(matcher.a[i1:i2])
+                    html_parts.append(f'<span style="background-color: #ffdddd; text-decoration: line-through;">{deleted_text}</span>')
+                if tag in ('insert', 'replace'):
+                    inserted_text = " ".join(matcher.b[j1:j2])
+                    html_parts.append(f'<span style="background-color: #ddffdd; font-weight: bold;">{inserted_text}</span>')
+        return " ".join(html_parts)
 
 
     def _on_transcription_error(self, exercise_id: str, error_message: str):
@@ -800,48 +874,34 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.record_button.setEnabled(True)
         self.transcription_error.emit(error_message)
 
-
-    def _handle_audio_error(self, error_code): # QAudioSource.Error enum
-        logger.error(f"AudioSource Error: {self._audio_recorder.errorString()} (Code: {error_code})")
-        self.status_label.setText(self.tr("Audio recording error: {0}").format(self._audio_recorder.errorString()))
-        self.record_button.setChecked(False) # Reset button
-        self.record_button.setText(self.tr("🎤 Record"))
-        self._is_recording = False
-
     def get_answer(self) -> str:
-        # For pronunciation, the "answer" is the transcribed text.
-        # The correctness will be judged by comparing it to target_pronunciation_text.
-        # Ensure we return the *clean* recognized text.
-        return self.transcribed_text_label.text().replace("You said: ", "").replace("<b>", "").replace("</b>", "").strip()
-
+        return ""
+    
     def clear_input(self):
-        self.transcribed_text_label.setText("")
-        self.status_label.setText(self.tr("Tap record and speak clearly."))
-        self.record_button.setChecked(False) # Ensure it's in "ready to record" state
+        """Called by 'Try Again' button."""
+        self.feedback_group.setVisible(False)
+        self.confidence_browser.clear()
+        self.diff_browser.clear()
+        self._update_ui_for_model_state()
+        self.record_button.setChecked(False)
 
 
-    def stop_media(self): # Override to stop recording/transcription
-        super().stop_media() # Stops reference audio if playing
+    def stop_media(self):
+        super().stop_media()
         if self._is_recording and self._audio_recorder:
             self._audio_recorder.stop()
+            self._is_recording = False
             logger.info("Recording stopped by stop_media call.")
-        
-        # Clean up temp file if widget is being destroyed/cleared
         if self._temp_audio_file:
             try:
-                if not self._temp_audio_file.closed:
-                    self._temp_audio_file.close()
+                if not self._temp_audio_file.closed: self._temp_audio_file.close()
                 if os.path.exists(self._temp_audio_file.name):
                     os.unlink(self._temp_audio_file.name)
-                    logger.debug(f"Cleaned up temp audio file {self._temp_audio_file.name} in stop_media")
             except Exception as e:
                 logger.error(f"Error during temp file cleanup in stop_media: {e}")
             self._temp_audio_file = None
-        
-        # Ensure QBuffer is also properly closed/disposed
         if self._qbuffer and self._qbuffer.isOpen():
             self._qbuffer.close()
-            logger.debug(f"QBuffer closed in stop_media.")
         self._qbuffer = None
         self._audio_buffer = None
 

@@ -1,7 +1,7 @@
 import logging
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QDialogButtonBox, QMessageBox
 from PySide6.QtMultimedia import QMediaDevices
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, Qt
 from application import settings as app_settings
 
 logger = logging.getLogger(__name__)
@@ -33,15 +33,20 @@ class InitialAudioSetupDialog(QDialog):
         # Whisper model selection
         whisper_label = QLabel(self.tr("Select a speech recognition model:"))
         self.whisper_combo = QComboBox()
-        self.whisper_combo.addItems(["None"] + app_settings.WHISPER_MODELS_AVAILABLE)
-        self.whisper_combo.setToolTip(self.tr(
-            "'None' will disable pronunciation exercises. 'base' is fastest, 'medium' is most accurate. "
-            "The model will be downloaded on first use."
-        ))
-        # Set a sensible default for first-time users
+        self._populate_whisper_models()
+
         self.whisper_combo.setCurrentText(app_settings.WHISPER_MODEL_DEFAULT)
         main_layout.addWidget(whisper_label)
         main_layout.addWidget(self.whisper_combo)
+
+        # Add a note about CUDA build requirements
+        cuda_note_label = QLabel(self.tr(
+            "<i><b>Note:</b> For GPU acceleration (recommended for Medium model), "
+            "the application must be run from an environment with a CUDA-enabled PyTorch build. "
+            "Otherwise, models will run on the CPU.</i>"
+        ))
+        cuda_note_label.setWordWrap(True)
+        main_layout.addWidget(cuda_note_label)
 
         # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
@@ -57,6 +62,22 @@ class InitialAudioSetupDialog(QDialog):
             index = self.mic_combo.findData(default_device.id().toStdString())
             if index != -1:
                 self.mic_combo.setCurrentIndex(index)
+
+    def _populate_whisper_models(self):
+        """Populates the Whisper model combo box with detailed tooltips."""
+        self.whisper_combo.addItem("None", userData="None") # Option to disable
+
+        for model_name, info in app_settings.WHISPER_MODEL_INFO.items():
+            self.whisper_combo.addItem(model_name, userData=model_name)
+            # Set the tooltip for the item we just added
+            tooltip_text = self.tr(
+                "Model: {model_name}\n"
+                "Size: {size}\n"
+                "Parameters: {params}\n"
+                "Recommended Device: {device_rec}"
+            ).format(**info, model_name=model_name) # Unpack dict and add model_name
+            
+            self.whisper_combo.setItemData(self.whisper_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
 
     def save_and_accept(self):
         # Save microphone choice

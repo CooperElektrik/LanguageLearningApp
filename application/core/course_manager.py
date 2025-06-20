@@ -6,7 +6,11 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
-from application import utils  # For developer mode check
+try:
+    from application import utils  # For developer mode check
+except ImportError:
+    from . import utils # Nuitka
+from PySide6.QtCore import QObject
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +30,15 @@ DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE = 1 # For most text-based inputs
 PRONUNCIATION_LEVENSHTEIN_TOLERANCE = 5 # More lenient for transcriptions
 DICTATION_LEVENSHTEIN_TOLERANCE = 2
 
-class CourseManager:
-    def __init__(self, manifest_path: str):
-        self.course: Optional[Course] = None
+class CourseManager(QObject):
+    def __init__(self, manifest_path: str, parent):
+        super().__init__(parent=parent) # Call QObject's constructor
+        # All existing attributes become instance attributes
+        self.course: Optional[Course] = None 
         self.manifest_data: Optional[dict] = None
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
         self.glossary: List[GlossaryEntry] = []
-        # NEW: A map for efficient, case-insensitive glossary lookups.
-        # Key: lowercase word, Value: GlossaryEntry object.
-        self.glossary_map: Dict[str, GlossaryEntry] = {}
 
         self.manifest_path = manifest_path
 
@@ -235,11 +238,11 @@ class CourseManager:
         is_correct_fuzzy = (distance <= tolerance)
 
         if is_correct_exact:
-            return True, f"Correct: {correct_answer_display}"
+            return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, f"Accepted (close match). Correct: {correct_answer_display}. You wrote: {user_answer}"
+            return True, self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
         else:
-            return False, f"Incorrect. Correct: {correct_answer_display}. You wrote: {user_answer}"
+            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
@@ -250,15 +253,11 @@ class CourseManager:
             logger.error(
                 f"No correct option defined for MC exercise {exercise.exercise_id}."
             )
-            return False, "Error: Exercise configuration issue (no correct answer)."
+            return False, self.tr("Error: Exercise configuration issue (no correct answer).")
 
         correct_answer_display = correct_option.text
-        is_correct = user_answer.lower() == correct_option.text.lower()
-        return is_correct, (
-            f"Correct: {correct_answer_display}"
-            if is_correct
-            else f"Incorrect. Correct: {correct_answer_display}"
-        )
+        is_correct_exact = user_answer.lower() == correct_option.text.lower()
+        return is_correct_exact, self.tr("Correct: {0}").format(correct_answer_display) if is_correct_exact else self.tr("Incorrect. Correct: {0}").format(correct_answer_display)
 
     def _check_fill_in_the_blank_answer(
         self, exercise: Exercise, user_answer: str
@@ -280,11 +279,11 @@ class CourseManager:
         is_correct_fuzzy = (distance <= tolerance)
 
         if is_correct_exact:
-            return True, f"Correct: {correct_answer_display}"
+            return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, f"Accepted (close match). Correct: {correct_answer_display}. You wrote: {user_answer}"
+            return True, self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
         else:
-            return False, f"Incorrect. Correct: {correct_answer_display}. You wrote: {user_answer}"
+            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
@@ -295,8 +294,11 @@ class CourseManager:
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
         correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
 
+        user_answer_norm = self._normalize_answer_for_comparison(user_answer)
+        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
+
         is_correct = (user_answer_norm == correct_answer_norm) # Jumble should usually be exact order
-        return is_correct, f"Correct: {correct_answer_display}" if is_correct else f"Incorrect. Correct: {correct_answer_display}. You arranged: {user_answer}"
+        return is_correct, self.tr("Correct: {0}").format(correct_answer_display) if is_correct else self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(correct_answer_display, user_answer)
 
     def _check_completion_answer(
         self, exercise: Exercise, user_answer: str
@@ -320,11 +322,11 @@ class CourseManager:
         base_feedback = f"Target: {target_text_display}\nYou said: {user_transcription}"
 
         if is_correct_exact:
-            return True, f"Excellent match!\n{base_feedback}"
+            return True, self.tr("Excellent match!")
         elif is_correct_fuzzy:
-            return True, f"Good (close match)!\n{base_feedback}"
+            return True, self.tr("Good (close match)!")
         else:
-            return False, f"Needs improvement.\n{base_feedback}\n(Difference: {distance}, Allowed: {tolerance})"
+            return False, self.tr("Needs improvement. See comparison below.")
 
     def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
         """
@@ -332,14 +334,10 @@ class CourseManager:
         """
         checker = self._answer_checkers.get(exercise.type)
         if checker:
-            return checker(exercise, user_answer.strip())
-        elif exercise.type == "pronunciation_practice":
-            return self._check_pronunciation_answer(exercise, user_answer.strip())
+            return checker(exercise, user_answer.strip()) # Pass user_answer stripped
         else:
-            logger.warning(
-                f"Answer checking not implemented for exercise type: {exercise.type} (ID: {exercise.exercise_id})"
-            )
-            return False, "Cannot check this exercise type."
+            logger.warning(self.tr("Answer checking not implemented for exercise type: {0} (ID: {1})").format(exercise.type, exercise.exercise_id))
+            return False, self.tr("Cannot check this exercise type.")
 
     def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
         """

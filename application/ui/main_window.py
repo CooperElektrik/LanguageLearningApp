@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
 
     def _load_course_for_learning(self, manifest_path: str):
         """Initializes services and UI for the LEARNING mode."""
-        self.course_manager = CourseManager(manifest_path=manifest_path)
+        self.course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not self.course_manager.course:
             QMessageBox.critical(
                 self, self.tr("Course Load Error"), self.tr("Failed to load course.")
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
         if not manifest_path:
             return
 
-        editor_course_manager = CourseManager(manifest_path=manifest_path)
+        editor_course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not editor_course_manager.course:
             QMessageBox.critical(
                 self,
@@ -434,10 +434,8 @@ class MainWindow(QMainWindow):
             dialog = InitialAudioSetupDialog(self)
             dialog.exec()
             # After this, settings are saved. The app will use them on the next exercise.
-        elif not QMediaDevices.audioInputs():
+        elif not setup_done and not QMediaDevices.audioInputs():
             logger.warning("Initial audio setup skipped: No audio input devices found.")
-            # Mark as done so we don't check again this session
-            q_settings.setValue(app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, True)
 
     def _check_and_show_onboarding(self):
         """Checks if onboarding has been seen and shows it if not."""

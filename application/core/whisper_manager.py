@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject, Signal, QThread, QSettings, QRunnable, QThre
 from typing import Optional, Tuple
 import settings as app_settings
 import os
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +47,16 @@ class TranscriptionTask(QRunnable):
         self.signals = self.Signals()
 
     class Signals(QObject):
-        finished = Signal(str, str) # exercise_id, recognized_text
+        finished = Signal(str, object, object) # exercise_id, segments, info
         error = Signal(str, str)    # exercise_id, error_message
 
     def run(self):
         try:
             logger.info(f"Background Task: Starting transcription for {self.audio_path}")
-            segments, _ = self._model.transcribe(self.audio_path, beam_size=5)
-            transcription = "".join(segment.text for segment in segments).strip()
-            logger.info(f"Background Task: Transcription finished for {self.exercise_id}: '{transcription}'")
-            self.signals.finished.emit(self.exercise_id, transcription)
+            segments, info = self._model.transcribe(self.audio_path, beam_size=5, word_timestamps=True, temperature=0.7)
+            logger.info(f"Background Task: Transcription finished for {self.exercise_id}.")
+            # Pass the generator objects directly. They will be consumed by the receiver.
+            self.signals.finished.emit(self.exercise_id, segments, info)
         except Exception as e:
             logger.error(f"Background Task: Error during transcription for {self.exercise_id}: {e}", exc_info=True)
             self.signals.error.emit(self.exercise_id, str(e))
@@ -75,8 +76,22 @@ class WhisperManager(QObject):
         self._active_model_name_loaded: Optional[str] = None
         self._is_loading = False
 
-        self.device = "cuda" if app_settings.FORCE_LOCALE else "cpu"
-        self.compute_type = "int8"
+        self.device, self.compute_type = self._get_best_device_config()
+        logger.info(f"WhisperManager configured to use device='{self.device}' with compute_type='{self.compute_type}'.")
+
+    def _get_best_device_config(self) -> Tuple[str, str]:
+        """Determines the best available device (cuda or cpu) and corresponding compute type."""
+        if torch.cuda.is_available():
+            # Check if the GPU supports float16, which is much faster.
+            # This is a simplification; a more robust check would involve compute capability.
+            # Most modern NVIDIA GPUs support float16.
+            try:
+                if torch.cuda.get_device_capability(0)[0] >= 7:
+                    return "cuda", "float16"
+            except Exception as e:
+                logger.warning(f"Could not determine CUDA device capability, falling back. Error: {e}")
+            return "cuda", "int8"
+        return "cpu", "int8"
 
     def get_selected_model_name(self) -> str:
         return self.q_settings.value(app_settings.QSETTINGS_KEY_WHISPER_MODEL, app_settings.WHISPER_MODEL_DEFAULT, type=str)
