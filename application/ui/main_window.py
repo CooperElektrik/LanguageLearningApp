@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QDockWidget,
     QApplication,
+    QPushButton,
+    QStatusBar
 )
 from PySide6.QtGui import (
     QAction,
@@ -39,6 +41,7 @@ except ImportError:
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
 from core.whisper_manager import WhisperManager
+from core.models import Exercise
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
 from ui.views.review_view import ReviewView
@@ -48,6 +51,7 @@ from ui.views.course_selection_view import CourseSelectionView
 from ui.views.course_editor_view import CourseEditorView
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
+from ui.dialogs.dev_info_dialog import DevInfoDialog
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +83,10 @@ class MainWindow(QMainWindow):
         # Placeholders for other modes' main widgets
         self.learning_widget = None
         self.editor_view = None
+
+        # Status bar button for dev info
+        self.dev_info_button: Optional[QPushButton] = None
+        self._setup_status_bar()
 
         self.current_translator = utils.setup_initial_translation(
             QApplication.instance()
@@ -139,6 +147,17 @@ class MainWindow(QMainWindow):
         )
         self.apply_font_size(saved_font_size)  # Apply saved or default font size
 
+    def _setup_status_bar(self):
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        self.dev_info_button = QPushButton("Dev Info")
+        self.dev_info_button.setObjectName("dev_info_status_button")
+        self.dev_info_button.setToolTip("Show current course/exercise developer information")
+        self.dev_info_button.clicked.connect(self._show_dev_info_dialog)
+        self.status_bar.addPermanentWidget(self.dev_info_button)
+        # Visibility is controlled by _update_dev_info_button_visibility
+        self._update_dev_info_button_visibility()
+
     def _load_course_for_learning(self, manifest_path: str):
         """Initializes services and UI for the LEARNING mode."""
         self.course_manager = CourseManager(manifest_path=manifest_path)
@@ -159,6 +178,7 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(
             150, self._check_and_show_onboarding
         )  # Small delay for UI to settle
+        self._update_dev_info_button_visibility()
         QTimer.singleShot(
             200, self._check_and_show_initial_setup
         )
@@ -178,10 +198,11 @@ class MainWindow(QMainWindow):
                 self.tr("Course Load Error"),
                 self.tr("Failed to load selected course for editing."),
             )
-            return
+
 
         self._setup_editing_ui(editor_course_manager)
         self.setWindowTitle(f"LL Editor - {editor_course_manager.get_course_title()}")
+        self._update_dev_info_button_visibility()
 
     def _setup_learning_ui(self):
         """Builds the main learning interface with docks and views."""
@@ -303,6 +324,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.tr("LinguaLearn"))
         self.main_stack.setCurrentWidget(self.course_selection_view)
         self.menuBar().setVisible(True)
+        self._update_dev_info_button_visibility()
+
         self._setup_file_menu()
 
     def _clear_dynamic_widgets(self):
@@ -319,6 +342,7 @@ class MainWindow(QMainWindow):
 
         self.course_manager = None
         self.progress_manager = None
+        self._update_dev_info_button_visibility()
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self.whisper_manager, self) # Pass the manager
@@ -378,6 +402,26 @@ class MainWindow(QMainWindow):
 
         self._retranslate_main_window_ui()
 
+    def _update_dev_info_button_visibility(self):
+        if self.dev_info_button:
+            is_dev_mode = utils.is_developer_mode_active()
+            # Only show if in dev mode AND a course is loaded (for learning or editing)
+            # Or always show in dev mode, and dialog handles "no course"
+            self.dev_info_button.setVisible(is_dev_mode)
+
+    def _show_dev_info_dialog(self):
+        current_exercise: Optional[Exercise] = None
+        
+        # Check if we are in learning mode and which view is active
+        if self.learning_widget and self.learning_widget.isVisible():
+            central_stack = self.learning_ui_views.get("central_stack")
+            if central_stack:
+                current_player_widget = central_stack.currentWidget()
+                if hasattr(current_player_widget, 'current_exercise_obj'):
+                    current_exercise = current_player_widget.current_exercise_obj
+
+        dialog = DevInfoDialog(self.course_manager, self.progress_manager, current_exercise, self)
+        dialog.exec()
 
     def _check_and_show_initial_setup(self):
         """Checks if the initial audio setup has been done and shows the dialog if not."""
@@ -513,7 +557,10 @@ class MainWindow(QMainWindow):
         if self.learning_widget and self.learning_widget.isVisible():
             # The learning_widget is a QMainWindow, its menuBar should update.
             # Its internal views (overview, progress, lesson, etc.) should handle their own retranslation via changeEvent.
-            pass
+            # pass
+        
+            if self.dev_info_button:
+                self.dev_info_button.setText(self.tr("Dev Info"))
 
         # Inform child views if necessary (more advanced)
         # For now, rely on QEvent.LanguageChange and the restart prompt.
