@@ -2,7 +2,7 @@ import logging
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QDialogButtonBox, QMessageBox
 from PySide6.QtMultimedia import QMediaDevices
 from PySide6.QtCore import QSettings, Qt
-from application import settings as app_settings
+import settings as app_settings
 
 logger = logging.getLogger(__name__)
 

@@ -18,27 +18,47 @@ from PIL import Image  # Import Pillow
 
 from typing import Optional
 
+# --- Start of Patched Section for PyInstaller Compatibility ---
+
+# Path configuration MUST be done before local imports.
+# This ensures that whether running from source or a PyInstaller bundle,
+# the Python path is set up correctly to find the application's modules.
+
+# Check if running in a PyInstaller bundle by detecting the `_MEIPASS` attribute.
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    # In a bundled app, `sys._MEIPASS` points to the temporary folder
+    # where all bundled files are extracted. This is our effective project root.
+    _project_root = sys._MEIPASS
+    # We assume the `application` folder is a subdirectory in the bundle.
+    _application_dir = os.path.join(_project_root, 'application')
+else:
+    # In a normal development environment, calculate paths relative to this script.
+    _application_dir = os.path.dirname(os.path.abspath(__file__))
+    _project_root = os.path.dirname(_application_dir)
+
+# Add the project root to `sys.path`. This allows for robust absolute imports
+# like `from application import settings`.
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+# With `sys.path` correctly set, we can now import our application modules.
+# We use a try-except to handle different ways the script might be run.
 try:
     from . import settings
     from . import utils
-except ImportError:
-    # Fallback for scenarios where main.py might be run in an unusual context
-    # or if settings/utils are needed before sys.path is fully configured.
+except (ImportError, ModuleNotFoundError):
+    # This fallback is for scenarios like running `main.py` directly from inside
+    # the `application` directory, where the `application` package itself isn't
+    # in the path. We add `_application_dir` to the path to make this work.
     import settings
     import utils
 
-# Determine the application directory and the project root
-_application_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.dirname(_application_dir)
-
+# Now that `utils` is imported, we can configure its required path.
 utils.set_app_root_dir(
     _application_dir
-)  # utils.get_resource_path needs the 'application' dir as its base for relative paths like "ui/styles"
+)  # `utils.get_resource_path` needs this base for relative paths.
 
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-    # logger is defined after setup_logging, so use print or basicConfig for early debug if needed
-    # logging.debug(f"Added project root '{_project_root}' to sys.path for main application.")
+# --- End of Patched Section ---
 
 
 def setup_logging():
@@ -81,10 +101,9 @@ def main():
     logger = (
         setup_logging()
     )  # Now setup_logging can safely use utils.is_developer_mode_active()
-    if _project_root not in sys.path:  # Log after logger is available
-        logger.debug(
-            f"Project root '{_project_root}' was already in sys.path or just added."
-        )
+    # Log the path setup now that the logger is available.
+    logger.debug(f"Project root '{_project_root}' is in sys.path.")
+
     # --- Splash Screen Setup ---
     try:
         splash_image_path_relative = settings.SPLASH_IMAGE_FILE

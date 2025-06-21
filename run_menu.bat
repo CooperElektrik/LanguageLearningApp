@@ -15,7 +15,7 @@ IF EXIST "%SCRIPT_DIR%\venv\Scripts\activate.bat" (
 ) ELSE (
     echo Virtual environment not found at "%SCRIPT_DIR%\venv\".
     echo Proceeding with the current Python environment.
-    echo Please ensure PySide6, PyYAML, Nuitka, and pytest are installed.
+    echo Please ensure PySide6, PyYAML, Nuitka, PyInstaller, and pytest are installed.
     echo.
 )
 
@@ -28,17 +28,19 @@ echo.
 echo  1. Run Main Application (Learning Mode)
 echo  2. Open Course Editor
 echo  3. Compile Application to EXE (with Nuitka)
-echo  4. Run Automated Tests (with pytest)
-echo  5. Exit
+echo  4. Compile Application to EXE (with PyInstaller) 
+echo  5. Run Automated Tests (with pytest)
+echo  6. Exit
 echo.
 set "choice="
-set /p choice="Enter your choice (1-5): "
+set /p choice="Enter your choice (1-6): "
 
 if "%choice%"=="1" goto runApp
 if "%choice%"=="2" goto runEditor
-if "%choice%"=="3" goto compileApp
-if "%choice%"=="4" goto runTests
-if "%choice%"=="5" goto end
+if "%choice%"=="3" goto compileNuitka
+if "%choice%"=="4" goto compilePyInstaller
+if "%choice%"=="5" goto runTests
+if "%choice%"=="6" goto end
 
 echo Invalid choice. Please press any key to try again.
 pause >nul
@@ -66,7 +68,7 @@ echo Editor closed. Press any key to return to the menu.
 pause >nul
 goto menu
 
-:compileApp
+:compileNuitka
 cls
 echo =====================================================================
 echo  Compiling Main Application to Executable (using Nuitka)
@@ -101,6 +103,57 @@ if %errorlevel% neq 0 (
 ) else (
     echo.
     echo Nuitka compilation successful.
+    echo Executable located at: "%SCRIPT_DIR%\application\dist\main.exe"
+)
+echo.
+echo Press any key to return to the menu.
+pause >nul
+cd /D "%SCRIPT_DIR%"
+goto menu
+
+:compilePyInstaller
+cls
+echo =====================================================================
+echo  Compiling Main Application to Executable (using PyInstaller)
+echo =====================================================================
+echo.
+echo This may take several minutes. Please wait...
+echo The compiled executable will be placed in: "%SCRIPT_DIR%\application\dist\"
+echo.
+echo Changing directory to: "%SCRIPT_DIR%\application\"
+cd /D "%SCRIPT_DIR%\application"
+
+echo Generating spec file and building with PyInstaller...
+echo.
+
+REM Generate spec file only once if not already present
+if not exist "main.spec" (
+    pyinstaller --name=main --onefile --specpath=. main.py
+)
+
+REM Modify spec file or manually add datas entries here if needed
+REM For now, we use --add-data to include required directories
+
+REM Build using PyInstaller with added data directories
+pyinstaller ^
+  --onefile ^
+  --windowed ^
+  --paths "%SCRIPT_DIR%\application" ^
+  --add-data="courses;courses" ^
+  --add-data="assets;assets" ^
+  --add-data="ui/styles;ui/styles" ^
+  --add-data="localization;localization" ^
+  --distpath=dist ^
+  --workpath=build ^
+  main.py
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: PyInstaller compilation failed.
+    echo Please check the console output above for details.
+) else (
+    echo.
+    echo PyInstaller compilation successful.
     echo Executable located at: "%SCRIPT_DIR%\application\dist\main.exe"
 )
 echo.
