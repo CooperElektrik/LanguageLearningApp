@@ -9,7 +9,7 @@ from . import glossary_loader
 try:
     from application import utils  # For developer mode check
 except ImportError:
-    from . import utils # Nuitka
+    import utils
 from PySide6.QtCore import QObject
 
 logger = logging.getLogger(__name__)

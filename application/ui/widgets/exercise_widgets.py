@@ -578,6 +578,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self._temp_audio_file: Optional[tempfile.NamedTemporaryFile] = None
         self._is_recording = False
 
+        self._last_transcription_text = ""
+
         # --- UI Setup ---
         self.target_text_label = QLabel(self.tr("Please pronounce: ") + f"<b>{self.exercise.target_pronunciation_text}</b>")
         self.target_text_label.setObjectName("pronunciation_target_label")
@@ -619,15 +621,27 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         feedback_layout.addWidget(QLabel(self.tr("Comparison with target text:")))
         feedback_layout.addWidget(self.diff_browser)
         
+        # Buttons to show AFTER feedback is ready
+        feedback_action_layout = QHBoxLayout()
         self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
         self.try_again_button.clicked.connect(self.clear_input)
-        feedback_layout.addWidget(self.try_again_button)
+        self.submit_feedback_button = QPushButton(self.tr("Submit & Continue"))
+        self.submit_feedback_button.clicked.connect(self._handle_submit_click)
+        feedback_action_layout.addStretch(1) # Push buttons to center/right
+        feedback_action_layout.addWidget(self.try_again_button)
+        feedback_action_layout.addWidget(self.submit_feedback_button)
+        feedback_action_layout.addStretch(1) # Push buttons to center/left
+        
+        feedback_layout.addLayout(feedback_action_layout)
         
         self.layout.addWidget(self.feedback_group)
+        # self.feedback_group.setVisible(False) # Hide until first transcription is ready
         
         self.whisper_manager.modelLoadingStarted.connect(self._on_model_loading_started)
         self.whisper_manager.modelLoadingFinished.connect(self._on_model_loading_finished)
         self.whisper_manager.modelUnloaded.connect(self._on_model_unloaded)
+
+        self.submit_feedback_button.setVisible(False)
 
         # Initial check for Whisper model
         self._update_ui_for_model_state()
@@ -636,6 +650,10 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         """Updates visibility of Record vs Load Model buttons based on manager state."""
         target_model = self.whisper_manager.get_selected_model_name()
         loaded_model = self.whisper_manager.get_loaded_model_name()
+
+        self.feedback_group.setVisible(False)
+
+        self.submit_feedback_button.setVisible(False)
 
         if not target_model or target_model.lower() == "none":
             self.load_model_button.setVisible(False)
@@ -723,6 +741,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 self.record_button.setChecked(False) # Revert button state
                 return
 
+            self.confidence_browser.clear()
+            self.diff_browser.clear()
             self.feedback_group.setVisible(False)
             self.status_label.setText(self.tr("Recording... Speak now!"))
             self.record_button.setText(self.tr("⏹️ Stop Recording"))
@@ -799,11 +819,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
 
     def _on_transcription_finished(self, exercise_id: str, segments, info):
+        logger.debug("Transcription finished.")
         if exercise_id != self.exercise.exercise_id: return
 
         all_words = []
         full_text = ""
-        # Consume the generator to get all words
         segment_list = list(segments)
         for segment in segment_list:
             full_text += segment.text
@@ -813,24 +833,38 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         full_text = full_text.strip()
         
         self.status_label.setText(self.tr("Transcription complete. Review your feedback below."))
-        self.record_button.setEnabled(True)
-        self.feedback_group.setVisible(True)
         
-        # 1. Generate and display confidence HTML
+        # Generate and display confidence HTML
         confidence_html = self._generate_confidence_html(all_words)
         self.confidence_browser.setHtml(confidence_html)
         
-        # 2. Generate and display diff HTML
+        # Generate and display diff HTML
         target_text = self.exercise.target_pronunciation_text
         diff_html = self._generate_diff_html(target_text, full_text)
         self.diff_browser.setHtml(diff_html)
         
         self.transcription_ready.emit(full_text)
-        self.answer_submitted.emit(full_text)
+        # Remove this line: self.answer_submitted.emit(full_text)
+
+        self.record_button.setEnabled(True)
+        self.feedback_group.setVisible(True)
+        self.submit_feedback_button.setVisible(True)  # Ensure submit button is visible
+
+        self._last_transcription_text = full_text
+
+    def _handle_submit_click(self):
+        """Called when the user clicks the 'Submit & Continue' button."""
+        # Emit the answer only when the user explicitly clicks this button
+        self.answer_submitted.emit(self._last_transcription_text)
+        self.submit_feedback_button.setEnabled(False)
+
+        # Disable buttons after submission to prevent double-clicks
+        self.try_again_button.setEnabled(False)
+        self.submit_feedback_button.setEnabled(False)
 
     def _generate_confidence_html(self, words: list) -> str:
         """Generates HTML with words colored by their transcription confidence."""
-        if not words: return "<i>No speech detected.</i>"
+        if not words: return f"<i>{self.tr('No speech detected.')}</i>"
         
         html_parts = []
         for word in words:
@@ -875,7 +909,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.transcription_error.emit(error_message)
 
     def get_answer(self) -> str:
-        return ""
+        """Returns the last recognized text, now used by the parent view AFTER submission."""
+        return self._last_transcription_text
     
     def clear_input(self):
         """Called by 'Try Again' button."""

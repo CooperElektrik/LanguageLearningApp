@@ -52,15 +52,15 @@ QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE = "onboarding/initial_audio_setup_v1"
 QSETTINGS_KEY_WHISPER_MODEL = "audio/whisper_model_selection"
 WHISPER_MODELS_AVAILABLE = ["tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "large-v3", "large-v3-turbo"] # Or include .en versions like "base.en"
 WHISPER_MODEL_INFO = {
-    "tiny": {"size": "~75 MB", "params": "39M", "device_rec": "CPU"},
-    "tiny.en": {"size": "~75 MB", "params": "39M", "device_rec": "CPU"},
-    "base":   {"size": "~145 MB", "params": "74M", "device_rec": "CPU"},
-    "base.en":   {"size": "~145 MB", "params": "74M", "device_rec": "CPU"},
-    "small":  {"size": "~484 MB", "params": "244M", "device_rec": "CPU / GPU"},
-    "small.en":  {"size": "~484 MB", "params": "244M", "device_rec": "CPU / GPU"},
-    "medium": {"size": "~1.53 GB", "params": "769M", "device_rec": "GPU"},
-    "large-v3": {"size": "~3.09 GB", "params": "1.54B", "device_rec": "GPU"},
-    "large-v3-turbo": {"size": "~1.62 GB", "params": "809M", "device_rec": "GPU"},
+    "tiny": {"size": "~75 MB", "params": "39M", "device_rec": "CPU", "ptime": "Instant"},
+    "tiny.en": {"size": "~75 MB", "params": "39M", "device_rec": "CPU", "ptime": "Instant"},
+    "base":   {"size": "~145 MB", "params": "74M", "device_rec": "CPU", "ptime": "Instant"},
+    "base.en":   {"size": "~145 MB", "params": "74M", "device_rec": "CPU", "ptime": "Instant"},
+    "small":  {"size": "~484 MB", "params": "244M", "device_rec": "CPU / GPU", "ptime": "Near-Instant"},
+    "small.en":  {"size": "~484 MB", "params": "244M", "device_rec": "CPU / GPU", "ptime": "Near-Instant"},
+    "medium": {"size": "~1.53 GB", "params": "769M", "device_rec": "GPU", "ptime": "6~20s"},
+    "large-v3": {"size": "~3.09 GB", "params": "1.54B", "device_rec": "GPU", "ptime": "40~120s"},
+    "large-v3-turbo": {"size": "~1.62 GB", "params": "809M", "device_rec": "GPU", "ptime": "30~100s"},
 }
 WHISPER_MODEL_DEFAULT = "small" # A good balance
 

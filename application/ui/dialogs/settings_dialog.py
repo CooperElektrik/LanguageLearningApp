@@ -180,7 +180,8 @@ class SettingsDialog(QDialog):
                 "Model: {model_name}\n"
                 "Size: {size}\n"
                 "Parameters: {params}\n"
-                "Recommended Device: {device_rec}"
+                "Recommended Device: {device_rec}\n"
+                "Expected processing time (CPU): {ptime}\n"
             ).format(**info, model_name=model_name)
             self.whisper_model_combo.setItemData(self.whisper_model_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
 
@@ -197,6 +198,7 @@ class SettingsDialog(QDialog):
             self.audio_input_device_combo.addItem(device.description(), userData=device.id().toStdString())
             if device.id().toStdString() == default_device_id_str:
                 self.audio_input_device_combo.setCurrentText(device.description()) # Set default
+                
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
         self.available_locales = utils.get_available_locales()  # Store for mapping

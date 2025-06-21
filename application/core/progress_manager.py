@@ -6,7 +6,10 @@ from PySide6.QtCore import QStandardPaths
 from collections import defaultdict
 from datetime import datetime, timedelta, date
 
-from application import utils  # For developer mode check
+try:
+    from application import utils  # For developer mode check
+except ImportError:
+    import utils
 import settings  # For ORG_NAME, APP_NAME, PROGRESS_DATA_SUBDIR
 
 from .models import Exercise, Lesson, Unit  # For type hinting
