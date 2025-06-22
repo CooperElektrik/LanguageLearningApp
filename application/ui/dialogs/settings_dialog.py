@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QMessageBox,
 )
-from PySide6.QtMultimedia import QMediaDevices # Added for audio device listing
+from PySide6.QtMultimedia import QMediaDevices  # Added for audio device listing
 from PySide6.QtCore import Qt, QSettings, Signal, QEvent
 
 import settings
@@ -23,10 +23,11 @@ from core.whisper_manager import WhisperManager
 
 try:
     import torch
+
     IS_CUDA_AVAILABLE = torch.cuda.is_available()
 except ImportError:
     IS_CUDA_AVAILABLE = False
-    torch = None # Prevent linting errors if torch is used elsewhere conditionally
+    torch = None  # Prevent linting errors if torch is used elsewhere conditionally
 
 
 logger = logging.getLogger(__name__)
@@ -61,12 +62,18 @@ class SettingsDialog(QDialog):
         audio_layout.addWidget(self.autoplay_audio_checkbox)
 
         # Pronunciation/Microphone settings group (new, within Audio)
-        self.pronunciation_settings_group = QGroupBox(self.tr("Pronunciation & Microphone"))
-        self.pronunciation_settings_layout = QFormLayout(self.pronunciation_settings_group)
-        
+        self.pronunciation_settings_group = QGroupBox(
+            self.tr("Pronunciation & Microphone")
+        )
+        self.pronunciation_settings_layout = QFormLayout(
+            self.pronunciation_settings_group
+        )
+
         self.whisper_model_combo = QComboBox()
         self._populate_whisper_models()
-        self.pronunciation_settings_layout.addRow(self.tr("Whisper Model:"), self.whisper_model_combo)
+        self.pronunciation_settings_layout.addRow(
+            self.tr("Whisper Model:"), self.whisper_model_combo
+        )
 
         self.unload_model_button = QPushButton(self.tr("Unload Model from Memory"))
         self.unload_model_button.clicked.connect(self._unload_model)
@@ -74,25 +81,37 @@ class SettingsDialog(QDialog):
 
         self.audio_input_device_combo = QComboBox()
         self._populate_audio_input_devices()
-        self.pronunciation_settings_layout.addRow(self.tr("Microphone Input Device:"), self.audio_input_device_combo)
+        self.pronunciation_settings_layout.addRow(
+            self.tr("Microphone Input Device:"), self.audio_input_device_combo
+        )
 
         # Add a note about CUDA build requirements
-        self.cuda_note_label = QLabel(self.tr(
-            "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
-        ))
+        self.cuda_note_label = QLabel(
+            self.tr(
+                "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+            )
+        )
         self.cuda_note_label.setWordWrap(True)
-        self.pronunciation_settings_layout.addRow(self.cuda_note_label) # Add as a new row in the form layout
+        self.pronunciation_settings_layout.addRow(
+            self.cuda_note_label
+        )  # Add as a new row in the form layout
 
         # Add CUDA availability status
         if IS_CUDA_AVAILABLE:
-            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>")
+            cuda_status_text = self.tr(
+                "<b>CUDA Status:</b> <font color='green'>Available</font>"
+            )
         else:
-            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>")
-        
+            cuda_status_text = self.tr(
+                "<b>CUDA Status:</b> <font color='red'>Not Available</font>"
+            )
+
         self.cuda_status_label = QLabel(cuda_status_text)
         self.pronunciation_settings_layout.addRow(self.cuda_status_label)
 
-        audio_layout.addWidget(self.pronunciation_settings_group) # Add the new sub-group to the main audio layout
+        audio_layout.addWidget(
+            self.pronunciation_settings_group
+        )  # Add the new sub-group to the main audio layout
 
         volume_layout = QHBoxLayout()
         volume_label = QLabel(self.tr("Volume:"))
@@ -187,7 +206,7 @@ class SettingsDialog(QDialog):
 
     def _populate_whisper_models(self):
         """Populates the Whisper model combo box with detailed tooltips."""
-        self.whisper_model_combo.addItem("None", userData="None") # Option to disable
+        self.whisper_model_combo.addItem("None", userData="None")  # Option to disable
 
         for model_name, info in settings.WHISPER_MODEL_INFO.items():
             self.whisper_model_combo.addItem(model_name, userData=model_name)
@@ -199,22 +218,34 @@ class SettingsDialog(QDialog):
                 "Recommended Device: {device_rec}\n"
                 "Expected processing time (CPU): {ptime}\n"
             ).format(**info, model_name=model_name)
-            self.whisper_model_combo.setItemData(self.whisper_model_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
+            self.whisper_model_combo.setItemData(
+                self.whisper_model_combo.count() - 1,
+                tooltip_text,
+                Qt.ItemDataRole.ToolTipRole,
+            )
 
     def _populate_audio_input_devices(self):
         """Populates the audio input device combo box."""
         # QMediaDevices is imported at the top of the file
 
         self.audio_input_device_combo.clear()
-        default_device_info = QMediaDevices.defaultAudioInput() # QAudioDevice object
-        default_device_id_str = default_device_info.id().toStdString() if not default_device_info.isNull() else ""
+        default_device_info = QMediaDevices.defaultAudioInput()  # QAudioDevice object
+        default_device_id_str = (
+            default_device_info.id().toStdString()
+            if not default_device_info.isNull()
+            else ""
+        )
 
         for device in QMediaDevices.audioInputs():
             # Store device.id().toStdString() (str) as userData, display description()
-            self.audio_input_device_combo.addItem(device.description(), userData=device.id().toStdString())
+            self.audio_input_device_combo.addItem(
+                device.description(), userData=device.id().toStdString()
+            )
             if device.id().toStdString() == default_device_id_str:
-                self.audio_input_device_combo.setCurrentText(device.description()) # Set default
-                
+                self.audio_input_device_combo.setCurrentText(
+                    device.description()
+                )  # Set default
+
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
         self.available_locales = utils.get_available_locales()  # Store for mapping
@@ -250,27 +281,36 @@ class SettingsDialog(QDialog):
             default_audio_input_id = default_device_info.id().toStdString()
 
         preferred_device_id = self.q_settings.value(
-            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE,
-            default_audio_input_id, 
-            type=str
+            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, default_audio_input_id, type=str
         )
         # Find and set the selected device in the combo box
         index = self.audio_input_device_combo.findData(preferred_device_id)
         if index != -1:
             self.audio_input_device_combo.setCurrentIndex(index)
-        elif default_audio_input_id: # Fallback to current system default if saved one not found
-            logger.warning(f"Preferred audio input device ID '{preferred_device_id}' not found. Defaulting to system default.")
-            default_index = self.audio_input_device_combo.findData(default_audio_input_id)
+        elif (
+            default_audio_input_id
+        ):  # Fallback to current system default if saved one not found
+            logger.warning(
+                f"Preferred audio input device ID '{preferred_device_id}' not found. Defaulting to system default."
+            )
+            default_index = self.audio_input_device_combo.findData(
+                default_audio_input_id
+            )
             if default_index != -1:
                 self.audio_input_device_combo.setCurrentIndex(default_index)
         else:
-            logger.warning(f"Preferred audio input device ID '{preferred_device_id}' not found and no system default available.")
+            logger.warning(
+                f"Preferred audio input device ID '{preferred_device_id}' not found and no system default available."
+            )
 
         current_whisper_model = self.q_settings.value(
             settings.QSETTINGS_KEY_WHISPER_MODEL,
-            settings.WHISPER_MODEL_DEFAULT, type=str
+            settings.WHISPER_MODEL_DEFAULT,
+            type=str,
         )
-        self.whisper_model_combo.setCurrentText(current_whisper_model if current_whisper_model else "None")
+        self.whisper_model_combo.setCurrentText(
+            current_whisper_model if current_whisper_model else "None"
+        )
 
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
@@ -367,14 +407,19 @@ class SettingsDialog(QDialog):
             self.autoplay_audio_checkbox.isChecked(),
         )
         # Save selected audio input device
-        selected_device_id = self.audio_input_device_combo.currentData() # This is the ID string
+        selected_device_id = (
+            self.audio_input_device_combo.currentData()
+        )  # This is the ID string
         self.q_settings.setValue(
-            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE,
-            selected_device_id
+            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_device_id
         )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_WHISPER_MODEL,
-            self.whisper_model_combo.currentText() if self.whisper_model_combo.currentText() != "None" else ""
+            (
+                self.whisper_model_combo.currentText()
+                if self.whisper_model_combo.currentText() != "None"
+                else ""
+            ),
         )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_SOUND_VOLUME, self.volume_slider.value()
@@ -424,23 +469,35 @@ class SettingsDialog(QDialog):
         self.sound_enabled_checkbox.setText(self.tr("Enable sound effects"))
 
         self.unload_model_button.setText(self.tr("Unload Model from Memory"))
-        
-        self.pronunciation_settings_group.setTitle(self.tr("Pronunciation & Microphone"))
+
+        self.pronunciation_settings_group.setTitle(
+            self.tr("Pronunciation & Microphone")
+        )
         # Retranslate labels within the QFormLayout for pronunciation settings
-        whisper_label = self.pronunciation_settings_layout.labelForField(self.whisper_model_combo)
+        whisper_label = self.pronunciation_settings_layout.labelForField(
+            self.whisper_model_combo
+        )
         if whisper_label:
             whisper_label.setText(self.tr("Whisper Model:"))
-        mic_label = self.pronunciation_settings_layout.labelForField(self.audio_input_device_combo)
+        mic_label = self.pronunciation_settings_layout.labelForField(
+            self.audio_input_device_combo
+        )
         if mic_label:
             mic_label.setText(self.tr("Microphone Input Device:"))
 
-        self.cuda_note_label.setText(self.tr(
-            "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
-        ))
+        self.cuda_note_label.setText(
+            self.tr(
+                "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+            )
+        )
         if IS_CUDA_AVAILABLE:
-            self.cuda_status_label.setText(self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>"))
+            self.cuda_status_label.setText(
+                self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>")
+            )
         else:
-            self.cuda_status_label.setText(self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>"))
+            self.cuda_status_label.setText(
+                self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>")
+            )
 
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label
@@ -494,4 +551,10 @@ class SettingsDialog(QDialog):
     def _unload_model(self):
         loaded_model = self.whisper_manager.get_loaded_model_name()
         self.whisper_manager.unload_model()
-        QMessageBox.information(self, self.tr("Model Unloaded"), self.tr("Model '{0}' has been unloaded from memory.").format(loaded_model or "None"))
+        QMessageBox.information(
+            self,
+            self.tr("Model Unloaded"),
+            self.tr("Model '{0}' has been unloaded from memory.").format(
+                loaded_model or "None"
+            ),
+        )

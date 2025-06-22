@@ -6,6 +6,7 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
+
 try:
     from application import utils  # For developer mode check
 except ImportError:
@@ -26,15 +27,16 @@ PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"
 PROMPT_KEY_CONTEXT_BLOCK = "prompt_context_block"
 PROMPT_KEY_DICTATION = "prompt_dictation"
 
-DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE = 1 # For most text-based inputs
-PRONUNCIATION_LEVENSHTEIN_TOLERANCE = 5 # More lenient for transcriptions
+DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE = 1  # For most text-based inputs
+PRONUNCIATION_LEVENSHTEIN_TOLERANCE = 5  # More lenient for transcriptions
 DICTATION_LEVENSHTEIN_TOLERANCE = 2
+
 
 class CourseManager(QObject):
     def __init__(self, manifest_path: str, parent):
-        super().__init__(parent=parent) # Call QObject's constructor
+        super().__init__(parent=parent)  # Call QObject's constructor
         # All existing attributes become instance attributes
-        self.course: Optional[Course] = None 
+        self.course: Optional[Course] = None
         self.manifest_data: Optional[dict] = None
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
@@ -203,15 +205,18 @@ class CourseManager(QObject):
 
     def get_lesson_exercise_count(self, lesson_id: str) -> int:
         return len(self.get_exercises(lesson_id))
-    
-    def _normalize_answer_for_comparison(self, text: str, for_pronunciation: bool = False) -> str:
+
+    def _normalize_answer_for_comparison(
+        self, text: str, for_pronunciation: bool = False
+    ) -> str:
         """Normalizes text for comparison (lowercase, strip, optionally remove punctuation)."""
         text_norm = text.lower().strip()
         if for_pronunciation:
             # For pronunciation, be more aggressive with punctuation removal
             import string
+
             # Remove all standard punctuation
-            text_norm = text_norm.translate(str.maketrans('', '', string.punctuation))
+            text_norm = text_norm.translate(str.maketrans("", "", string.punctuation))
             # Optional: normalize whitespace to single spaces if multiple spaces might occur
             text_norm = " ".join(text_norm.split())
         return text_norm
@@ -227,27 +232,34 @@ class CourseManager(QObject):
         # Add other type-specific defaults here if needed
         return DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE
 
-
     def _check_translation_answer(
         self, exercise: Exercise, user_answer: str
     ) -> Tuple[bool, str]:
         """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
-        
-        user_answer_norm = self._normalize_answer_for_comparison(user_answer, for_pronunciation=(exercise.type == "dictation"))
-        correct_answer_norm = self._normalize_answer_for_comparison(exercise.answer, for_pronunciation=(exercise.type == "dictation"))
-        
+
+        user_answer_norm = self._normalize_answer_for_comparison(
+            user_answer, for_pronunciation=(exercise.type == "dictation")
+        )
+        correct_answer_norm = self._normalize_answer_for_comparison(
+            exercise.answer, for_pronunciation=(exercise.type == "dictation")
+        )
+
         tolerance = self._get_effective_tolerance(exercise)
         distance = Levenshtein.distance(user_answer_norm, correct_answer_norm)
-        is_correct_exact = (user_answer_norm == correct_answer_norm)
-        is_correct_fuzzy = (distance <= tolerance)
+        is_correct_exact = user_answer_norm == correct_answer_norm
+        is_correct_fuzzy = distance <= tolerance
 
         if is_correct_exact:
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
+            return True, self.tr(
+                "Accepted (close match). Correct: {0}. You wrote: {1}"
+            ).format(correct_answer_display, user_answer)
         else:
-            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
+            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
+                correct_answer_display, user_answer
+            )
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
@@ -258,11 +270,17 @@ class CourseManager(QObject):
             logger.error(
                 f"No correct option defined for MC exercise {exercise.exercise_id}."
             )
-            return False, self.tr("Error: Exercise configuration issue (no correct answer).")
+            return False, self.tr(
+                "Error: Exercise configuration issue (no correct answer)."
+            )
 
         correct_answer_display = correct_option.text
         is_correct_exact = user_answer.lower() == correct_option.text.lower()
-        return is_correct_exact, self.tr("Correct: {0}").format(correct_answer_display) if is_correct_exact else self.tr("Incorrect. Correct: {0}").format(correct_answer_display)
+        return is_correct_exact, (
+            self.tr("Correct: {0}").format(correct_answer_display)
+            if is_correct_exact
+            else self.tr("Incorrect. Correct: {0}").format(correct_answer_display)
+        )
 
     def _check_fill_in_the_blank_answer(
         self, exercise: Exercise, user_answer: str
@@ -276,19 +294,25 @@ class CourseManager(QObject):
             return False, "Error: Exercise configuration issue (no correct answer)."
 
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
-        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
-        
+        correct_answer_norm = self._normalize_answer_for_comparison(
+            correct_answer_display
+        )
+
         tolerance = self._get_effective_tolerance(exercise)
         distance = Levenshtein.distance(user_answer_norm, correct_answer_norm)
-        is_correct_exact = (user_answer_norm == correct_answer_norm)
-        is_correct_fuzzy = (distance <= tolerance)
+        is_correct_exact = user_answer_norm == correct_answer_norm
+        is_correct_fuzzy = distance <= tolerance
 
         if is_correct_exact:
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
+            return True, self.tr(
+                "Accepted (close match). Correct: {0}. You wrote: {1}"
+            ).format(correct_answer_display, user_answer)
         else:
-            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(correct_answer_display, user_answer)
+            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
+                correct_answer_display, user_answer
+            )
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
@@ -297,13 +321,25 @@ class CourseManager(QObject):
         correct_answer_display = exercise.answer
         # For jumble, user_answer is already space-joined. We compare normalized strings.
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
-        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
+        correct_answer_norm = self._normalize_answer_for_comparison(
+            correct_answer_display
+        )
 
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
-        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
+        correct_answer_norm = self._normalize_answer_for_comparison(
+            correct_answer_display
+        )
 
-        is_correct = (user_answer_norm == correct_answer_norm) # Jumble should usually be exact order
-        return is_correct, self.tr("Correct: {0}").format(correct_answer_display) if is_correct else self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(correct_answer_display, user_answer)
+        is_correct = (
+            user_answer_norm == correct_answer_norm
+        )  # Jumble should usually be exact order
+        return is_correct, (
+            self.tr("Correct: {0}").format(correct_answer_display)
+            if is_correct
+            else self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(
+                correct_answer_display, user_answer
+            )
+        )
 
     def _check_completion_answer(
         self, exercise: Exercise, user_answer: str
@@ -311,19 +347,25 @@ class CourseManager(QObject):
         """Checks answers for exercises that are completed via a single action."""
         is_correct = user_answer.lower() == "completed"
         return is_correct, "Continue" if is_correct else "Activity not completed."
-    
-    def _check_pronunciation_answer(self, exercise: Exercise, user_transcription: str) -> Tuple[bool, str]:
+
+    def _check_pronunciation_answer(
+        self, exercise: Exercise, user_transcription: str
+    ) -> Tuple[bool, str]:
         """Checks answer for pronunciation exercises by comparing transcription."""
         target_text_display = exercise.target_pronunciation_text
 
-        user_transcription_norm = self._normalize_answer_for_comparison(user_transcription, for_pronunciation=True)
-        target_text_norm = self._normalize_answer_for_comparison(target_text_display, for_pronunciation=True)
+        user_transcription_norm = self._normalize_answer_for_comparison(
+            user_transcription, for_pronunciation=True
+        )
+        target_text_norm = self._normalize_answer_for_comparison(
+            target_text_display, for_pronunciation=True
+        )
 
         tolerance = self._get_effective_tolerance(exercise)
         distance = Levenshtein.distance(user_transcription_norm, target_text_norm)
-        is_correct_exact = (user_transcription_norm == target_text_norm)
-        is_correct_fuzzy = (distance <= tolerance)
-        
+        is_correct_exact = user_transcription_norm == target_text_norm
+        is_correct_fuzzy = distance <= tolerance
+
         base_feedback = f"Target: {target_text_display}\nYou said: {user_transcription}"
 
         if is_correct_exact:
@@ -339,9 +381,13 @@ class CourseManager(QObject):
         """
         checker = self._answer_checkers.get(exercise.type)
         if checker:
-            return checker(exercise, user_answer.strip()) # Pass user_answer stripped
+            return checker(exercise, user_answer.strip())  # Pass user_answer stripped
         else:
-            logger.warning(self.tr("Answer checking not implemented for exercise type: {0} (ID: {1})").format(exercise.type, exercise.exercise_id))
+            logger.warning(
+                self.tr(
+                    "Answer checking not implemented for exercise type: {0} (ID: {1})"
+                ).format(exercise.type, exercise.exercise_id)
+            )
             return False, self.tr("Cannot check this exercise type.")
 
     def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:

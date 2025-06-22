@@ -6,9 +6,11 @@ from cx_Freeze import setup, Executable
 from settings import APP_NAME as LINGUALEARN_APP_NAME
 
 APP_VERSION = "1.0"
-APP_DESCRIPTION = "An interactive language learning platform with course editing capabilities."
+APP_DESCRIPTION = (
+    "An interactive language learning platform with course editing capabilities."
+)
 MAIN_SCRIPT = "main.py"
-EXECUTABLE_NAME = LINGUALEARN_APP_NAME # Use the name from settings for the final .exe
+EXECUTABLE_NAME = LINGUALEARN_APP_NAME  # Use the name from settings for the final .exe
 
 # === Platform-Specific Configuration ===
 # For GUI applications on Windows, use "Win32GUI" to hide the console window.
@@ -44,7 +46,6 @@ build_exe_options = {
         "sympy.geometry",
         "sympy.physics",
     ],
-
     # --- Include Data Files & Directories ---
     "include_files": [
         ("courses", "courses"),
@@ -52,7 +53,6 @@ build_exe_options = {
         ("ui/styles", "ui/styles"),
         ("localization", "localization"),
     ],
-
     "packages": [
         "PySide6",
         "torch",
@@ -60,13 +60,12 @@ build_exe_options = {
         "Levenshtein",
         "markdown",
         "yaml",
-        "PIL"
+        "PIL",
     ],
-    
     # --- Silent Build ---
     # Set to True to reduce console output during the build process.
     "silent": True,
-    "optimize": 2
+    "optimize": 2,
 }
 
 # === Setup Configuration ===
@@ -82,7 +81,7 @@ setup(
             MAIN_SCRIPT,
             base=base,
             target_name=EXECUTABLE_NAME,
-            icon="assets/icons/app_icon.ico" # Specify an application icon
+            icon="assets/icons/app_icon.ico",  # Specify an application icon
         )
-    ]
+    ],
 )

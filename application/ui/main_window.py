@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QApplication,
     QPushButton,
-    QStatusBar
+    QStatusBar,
 )
 from PySide6.QtGui import (
     QAction,
@@ -152,7 +152,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.dev_info_button = QPushButton("Dev Info")
         self.dev_info_button.setObjectName("dev_info_status_button")
-        self.dev_info_button.setToolTip("Show current course/exercise developer information")
+        self.dev_info_button.setToolTip(
+            "Show current course/exercise developer information"
+        )
         self.dev_info_button.clicked.connect(self._show_dev_info_dialog)
         self.status_bar.addPermanentWidget(self.dev_info_button)
         # Visibility is controlled by _update_dev_info_button_visibility
@@ -179,9 +181,7 @@ class MainWindow(QMainWindow):
             150, self._check_and_show_onboarding
         )  # Small delay for UI to settle
         self._update_dev_info_button_visibility()
-        QTimer.singleShot(
-            200, self._check_and_show_initial_setup
-        )
+        QTimer.singleShot(200, self._check_and_show_initial_setup)
 
     def _load_course_for_editing(self):  # Keep existing definition
         """Opens a file dialog and loads a course into the EDITOR mode."""
@@ -198,7 +198,6 @@ class MainWindow(QMainWindow):
                 self.tr("Course Load Error"),
                 self.tr("Failed to load selected course for editing."),
             )
-
 
         self._setup_editing_ui(editor_course_manager)
         self.setWindowTitle(f"LL Editor - {editor_course_manager.get_course_title()}")
@@ -239,8 +238,12 @@ class MainWindow(QMainWindow):
         self.learning_ui_views = {
             "overview": course_overview_view,
             "progress": progress_view,
-            "lesson": LessonView(self.course_manager, self.progress_manager, self.whisper_manager),
-            "review": ReviewView(self.course_manager, self.progress_manager, self.whisper_manager),
+            "lesson": LessonView(
+                self.course_manager, self.progress_manager, self.whisper_manager
+            ),
+            "review": ReviewView(
+                self.course_manager, self.progress_manager, self.whisper_manager
+            ),
             "glossary": GlossaryView(self.course_manager),
             "placeholder": QLabel(
                 self.tr("Select a lesson or start a review."), alignment=Qt.AlignCenter
@@ -345,7 +348,7 @@ class MainWindow(QMainWindow):
         self._update_dev_info_button_visibility()
 
     def show_settings_dialog(self):
-        dialog = SettingsDialog(self.whisper_manager, self) # Pass the manager
+        dialog = SettingsDialog(self.whisper_manager, self)  # Pass the manager
         dialog.theme_changed.connect(self.apply_theme)  # Connect to the new signal
         dialog.locale_changed.connect(self.apply_locale)
         dialog.font_size_changed.connect(
@@ -411,23 +414,27 @@ class MainWindow(QMainWindow):
 
     def _show_dev_info_dialog(self):
         current_exercise: Optional[Exercise] = None
-        
+
         # Check if we are in learning mode and which view is active
         if self.learning_widget and self.learning_widget.isVisible():
             central_stack = self.learning_ui_views.get("central_stack")
             if central_stack:
                 current_player_widget = central_stack.currentWidget()
-                if hasattr(current_player_widget, 'current_exercise_obj'):
+                if hasattr(current_player_widget, "current_exercise_obj"):
                     current_exercise = current_player_widget.current_exercise_obj
 
-        dialog = DevInfoDialog(self.course_manager, self.progress_manager, current_exercise, self)
+        dialog = DevInfoDialog(
+            self.course_manager, self.progress_manager, current_exercise, self
+        )
         dialog.exec()
 
     def _check_and_show_initial_setup(self):
         """Checks if the initial audio setup has been done and shows the dialog if not."""
         q_settings = QSettings()
-        setup_done = q_settings.value(app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool)
-        
+        setup_done = q_settings.value(
+            app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool
+        )
+
         # Only show if not done, and if there are any audio input devices.
         if not setup_done and QMediaDevices.audioInputs():
             logger.info("Initial audio setup not completed. Showing setup dialog.")
@@ -556,7 +563,7 @@ class MainWindow(QMainWindow):
             # The learning_widget is a QMainWindow, its menuBar should update.
             # Its internal views (overview, progress, lesson, etc.) should handle their own retranslation via changeEvent.
             # pass
-        
+
             if self.dev_info_button:
                 self.dev_info_button.setText(self.tr("Dev Info"))
 

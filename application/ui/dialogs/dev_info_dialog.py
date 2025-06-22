@@ -1,8 +1,14 @@
 import logging
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QDialogButtonBox, QPushButton
+from PySide6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QTextEdit,
+    QDialogButtonBox,
+    QPushButton,
+)
 from PySide6.QtCore import Qt
 from typing import Optional, Any
-import json # For pretty printing dictionaries
+import json  # For pretty printing dictionaries
 
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
@@ -10,19 +16,26 @@ from core.models import Exercise
 
 logger = logging.getLogger(__name__)
 
+
 def format_dict_for_display(data_dict: dict, indent=2) -> str:
     """Formats a dictionary into a pretty-printed JSON string."""
     try:
-        return json.dumps(data_dict, indent=indent, ensure_ascii=False, default=str) # default=str for non-serializable like datetime
+        return json.dumps(
+            data_dict, indent=indent, ensure_ascii=False, default=str
+        )  # default=str for non-serializable like datetime
     except Exception as e:
         logger.error(f"Error formatting dict to JSON: {e}")
-        return str(data_dict) # Fallback to plain string
+        return str(data_dict)  # Fallback to plain string
+
 
 class DevInfoDialog(QDialog):
-    def __init__(self, course_manager: CourseManager,
-                 progress_manager: Optional[ProgressManager] = None,
-                 current_exercise: Optional[Exercise] = None,
-                 parent=None):
+    def __init__(
+        self,
+        course_manager: CourseManager,
+        progress_manager: Optional[ProgressManager] = None,
+        current_exercise: Optional[Exercise] = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Developer Information"))
         self.setMinimumSize(700, 500)
@@ -30,7 +43,9 @@ class DevInfoDialog(QDialog):
         layout = QVBoxLayout(self)
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
-        self.text_edit.setFontFamily("Consolas, Courier New, monospace") # Monospaced font for better dict display
+        self.text_edit.setFontFamily(
+            "Consolas, Courier New, monospace"
+        )  # Monospaced font for better dict display
         layout.addWidget(self.text_edit)
 
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
@@ -39,9 +54,12 @@ class DevInfoDialog(QDialog):
 
         self._populate_info(course_manager, progress_manager, current_exercise)
 
-    def _populate_info(self, course_manager: CourseManager,
-                       progress_manager: Optional[ProgressManager],
-                       current_exercise: Optional[Exercise]):
+    def _populate_info(
+        self,
+        course_manager: CourseManager,
+        progress_manager: Optional[ProgressManager],
+        current_exercise: Optional[Exercise],
+    ):
         info_str = []
 
         # --- Course Info ---
@@ -56,7 +74,9 @@ class DevInfoDialog(QDialog):
                 "Author": course_manager.course.author,
                 "Manifest Path": course_manager.manifest_path,
                 "Content File": course_manager.manifest_data.get("content_file", "N/A"),
-                "Glossary File": course_manager.manifest_data.get("glossary_file", "N/A"),
+                "Glossary File": course_manager.manifest_data.get(
+                    "glossary_file", "N/A"
+                ),
                 "Number of Units": len(course_manager.course.units),
                 "Total Exercises": len(course_manager.get_all_exercises()),
                 "Total Glossary Entries": len(course_manager.glossary),
@@ -80,7 +100,11 @@ class DevInfoDialog(QDialog):
                 "Explanation": current_exercise.explanation,
                 "Audio File": current_exercise.audio_file,
                 "Image File": current_exercise.image_file,
-                "Options": [opt.to_dict() for opt in current_exercise.options] if current_exercise.options else None,
+                "Options": (
+                    [opt.to_dict() for opt in current_exercise.options]
+                    if current_exercise.options
+                    else None
+                ),
                 "Words (Jumble)": current_exercise.words,
                 "Source Word (MCQ)": current_exercise.source_word,
                 "Sentence Template (FIB)": current_exercise.sentence_template,
@@ -89,18 +113,23 @@ class DevInfoDialog(QDialog):
                 "Raw Data": current_exercise.raw_data,
             }
             # Filter out None values for cleaner display
-            exercise_details_filtered = {k: v for k, v in exercise_details.items() if v is not None}
+            exercise_details_filtered = {
+                k: v for k, v in exercise_details.items() if v is not None
+            }
             info_str.append(format_dict_for_display(exercise_details_filtered))
 
             # --- SRS Data for Current Exercise ---
             if progress_manager:
-                srs_data = progress_manager.get_exercise_srs_data(current_exercise.exercise_id)
+                srs_data = progress_manager.get_exercise_srs_data(
+                    current_exercise.exercise_id
+                )
                 info_str.append("-" * 20 + " SRS Data for Current Exercise " + "-" * 20)
                 info_str.append(format_dict_for_display(srs_data))
             info_str.append("\n")
-        elif course_manager.course: # Only show this if a course is loaded but no exercise active
-             info_str.append("No exercise currently active in the player view.\n")
-
+        elif (
+            course_manager.course
+        ):  # Only show this if a course is loaded but no exercise active
+            info_str.append("No exercise currently active in the player view.\n")
 
         # --- Progress Manager Info ---
         if progress_manager:

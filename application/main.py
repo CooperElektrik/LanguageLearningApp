@@ -25,12 +25,12 @@ from typing import Optional
 # the Python path is set up correctly to find the application's modules.
 
 # Check if running in a PyInstaller bundle by detecting the `_MEIPASS` attribute.
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     # In a bundled app, `sys._MEIPASS` points to the temporary folder
     # where all bundled files are extracted. This is our effective project root.
     _project_root = sys._MEIPASS
     # We assume the `application` folder is a subdirectory in the bundle.
-    _application_dir = os.path.join(_project_root, 'application')
+    _application_dir = os.path.join(_project_root, "application")
 else:
     # In a normal development environment, calculate paths relative to this script.
     _application_dir = os.path.dirname(os.path.abspath(__file__))

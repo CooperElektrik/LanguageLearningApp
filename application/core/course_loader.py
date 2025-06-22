@@ -138,7 +138,6 @@ def _parse_exercise(
         )
         return None
 
-
     return Exercise(
         exercise_id=ex_id,
         type=ex_type,

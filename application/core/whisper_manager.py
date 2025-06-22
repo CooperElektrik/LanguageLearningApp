@@ -13,6 +13,7 @@ class ModelLoader(QRunnable):
     """
     A QRunnable task to load a Whisper model in a background thread.
     """
+
     def __init__(self, model_name: str, device: str, compute_type: str):
         super().__init__()
         self.model_name = model_name
@@ -22,16 +23,25 @@ class ModelLoader(QRunnable):
 
     class Signals(QObject):
         finished = Signal(str, object)  # model_name, model_instance
-        error = Signal(str, str)        # model_name, error_message
+        error = Signal(str, str)  # model_name, error_message
 
     def run(self):
         try:
-            logger.info(f"Background Task: Loading Whisper model '{self.model_name}' on device '{self.device}' with compute_type '{self.compute_type}'. This might take a while on first use.")
-            model_instance = WhisperModel(self.model_name, device=self.device, compute_type=self.compute_type)
-            logger.info(f"Background Task: Model '{self.model_name}' loaded successfully.")
+            logger.info(
+                f"Background Task: Loading Whisper model '{self.model_name}' on device '{self.device}' with compute_type '{self.compute_type}'. This might take a while on first use."
+            )
+            model_instance = WhisperModel(
+                self.model_name, device=self.device, compute_type=self.compute_type
+            )
+            logger.info(
+                f"Background Task: Model '{self.model_name}' loaded successfully."
+            )
             self.signals.finished.emit(self.model_name, model_instance)
         except Exception as e:
-            logger.error(f"Background Task: Failed to load Whisper model '{self.model_name}': {e}", exc_info=True)
+            logger.error(
+                f"Background Task: Failed to load Whisper model '{self.model_name}': {e}",
+                exc_info=True,
+            )
             self.signals.error.emit(self.model_name, str(e))
 
 
@@ -39,7 +49,14 @@ class TranscriptionTask(QRunnable):
     """
     A QRunnable task to run transcription in a background thread.
     """
-    def __init__(self, model: WhisperModel, audio_path: str, exercise_id: str, language_code: Optional[str] = None):
+
+    def __init__(
+        self,
+        model: WhisperModel,
+        audio_path: str,
+        exercise_id: str,
+        language_code: Optional[str] = None,
+    ):
         super().__init__()
         self._model = model
         self.audio_path = audio_path
@@ -48,19 +65,34 @@ class TranscriptionTask(QRunnable):
         self.signals = self.Signals()
 
     class Signals(QObject):
-        finished = Signal(str, object, object) # exercise_id, segments, info
-        error = Signal(str, str)    # exercise_id, error_message
+        finished = Signal(str, object, object)  # exercise_id, segments, info
+        error = Signal(str, str)  # exercise_id, error_message
 
     def run(self):
         try:
-            lang_info = f" with language '{self.language_code}'" if self.language_code else ""
-            logger.info(f"Background Task: Starting transcription for {self.audio_path}{lang_info}")
-            segments, info = self._model.transcribe(self.audio_path, beam_size=5, word_timestamps=True, temperature=0.7, language=self.language_code)
-            logger.info(f"Background Task: Transcription finished for {self.exercise_id}.")
+            lang_info = (
+                f" with language '{self.language_code}'" if self.language_code else ""
+            )
+            logger.info(
+                f"Background Task: Starting transcription for {self.audio_path}{lang_info}"
+            )
+            segments, info = self._model.transcribe(
+                self.audio_path,
+                beam_size=5,
+                word_timestamps=True,
+                temperature=0.7,
+                language=self.language_code,
+            )
+            logger.info(
+                f"Background Task: Transcription finished for {self.exercise_id}."
+            )
             # Pass the generator objects directly. They will be consumed by the receiver.
             self.signals.finished.emit(self.exercise_id, segments, info)
         except Exception as e:
-            logger.error(f"Background Task: Error during transcription for {self.exercise_id}: {e}", exc_info=True)
+            logger.error(
+                f"Background Task: Error during transcription for {self.exercise_id}: {e}",
+                exc_info=True,
+            )
             self.signals.error.emit(self.exercise_id, str(e))
 
 
@@ -79,7 +111,9 @@ class WhisperManager(QObject):
         self._is_loading = False
 
         self.device, self.compute_type = self._get_best_device_config()
-        logger.info(f"WhisperManager configured to use device='{self.device}' with compute_type='{self.compute_type}'.")
+        logger.info(
+            f"WhisperManager configured to use device='{self.device}' with compute_type='{self.compute_type}'."
+        )
 
     def _get_best_device_config(self) -> Tuple[str, str]:
         """Determines the best available device (cuda or cpu) and corresponding compute type."""
@@ -91,16 +125,22 @@ class WhisperManager(QObject):
                 if torch.cuda.get_device_capability(0)[0] >= 7:
                     return "cuda", "float16"
             except Exception as e:
-                logger.warning(f"Could not determine CUDA device capability, falling back. Error: {e}")
+                logger.warning(
+                    f"Could not determine CUDA device capability, falling back. Error: {e}"
+                )
             return "cuda", "int8"
         return "cpu", "int8"
 
     def get_selected_model_name(self) -> str:
-        return self.q_settings.value(app_settings.QSETTINGS_KEY_WHISPER_MODEL, app_settings.WHISPER_MODEL_DEFAULT, type=str)
+        return self.q_settings.value(
+            app_settings.QSETTINGS_KEY_WHISPER_MODEL,
+            app_settings.WHISPER_MODEL_DEFAULT,
+            type=str,
+        )
 
     def get_loaded_model_name(self) -> Optional[str]:
         return self._active_model_name_loaded
-    
+
     def is_loading(self) -> bool:
         return self._is_loading
 
@@ -112,16 +152,18 @@ class WhisperManager(QObject):
             logger.info(f"Model '{model_name}' is already loaded.")
             self.modelLoadingFinished.emit(model_name, True)
             return
-        
-        self.unload_model() # Unload previous model first
+
+        self.unload_model()  # Unload previous model first
 
         if not model_name or model_name.lower() == "none":
-            self.modelLoadingFinished.emit("None", True) # Consider loading "None" a success
+            self.modelLoadingFinished.emit(
+                "None", True
+            )  # Consider loading "None" a success
             return
 
         self._is_loading = True
         self.modelLoadingStarted.emit(model_name)
-        
+
         loader_task = ModelLoader(model_name, self.device, self.compute_type)
         loader_task.signals.finished.connect(self._on_model_loaded)
         loader_task.signals.error.connect(self._on_model_load_error)
@@ -147,12 +189,21 @@ class WhisperManager(QObject):
             self.modelUnloaded.emit(unloaded_model_name)
             logger.info(f"Model '{unloaded_model_name}' unloaded.")
 
-    def transcribe_audio(self, audio_path: str, exercise_id: str, language_code: Optional[str] = None) -> Optional[TranscriptionTask]:
+    def transcribe_audio(
+        self, audio_path: str, exercise_id: str, language_code: Optional[str] = None
+    ) -> Optional[TranscriptionTask]:
         if not self._active_model_instance:
-            logger.error(f"Cannot transcribe: Whisper model '{self.get_selected_model_name()}' is not loaded.")
+            logger.error(
+                f"Cannot transcribe: Whisper model '{self.get_selected_model_name()}' is not loaded."
+            )
             return None
-        
-        task = TranscriptionTask(self._active_model_instance, audio_path, exercise_id, language_code=language_code)
+
+        task = TranscriptionTask(
+            self._active_model_instance,
+            audio_path,
+            exercise_id,
+            language_code=language_code,
+        )
         # The caller will connect to the task's signals.
         self.thread_pool.start(task)
         return task

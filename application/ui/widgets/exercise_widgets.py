@@ -22,11 +22,28 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QFrame,
     QTextBrowser,
-    QGroupBox
+    QGroupBox,
 )
-from PySide6.QtCore import Signal, QUrl, Qt, QTimer, QSettings, QThread, QByteArray, QIODevice, QBuffer
+from PySide6.QtCore import (
+    Signal,
+    QUrl,
+    Qt,
+    QTimer,
+    QSettings,
+    QThread,
+    QByteArray,
+    QIODevice,
+    QBuffer,
+)
 from PySide6.QtGui import QFont, QPixmap, QKeyEvent  # Added QKeyEvent
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QAudioSource, QAudioFormat, QMediaDevices, QAudioDevice # Import QAudioDevice
+from PySide6.QtMultimedia import (
+    QMediaPlayer,
+    QAudioOutput,
+    QAudioSource,
+    QAudioFormat,
+    QMediaDevices,
+    QAudioDevice,
+)  # Import QAudioDevice
 
 try:
     from application.core.models import Exercise
@@ -566,10 +583,16 @@ class ContextBlockWidget(BaseExerciseWidget):
 class PronunciationExerciseWidget(BaseExerciseWidget):
     # Signals for internal state changes if needed by parent view
     transcription_started = Signal()
-    transcription_ready = Signal(str) # Recognized text
+    transcription_ready = Signal(str)  # Recognized text
     transcription_error = Signal(str)
 
-    def __init__(self, exercise: Exercise, course_manager: CourseManager, whisper_manager: WhisperManager, parent=None):
+    def __init__(
+        self,
+        exercise: Exercise,
+        course_manager: CourseManager,
+        whisper_manager: WhisperManager,
+        parent=None,
+    ):
         super().__init__(exercise, course_manager, parent)
         self.whisper_manager = whisper_manager
         self._audio_recorder: Optional[QAudioSource] = None
@@ -581,16 +604,25 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self._last_transcription_text = ""
 
         # --- UI Setup ---
-        self.target_text_label = QLabel(self.tr("Please pronounce: ") + f"<b>{self.exercise.target_pronunciation_text}</b>")
+        self.target_text_label = QLabel(
+            self.tr("Please pronounce: ")
+            + f"<b>{self.exercise.target_pronunciation_text}</b>"
+        )
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
-        self.layout.insertWidget(self.layout.indexOf(self.prompt_label) + 1, self.target_text_label)
+        self.layout.insertWidget(
+            self.layout.indexOf(self.prompt_label) + 1, self.target_text_label
+        )
         self.prompt_label.setVisible(False)
 
         if self.exercise.audio_file:
             self.play_ref_button = QPushButton(self.tr("🔊 Play Reference"))
-            self.play_ref_button.clicked.connect(lambda: self._play_audio_file(self.exercise.audio_file))
-            self.layout.insertWidget(self.layout.indexOf(self.target_text_label) + 1, self.play_ref_button)
+            self.play_ref_button.clicked.connect(
+                lambda: self._play_audio_file(self.exercise.audio_file)
+            )
+            self.layout.insertWidget(
+                self.layout.indexOf(self.target_text_label) + 1, self.play_ref_button
+            )
 
         # Action Buttons
         action_layout = QHBoxLayout()
@@ -616,29 +648,33 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.confidence_browser.setOpenExternalLinks(False)
         self.diff_browser = QTextBrowser()
         self.diff_browser.setOpenExternalLinks(False)
-        feedback_layout.addWidget(QLabel(self.tr("Your speech (colored by confidence):")))
+        feedback_layout.addWidget(
+            QLabel(self.tr("Your speech (colored by confidence):"))
+        )
         feedback_layout.addWidget(self.confidence_browser)
         feedback_layout.addWidget(QLabel(self.tr("Comparison with target text:")))
         feedback_layout.addWidget(self.diff_browser)
-        
+
         # Buttons to show AFTER feedback is ready
         feedback_action_layout = QHBoxLayout()
         self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
         self.try_again_button.clicked.connect(self.clear_input)
         self.submit_feedback_button = QPushButton(self.tr("Submit & Continue"))
         self.submit_feedback_button.clicked.connect(self._handle_submit_click)
-        feedback_action_layout.addStretch(1) # Push buttons to center/right
+        feedback_action_layout.addStretch(1)  # Push buttons to center/right
         feedback_action_layout.addWidget(self.try_again_button)
         feedback_action_layout.addWidget(self.submit_feedback_button)
-        feedback_action_layout.addStretch(1) # Push buttons to center/left
-        
+        feedback_action_layout.addStretch(1)  # Push buttons to center/left
+
         feedback_layout.addLayout(feedback_action_layout)
-        
+
         self.layout.addWidget(self.feedback_group)
         # self.feedback_group.setVisible(False) # Hide until first transcription is ready
-        
+
         self.whisper_manager.modelLoadingStarted.connect(self._on_model_loading_started)
-        self.whisper_manager.modelLoadingFinished.connect(self._on_model_loading_finished)
+        self.whisper_manager.modelLoadingFinished.connect(
+            self._on_model_loading_finished
+        )
         self.whisper_manager.modelUnloaded.connect(self._on_model_unloaded)
 
         self.submit_feedback_button.setVisible(False)
@@ -658,16 +694,22 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         if not target_model or target_model.lower() == "none":
             self.load_model_button.setVisible(False)
             self.record_button.setVisible(False)
-            self.status_label.setText(self.tr("Please select a Whisper model in Settings to enable pronunciation practice."))
+            self.status_label.setText(
+                self.tr(
+                    "Please select a Whisper model in Settings to enable pronunciation practice."
+                )
+            )
         elif self.whisper_manager.is_loading():
-             self._on_model_loading_started(target_model)
-        elif target_model == loaded_model: # Model is selected and loaded
+            self._on_model_loading_started(target_model)
+        elif target_model == loaded_model:  # Model is selected and loaded
             self.load_model_button.setVisible(False)
             self.record_button.setVisible(True)
             self.record_button.setEnabled(True)
             self.status_label.setText(self.tr("Tap record to speak."))
-        else: # Model is selected but not loaded
-            self.load_model_button.setText(self.tr("Load Model: {0}").format(target_model))
+        else:  # Model is selected but not loaded
+            self.load_model_button.setText(
+                self.tr("Load Model: {0}").format(target_model)
+            )
             self.load_model_button.setVisible(True)
             self.load_model_button.setEnabled(True)
             self.record_button.setVisible(False)
@@ -680,37 +722,47 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         q_settings = QSettings()
         preferred_device_id_str = q_settings.value(
             app_settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE,
-            "", # Default to empty string if not set
-            type=str
+            "",  # Default to empty string if not set
+            type=str,
         )
 
         selected_device_info: Optional[QAudioDevice] = None
-        if preferred_device_id_str: # If a preference is set
+        if preferred_device_id_str:  # If a preference is set
             for device in QMediaDevices.audioInputs():
                 if device.id().toStdString() == preferred_device_id_str:
                     selected_device_info = device
-                    logger.info(f"Using preferred audio input device: {selected_device_info.description()}")
+                    logger.info(
+                        f"Using preferred audio input device: {selected_device_info.description()}"
+                    )
                     break
-        
-        if not selected_device_info: # Fallback to system default if preferred not found or not set
+
+        if (
+            not selected_device_info
+        ):  # Fallback to system default if preferred not found or not set
             default_device_info = QMediaDevices.defaultAudioInput()
             if not default_device_info.isNull():
                 selected_device_info = default_device_info
-                logger.info(f"Using system default audio input device: {selected_device_info.description()}")
-            else: # No device available
+                logger.info(
+                    f"Using system default audio input device: {selected_device_info.description()}"
+                )
+            else:  # No device available
                 self.status_label.setText(self.tr("No audio input device found!"))
-                logger.error("No audio input device found (neither preferred nor default).")
+                logger.error(
+                    "No audio input device found (neither preferred nor default)."
+                )
                 self.record_button.setEnabled(False)
                 return False
 
         if selected_device_info and not selected_device_info.isNull():
             audio_format = QAudioFormat()
             audio_format.setSampleRate(16000)  # Whisper expects 16kHz
-            audio_format.setChannelCount(1)    # Mono
-            audio_format.setSampleFormat(QAudioFormat.SampleFormat.Int16) # 16-bit PCM
+            audio_format.setChannelCount(1)  # Mono
+            audio_format.setSampleFormat(QAudioFormat.SampleFormat.Int16)  # 16-bit PCM
 
-            self._audio_recorder = QAudioSource(selected_device_info, audio_format, self) 
-            # self._audio_recorder.errorOccurred.connect(self._handle_audio_error) 
+            self._audio_recorder = QAudioSource(
+                selected_device_info, audio_format, self
+            )
+            # self._audio_recorder.errorOccurred.connect(self._handle_audio_error)
             return True
         else:
             self.status_label.setText(self.tr("No audio input device found!"))
@@ -723,7 +775,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.load_model_button.setEnabled(False)
         self.load_model_button.setVisible(True)
         self.record_button.setVisible(False)
-        self.status_label.setText(self.tr("Loading pronunciation model ({0})...").format(model_name))
+        self.status_label.setText(
+            self.tr("Loading pronunciation model ({0})...").format(model_name)
+        )
 
     def _on_model_loading_finished(self, model_name: str, success: bool):
         self._update_ui_for_model_state()
@@ -736,9 +790,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.whisper_manager.load_model(target_model)
 
     def _handle_record_toggle(self, checked: bool):
-        if checked: # Start recording
+        if checked:  # Start recording
             if not self._init_audio_recorder():
-                self.record_button.setChecked(False) # Revert button state
+                self.record_button.setChecked(False)  # Revert button state
                 return
 
             self.confidence_browser.clear()
@@ -746,81 +800,111 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.feedback_group.setVisible(False)
             self.status_label.setText(self.tr("Recording... Speak now!"))
             self.record_button.setText(self.tr("⏹️ Stop Recording"))
-            
+
             # Close file if open from previous recording, create new temp file for this recording
             if self._temp_audio_file:
                 try:
                     if not self._temp_audio_file.closed:
                         self._temp_audio_file.close()
-                    os.unlink(self._temp_audio_file.name) # Delete previous temp file
+                    os.unlink(self._temp_audio_file.name)  # Delete previous temp file
                 except Exception as e:
-                    logger.warning(f"Could not close/delete previous temp audio file '{self._temp_audio_file.name if self._temp_audio_file else 'N/A'}': {e}")
-            self._temp_audio_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-            self._temp_audio_file.close() # Close the file handle from Python's side
-            logger.debug(f"New temporary audio file for recording: {self._temp_audio_file.name}")
+                    logger.warning(
+                        f"Could not close/delete previous temp audio file '{self._temp_audio_file.name if self._temp_audio_file else 'N/A'}': {e}"
+                    )
+            self._temp_audio_file = tempfile.NamedTemporaryFile(
+                suffix=".wav", delete=False
+            )
+            self._temp_audio_file.close()  # Close the file handle from Python's side
+            logger.debug(
+                f"New temporary audio file for recording: {self._temp_audio_file.name}"
+            )
 
             # Setup a QBuffer to receive the raw audio data
             self._audio_buffer = QByteArray()
-            self._qbuffer = QBuffer(self._audio_buffer, self) # Parent to self (widget)
+            self._qbuffer = QBuffer(self._audio_buffer, self)  # Parent to self (widget)
             self._qbuffer.open(QIODevice.OpenModeFlag.WriteOnly)
 
             # Start recording, sending data to our QBuffer
-            self._audio_recorder.start(self._qbuffer) # CORRECTED: Start recording to QBuffer
+            self._audio_recorder.start(
+                self._qbuffer
+            )  # CORRECTED: Start recording to QBuffer
             self._is_recording = True
             logger.info(f"Audio recording started, writing to QBuffer.")
 
-        else: # Stop recording
+        else:  # Stop recording
             if self._audio_recorder and self._is_recording:
                 self._audio_recorder.stop()
                 self._is_recording = False
                 logger.info("Audio recording stopped.")
                 self.status_label.setText(self.tr("Processing audio... Please wait."))
-                self.record_button.setText(self.tr("🎤 Record")) # Reset button text
-                self.record_button.setEnabled(False) # Disable while processing
+                self.record_button.setText(self.tr("🎤 Record"))  # Reset button text
+                self.record_button.setEnabled(False)  # Disable while processing
 
                 # Close the QBuffer and save its contents to the temp WAV file
-                if self._qbuffer and self._qbuffer.isOpen(): # Check if qbuffer is valid and open
+                if (
+                    self._qbuffer and self._qbuffer.isOpen()
+                ):  # Check if qbuffer is valid and open
                     self._qbuffer.close()
                 if self._temp_audio_file and self._audio_buffer:
                     try:
-                        import wave # Use Python's built-in wave module
-                        with wave.open(self._temp_audio_file.name, 'wb') as wf:
+                        import wave  # Use Python's built-in wave module
+
+                        with wave.open(self._temp_audio_file.name, "wb") as wf:
                             wf.setnchannels(1)  # Mono
-                            wf.setsampwidth(2) # 2 bytes for Int16
-                            wf.setframerate(16000) # 16kHz
-                            wf.writeframes(self._audio_buffer.data()) # QByteArray.data() returns bytes
-                        logger.info(f"Buffered raw PCM audio saved as WAV to {self._temp_audio_file.name}")
-                        self._start_transcription(self._temp_audio_file.name, self.course_manager.target_language_code)
+                            wf.setsampwidth(2)  # 2 bytes for Int16
+                            wf.setframerate(16000)  # 16kHz
+                            wf.writeframes(
+                                self._audio_buffer.data()
+                            )  # QByteArray.data() returns bytes
+                        logger.info(
+                            f"Buffered raw PCM audio saved as WAV to {self._temp_audio_file.name}"
+                        )
+                        self._start_transcription(
+                            self._temp_audio_file.name,
+                            self.course_manager.target_language_code,
+                        )
                     except Exception as e:
-                        logger.error(f"Error saving buffered audio to {self._temp_audio_file.name}: {e}")
+                        logger.error(
+                            f"Error saving buffered audio to {self._temp_audio_file.name}: {e}"
+                        )
                         self.status_label.setText(self.tr("Error saving audio."))
                         self.record_button.setEnabled(True)
                     finally:
-                        self._audio_buffer = None # Clear buffer after saving
-                        self._qbuffer = None # Dispose of QBuffer
+                        self._audio_buffer = None  # Clear buffer after saving
+                        self._qbuffer = None  # Dispose of QBuffer
                 else:
                     self.status_label.setText(self.tr("No audio data to process."))
                     self.record_button.setEnabled(True)
 
-    def _start_transcription(self, audio_file_path: str, language_code: str | None = None):
-        if not audio_file_path or not os.path.exists(audio_file_path): # Check explicitly for path existence
-            self.status_label.setText(self.tr("Error: Audio file for transcription not found."))
+    def _start_transcription(
+        self, audio_file_path: str, language_code: str | None = None
+    ):
+        if not audio_file_path or not os.path.exists(
+            audio_file_path
+        ):  # Check explicitly for path existence
+            self.status_label.setText(
+                self.tr("Error: Audio file for transcription not found.")
+            )
             self.record_button.setEnabled(True)
             return
 
-        task = self.whisper_manager.transcribe_audio(audio_file_path, self.exercise.exercise_id, language_code)
+        task = self.whisper_manager.transcribe_audio(
+            audio_file_path, self.exercise.exercise_id, language_code
+        )
 
         if task:
             task.signals.finished.connect(self._on_transcription_finished)
             task.signals.error.connect(self._on_transcription_error)
-        else: # Transcription not started (e.g., Whisper disabled or manager busy)
-            self.status_label.setText(self.tr("Transcription service not available or disabled."))
+        else:  # Transcription not started (e.g., Whisper disabled or manager busy)
+            self.status_label.setText(
+                self.tr("Transcription service not available or disabled.")
+            )
             self.record_button.setEnabled(True)
-
 
     def _on_transcription_finished(self, exercise_id: str, segments, info):
         logger.debug("Transcription finished.")
-        if exercise_id != self.exercise.exercise_id: return
+        if exercise_id != self.exercise.exercise_id:
+            return
 
         all_words = []
         full_text = ""
@@ -831,18 +915,20 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 all_words.extend(segment.words)
 
         full_text = full_text.strip()
-        
-        self.status_label.setText(self.tr("Transcription complete. Review your feedback below."))
-        
+
+        self.status_label.setText(
+            self.tr("Transcription complete. Review your feedback below.")
+        )
+
         # Generate and display confidence HTML
         confidence_html = self._generate_confidence_html(all_words)
         self.confidence_browser.setHtml(confidence_html)
-        
+
         # Generate and display diff HTML
         target_text = self.exercise.target_pronunciation_text
         diff_html = self._generate_diff_html(target_text, full_text)
         self.diff_browser.setHtml(diff_html)
-        
+
         self.transcription_ready.emit(full_text)
         # Remove this line: self.answer_submitted.emit(full_text)
 
@@ -864,8 +950,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
     def _generate_confidence_html(self, words: list) -> str:
         """Generates HTML with words colored by their transcription confidence."""
-        if not words: return f"<i>{self.tr('No speech detected.')}</i>"
-        
+        if not words:
+            return f"<i>{self.tr('No speech detected.')}</i>"
+
         html_parts = []
         for word in words:
             prob = word.probability
@@ -878,40 +965,52 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             else:
                 color = "#DC143C"  # Crimson
             html_parts.append(f'<span style="color: {color};">{word.word}</span>')
-        
+
         return "".join(html_parts)
 
     def _generate_diff_html(self, target_str: str, user_str: str) -> str:
         """Generates HTML showing a visual diff between two strings."""
-        target_str_norm = self.course_manager._normalize_answer_for_comparison(target_str, for_pronunciation=True)
-        user_str_norm = self.course_manager._normalize_answer_for_comparison(user_str, for_pronunciation=True)
+        target_str_norm = self.course_manager._normalize_answer_for_comparison(
+            target_str, for_pronunciation=True
+        )
+        user_str_norm = self.course_manager._normalize_answer_for_comparison(
+            user_str, for_pronunciation=True
+        )
 
-        matcher = difflib.SequenceMatcher(None, target_str_norm.split(), user_str_norm.split())
+        matcher = difflib.SequenceMatcher(
+            None, target_str_norm.split(), user_str_norm.split()
+        )
         html_parts = []
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-            if tag == 'equal':
+            if tag == "equal":
                 html_parts.append(" ".join(matcher.a[i1:i2]))
             else:
-                if tag in ('delete', 'replace'):
+                if tag in ("delete", "replace"):
                     deleted_text = " ".join(matcher.a[i1:i2])
-                    html_parts.append(f'<span style="background-color: #ffdddd; text-decoration: line-through;">{deleted_text}</span>')
-                if tag in ('insert', 'replace'):
+                    html_parts.append(
+                        f'<span style="background-color: #ffdddd; text-decoration: line-through;">{deleted_text}</span>'
+                    )
+                if tag in ("insert", "replace"):
                     inserted_text = " ".join(matcher.b[j1:j2])
-                    html_parts.append(f'<span style="background-color: #ddffdd; font-weight: bold;">{inserted_text}</span>')
+                    html_parts.append(
+                        f'<span style="background-color: #ddffdd; font-weight: bold;">{inserted_text}</span>'
+                    )
         return " ".join(html_parts)
 
-
     def _on_transcription_error(self, exercise_id: str, error_message: str):
-        if exercise_id != self.exercise.exercise_id: return
+        if exercise_id != self.exercise.exercise_id:
+            return
 
-        self.status_label.setText(self.tr("Transcription Error: {0}").format(error_message))
+        self.status_label.setText(
+            self.tr("Transcription Error: {0}").format(error_message)
+        )
         self.record_button.setEnabled(True)
         self.transcription_error.emit(error_message)
 
     def get_answer(self) -> str:
         """Returns the last recognized text, now used by the parent view AFTER submission."""
         return self._last_transcription_text
-    
+
     def clear_input(self):
         """Called by 'Try Again' button."""
         self.feedback_group.setVisible(False)
@@ -919,7 +1018,6 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.diff_browser.clear()
         self._update_ui_for_model_state()
         self.record_button.setChecked(False)
-
 
     def stop_media(self):
         super().stop_media()
@@ -929,7 +1027,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             logger.info("Recording stopped by stop_media call.")
         if self._temp_audio_file:
             try:
-                if not self._temp_audio_file.closed: self._temp_audio_file.close()
+                if not self._temp_audio_file.closed:
+                    self._temp_audio_file.close()
                 if os.path.exists(self._temp_audio_file.name):
                     os.unlink(self._temp_audio_file.name)
             except Exception as e:

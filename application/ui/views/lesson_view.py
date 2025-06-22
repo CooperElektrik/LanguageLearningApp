@@ -294,8 +294,14 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         quality_score_for_srs = 0
 
         if was_skipped:
-            correct_answer_display_part = self.current_exercise_obj.answer or self.current_exercise_obj.correct_option or "N/A"
-            feedback_text_display = self.tr("Skipped. Correct answer: {0}").format(correct_answer_display_part)
+            correct_answer_display_part = (
+                self.current_exercise_obj.answer
+                or self.current_exercise_obj.correct_option
+                or "N/A"
+            )
+            feedback_text_display = self.tr("Skipped. Correct answer: {0}").format(
+                correct_answer_display_part
+            )
             self.feedback_label.setStyleSheet("color: orange;")
             is_correct = False
             quality_score_for_srs = 0
