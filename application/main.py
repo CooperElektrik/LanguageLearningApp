@@ -115,8 +115,8 @@ def main():
         try:
             pil_image = Image.open(splash_image_path_abs)
             # Define your desired splash screen size
-            target_width = 600
-            target_height = 400
+            target_width = 896
+            target_height = target_width
 
             # Resize the image while maintaining aspect ratio
             pil_image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
