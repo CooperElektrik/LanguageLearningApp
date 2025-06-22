@@ -39,11 +39,12 @@ class TranscriptionTask(QRunnable):
     """
     A QRunnable task to run transcription in a background thread.
     """
-    def __init__(self, model: WhisperModel, audio_path: str, exercise_id: str):
+    def __init__(self, model: WhisperModel, audio_path: str, exercise_id: str, language_code: Optional[str] = None):
         super().__init__()
         self._model = model
         self.audio_path = audio_path
         self.exercise_id = exercise_id
+        self.language_code = language_code
         self.signals = self.Signals()
 
     class Signals(QObject):
@@ -52,8 +53,9 @@ class TranscriptionTask(QRunnable):
 
     def run(self):
         try:
-            logger.info(f"Background Task: Starting transcription for {self.audio_path}")
-            segments, info = self._model.transcribe(self.audio_path, beam_size=5, word_timestamps=True, temperature=0.7)
+            lang_info = f" with language '{self.language_code}'" if self.language_code else ""
+            logger.info(f"Background Task: Starting transcription for {self.audio_path}{lang_info}")
+            segments, info = self._model.transcribe(self.audio_path, beam_size=5, word_timestamps=True, temperature=0.7, language=self.language_code)
             logger.info(f"Background Task: Transcription finished for {self.exercise_id}.")
             # Pass the generator objects directly. They will be consumed by the receiver.
             self.signals.finished.emit(self.exercise_id, segments, info)
@@ -145,12 +147,12 @@ class WhisperManager(QObject):
             self.modelUnloaded.emit(unloaded_model_name)
             logger.info(f"Model '{unloaded_model_name}' unloaded.")
 
-    def transcribe_audio(self, audio_path: str, exercise_id: str) -> Optional[TranscriptionTask]:
+    def transcribe_audio(self, audio_path: str, exercise_id: str, language_code: Optional[str] = None) -> Optional[TranscriptionTask]:
         if not self._active_model_instance:
             logger.error(f"Cannot transcribe: Whisper model '{self.get_selected_model_name()}' is not loaded.")
             return None
         
-        task = TranscriptionTask(self._active_model_instance, audio_path, exercise_id)
+        task = TranscriptionTask(self._active_model_instance, audio_path, exercise_id, language_code=language_code)
         # The caller will connect to the task's signals.
         self.thread_pool.start(task)
         return task

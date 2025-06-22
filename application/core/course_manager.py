@@ -38,6 +38,7 @@ class CourseManager(QObject):
         self.manifest_data: Optional[dict] = None
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
+        self.target_language_code: Optional[str] = None
         self.glossary: List[GlossaryEntry] = []
 
         self.manifest_path = manifest_path
@@ -81,6 +82,7 @@ class CourseManager(QObject):
         self.source_language = self.manifest_data.get(
             "source_language", "Unknown Source"
         )
+        self.target_language_code = self.manifest_data.get("target_language_code")
 
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
@@ -167,6 +169,9 @@ class CourseManager(QObject):
 
     def get_target_language(self) -> str:
         return self.target_language
+
+    def get_target_language_code(self) -> Optional[str]:
+        return self.target_language_code
 
     def get_source_language(self) -> str:
         return self.source_language

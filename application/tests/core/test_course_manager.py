@@ -3,6 +3,7 @@ def test_course_manager_initialization(course_manager):
     assert course_manager.course is not None
     assert course_manager.get_course_title() == "Test Course"
     assert course_manager.get_target_language() == "Vietnamese"
+    assert course_manager.get_target_language_code() == "vi"
     assert len(course_manager.get_glossary_entries()) == 2
 
 

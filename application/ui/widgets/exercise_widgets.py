@@ -76,7 +76,7 @@ class BaseExerciseWidget(QWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(parent)
         self.exercise = exercise
-        self.course_manager = course_manager
+        self.course_manager: CourseManager = course_manager
         self.assets_base_dir = self.course_manager.get_course_manifest_directory()
         if not self.assets_base_dir:
             self.assets_base_dir = self.course_manager.get_course_content_directory()
@@ -790,7 +790,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                             wf.setframerate(16000) # 16kHz
                             wf.writeframes(self._audio_buffer.data()) # QByteArray.data() returns bytes
                         logger.info(f"Buffered raw PCM audio saved as WAV to {self._temp_audio_file.name}")
-                        self._start_transcription(self._temp_audio_file.name)
+                        self._start_transcription(self._temp_audio_file.name, self.course_manager.target_language_code)
                     except Exception as e:
                         logger.error(f"Error saving buffered audio to {self._temp_audio_file.name}: {e}")
                         self.status_label.setText(self.tr("Error saving audio."))
@@ -802,13 +802,13 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                     self.status_label.setText(self.tr("No audio data to process."))
                     self.record_button.setEnabled(True)
 
-    def _start_transcription(self, audio_file_path: str):
+    def _start_transcription(self, audio_file_path: str, language_code: str | None = None):
         if not audio_file_path or not os.path.exists(audio_file_path): # Check explicitly for path existence
             self.status_label.setText(self.tr("Error: Audio file for transcription not found."))
             self.record_button.setEnabled(True)
             return
 
-        task = self.whisper_manager.transcribe_audio(audio_file_path, self.exercise.exercise_id)
+        task = self.whisper_manager.transcribe_audio(audio_file_path, self.exercise.exercise_id, language_code)
 
         if task:
             task.signals.finished.connect(self._on_transcription_finished)
