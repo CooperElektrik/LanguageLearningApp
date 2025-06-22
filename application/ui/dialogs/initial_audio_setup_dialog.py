@@ -4,6 +4,14 @@ from PySide6.QtMultimedia import QMediaDevices
 from PySide6.QtCore import QSettings, Qt
 import settings as app_settings
 
+try:
+    import torch
+    IS_CUDA_AVAILABLE = torch.cuda.is_available()
+except ImportError:
+    IS_CUDA_AVAILABLE = False
+    torch = None # Prevent linting errors if torch is used elsewhere conditionally
+
+
 logger = logging.getLogger(__name__)
 
 class InitialAudioSetupDialog(QDialog):
@@ -47,6 +55,15 @@ class InitialAudioSetupDialog(QDialog):
         ))
         cuda_note_label.setWordWrap(True)
         main_layout.addWidget(cuda_note_label)
+
+        # Add CUDA availability status
+        if IS_CUDA_AVAILABLE:
+            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>")
+        else:
+            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>")
+        
+        cuda_status_label = QLabel(cuda_status_text)
+        main_layout.addWidget(cuda_status_label)
 
         # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)

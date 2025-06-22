@@ -21,6 +21,14 @@ import utils
 
 from core.whisper_manager import WhisperManager
 
+try:
+    import torch
+    IS_CUDA_AVAILABLE = torch.cuda.is_available()
+except ImportError:
+    IS_CUDA_AVAILABLE = False
+    torch = None # Prevent linting errors if torch is used elsewhere conditionally
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,13 +77,21 @@ class SettingsDialog(QDialog):
         self.pronunciation_settings_layout.addRow(self.tr("Microphone Input Device:"), self.audio_input_device_combo)
 
         # Add a note about CUDA build requirements
-        cuda_note_label = QLabel(self.tr(
+        self.cuda_note_label = QLabel(self.tr(
             "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
         ))
-        cuda_note_label.setWordWrap(True)
-        self.pronunciation_settings_layout.addRow(cuda_note_label) # Add as a new row in the form layout
+        self.cuda_note_label.setWordWrap(True)
+        self.pronunciation_settings_layout.addRow(self.cuda_note_label) # Add as a new row in the form layout
 
+        # Add CUDA availability status
+        if IS_CUDA_AVAILABLE:
+            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>")
+        else:
+            cuda_status_text = self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>")
         
+        self.cuda_status_label = QLabel(cuda_status_text)
+        self.pronunciation_settings_layout.addRow(self.cuda_status_label)
+
         audio_layout.addWidget(self.pronunciation_settings_group) # Add the new sub-group to the main audio layout
 
         volume_layout = QHBoxLayout()
@@ -417,6 +433,14 @@ class SettingsDialog(QDialog):
         mic_label = self.pronunciation_settings_layout.labelForField(self.audio_input_device_combo)
         if mic_label:
             mic_label.setText(self.tr("Microphone Input Device:"))
+
+        self.cuda_note_label.setText(self.tr(
+            "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+        ))
+        if IS_CUDA_AVAILABLE:
+            self.cuda_status_label.setText(self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>"))
+        else:
+            self.cuda_status_label.setText(self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>"))
 
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label
