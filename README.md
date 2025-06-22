@@ -75,7 +75,10 @@ The easiest and canonical way to run the different components of the LL project 
 
 ## Compilation to Executable
 
-The `run_menu.bat` script provides options to compile the `main.py` application and the `main_editor.py` tool into standalone Windows executables (`.exe`) using Nuitka.
+The `run_menu.bat` script provides options to compile the application into standalone Windows executables using Nuitka and PyInstaller.
+
+>[!IMPORTANT]
+>Due to the massive size of PyTorch and `faster-whisper`'s dependencies, Nuitka will take upwards of 30 minutes to compile the application. Use PyInstaller instead if you don't have the time for that.
 
 -   Compiled applications will be placed in the `application/dist/` directory.
--   Ensure Nuitka and a compatible C/C++ compiler are installed before attempting compilation.
+-   Nuitka: Ensure Nuitka and a compatible C/C++ compiler are installed before attempting compilation.
