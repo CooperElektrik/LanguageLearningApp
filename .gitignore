@@ -2,13 +2,11 @@ venv/
 dist/
 build/
 .vscode/
+courses/
 application/core/data/
 content.yaml
 manifest.yaml
 glossary.yaml
 *.pyc
-*.wav
-*.mp3
-*.png
 *.spec
 pate_egg.txt

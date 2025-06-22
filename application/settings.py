@@ -31,9 +31,9 @@ AVAILABLE_THEMES = {
 # --- Sound Settings ---
 SOUND_EFFECTS_ENABLED_DEFAULT = True
 SOUND_VOLUME_DEFAULT = 50  # An integer from 0 to 100
-SOUND_FILE_CORRECT = "correct.wav"
-SOUND_FILE_INCORRECT = "incorrect.wav"
-SOUND_FILE_COMPLETE = "complete.wav"
+SOUND_FILE_CORRECT = "correct.mp3"
+SOUND_FILE_INCORRECT = "incorrect.mp3"
+SOUND_FILE_COMPLETE = "complete.mp3"
 
 # --- QSettings Keys ---
 QSETTINGS_KEY_SOUND_ENABLED = "audio/sound_effects_enabled"
