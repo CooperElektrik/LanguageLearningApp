@@ -479,6 +479,7 @@ class SettingsDialog(QDialog):
     def _reset_onboarding_flag(self):
         """Resets the onboarding seen flag in QSettings."""
         self.q_settings.setValue(settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, False)
+        self.q_settings.setValue(settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False)
         logger.info(
             "Onboarding message flag has been reset. It will show again on the next course load."
         )
