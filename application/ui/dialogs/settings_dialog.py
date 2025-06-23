@@ -52,8 +52,8 @@ class SettingsDialog(QDialog):
         main_layout = QVBoxLayout(self)
 
         # --- Audio Settings ---
-        audio_group = QGroupBox(self.tr("Audio"))
-        audio_layout = QVBoxLayout(audio_group)
+        self.audio_group = QGroupBox(self.tr("Audio"))
+        audio_layout = QVBoxLayout(self.audio_group)
 
         self.sound_enabled_checkbox = QCheckBox(self.tr("Enable sound effects"))
         audio_layout.addWidget(self.sound_enabled_checkbox)
@@ -125,12 +125,12 @@ class SettingsDialog(QDialog):
         volume_layout.addWidget(self.volume_slider)
         audio_layout.addLayout(volume_layout)
 
-        main_layout.addWidget(audio_group)
+        main_layout.addWidget(self.audio_group)
 
         # --- UI Settings ---
         # UI Settings (General, then Theme, then Font)
-        ui_group = QGroupBox(self.tr("User Interface"))
-        ui_layout = QFormLayout(ui_group)
+        self.ui_group = QGroupBox(self.tr("User Interface"))
+        ui_layout = QFormLayout(self.ui_group)
 
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
@@ -162,7 +162,7 @@ class SettingsDialog(QDialog):
         self.reset_ui_button = QPushButton(self.tr("Reset UI Settings to Default"))
         self.reset_ui_button.clicked.connect(self._reset_ui_settings)
         ui_layout.addRow(self.reset_ui_button)  # Add as a new row
-        main_layout.addWidget(ui_group)
+        main_layout.addWidget(self.ui_group)
 
         # --- Developer Settings ---
         self.dev_group = QGroupBox(self.tr("Developer"))

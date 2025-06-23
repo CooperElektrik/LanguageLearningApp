@@ -30,17 +30,19 @@ echo  2. Open Course Editor
 echo  3. Compile Application to EXE (with Nuitka)
 echo  4. Compile Application to EXE (with PyInstaller) 
 echo  5. Run Automated Tests (with pytest)
-echo  6. Exit
+echo  6. Update/Compile Translations
+echo  7. Exit
 echo.
 set "choice="
-set /p choice="Enter your choice (1-6): "
+set /p choice="Enter your choice (1-7): "
 
 if "%choice%"=="1" goto runApp
 if "%choice%"=="2" goto runEditor
 if "%choice%"=="3" goto compileNuitka
 if "%choice%"=="4" goto compilePyInstaller
 if "%choice%"=="5" goto runTests
-if "%choice%"=="6" goto end
+if "%choice%"=="6" goto updateTranslations
+if "%choice%"=="7" goto end
 
 echo Invalid choice. Please press any key to try again.
 pause >nul
@@ -177,6 +179,72 @@ echo Running: pytest -v
 pytest -v
 echo.
 echo Tests finished. Press any key to return to the menu.
+pause >nul
+goto menu
+
+:updateTranslations
+cls
+echo =====================================================================
+echo  Updating and Compiling Translations
+echo =====================================================================
+echo.
+echo Running pyside6-lupdate...
+echo.
+pyside6-lupdate ^
+  "%SCRIPT_DIR%\application\main.py" ^
+  "%SCRIPT_DIR%\application\ui\main_window.py" ^
+  "%SCRIPT_DIR%\application\ui\views\course_editor_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\course_overview_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\course_selection_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\glossary_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\lesson_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\progress_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\review_view.py" ^
+  "%SCRIPT_DIR%\application\ui\views\base_exercise_player_view.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\settings_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\initial_audio_setup_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\glossary_detail_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\glossary_lookup_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\dev_info_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\widgets\exercise_widgets.py" ^
+  "%SCRIPT_DIR%\application\core\course_manager.py" ^
+  -ts "%SCRIPT_DIR%\application\localization\app_zh-TW.ts" ^
+     "%SCRIPT_DIR%\application\localization\app_vi-VN.ts" ^
+     "%SCRIPT_DIR%\application\localization\app_ja-JP.ts" ^
+     "%SCRIPT_DIR%\application\localization\app_ru-RU.ts" ^
+     "%SCRIPT_DIR%\application\localization\app_ko-KR.ts" ^
+     "%SCRIPT_DIR%\application\localization\app_de-DE.ts"
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: pyside6-lupdate failed.
+    echo Please check the console output above for details.
+    pause >nul
+    goto menu
+)
+
+echo.
+echo Running pyside6-lrelease...
+echo.
+pyside6-lrelease ^
+  -compress ^
+  "%SCRIPT_DIR%\application\localization\app_de-DE.ts" ^
+  "%SCRIPT_DIR%\application\localization\app_ja-JP.ts" ^
+  "%SCRIPT_DIR%\application\localization\app_ko-KR.ts" ^
+  "%SCRIPT_DIR%\application\localization\app_ru-RU.ts" ^
+  "%SCRIPT_DIR%\application\localization\app_vi-VN.ts" ^
+  "%SCRIPT_DIR%\application\localization\app_zh-TW.ts"
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: pyside6-lrelease failed.
+    echo Please check the console output above for details.
+) else (
+    echo.
+    echo Translation compilation successful.
+)
+echo.
+echo Press any key to return to the menu.
 pause >nul
 goto menu
 
