@@ -233,6 +233,7 @@ class MainWindow(QMainWindow):
         self.learning_widget.addDockWidget(
             Qt.DockWidgetArea.RightDockWidgetArea, self.progress_dock_widget
         )
+        self.progress_dock_widget.setVisible(False) # Hide initially
 
         # We need to store these view references to switch the stack inside this learning_widget
         self.learning_ui_views = {

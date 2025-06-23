@@ -114,14 +114,14 @@ class SettingsDialog(QDialog):
         )  # Add the new sub-group to the main audio layout
 
         volume_layout = QHBoxLayout()
-        volume_label = QLabel(self.tr("Volume:"))
+        self.volume_label = QLabel(self.tr("Volume:"))
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.valueChanged.connect(
             utils.update_sound_volume
         )  # Live update
 
-        volume_layout.addWidget(volume_label)
+        volume_layout.addWidget(self.volume_label)
         volume_layout.addWidget(self.volume_slider)
         audio_layout.addLayout(volume_layout)
 
