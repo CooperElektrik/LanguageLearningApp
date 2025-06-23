@@ -7,6 +7,7 @@ import markdown
 import urllib.parse
 import tempfile
 import difflib
+import time
 from typing import Any, Dict, Optional, Type, List
 
 from PySide6.QtWidgets import (
@@ -113,6 +114,7 @@ class BaseExerciseWidget(QWidget):
         self.image_label.setScaledContents(False)
         self._setup_image()
         self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
+        self.image_label.setVisible(True)
 
         self._media_player: Optional[QMediaPlayer] = None
         self._audio_output: Optional[QAudioOutput] = None
@@ -133,7 +135,6 @@ class BaseExerciseWidget(QWidget):
                         Qt.SmoothTransformation,
                     )
                     self.image_label.setPixmap(scaled_pixmap)
-                    self.image_label.setVisible(True)
                     return
             # self.image_label.setVisible(False)
             self.image_label.setText(f"Cannot load image: {self.exercise.image_file}")
@@ -477,6 +478,8 @@ class ContextBlockWidget(BaseExerciseWidget):
     """A widget to display text content, not as an interactive exercise."""
 
     def __init__(self, exercise: Exercise, course_manager: CourseManager, parent=None):
+        # TODO: fix the random pop-up that appears for a split second
+        # Cause: init call
         super().__init__(exercise, course_manager, parent)
         # Hide the default prompt label as we use a dedicated title and content area
         self.prompt_label.setVisible(False)
