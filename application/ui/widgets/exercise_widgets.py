@@ -607,7 +607,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         # --- UI Setup ---
         self.target_text_label = QLabel(
             self.tr("Please pronounce: ")
-            + f"<b>{self.exercise.target_pronunciation_text}</b>"
+            + f"{self.exercise.target_pronunciation_text}"
         )
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
@@ -952,7 +952,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
     def _generate_confidence_html(self, words: list) -> str:
         """Generates HTML with words colored by their transcription confidence."""
         if not words:
-            return f"<i>{self.tr('No speech detected.')}</i>"
+            return f"{self.tr('No speech detected.')}"
 
         html_parts = []
         for word in words:

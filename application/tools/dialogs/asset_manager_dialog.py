@@ -58,7 +58,7 @@ class AssetManagerDialog(QDialog):
 
         # Top section: Asset directory info
         info_layout = QHBoxLayout()
-        info_layout.addWidget(QLabel(f"Assets stored in: <b>{self.asset_subdir}/</b>"))
+        info_layout.addWidget(QLabel(f"Assets stored in: {self.asset_subdir}/"))
         info_layout.addStretch(1)
         main_layout.addLayout(info_layout)
 

@@ -88,7 +88,7 @@ class SettingsDialog(QDialog):
         # Add a note about CUDA build requirements
         self.cuda_note_label = QLabel(
             self.tr(
-                "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
             )
         )
         self.cuda_note_label.setWordWrap(True)
@@ -99,11 +99,11 @@ class SettingsDialog(QDialog):
         # Add CUDA availability status
         if IS_CUDA_AVAILABLE:
             cuda_status_text = self.tr(
-                "<b>CUDA Status:</b> <font color='green'>Available</font>"
+                "CUDA Status: Available"
             )
         else:
             cuda_status_text = self.tr(
-                "<b>CUDA Status:</b> <font color='red'>Not Available</font>"
+                "CUDA Status: Not Available"
             )
 
         self.cuda_status_label = QLabel(cuda_status_text)
@@ -487,16 +487,16 @@ class SettingsDialog(QDialog):
 
         self.cuda_note_label.setText(
             self.tr(
-                "<i><b>Note:</b> For GPU acceleration, a CUDA-enabled PyTorch build is required.</i>"
+                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
             )
         )
         if IS_CUDA_AVAILABLE:
             self.cuda_status_label.setText(
-                self.tr("<b>CUDA Status:</b> <font color='green'>Available</font>")
+                self.tr("CUDA Status: Available")
             )
         else:
             self.cuda_status_label.setText(
-                self.tr("<b>CUDA Status:</b> <font color='red'>Not Available</font>")
+                self.tr("CUDA Status: Not Available")
             )
 
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))

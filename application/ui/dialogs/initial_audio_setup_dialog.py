@@ -61,9 +61,9 @@ class InitialAudioSetupDialog(QDialog):
         # Add a note about CUDA build requirements
         cuda_note_label = QLabel(
             self.tr(
-                "<i><b>Note:</b> For GPU acceleration (recommended for Medium model), "
+                "Note: For GPU acceleration (recommended for Medium model), "
                 "the application must be run from an environment with a CUDA-enabled PyTorch build. "
-                "Otherwise, models will run on the CPU.</i>"
+                "Otherwise, models will run on the CPU."
             )
         )
         cuda_note_label.setWordWrap(True)
@@ -72,11 +72,11 @@ class InitialAudioSetupDialog(QDialog):
         # Add CUDA availability status
         if IS_CUDA_AVAILABLE:
             cuda_status_text = self.tr(
-                "<b>CUDA Status:</b> <font color='green'>Available</font>"
+                "CUDA Status: Available"
             )
         else:
             cuda_status_text = self.tr(
-                "<b>CUDA Status:</b> <font color='red'>Not Available</font>"
+                "CUDA Status: Not Available"
             )
 
         cuda_status_label = QLabel(cuda_status_text)

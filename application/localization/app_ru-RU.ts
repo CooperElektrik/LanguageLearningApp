@@ -2,55 +2,91 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ru_RU">
 <context>
+    <name>BaseExercisePlayerView</name>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="94"/>
+        <location filename="../ui/views/base_exercise_player_view.py" line="334"/>
+        <source>My Notes</source>
+        <translation>Мои заметки</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="103"/>
+        <location filename="../ui/views/base_exercise_player_view.py" line="337"/>
+        <source>Type your personal notes for this exercise here...</source>
+        <translation>Введите здесь свои личные заметки к этому упражнению...</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="185"/>
+        <source>Unsupported exercise type: {0}</source>
+        <translation>Неподдерживаемый тип упражнения: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="213"/>
+        <location filename="../ui/views/base_exercise_player_view.py" line="346"/>
+        <source>Hint: {0}</source>
+        <translation>Подсказка: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="278"/>
+        <source>Edit Notes</source>
+        <translation>Редактировать заметки</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/base_exercise_player_view.py" line="280"/>
+        <source>Add Notes</source>
+        <translation>Добавить заметки</translation>
+    </message>
+</context>
+<context>
     <name>BaseExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="140"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="146"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="174"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="186"/>
         <source>Audio Error</source>
         <translation>Ошибка аудио</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="140"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="175"/>
         <source>Cannot prepare audio: {0}</source>
         <translation>Невозможно подготовить аудио: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="146"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="187"/>
         <source>Audio file not found: {0}</source>
         <translation>Аудиофайл не найден: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="154"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="155"/>
-        <source>Translate to %s: &quot;%s&quot;</source>
-        <translation>Переведите на %s: &quot;%s&quot;</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="196"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="197"/>
+        <source>Translate to %s: "%s"</source>
+        <translation>Переведите на %s: "%s"</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="156"/>
-        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
-        <translation>Выберите %s перевод для: &quot;%s&quot; (%s)</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
+        <source>Choose the %s translation for: "%s" (%s)</source>
+        <translation>Выберите %s перевод для: "%s" (%s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="157"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="201"/>
         <source>%s (Hint: %s)</source>
         <translation>%s (Подсказка: %s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="158"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="159"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="160"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="161"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="162"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="204"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="205"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="206"/>
         <source>%s</source>
         <translation>%s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="163"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
         <source>Exercise Prompt: %s</source>
         <translation>Подсказка (Упражнение): %s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="166"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="209"/>
         <source>Exercise Prompt</source>
         <translation>Подсказка (Упражнение)</translation>
     </message>
@@ -58,7 +94,7 @@
 <context>
     <name>ContextBlockWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="426"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="508"/>
         <source>Continue</source>
         <translation>Продолжить</translation>
     </message>
@@ -66,22 +102,22 @@
 <context>
     <name>CourseEditorView</name>
     <message>
-        <location filename="../ui/views/course_editor_view.py" line="156"/>
+        <location filename="../ui/views/course_editor_view.py" line="181"/>
         <source>Save Successful</source>
         <translation>Сохранение прошло успешно</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_editor_view.py" line="156"/>
+        <location filename="../ui/views/course_editor_view.py" line="182"/>
         <source>The course has been saved successfully.</source>
         <translation>Курс успешно сохранен.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_editor_view.py" line="160"/>
+        <location filename="../ui/views/course_editor_view.py" line="189"/>
         <source>Save Failed</source>
         <translation>Сохранение не удалось</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_editor_view.py" line="160"/>
+        <location filename="../ui/views/course_editor_view.py" line="192"/>
         <source>An error occurred while saving the course.
 Check the logs for details.</source>
         <translation>Произошла ошибка при сохранении курса.
@@ -89,69 +125,132 @@ Check the logs for details.</source>
     </message>
 </context>
 <context>
+    <name>CourseManager</name>
+    <message>
+        <location filename="../core/course_manager.py" line="254"/>
+        <location filename="../core/course_manager.py" line="280"/>
+        <location filename="../core/course_manager.py" line="307"/>
+        <location filename="../core/course_manager.py" line="337"/>
+        <source>Correct: {0}</source>
+        <translation>Верно: {0}</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="258"/>
+        <location filename="../core/course_manager.py" line="311"/>
+        <source>Accepted (close match). Correct: {0}. You wrote: {1}</source>
+        <translation>Принято (близкий вариант). Верно: {0}. Ваш ответ: {1}</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="260"/>
+        <location filename="../core/course_manager.py" line="313"/>
+        <source>Incorrect. Correct: {0}. You wrote: {1}</source>
+        <translation>Неверно. Верно: {0}. Ваш ответ: {1}</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="277"/>
+        <source>Error: Exercise configuration issue (no correct answer).</source>
+        <translation>Ошибка: Проблема конфигурации упражнения (нет правильного ответа).</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="282"/>
+        <source>Incorrect. Correct: {0}</source>
+        <translation>Неверно. Верно: {0}</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="339"/>
+        <source>Incorrect. Correct: {0}. You arranged: {1}</source>
+        <translation>Неверно. Верно: {0}. Вы расположили: {1}</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="373"/>
+        <source>Excellent match!</source>
+        <translation>Отличное совпадение!</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="375"/>
+        <source>Good (close match)!</source>
+        <translation>Хорошо (близкое совпадение)!</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="378"/>
+        <source>Needs improvement. See comparison below.</source>
+        <translation>Требует улучшения. См. сравнение ниже.</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="389"/>
+        <source>Answer checking not implemented for exercise type: {0} (ID: {1})</source>
+        <translation>Проверка ответа не реализована для типа упражнения: {0} (ID: {1})</translation>
+    </message>
+    <message>
+        <location filename="../core/course_manager.py" line="393"/>
+        <source>Cannot check this exercise type.</source>
+        <translation>Невозможно проверить этот тип упражнения.</translation>
+    </message>
+</context>
+<context>
     <name>CourseOverviewView</name>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="44"/>
-        <location filename="../ui/views/course_overview_view.py" line="200"/>
+        <location filename="../ui/views/course_overview_view.py" line="52"/>
+        <location filename="../ui/views/course_overview_view.py" line="227"/>
         <source>Daily Review</source>
         <translation>Ежедневный обзор</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="54"/>
-        <location filename="../ui/views/course_overview_view.py" line="201"/>
+        <location filename="../ui/views/course_overview_view.py" line="62"/>
+        <location filename="../ui/views/course_overview_view.py" line="228"/>
         <source>Review Due</source>
         <translation>Пора повторить</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="59"/>
-        <location filename="../ui/views/course_overview_view.py" line="202"/>
+        <location filename="../ui/views/course_overview_view.py" line="69"/>
+        <location filename="../ui/views/course_overview_view.py" line="229"/>
         <source>Review Weak</source>
         <translation>Повторить слабые места</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="61"/>
-        <location filename="../ui/views/course_overview_view.py" line="203"/>
+        <location filename="../ui/views/course_overview_view.py" line="73"/>
+        <location filename="../ui/views/course_overview_view.py" line="232"/>
         <source>Review items you struggle with the most.</source>
         <translation>Повторите элементы, с которыми у вас больше всего трудностей.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="104"/>
+        <location filename="../ui/views/course_overview_view.py" line="116"/>
         <source>No units available in this course.</source>
         <translation>В этом курсе нет доступных модулей.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="117"/>
+        <location filename="../ui/views/course_overview_view.py" line="129"/>
         <source>This unit has no lessons.</source>
         <translation>Этот модуль не содержит уроков.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="165"/>
+        <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>Course not loaded.</source>
         <translation>Курс не загружен.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="166"/>
+        <location filename="../ui/views/course_overview_view.py" line="180"/>
         <source>N/A</source>
         <translation>Н/Д</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="172"/>
-        <location filename="../ui/views/course_overview_view.py" line="199"/>
+        <location filename="../ui/views/course_overview_view.py" line="188"/>
+        <location filename="../ui/views/course_overview_view.py" line="226"/>
         <source>Language Course</source>
         <translation>Языковой курс</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="175"/>
+        <location filename="../ui/views/course_overview_view.py" line="191"/>
         <source>Total XP: {0}</source>
         <translation>Всего XP: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="182"/>
+        <location filename="../ui/views/course_overview_view.py" line="204"/>
         <source>{0} exercises due for review.</source>
         <translation>{0} упражнений требуют повторения.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="185"/>
+        <location filename="../ui/views/course_overview_view.py" line="210"/>
         <source>No exercises due for review right now!</source>
         <translation>Сейчас нет упражнений для повторения!</translation>
     </message>
@@ -159,198 +258,387 @@ Check the logs for details.</source>
 <context>
     <name>CourseSelectionView</name>
     <message>
-        <location filename="../ui/views/course_selection_view.py" line="25"/>
-        <location filename="../ui/views/course_selection_view.py" line="73"/>
+        <location filename="../ui/views/course_selection_view.py" line="30"/>
+        <location filename="../ui/views/course_selection_view.py" line="90"/>
         <source>Select a Course</source>
         <translation>Выберите курс</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_selection_view.py" line="42"/>
+        <location filename="../ui/views/course_selection_view.py" line="48"/>
         <source>Error: Courses directory not found.</source>
         <translation>Ошибка: Каталог курсов не найден.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_selection_view.py" line="65"/>
+        <location filename="../ui/views/course_selection_view.py" line="81"/>
         <source>No valid courses found in the courses directory.</source>
         <translation>В каталоге курсов не найдено действительных курсов.</translation>
     </message>
 </context>
 <context>
+    <name>DevInfoDialog</name>
+    <message>
+        <location filename="../ui/dialogs/dev_info_dialog.py" line="40"/>
+        <source>Developer Information</source>
+        <translation>Информация для разработчиков</translation>
+    </message>
+</context>
+<context>
+    <name>GlossaryDetailDialog</name>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="39"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="383"/>
+        <source>Glossary Entry: {0}</source>
+        <translation>Запись глоссария: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="92"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="385"/>
+        <source>Part of Speech:</source>
+        <translation>Часть речи:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="98"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="386"/>
+        <source>Example Sentence:</source>
+        <translation>Пример предложения:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="111"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="387"/>
+        <source>Notes:</source>
+        <translation>Заметки:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="122"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="208"/>
+        <source>🔊 Play Audio</source>
+        <translation>🔊 Воспроизвести аудио</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="127"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="388"/>
+        <source>Pronunciation:</source>
+        <translation>Произношение:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="176"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="180"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="192"/>
+        <source>N/A</source>
+        <translation>Н/Д</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="205"/>
+        <source>No Audio Available</source>
+        <translation>Аудио недоступно</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="293"/>
+        <source>Audio Playback Error</source>
+        <translation>Ошибка воспроизведения аудио</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="294"/>
+        <source>An audio error occurred: {0}</source>
+        <translation>Произошла ошибка аудио: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="315"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="333"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="351"/>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="361"/>
+        <source>Audio Error</source>
+        <translation>Ошибка аудио</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="316"/>
+        <source>Could not determine asset base directory for audio.</source>
+        <translation>Не удалось определить базовый каталог ресурсов для аудио.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="334"/>
+        <source>Cannot prepare audio: {0}</source>
+        <translation>Невозможно подготовить аудио: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="352"/>
+        <source>Cannot play audio: {0}</source>
+        <translation>Невозможно воспроизвести аудио: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_detail_dialog.py" line="364"/>
+        <source>Audio file not found at path:
+{0}
+
+Please check course assets and paths.</source>
+        <translation>Аудиофайл не найден по пути:
+{0}
+
+Пожалуйста, проверьте ресурсы и пути курса.</translation>
+    </message>
+</context>
+<context>
+    <name>GlossaryLookupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/glossary_lookup_dialog.py" line="23"/>
+        <location filename="../ui/dialogs/glossary_lookup_dialog.py" line="116"/>
+        <source>Glossary Lookup</source>
+        <translation>Поиск по глоссарию</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/glossary_lookup_dialog.py" line="32"/>
+        <location filename="../ui/dialogs/glossary_lookup_dialog.py" line="117"/>
+        <source>Start typing to search...</source>
+        <translation>Начните ввод для поиска...</translation>
+    </message>
+</context>
+<context>
     <name>GlossaryView</name>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="34"/>
-        <location filename="../ui/views/glossary_view.py" line="149"/>
+        <location filename="../ui/views/glossary_view.py" line="43"/>
+        <location filename="../ui/views/glossary_view.py" line="183"/>
         <source>← Back to Course Overview</source>
         <translation>← Назад к обзору курса</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="42"/>
-        <location filename="../ui/views/glossary_view.py" line="150"/>
+        <location filename="../ui/views/glossary_view.py" line="51"/>
+        <location filename="../ui/views/glossary_view.py" line="184"/>
         <source>Glossary</source>
         <translation>Глоссарий</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="53"/>
-        <location filename="../ui/views/glossary_view.py" line="151"/>
+        <location filename="../ui/views/glossary_view.py" line="64"/>
+        <location filename="../ui/views/glossary_view.py" line="187"/>
         <source>Search words, translations, examples...</source>
         <translation>Поиск слов, переводов, примеров...</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="84"/>
+        <location filename="../ui/views/glossary_view.py" line="100"/>
         <source>No glossary entries found matching your search.</source>
         <translation>Не найдено записей глоссария, соответствующих вашему поиску.</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="86"/>
+        <location filename="../ui/views/glossary_view.py" line="106"/>
         <source>No glossary entries available for this course.</source>
         <translation>Для этого курса нет доступных записей глоссария.</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="97"/>
-        <source>Double-click to see details for &apos;{0}&apos;</source>
-        <translation>Дважды щелкните, чтобы увидеть детали &apos;{0}&apos;</translation>
+        <location filename="../ui/views/glossary_view.py" line="120"/>
+        <source>Double-click to see details for '{0}'</source>
+        <translation>Дважды щелкните, чтобы увидеть детали '{0}'</translation>
     </message>
     <message>
-        <location filename="../ui/views/glossary_view.py" line="138"/>
+        <location filename="../ui/views/glossary_view.py" line="170"/>
         <source>No glossary entries</source>
         <translation>Нет записей глоссария</translation>
     </message>
 </context>
 <context>
+    <name>InitialAudioSetupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="29"/>
+        <source>Initial Audio Setup</source>
+        <translation>Начальная настройка аудио</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="41"/>
+        <source>Welcome! To enable pronunciation exercises, please configure your audio settings.
+You can change these later in the main settings menu.</source>
+        <translation>Добро пожаловать! Чтобы включить упражнения на произношение, настройте параметры аудио.
+Вы можете изменить их позже в главном меню настроек.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="46"/>
+        <source>Select your microphone:</source>
+        <translation>Выберите ваш микрофон:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="53"/>
+        <source>Select a speech recognition model:</source>
+        <translation>Выберите модель распознавания речи:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="68"/>
+        <source>Note: For GPU acceleration (recommended for Medium model), the application must be run from an environment with a CUDA-enabled PyTorch build. Otherwise, models will run on the CPU.</source>
+        <translation>Примечание: Для ускорения на GPU (рекомендуется для модели Medium) приложение должно быть запущено из среды с установленным PyTorch с поддержкой CUDA. В противном случае модели будут работать на ЦП.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="77"/>
+        <source>CUDA Status: Available</source>
+        <translation>Статус CUDA: Доступен</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="82"/>
+        <source>CUDA Status: Not Available</source>
+        <translation>Статус CUDA: Недоступен</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="114"/>
+        <source>Model: {model_name}
+Size: {size}
+Parameters: {params}
+Recommended Device: {device_rec}</source>
+        <translation>Модель: {model_name}
+Размер: {size}
+Параметры: {params}
+Рекомендуемое устройство: {device_rec}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="148"/>
+        <source>Model Download</source>
+        <translation>Загрузка модели</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="152"/>
+        <source>The selected speech recognition model will be downloaded the first time you start a pronunciation exercise. This may take several minutes depending on the model size and your internet connection.</source>
+        <translation>Выбранная модель распознавания речи будет загружена при первом запуске упражнения на произношение. Это может занять несколько минут в зависимости от размера модели и вашего интернет-соединения.</translation>
+    </message>
+</context>
+<context>
     <name>LessonView</name>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="53"/>
-        <location filename="../ui/views/lesson_view.py" line="388"/>
+        <location filename="../ui/views/lesson_view.py" line="66"/>
+        <location filename="../ui/views/lesson_view.py" line="483"/>
         <source>← Back to Lessons</source>
         <translation>← Назад к урокам</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="58"/>
-        <location filename="../ui/views/lesson_view.py" line="389"/>
+        <location filename="../ui/views/lesson_view.py" line="71"/>
+        <location filename="../ui/views/lesson_view.py" line="486"/>
         <source>Lesson Title</source>
         <translation>Название урока</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="63"/>
-        <location filename="../ui/views/lesson_view.py" line="357"/>
-        <location filename="../ui/views/lesson_view.py" line="391"/>
+        <location filename="../ui/views/lesson_view.py" line="76"/>
+        <location filename="../ui/views/lesson_view.py" line="448"/>
+        <location filename="../ui/views/lesson_view.py" line="490"/>
         <source>%v / %m Steps</source>
         <translation>%v / %m Шагов</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="73"/>
-        <location filename="../ui/views/lesson_view.py" line="139"/>
-        <location filename="../ui/views/lesson_view.py" line="223"/>
+        <location filename="../ui/views/lesson_view.py" line="86"/>
+        <location filename="../ui/views/lesson_view.py" line="170"/>
+        <location filename="../ui/views/lesson_view.py" line="266"/>
         <source>Show Hint</source>
         <translation>Показать подсказку</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="79"/>
-        <location filename="../ui/views/lesson_view.py" line="395"/>
+        <location filename="../ui/views/lesson_view.py" line="94"/>
+        <location filename="../ui/views/lesson_view.py" line="494"/>
         <source>Lookup...</source>
         <translation>Поиск...</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="86"/>
-        <location filename="../ui/views/lesson_view.py" line="396"/>
+        <location filename="../ui/views/lesson_view.py" line="101"/>
+        <location filename="../ui/views/lesson_view.py" line="495"/>
         <source>Skip</source>
         <translation>Пропустить</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="91"/>
-        <location filename="../ui/views/lesson_view.py" line="397"/>
+        <location filename="../ui/views/lesson_view.py" line="106"/>
+        <location filename="../ui/views/lesson_view.py" line="496"/>
         <source>Submit</source>
         <translation>Отправить</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="96"/>
+        <location filename="../ui/views/lesson_view.py" line="111"/>
         <source>Continue</source>
         <translation>Продолжить</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="138"/>
-        <location filename="../ui/views/lesson_view.py" line="222"/>
+        <location filename="../ui/views/lesson_view.py" line="168"/>
+        <location filename="../ui/views/lesson_view.py" line="264"/>
         <source>Hide Hint</source>
         <translation>Скрыть подсказку</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="144"/>
+        <location filename="../ui/views/lesson_view.py" line="178"/>
         <source>Finish Lesson 🎉</source>
         <translation>Урок завершен 🎉</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="146"/>
+        <location filename="../ui/views/lesson_view.py" line="180"/>
         <source>Review Mistakes →</source>
         <translation>Повторить ошибки →</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="148"/>
+        <location filename="../ui/views/lesson_view.py" line="182"/>
         <source>Next Exercise →</source>
         <translation>Следующее упражнение →</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="151"/>
+        <location filename="../ui/views/lesson_view.py" line="185"/>
         <source>Back to Overview</source>
         <translation>Назад к обзору</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="166"/>
+        <location filename="../ui/views/lesson_view.py" line="199"/>
         <source>Error: Could not load lesson data.</source>
         <translation>Ошибка: Не удалось загрузить данные урока.</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="210"/>
+        <location filename="../ui/views/lesson_view.py" line="251"/>
         <source>Error loading exercise. Skipping.</source>
         <translation>Ошибка загрузки упражнения. Пропускаю.</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="250"/>
+        <location filename="../ui/views/lesson_view.py" line="302"/>
         <source>Skipped. Correct answer: {0}</source>
         <translation>Пропущено. Правильный ответ: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="256"/>
+        <location filename="../ui/views/lesson_view.py" line="309"/>
+        <location filename="../ui/views/lesson_view.py" line="354"/>
+        <source>
+
+Explanation: {0}</source>
+        <translation>
+
+Объяснение: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/lesson_view.py" line="317"/>
         <source>Please provide an answer.</source>
         <translation>Пожалуйста, введите ответ.</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="308"/>
+        <location filename="../ui/views/lesson_view.py" line="388"/>
         <source>Skip Exercise</source>
         <translation>Пропустить упражнение</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="309"/>
+        <location filename="../ui/views/lesson_view.py" line="391"/>
         <source>Are you sure you want to skip this exercise? It will be marked for earlier review.</source>
         <translation>Вы уверены, что хотите пропустить это упражнение? Оно будет отмечено для более раннего повторения.</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="322"/>
-        <location filename="../ui/views/lesson_view.py" line="404"/>
+        <location filename="../ui/views/lesson_view.py" line="408"/>
+        <location filename="../ui/views/lesson_view.py" line="503"/>
         <source>Reviewing Mistakes</source>
         <translation>Повторение ошибок</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="323"/>
-        <source>Let&apos;s go over the exercises you had trouble with.</source>
+        <location filename="../ui/views/lesson_view.py" line="411"/>
+        <source>Let's go over the exercises you had trouble with.</source>
         <translation>Давайте повторим упражнения, с которыми у вас возникли трудности.</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="333"/>
-        <source>Lesson &apos;{0}&apos; completed!</source>
-        <translation>Урок &apos;{0}&apos; завершен!</translation>
+        <location filename="../ui/views/lesson_view.py" line="422"/>
+        <source>Lesson '{0}' completed!</source>
+        <translation>Урок '{0}' завершен!</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="356"/>
+        <location filename="../ui/views/lesson_view.py" line="447"/>
         <source>Lesson</source>
         <translation>Урок</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="367"/>
+        <location filename="../ui/views/lesson_view.py" line="460"/>
         <source>Glossary Empty</source>
         <translation>Глоссарий пуст</translation>
     </message>
     <message>
-        <location filename="../ui/views/lesson_view.py" line="367"/>
+        <location filename="../ui/views/lesson_view.py" line="461"/>
         <source>No glossary entries for this course.</source>
         <translation>Для этого курса нет записей глоссария.</translation>
     </message>
@@ -358,7 +646,7 @@ Check the logs for details.</source>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="327"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="395"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Воспроизвести аудио</translation>
     </message>
@@ -366,84 +654,84 @@ Check the logs for details.</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="38"/>
-        <location filename="../ui/main_window.py" line="222"/>
-        <location filename="../ui/main_window.py" line="361"/>
+        <location filename="../ui/main_window.py" line="69"/>
+        <location filename="../ui/main_window.py" line="328"/>
+        <location filename="../ui/main_window.py" line="540"/>
         <source>LinguaLearn</source>
         <translation>LinguaLearn</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="105"/>
-        <location filename="../ui/main_window.py" line="123"/>
+        <location filename="../ui/main_window.py" line="168"/>
+        <location filename="../ui/main_window.py" line="198"/>
         <source>Course Load Error</source>
         <translation>Ошибка загрузки курса</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="105"/>
+        <location filename="../ui/main_window.py" line="169"/>
         <source>Failed to load course.</source>
         <translation>Не удалось загрузить курс.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="118"/>
+        <location filename="../ui/main_window.py" line="189"/>
         <source>Open Course Manifest</source>
         <translation>Открыть манифест курса</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="123"/>
+        <location filename="../ui/main_window.py" line="199"/>
         <source>Failed to load selected course for editing.</source>
         <translation>Не удалось загрузить выбранный курс для редактирования.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="140"/>
-        <location filename="../ui/main_window.py" line="371"/>
+        <location filename="../ui/main_window.py" line="218"/>
+        <location filename="../ui/main_window.py" line="550"/>
         <source>Course Navigation</source>
         <translation>Навигация по курсу</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="145"/>
-        <location filename="../ui/main_window.py" line="373"/>
+        <location filename="../ui/main_window.py" line="229"/>
+        <location filename="../ui/main_window.py" line="552"/>
         <source>Progress</source>
         <translation>Прогресс</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="157"/>
+        <location filename="../ui/main_window.py" line="250"/>
         <source>Select a lesson or start a review.</source>
         <translation>Выберите урок или начните повторение.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="194"/>
+        <location filename="../ui/main_window.py" line="296"/>
         <source>&amp;File</source>
         <translation>&amp;Файл</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="195"/>
+        <location filename="../ui/main_window.py" line="298"/>
         <source>Open Course for Editing...</source>
         <translation>Открыть курс для редактирования...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="207"/>
+        <location filename="../ui/main_window.py" line="312"/>
         <source>Return to Course Selection</source>
         <translation>Вернуться к выбору курса</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="212"/>
+        <location filename="../ui/main_window.py" line="318"/>
         <source>Start Due Review</source>
         <translation>Начать повторение по плану</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="296"/>
+        <location filename="../ui/main_window.py" line="466"/>
         <source>Welcome to LinguaLearn!</source>
         <translation>Добро пожаловать в LinguaLearn!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="307"/>
+        <location filename="../ui/main_window.py" line="477"/>
         <source>Welcome to your language course!
 
-Here&apos;s a quick guide to the interface:
+Here's a quick guide to the interface:
 
 • Left Panel (Course Navigation):
   - Displays course units and lessons. Click a lesson to start.
-  - Use &apos;Review Due&apos; or &apos;Review Weak&apos; to practice.
+  - Use 'Review Due' or 'Review Weak' to practice.
 
 • Right Panel (Progress):
   - Shows your XP, study streak, and achievements.
@@ -457,7 +745,7 @@ Happy learning!</source>
 
 • Левая панель (Навигация по курсу):
   - Отображает модули и уроки курса. Нажмите на урок, чтобы начать.
-  - Используйте &apos;Повторить по плану&apos; или &apos;Повторить слабые места&apos; для практики.
+  - Используйте 'Повторить по плану' или 'Повторить слабые места' для практики.
 
 • Правая панель (Прогресс):
   - Показывает ваши XP, продолжительность занятий и достижения.
@@ -466,99 +754,229 @@ Happy learning!</source>
 
 Удачного обучения!</translation>
     </message>
+    <message>
+        <location filename="../ui/main_window.py" line="569"/>
+        <source>Dev Info</source>
+        <translation>Информация для разработчиков</translation>
+    </message>
 </context>
 <context>
     <name>ProgressView</name>
     <message>
-        <location filename="../ui/views/progress_view.py" line="52"/>
+        <location filename="../ui/views/progress_view.py" line="66"/>
         <source>Total Experience (XP)</source>
         <translation>Общий опыт (XP)</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="63"/>
+        <location filename="../ui/views/progress_view.py" line="77"/>
         <source>Study Streak</source>
         <translation>Продолжительность занятий</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="81"/>
+        <location filename="../ui/views/progress_view.py" line="94"/>
         <source>Achievements</source>
         <translation>Достижения</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="88"/>
+        <location filename="../ui/views/progress_view.py" line="105"/>
         <source>First Step</source>
         <translation>Первый шаг</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="88"/>
+        <location filename="../ui/views/progress_view.py" line="106"/>
         <source>Complete your first lesson.</source>
         <translation>Пройдите свой первый урок.</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="90"/>
+        <location filename="../ui/views/progress_view.py" line="112"/>
         <source>XP Enthusiast</source>
         <translation>Энтузиаст XP</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="90"/>
+        <location filename="../ui/views/progress_view.py" line="113"/>
         <source>Reach 1000 XP.</source>
         <translation>Достигните 1000 XP.</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="92"/>
+        <location filename="../ui/views/progress_view.py" line="119"/>
         <source>7-Day Streak</source>
         <translation>7-дневная серия</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="92"/>
+        <location filename="../ui/views/progress_view.py" line="120"/>
         <source>Study for 7 consecutive days.</source>
         <translation>Занимайтесь 7 дней подряд.</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="94"/>
+        <location filename="../ui/views/progress_view.py" line="126"/>
         <source>30-Day Streak</source>
         <translation>30-дневная серия</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="94"/>
+        <location filename="../ui/views/progress_view.py" line="127"/>
         <source>Study for 30 consecutive days.</source>
         <translation>Занимайтесь 30 дней подряд.</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="96"/>
+        <location filename="../ui/views/progress_view.py" line="133"/>
         <source>Lesson Master</source>
         <translation>Мастер уроков</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="96"/>
+        <location filename="../ui/views/progress_view.py" line="134"/>
         <source>Complete all lessons in the course.</source>
         <translation>Пройдите все уроки в курсе.</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="183"/>
+        <location filename="../ui/views/progress_view.py" line="242"/>
         <source>{0} XP</source>
         <translation>{0} XP</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="186"/>
+        <location filename="../ui/views/progress_view.py" line="246"/>
         <source>{0} Days</source>
         <translation>{0} дней</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="190"/>
+        <location filename="../ui/views/progress_view.py" line="252"/>
         <source>Keep up the consistent work!</source>
         <translation>Продолжайте в том же духе!</translation>
     </message>
     <message>
-        <location filename="../ui/views/progress_view.py" line="193"/>
+        <location filename="../ui/views/progress_view.py" line="255"/>
         <source>Start a new streak today!</source>
         <translation>Начните новую серию сегодня!</translation>
     </message>
 </context>
 <context>
+    <name>PronunciationExerciseWidget</name>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="610"/>
+        <source>Please pronounce: </source>
+        <translation>Произнесите, пожалуйста: </translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="620"/>
+        <source>🔊 Play Reference</source>
+        <translation>🔊 Воспроизвести образец</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="635"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="841"/>
+        <source>🎤 Record</source>
+        <translation>🎤 Запись</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="641"/>
+        <source>Tap record and speak clearly.</source>
+        <translation>Нажмите запись и говорите четко.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="646"/>
+        <source>Transcription Feedback</source>
+        <translation>Обратная связь по транскрипции</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="653"/>
+        <source>Your speech (colored by confidence):</source>
+        <translation>Ваша речь (раскрашена по степени уверенности):</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="656"/>
+        <source>Comparison with target text:</source>
+        <translation>Сравнение с целевым текстом:</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
+        <source>🔄 Try Again</source>
+        <translation>🔄 Попробовать снова</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="663"/>
+        <source>Submit &amp; Continue</source>
+        <translation>Отправить и продолжить</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="702"/>
+        <source>Please select a Whisper model in Settings to enable pronunciation practice.</source>
+        <translation>Пожалуйста, выберите модель Whisper в Настройках, чтобы включить практику произношения.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="709"/>
+        <source>Tap record to speak.</source>
+        <translation>Нажмите запись, чтобы говорить.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="712"/>
+        <source>Load Model: {0}</source>
+        <translation>Загрузить модель: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="717"/>
+        <source>Model must be loaded before recording.</source>
+        <translation>Модель должна быть загружена перед записью.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="750"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="769"/>
+        <source>No audio input device found!</source>
+        <translation>Аудиоустройство ввода не найдено!</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="780"/>
+        <source>Loading pronunciation model ({0})...</source>
+        <translation>Загрузка модели произношения ({0})...</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="802"/>
+        <source>Recording... Speak now!</source>
+        <translation>Запись... Говорите!</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="803"/>
+        <source>⏹️ Stop Recording</source>
+        <translation>⏹️ Остановить запись</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="840"/>
+        <source>Processing audio... Please wait.</source>
+        <translation>Обработка аудио... Подождите.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="871"/>
+        <source>Error saving audio.</source>
+        <translation>Ошибка сохранения аудио.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
+        <source>No audio data to process.</source>
+        <translation>Нет аудиоданных для обработки.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="888"/>
+        <source>Error: Audio file for transcription not found.</source>
+        <translation>Ошибка: Аудиофайл для транскрипции не найден.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="902"/>
+        <source>Transcription service not available or disabled.</source>
+        <translation>Сервис транскрипции недоступен или отключен.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="922"/>
+        <source>Transcription complete. Review your feedback below.</source>
+        <translation>Транскрипция завершена. Ознакомьтесь с отзывами ниже.</translation>
+    </message>
+    <message>
+        <location filename="../ui/widgets/exercise_widgets.py" line="1006"/>
+        <source>Transcription Error: {0}</source>
+        <translation>Ошибка транскрипции: {0}</translation>
+    </message>
+</context>
+<context>
     <name>RadioButtonOptionExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="260"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="317"/>
         <source>No options available for this exercise.</source>
         <translation>Для этого упражнения нет доступных вариантов.</translation>
     </message>
@@ -566,113 +984,123 @@ Happy learning!</source>
 <context>
     <name>ReviewView</name>
     <message>
-        <location filename="../ui/views/review_view.py" line="59"/>
+        <location filename="../ui/views/review_view.py" line="71"/>
         <source>← Back to Overview</source>
         <translation>← Назад к обзору</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="64"/>
-        <location filename="../ui/views/review_view.py" line="203"/>
-        <location filename="../ui/views/review_view.py" line="352"/>
+        <location filename="../ui/views/review_view.py" line="76"/>
+        <location filename="../ui/views/review_view.py" line="226"/>
+        <location filename="../ui/views/review_view.py" line="426"/>
         <source>Review Session</source>
         <translation>Сеанс повторения</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="70"/>
-        <location filename="../ui/views/review_view.py" line="353"/>
+        <location filename="../ui/views/review_view.py" line="82"/>
+        <location filename="../ui/views/review_view.py" line="427"/>
         <source>Review Progress: %v / %m</source>
         <translation>Прогресс повторения: %v / %m</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="87"/>
-        <location filename="../ui/views/review_view.py" line="177"/>
-        <location filename="../ui/views/review_view.py" line="254"/>
+        <location filename="../ui/views/review_view.py" line="99"/>
+        <location filename="../ui/views/review_view.py" line="193"/>
+        <location filename="../ui/views/review_view.py" line="286"/>
         <source>Show Hint</source>
         <translation>Показать подсказку</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="93"/>
+        <location filename="../ui/views/review_view.py" line="105"/>
         <source>Lookup...</source>
         <translation>Поиск...</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="100"/>
+        <location filename="../ui/views/review_view.py" line="112"/>
         <source>Submit Answer</source>
         <translation>Отправить ответ</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="105"/>
+        <location filename="../ui/views/review_view.py" line="117"/>
         <source>Show Answer</source>
         <translation>Показать ответ</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="117"/>
+        <location filename="../ui/views/review_view.py" line="128"/>
         <source>Again (1)</source>
         <translation>Снова (1)</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="121"/>
+        <location filename="../ui/views/review_view.py" line="132"/>
         <source>Hard (2)</source>
         <translation>Слодно (2)</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="125"/>
+        <location filename="../ui/views/review_view.py" line="136"/>
         <source>Good (3)</source>
         <translation>Хорошо (3)</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="129"/>
+        <location filename="../ui/views/review_view.py" line="140"/>
         <source>Easy (4)</source>
         <translation>Легко (4)</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="176"/>
-        <location filename="../ui/views/review_view.py" line="253"/>
+        <location filename="../ui/views/review_view.py" line="191"/>
+        <location filename="../ui/views/review_view.py" line="284"/>
         <source>Hide Hint</source>
         <translation>Скрыть подсказку</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="203"/>
+        <location filename="../ui/views/review_view.py" line="227"/>
         <source>No exercises to review in this session!</source>
         <translation>В этом сеансе нет упражнений для повторения!</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="211"/>
+        <location filename="../ui/views/review_view.py" line="236"/>
         <source>{0} ({1} exercises)</source>
         <translation>{0} ({1} упражнений)</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="241"/>
+        <location filename="../ui/views/review_view.py" line="271"/>
         <source>Error loading exercise. Please rate to continue.</source>
         <translation>Ошибка загрузки упражнения. Пожалуйста, оцените для продолжения.</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="274"/>
+        <location filename="../ui/views/review_view.py" line="311"/>
         <source>Please provide an answer.</source>
         <translation>Пожалуйста, введите ответ.</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="305"/>
+        <location filename="../ui/views/review_view.py" line="331"/>
+        <location filename="../ui/views/review_view.py" line="371"/>
+        <source>
+
+Explanation: {0}</source>
+        <translation>
+
+Объяснение: {0}</translation>
+    </message>
+    <message>
+        <location filename="../ui/views/review_view.py" line="367"/>
         <source>Correct answer: {0}</source>
         <translation>Правильный ответ: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="338"/>
+        <location filename="../ui/views/review_view.py" line="411"/>
         <source>Review Session Complete</source>
         <translation>Сеанс повторения завершен</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="339"/>
-        <source>You&apos;ve completed this review session! Total exercises: {0}</source>
+        <location filename="../ui/views/review_view.py" line="414"/>
+        <source>You've completed this review session! Total exercises: {0}</source>
         <translation>Вы завершили этот сеанс повторения! Всего упражнений: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="363"/>
+        <location filename="../ui/views/review_view.py" line="439"/>
         <source>Glossary Empty</source>
         <translation>Глоссарий пуст</translation>
     </message>
     <message>
-        <location filename="../ui/views/review_view.py" line="363"/>
+        <location filename="../ui/views/review_view.py" line="440"/>
         <source>No glossary entries available for this course.</source>
         <translation>Для этого курса нет доступных записей глоссария.</translation>
     </message>
@@ -680,17 +1108,17 @@ Happy learning!</source>
 <context>
     <name>SentenceJumbleExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="349"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="421"/>
         <source>Your sentence will appear here.</source>
         <translation>Ваше предложение появится здесь.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="361"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="434"/>
         <source>Submit Sentence</source>
         <translation>Отправить предложение</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="385"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="464"/>
         <source>Click words below to build your sentence.</source>
         <translation>Нажмите на слова ниже, чтобы составить свое предложение.</translation>
     </message>
@@ -698,125 +1126,192 @@ Happy learning!</source>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="21"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="267"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="47"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="465"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="29"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="270"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="55"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="468"/>
         <source>Audio</source>
         <translation>Аудио</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="32"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="271"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="58"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="469"/>
         <source>Enable sound effects</source>
         <translation>Включить звуковые эффекты</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="35"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="272"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="61"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="502"/>
         <source>Autoplay audio in exercises</source>
         <translation>Автоматически воспроизводить аудио в упражнениях</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="40"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="275"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="67"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="475"/>
+        <source>Pronunciation &amp; Microphone</source>
+        <translation>Произношение и микрофон</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="75"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="481"/>
+        <source>Whisper Model:</source>
+        <translation>Модель Whisper:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="78"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="471"/>
+        <source>Unload Model from Memory</source>
+        <translation>Выгрузить модель из памяти</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="85"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="486"/>
+        <source>Microphone Input Device:</source>
+        <translation>Устройство ввода микрофона:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="93"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="492"/>
+        <source>Note: For GPU acceleration, a CUDA-enabled PyTorch build is required.</source>
+        <translation>Примечание: Для ускорения на GPU требуется сборка PyTorch с поддержкой CUDA.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="104"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="496"/>
+        <source>CUDA Status: Available</source>
+        <translation>Статус CUDA: Доступен</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="109"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="500"/>
+        <source>CUDA Status: Not Available</source>
+        <translation>Статус CUDA: Недоступен</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="117"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="505"/>
         <source>Volume:</source>
         <translation>Громкость:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="53"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="283"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="132"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="508"/>
         <source>User Interface</source>
         <translation>Пользовательский интерфейс</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="58"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="137"/>
         <source>Theme:</source>
         <translation>Тема:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="62"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="141"/>
         <source>Language:</source>
         <translation>Язык:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="74"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="155"/>
         <source>Font Size:</source>
         <translation>Размер шрифта:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="76"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="288"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="159"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="515"/>
         <source>Show hints automatically in exercises</source>
         <translation>Автоматически показывать подсказки в упражнениях</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="79"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="289"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="162"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="516"/>
         <source>Reset UI Settings to Default</source>
         <translation>Сбросить настройки пользовательского интерфейса по умолчанию</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="85"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="292"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="168"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="519"/>
         <source>Developer</source>
         <translation>Разработчик</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="88"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="293"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="171"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="520"/>
         <source>Enable Developer Mode</source>
         <translation>Включить режим разработчика</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="89"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="296"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="176"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="531"/>
         <source>Requires application restart to take full effect for logging and some startup features.</source>
         <translation>Требуется перезапуск приложения для полного эффекта логирования и некоторых функций при запуске.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="92"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="294"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="181"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="521"/>
         <source>Reset Onboarding Message Flag</source>
         <translation>Сбросить флаг приветственного сообщения</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="93"/>
-        <location filename="../ui/dialogs/settings_dialog.py" line="295"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="186"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="526"/>
         <source>Allows the onboarding message to be shown again the next time a course is loaded.</source>
         <translation>Позволяет снова показать приветственное сообщение при следующей загрузке курса.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="212"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="220"/>
+        <source>Model: {model_name}
+Size: {size}
+Parameters: {params}
+Recommended Device: {device_rec}
+Expected processing time (CPU): {ptime}
+</source>
+        <translation>Модель: {model_name}
+Размер: {size}
+Параметры: {params}
+Рекомендуемое устройство: {device_rec}
+Ожидаемое время обработки (ЦП): {ptime}
+</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="392"/>
         <source>UI Settings Reset</source>
-        <translation>Сброс настроек пользовательского интерфейса</translation>
+        <translation>Настройки пользовательского интерфейса сброшены</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="212"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="395"/>
         <source>Theme, font size and language have been reset to defaults. Click OK or Apply to save.</source>
-        <translation>Тема, размер шрифта и язык сброшены до значений по умолчанию. Нажмите ОК или Применить для сохранения.</translation>
+        <translation>Тема, размер шрифта и язык были сброшены по умолчанию. Нажмите ОК или Применить для сохранения.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="307"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="545"/>
         <source>Onboarding Reset</source>
         <translation>Сброс приветствия</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="309"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="548"/>
         <source>The onboarding message flag has been reset.
 The welcome guide will be shown the next time you load a course.</source>
-        <translation>Флаг приветственного сообщения сброшен.
-Приветственное руководство будет показано в следующий раз при загрузке курса.</translation>
+        <translation>Флаг приветственного сообщения был сброшен.
+Приветственное руководство будет показано при следующей загрузке курса.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="556"/>
+        <source>Model Unloaded</source>
+        <translation>Модель выгружена</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
+        <source>Model '{0}' has been unloaded from memory.</source>
+        <translation>Модель '{0}' была выгружена из памяти.</translation>
     </message>
 </context>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="222"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="277"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Воспроизвести аудио</translation>
     </message>
