@@ -17,12 +17,14 @@ LOCALIZATION_DIR = "localization"  # Directory containing .qm files
 THEME_DIR = "ui/styles"  # Directory containing .qss files
 LIGHT_THEME_FILE = "light_theme.qss"  # Specific light theme
 DARK_THEME_FILE = "dark_theme.qss"  # Specific dark theme
+FANCY_LIGHT_THEME_FILE = "fancy_light_theme.qss"  # Glassmorphism theme
 WINDOWS_95_FILE = "win95_theme.qss"  # Windows 95'ish theme
 TEMPLE_OS_FILE = "temple_os_theme.qss"  # Terry A. Davis
 SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Splash screen image
 AVAILABLE_THEMES = {
     "System": "system_default",
     "Light": LIGHT_THEME_FILE,
+    "Fancy Light": FANCY_LIGHT_THEME_FILE,
     "Dark": DARK_THEME_FILE,
     "Windows 95": WINDOWS_95_FILE,
     "Temple OS": TEMPLE_OS_FILE,

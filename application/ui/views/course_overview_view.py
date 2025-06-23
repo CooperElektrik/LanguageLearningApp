@@ -156,7 +156,6 @@ class CourseOverviewView(QWidget):
                         lesson_button.setIcon(icon)
 
                     lesson_button.setProperty("status", status_property)
-
                     if is_unlocked or is_completed:
                         lesson_button.setEnabled(True)
                         lesson_button.clicked.connect(

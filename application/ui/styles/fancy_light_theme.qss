@@ -1,0 +1,199 @@
+/* application/ui/styles/fancy_light_theme.qss */
+
+QWidget {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; /* Windows 11 font preference */
+    font-size: 10pt; /* Or use settings.DEFAULT_FONT_SIZE dynamically */
+    color: #1C1C1C; /* Dark text color */
+}
+
+QMainWindow {
+    background-color: rgba(242, 242, 242, 0.9); /* Base window background, slightly transparent */
+}
+
+/* --- General Widget Backgrounds --- */
+QGroupBox, QFrame#course_units_scroll_area, QFrame#progress_scroll_area {
+    background-color: rgba(255, 255, 255, 0.75); /* Whiter, more transparent panels */
+    border: 1px solid rgba(200, 200, 200, 0.6);
+    border-radius: 8px;
+    margin-top: 1ex; /* Space for title */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #333;
+    font-weight: bold;
+}
+
+/* --- Buttons --- */
+QPushButton {
+    background-color: rgba(230, 230, 230, 0.85); /* Slightly transparent light grey */
+    border: 1px solid rgba(180, 180, 180, 0.7);
+    border-radius: 6px; /* Rounded corners */
+    padding: 6px 12px;
+    min-height: 20px;
+    color: #1C1C1C;
+}
+
+QPushButton:hover {
+    background-color: rgba(210, 225, 245, 0.9); /* Light blueish hover */
+    border-color: rgba(0, 120, 212, 0.8);
+}
+
+QPushButton:pressed {
+    background-color: rgba(190, 210, 235, 0.95); /* Darker blueish pressed */
+    border-color: rgba(0, 84, 153, 0.9);
+}
+
+QPushButton:disabled {
+    background-color: rgba(235, 235, 235, 0.6);
+    color: rgba(120, 120, 120, 0.7);
+    border-color: rgba(200, 200, 200, 0.5);
+}
+
+/* Specific buttons if needed */
+QPushButton#start_review_button_main, QPushButton#load_model_button {
+    background-color: rgba(0, 120, 212, 0.8); /* Accent color for primary actions */
+    color: white;
+    font-weight: bold;
+}
+QPushButton#start_review_button_main:hover, QPushButton#load_model_button:hover {
+    background-color: rgba(0, 100, 180, 0.9);
+}
+QPushButton#start_review_button_main:pressed, QPushButton#load_model_button:pressed {
+    background-color: rgba(0, 80, 150, 0.95);
+}
+QPushButton#lesson_button {
+    text-align: left;
+}
+
+
+/* --- Input Fields --- */
+QLineEdit, QTextEdit, QTextBrowser {
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(180, 180, 180, 0.7);
+    border-radius: 4px;
+    padding: 4px;
+    selection-background-color: #0078D4; /* Windows blue accent for selection */
+    selection-color: white;
+}
+QTextEdit:focus, QLineEdit:focus {
+    border: 1px solid #0078D4;
+}
+
+/* --- Scroll Bars (Simplified for a modern look) --- */
+QScrollBar:vertical {
+    border: none;
+    width: 0px; /* Completely hide vertical scrollbar */
+}
+/* Horizontal Scrollbar similar */
+QScrollBar:horizontal {
+    border: none;
+    height: 0px; /* Completely hide horizontal scrollbar */
+}
+
+
+/* --- Other Widgets --- */
+QListWidget, QTreeView {
+    background-color: rgba(250, 250, 250, 0.8);
+    border: 1px solid rgba(200, 200, 200, 0.6);
+    border-radius: 4px;
+}
+QListWidget::item:hover, QTreeView::item:hover {
+    background-color: rgba(210, 225, 245, 0.7);
+}
+QListWidget::item:selected, QTreeView::item:selected {
+    background-color: #0078D4;
+    color: white;
+}
+
+QProgressBar {
+    border: 1px solid rgba(180, 180, 180, 0.7);
+    border-radius: 4px;
+    text-align: center;
+    background-color: rgba(230, 230, 230, 0.8);
+    color: #1C1C1C;
+}
+QProgressBar::chunk {
+    background-color: #0078D4; /* Accent color for progress */
+    border-radius: 3px;
+    margin: 0.5px;
+}
+
+QComboBox {
+    border: 1px solid rgba(180, 180, 180, 0.7);
+    border-radius: 4px;
+    padding: 1px 18px 1px 3px;
+    min-width: 6em;
+    background-color: rgba(245, 245, 245, 0.85);
+}
+QComboBox:on { /* shift the text when the popup opens */
+    padding-top: 3px;
+    padding-left: 4px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+    border-left-width: 1px;
+    border-left-color: rgba(180, 180, 180, 0.7);
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+QComboBox::down-arrow {
+    image: url(application/assets/icons/down_arrow.png); /* You'll need a small down arrow icon */
+    /* If no icon, QStyle will draw a default one */
+}
+QComboBox QAbstractItemView { /* The dropdown list */
+    border: 1px solid rgba(180, 180, 180, 0.9);
+    background-color: white;
+    selection-background-color: #0078D4;
+}
+
+QTabWidget::pane {
+    border: 1px solid rgba(200, 200, 200, 0.6);
+    border-radius: 4px;
+    background-color: rgba(248, 248, 248, 0.8);
+}
+QTabBar::tab {
+    background: rgba(230, 230, 230, 0.8);
+    border: 1px solid rgba(200, 200, 200, 0.6);
+    border-bottom-color: transparent; /* Same as pane color or transparent */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding: 6px 10px;
+    margin-right: 2px;
+}
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: rgba(240, 240, 240, 0.9);
+}
+QTabBar::tab:selected {
+    border-color: rgba(150, 150, 150, 0.7);
+    border-bottom-color: rgba(248, 248, 248, 0.8); /* Same as pane color */
+}
+
+QDockWidget {
+    titlebar-close-icon: url(application/assets/icons/close.png); /* Example */
+    titlebar-normal-icon: url(application/assets/icons/float.png); /* Example */
+}
+QDockWidget::title {
+    text-align: left; /* Default */
+    background: rgba(220, 220, 220, 0.85);
+    padding: 5px;
+    border: 1px solid rgba(200, 200, 200, 0.6);
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+/* Specific Object Names for further customization if needed */
+QLabel#course_title_label {
+    font-size: 16pt;
+    font-weight: bold;
+    padding-bottom: 10px;
+}
+QTextBrowser#confidence_browser, QTextBrowser#diff_browser {
+    background-color: rgba(245, 245, 250, 0.9); /* Slightly different background for feedback */
+}
