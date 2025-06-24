@@ -40,53 +40,53 @@
 <context>
     <name>BaseExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="174"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="186"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="176"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="188"/>
         <source>Audio Error</source>
         <translation>Audiofehler</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="175"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="177"/>
         <source>Cannot prepare audio: {0}</source>
         <translation>Audio kann nicht vorbereitet werden: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="187"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="189"/>
         <source>Audio file not found: {0}</source>
         <translation>Audiodatei nicht gefunden: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="196"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="197"/>
-        <source>Translate to %s: "%s"</source>
-        <translation>Übersetzen nach %s: "%s"</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="198"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="199"/>
+        <source>Translate to %s: &quot;%s&quot;</source>
+        <translation>Übersetzen nach %s: &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
-        <source>Choose the %s translation for: "%s" (%s)</source>
-        <translation>Wählen Sie die %s-Übersetzung für: "%s" (%s)</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
+        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
+        <translation>Wählen Sie die %s-Übersetzung für: &quot;%s&quot; (%s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="201"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <source>%s (Hint: %s)</source>
         <translation>%s (Hinweis: %s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="204"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="205"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="206"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="207"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
         <source>%s</source>
         <translation>%s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="210"/>
         <source>Exercise Prompt: %s</source>
         <translation>Übungsaufgabe: %s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="209"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="211"/>
         <source>Exercise Prompt</source>
         <translation>Übungsaufgabe</translation>
     </message>
@@ -94,7 +94,7 @@
 <context>
     <name>ContextBlockWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="508"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="512"/>
         <source>Continue</source>
         <translation>Weiterfahren</translation>
     </message>
@@ -191,25 +191,24 @@ Check the logs for details.</source>
     <name>CourseOverviewView</name>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="52"/>
-        <location filename="../ui/views/course_overview_view.py" line="227"/>
+        <location filename="../ui/views/course_overview_view.py" line="226"/>
         <source>Daily Review</source>
         <translation>Tägliche Prüfung</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="62"/>
-        <location filename="../ui/views/course_overview_view.py" line="228"/>
+        <location filename="../ui/views/course_overview_view.py" line="227"/>
         <source>Review Due</source>
         <translation>Prüfung fällig</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="69"/>
-        <location filename="../ui/views/course_overview_view.py" line="229"/>
         <source>Review Weak</source>
         <translation>Schwache Punkte prüfen</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="73"/>
-        <location filename="../ui/views/course_overview_view.py" line="232"/>
+        <location filename="../ui/views/course_overview_view.py" line="231"/>
         <source>Review items you struggle with the most.</source>
         <translation>Prüfen Sie die Elemente, die Ihnen am schwersten fallen.</translation>
     </message>
@@ -224,33 +223,33 @@ Check the logs for details.</source>
         <translation>Diese Einheit hat keine Lektionen.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="179"/>
+        <location filename="../ui/views/course_overview_view.py" line="178"/>
         <source>Course not loaded.</source>
         <translation>Kurs nicht geladen.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="180"/>
+        <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>N/A</source>
         <translation>N/A.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="188"/>
-        <location filename="../ui/views/course_overview_view.py" line="226"/>
+        <location filename="../ui/views/course_overview_view.py" line="187"/>
+        <location filename="../ui/views/course_overview_view.py" line="225"/>
         <source>Language Course</source>
         <translation>Sprachkurs</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="191"/>
+        <location filename="../ui/views/course_overview_view.py" line="190"/>
         <source>Total XP: {0}</source>
         <translation>Gesamt-XP: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="204"/>
+        <location filename="../ui/views/course_overview_view.py" line="203"/>
         <source>{0} exercises due for review.</source>
         <translation>{0} Übungen zur Prüfung fällig.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="210"/>
+        <location filename="../ui/views/course_overview_view.py" line="209"/>
         <source>No exercises due for review right now!</source>
         <translation>Derzeit keine Übungen zur Prüfung fällig!</translation>
     </message>
@@ -424,8 +423,8 @@ Bitte überprüfen Sie Kurs-Assets und Pfade.</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="120"/>
-        <source>Double-click to see details for '{0}'</source>
-        <translation>Doppelklicken, um Details für '{0}' anzuzeigen</translation>
+        <source>Double-click to see details for &apos;{0}&apos;</source>
+        <translation>Doppelklicken, um Details für &apos;{0}&apos; anzuzeigen</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="170"/>
@@ -619,13 +618,13 @@ Erklärung: {0}</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="411"/>
-        <source>Let's go over the exercises you had trouble with.</source>
+        <source>Let&apos;s go over the exercises you had trouble with.</source>
         <translation>Gehen wir uns die Übungen an, bei denen Sie Schwierigkeiten hatten.</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="422"/>
-        <source>Lesson '{0}' completed!</source>
-        <translation>Lektion '{0}' abgeschlossen!</translation>
+        <source>Lesson &apos;{0}&apos; completed!</source>
+        <translation>Lektion &apos;{0}&apos; abgeschlossen!</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="447"/>
@@ -646,7 +645,7 @@ Erklärung: {0}</translation>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="395"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="397"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Audio abspielen</translation>
     </message>
@@ -657,8 +656,8 @@ Erklärung: {0}</translation>
         <location filename="../ui/main_window.py" line="69"/>
         <location filename="../ui/main_window.py" line="328"/>
         <location filename="../ui/main_window.py" line="540"/>
-        <source>LinguaLearn</source>
-        <translation>LinguaLearn</translation>
+        <source>LanguageLearningApp</source>
+        <translation>Sprachlern-App</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="168"/>
@@ -699,9 +698,8 @@ Erklärung: {0}</translation>
         <translation>Wählen Sie eine Lektion oder starten Sie eine Prüfung.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="296"/>
         <source>&amp;File</source>
-        <translation>&amp;Datei</translation>
+        <translation type="vanished">&amp;Datei</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="298"/>
@@ -720,18 +718,18 @@ Erklärung: {0}</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="466"/>
-        <source>Welcome to LinguaLearn!</source>
-        <translation>Willkommen bei LinguaLearn!</translation>
+        <source>Welcome to LanguageLearningApp!</source>
+        <translation>Willkommen bei LanguageLearningApp!</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="477"/>
         <source>Welcome to your language course!
 
-Here's a quick guide to the interface:
+Here&apos;s a quick guide to the interface:
 
 • Left Panel (Course Navigation):
   - Displays course units and lessons. Click a lesson to start.
-  - Use 'Review Due' or 'Review Weak' to practice.
+  - Use &apos;Review Due&apos; or &apos;Review Weak&apos; to practice.
 
 • Right Panel (Progress):
   - Shows your XP, study streak, and achievements.
@@ -745,7 +743,7 @@ Hier ist eine kurze Anleitung zur Benutzeroberfläche:
 
 • Linkes Panel (Kursnavigation):
   - Zeigt Kurseinheiten und Lektionen an. Klicken Sie auf eine Lektion, um zu beginnen.
-  - Verwenden Sie 'Fällige Prüfung' oder 'Schwache Punkte prüfen' zum Üben.
+  - Verwenden Sie &apos;Fällige Prüfung&apos; oder &apos;Schwache Punkte prüfen&apos; zum Üben.
 
 • Rechtes Panel (Fortschritt):
   - Zeigt Ihre XP, Ihre Lernsträhne und Ihre Erfolge an.
@@ -851,50 +849,50 @@ Viel Erfolg beim Lernen!</translation>
 <context>
     <name>PronunciationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="610"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="611"/>
         <source>Please pronounce: </source>
         <translation>Bitte sprechen Sie: </translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="620"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="621"/>
         <source>🔊 Play Reference</source>
         <translation>🔊 Referenz abspielen</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="635"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="841"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="636"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="826"/>
         <source>🎤 Record</source>
         <translation>🎤 Aufnehmen</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="641"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="642"/>
         <source>Tap record and speak clearly.</source>
         <translation>Tippen Sie auf Aufnehmen und sprechen Sie deutlich.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="646"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="654"/>
         <source>Transcription Feedback</source>
         <translation>Transkriptionsfeedback</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="653"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
         <source>Your speech (colored by confidence):</source>
         <translation>Ihre Sprache (farblich nach Konfidenz):</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="656"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="664"/>
         <source>Comparison with target text:</source>
         <translation>Vergleich mit Zieltext:</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="668"/>
         <source>🔄 Try Again</source>
         <translation>🔄 Erneut versuchen</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="663"/>
-        <source>Submit &amp; Continue</source>
-        <translation>Absenden &amp; Fortfahren</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="670"/>
+        <source>Submit and Continue</source>
+        <translation>Absenden und Fortfahren</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="702"/>
@@ -917,58 +915,58 @@ Viel Erfolg beim Lernen!</translation>
         <translation>Modell muss vor der Aufnahme geladen werden.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="750"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="769"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="745"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="761"/>
         <source>No audio input device found!</source>
         <translation>Kein Audio-Eingabegerät gefunden!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="780"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="772"/>
         <source>Loading pronunciation model ({0})...</source>
         <translation>Aussprachemodell ({0}) wird geladen...</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="802"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="796"/>
         <source>Recording... Speak now!</source>
         <translation>Aufnahme läuft... Sprechen Sie jetzt!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="803"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="797"/>
         <source>⏹️ Stop Recording</source>
         <translation>⏹️ Aufnahme stoppen</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="840"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="825"/>
         <source>Processing audio... Please wait.</source>
         <translation>Audio wird verarbeitet... Bitte warten.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="871"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="850"/>
         <source>Error saving audio.</source>
         <translation>Fehler beim Speichern des Audios.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="856"/>
         <source>No audio data to process.</source>
         <translation>Keine Audiodaten zum Verarbeiten.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="888"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="865"/>
         <source>Error: Audio file for transcription not found.</source>
         <translation>Fehler: Audiodatei für Transkription nicht gefunden.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="902"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
         <source>Transcription service not available or disabled.</source>
         <translation>Transkriptionsdienst nicht verfügbar oder deaktiviert.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="922"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="894"/>
         <source>Transcription complete. Review your feedback below.</source>
         <translation>Transkription abgeschlossen. Überprüfen Sie Ihr Feedback unten.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="1006"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="960"/>
         <source>Transcription Error: {0}</source>
         <translation>Transkriptionsfehler: {0}</translation>
     </message>
@@ -976,7 +974,7 @@ Viel Erfolg beim Lernen!</translation>
 <context>
     <name>RadioButtonOptionExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="317"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="319"/>
         <source>No options available for this exercise.</source>
         <translation>Keine Optionen für diese Übung verfügbar.</translation>
     </message>
@@ -1091,7 +1089,7 @@ Erklärung: {0}</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="414"/>
-        <source>You've completed this review session! Total exercises: {0}</source>
+        <source>You&apos;ve completed this review session! Total exercises: {0}</source>
         <translation>Sie haben diese Prüfungssitzung abgeschlossen! Gesamte Übungen: {0}</translation>
     </message>
     <message>
@@ -1108,17 +1106,17 @@ Erklärung: {0}</translation>
 <context>
     <name>SentenceJumbleExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="421"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="423"/>
         <source>Your sentence will appear here.</source>
         <translation>Ihr Satz wird hier angezeigt.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="434"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="436"/>
         <source>Submit Sentence</source>
         <translation>Satz absenden</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="464"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="466"/>
         <source>Click words below to build your sentence.</source>
         <translation>Klicken Sie auf die Wörter unten, um Ihren Satz zu bilden.</translation>
     </message>
@@ -1152,8 +1150,8 @@ Erklärung: {0}</translation>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="67"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="475"/>
-        <source>Pronunciation &amp; Microphone</source>
-        <translation>Aussprache &amp; Mikrofon</translation>
+        <source>Pronunciation and Microphone</source>
+        <translation>Aussprache und Mikrofon</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="75"/>
@@ -1304,14 +1302,14 @@ Der Willkommensleitfaden wird beim nächsten Laden eines Kurses angezeigt.</tran
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
-        <source>Model ''{0}'' has been unloaded from memory.</source>
-        <translation>Modell ''{0}'' wurde aus dem Speicher entladen.</translation>
+        <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
+        <translation>Modell &apos;{0}&apos; wurde aus dem Speicher entladen.</translation>
     </message>
 </context>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="277"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="279"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Audio abspielen</translation>
     </message>

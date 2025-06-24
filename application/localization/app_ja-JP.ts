@@ -13,7 +13,8 @@
         <location filename="../ui/views/base_exercise_player_view.py" line="103"/>
         <location filename="../ui/views/base_exercise_player_view.py" line="337"/>
         <source>Type your personal notes for this exercise here...</source>
-        <translation>この練習のための個人的なメモをここに\n入力してください...</translation>
+        <translation>この練習のための個人的なメモをここに
+入力してください...</translation>
     </message>
     <message>
         <location filename="../ui/views/base_exercise_player_view.py" line="185"/>
@@ -40,53 +41,53 @@
 <context>
     <name>BaseExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="174"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="186"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="176"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="188"/>
         <source>Audio Error</source>
         <translation>音声エラー</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="175"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="177"/>
         <source>Cannot prepare audio: {0}</source>
         <translation>音声を準備できません: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="187"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="189"/>
         <source>Audio file not found: {0}</source>
         <translation>音声ファイルが見つかりません: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="196"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="197"/>
-        <source>Translate to %s: "%s"</source>
-        <translation>%s に翻訳してください: "%s"</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="198"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="199"/>
+        <source>Translate to %s: &quot;%s&quot;</source>
+        <translation>%s に翻訳してください: &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
-        <source>Choose the %s translation for: "%s" (%s)</source>
-        <translation>"%s" (%s) の %s 翻訳を選択してください</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
+        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
+        <translation>&quot;%s&quot; (%s) の %s 翻訳を選択してください</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="201"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <source>%s (Hint: %s)</source>
         <translation>%s (ヒント: %s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="204"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="205"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="206"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="207"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
         <source>%s</source>
         <translation>%s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="210"/>
         <source>Exercise Prompt: %s</source>
         <translation>練習プロンプト: %s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="209"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="211"/>
         <source>Exercise Prompt</source>
         <translation>練習プロンプト</translation>
     </message>
@@ -94,7 +95,7 @@
 <context>
     <name>ContextBlockWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="508"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="512"/>
         <source>Continue</source>
         <translation>続ける</translation>
     </message>
@@ -191,25 +192,24 @@ Check the logs for details.</source>
     <name>CourseOverviewView</name>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="52"/>
-        <location filename="../ui/views/course_overview_view.py" line="227"/>
+        <location filename="../ui/views/course_overview_view.py" line="226"/>
         <source>Daily Review</source>
         <translation>毎日復習</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="62"/>
-        <location filename="../ui/views/course_overview_view.py" line="228"/>
+        <location filename="../ui/views/course_overview_view.py" line="227"/>
         <source>Review Due</source>
         <translation>復習期限</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="69"/>
-        <location filename="../ui/views/course_overview_view.py" line="229"/>
         <source>Review Weak</source>
         <translation>苦手な復習</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="73"/>
-        <location filename="../ui/views/course_overview_view.py" line="232"/>
+        <location filename="../ui/views/course_overview_view.py" line="231"/>
         <source>Review items you struggle with the most.</source>
         <translation>最も苦手な項目を復習しましょう。</translation>
     </message>
@@ -224,33 +224,33 @@ Check the logs for details.</source>
         <translation>このユニットにはレッスンがありません。</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="179"/>
+        <location filename="../ui/views/course_overview_view.py" line="178"/>
         <source>Course not loaded.</source>
         <translation>コースが読み込まれていません。</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="180"/>
+        <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>N/A</source>
         <translation>該当なし</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="188"/>
-        <location filename="../ui/views/course_overview_view.py" line="226"/>
+        <location filename="../ui/views/course_overview_view.py" line="187"/>
+        <location filename="../ui/views/course_overview_view.py" line="225"/>
         <source>Language Course</source>
         <translation>言語コース</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="191"/>
+        <location filename="../ui/views/course_overview_view.py" line="190"/>
         <source>Total XP: {0}</source>
         <translation>合計XP: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="204"/>
+        <location filename="../ui/views/course_overview_view.py" line="203"/>
         <source>{0} exercises due for review.</source>
         <translation>{0} 個の練習が復習が必要です。</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="210"/>
+        <location filename="../ui/views/course_overview_view.py" line="209"/>
         <source>No exercises due for review right now!</source>
         <translation>現在、復習が必要な練習はありません!</translation>
     </message>
@@ -424,8 +424,8 @@ Please check course assets and paths.</source>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="120"/>
-        <source>Double-click to see details for '{0}'</source>
-        <translation>'{0}' の詳細を見るにはダブルクリックしてください</translation>
+        <source>Double-click to see details for &apos;{0}&apos;</source>
+        <translation>&apos;{0}&apos; の詳細を見るにはダブルクリックしてください</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="170"/>
@@ -619,13 +619,13 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="411"/>
-        <source>Let's go over the exercises you had trouble with.</source>
+        <source>Let&apos;s go over the exercises you had trouble with.</source>
         <translation>苦労した練習を見ていきましょう。</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="422"/>
-        <source>Lesson '{0}' completed!</source>
-        <translation>レッスン '{0}' が完了しました!</translation>
+        <source>Lesson &apos;{0}&apos; completed!</source>
+        <translation>レッスン &apos;{0}&apos; が完了しました!</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="447"/>
@@ -646,7 +646,7 @@ Explanation: {0}</source>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="395"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="397"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 音声再生</translation>
     </message>
@@ -657,8 +657,8 @@ Explanation: {0}</source>
         <location filename="../ui/main_window.py" line="69"/>
         <location filename="../ui/main_window.py" line="328"/>
         <location filename="../ui/main_window.py" line="540"/>
-        <source>LinguaLearn</source>
-        <translation>リンガルラーン</translation>
+        <source>LanguageLearningApp</source>
+        <translation>LanguageLearningApp</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="168"/>
@@ -699,11 +699,6 @@ Explanation: {0}</source>
         <translation>レッスンを選択するか、復習を開始してください。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="296"/>
-        <source>&amp;File</source>
-        <translation>&amp;ファイル</translation>
-    </message>
-    <message>
         <location filename="../ui/main_window.py" line="298"/>
         <source>Open Course for Editing...</source>
         <translation>編集用にコースを開く...</translation>
@@ -720,18 +715,18 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="466"/>
-        <source>Welcome to LinguaLearn!</source>
-        <translation>リンガルラーンへようこそ!</translation>
+        <source>Welcome to LanguageLearningApp!</source>
+        <translation>LanguageLearningAppへようこそ！</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="477"/>
         <source>Welcome to your language course!
 
-Here's a quick guide to the interface:
+Here&apos;s a quick guide to the interface:
 
 • Left Panel (Course Navigation):
   - Displays course units and lessons. Click a lesson to start.
-  - Use 'Review Due' or 'Review Weak' to practice.
+  - Use &apos;Review Due&apos; or &apos;Review Weak&apos; to practice.
 
 • Right Panel (Progress):
   - Shows your XP, study streak, and achievements.
@@ -745,7 +740,7 @@ Happy learning!</source>
 
 • 左パネル (コースナビゲーション):
   - コースユニットとレッスンを表示します。開始するにはレッスンをクリックしてください。
-  - '期限切れ復習' または '苦手な復習' を使用して練習しましょう。
+  - &apos;期限切れ復習&apos; または &apos;苦手な復習&apos; を使用して練習しましょう。
 
 • 右パネル (進捗):
   - XP、学習継続、実績を表示します。
@@ -851,49 +846,49 @@ Happy learning!</source>
 <context>
     <name>PronunciationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="610"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="611"/>
         <source>Please pronounce: </source>
         <translation>発音してください: </translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="620"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="621"/>
         <source>🔊 Play Reference</source>
         <translation>🔊 参考音再生</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="635"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="841"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="636"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="826"/>
         <source>🎤 Record</source>
         <translation>🎤 録音</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="641"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="642"/>
         <source>Tap record and speak clearly.</source>
         <translation>録音をタップして、はっきりと話してください。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="646"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="654"/>
         <source>Transcription Feedback</source>
         <translation>文字起こしフィードバック</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="653"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
         <source>Your speech (colored by confidence):</source>
         <translation>あなたの発話（信頼度で色分け）:</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="656"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="664"/>
         <source>Comparison with target text:</source>
         <translation>目標テキストとの比較:</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="668"/>
         <source>🔄 Try Again</source>
         <translation>🔄 再試行</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="663"/>
-        <source>Submit &amp; Continue</source>
+        <location filename="../ui/widgets/exercise_widgets.py" line="670"/>
+        <source>Submit and Continue</source>
         <translation>提出して続ける</translation>
     </message>
     <message>
@@ -917,58 +912,58 @@ Happy learning!</source>
         <translation>録音前にモデルをロードする必要があります。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="750"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="769"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="745"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="761"/>
         <source>No audio input device found!</source>
         <translation>オーディオ入力デバイスが見つかりません！</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="780"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="772"/>
         <source>Loading pronunciation model ({0})...</source>
         <translation>発音モデル ({0}) を読み込み中...</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="802"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="796"/>
         <source>Recording... Speak now!</source>
         <translation>録音中... 今話してください！</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="803"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="797"/>
         <source>⏹️ Stop Recording</source>
         <translation>⏹️ 録音停止</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="840"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="825"/>
         <source>Processing audio... Please wait.</source>
         <translation>音声を処理中...お待ちください。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="871"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="850"/>
         <source>Error saving audio.</source>
         <translation>音声の保存エラー。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="856"/>
         <source>No audio data to process.</source>
         <translation>処理する音声データがありません。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="888"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="865"/>
         <source>Error: Audio file for transcription not found.</source>
         <translation>エラー: 文字起こし用の音声ファイルが見つかりません。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="902"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
         <source>Transcription service not available or disabled.</source>
         <translation>文字起こしサービスが利用できないか無効になっています。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="922"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="894"/>
         <source>Transcription complete. Review your feedback below.</source>
         <translation>文字起こしが完了しました。以下のフィードバックを確認してください。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="1006"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="960"/>
         <source>Transcription Error: {0}</source>
         <translation>文字起こしエラー: {0}</translation>
     </message>
@@ -976,7 +971,7 @@ Happy learning!</source>
 <context>
     <name>RadioButtonOptionExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="317"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="319"/>
         <source>No options available for this exercise.</source>
         <translation>この練習には利用可能なオプションはありません。</translation>
     </message>
@@ -1091,7 +1086,7 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="414"/>
-        <source>You've completed this review session! Total exercises: {0}</source>
+        <source>You&apos;ve completed this review session! Total exercises: {0}</source>
         <translation>この復習セッションを完了しました！合計練習数: {0}</translation>
     </message>
     <message>
@@ -1108,17 +1103,17 @@ Explanation: {0}</source>
 <context>
     <name>SentenceJumbleExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="421"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="423"/>
         <source>Your sentence will appear here.</source>
         <translation>ここにあなたの文が表示されます。</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="434"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="436"/>
         <source>Submit Sentence</source>
         <translation>文を提出</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="464"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="466"/>
         <source>Click words below to build your sentence.</source>
         <translation>下の単語をクリックして文を組み立てましょう。</translation>
     </message>
@@ -1152,7 +1147,7 @@ Explanation: {0}</source>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="67"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="475"/>
-        <source>Pronunciation &amp; Microphone</source>
+        <source>Pronunciation and Microphone</source>
         <translation>発音とマイク</translation>
     </message>
     <message>
@@ -1304,14 +1299,14 @@ The welcome guide will be shown the next time you load a course.</source>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
-        <source>Model '{0}' has been unloaded from memory.</source>
-        <translation>モデル '{0}' がメモリからアンロードされました。</translation>
+        <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
+        <translation>モデル &apos;{0}&apos; がメモリからアンロードされました。</translation>
     </message>
 </context>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="277"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="279"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 音声再生</translation>
     </message>

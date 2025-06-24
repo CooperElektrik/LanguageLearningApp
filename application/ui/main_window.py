@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
             None  # Store the active translator
         )
 
-        self.setWindowTitle(self.tr("LinguaLearn"))
+        self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.setGeometry(100, 100, 1024, 768)
 
         # Main stack to switch between app states (selection, learning, editing)
@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
     def _setup_file_menu(self):
         """Menu for the initial selection screen."""
         self.menuBar().clear()
-        file_menu = self.menuBar().addMenu(self.tr("&File"))
+        file_menu = self.menuBar().addMenu("File")
         file_menu.addAction(
             self.tr("Open Course for Editing..."), self._load_course_for_editing
         )
@@ -325,7 +325,7 @@ class MainWindow(QMainWindow):
 
     def _return_to_selection_screen(self):
         self._clear_dynamic_widgets()
-        self.setWindowTitle(self.tr("LinguaLearn"))
+        self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.main_stack.setCurrentWidget(self.course_selection_view)
         self.menuBar().setVisible(True)
         self._update_dev_info_button_visibility()
@@ -462,7 +462,7 @@ class MainWindow(QMainWindow):
                 "First time loading a course or onboarding not seen. Displaying onboarding message."
             )
 
-            title = self.tr("Welcome to LinguaLearn!")
+            title = self.tr("Welcome to LanguageLearningApp!")
             message = self.tr(
                 "Welcome to your language course!\n\n"
                 "Here's a quick guide to the interface:\n\n"
@@ -537,7 +537,7 @@ class MainWindow(QMainWindow):
             # Assuming editor_view has a way to get its course title
             pass  # self.setWindowTitle(f"LL Editor - {self.editor_view.get_course_title()}")
         else:
-            self.setWindowTitle(self.tr("LinguaLearn"))
+            self.setWindowTitle(self.tr("LanguageLearningApp"))
 
         # Menus (re-creating them is a common way to ensure re-translation)
         if self.main_stack.currentWidget() == self.course_selection_view:

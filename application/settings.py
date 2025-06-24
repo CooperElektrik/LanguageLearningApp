@@ -2,8 +2,8 @@ import os
 import logging  # For LOG_LEVEL constants
 
 # --- General Application Settings ---
-APP_NAME = "LinguaLearn"
-ORG_NAME = "LinguaLearnProject"  # Used for QStandardPaths, QSettings etc.
+APP_NAME = "LanguageLearningApp"
+ORG_NAME = "CooperElektrik"  # Used for QStandardPaths, QSettings etc.
 
 # --- File and Directory Names (relative to application root or MEIPASS) ---
 MANIFEST_FILENAME = "manifest.yaml"

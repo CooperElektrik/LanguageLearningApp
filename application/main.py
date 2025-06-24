@@ -162,7 +162,7 @@ def main():
             splash_timer.start()  # Start timing how long the splash is shown
             splash.show()
             splash.showMessage(
-                "LinguaLearn is starting...",  # This message could be made translatable later if needed
+                "Application is starting...",  # This message could be made translatable later if needed
                 Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
                 Qt.GlobalColor.white,  # Adjust color for visibility against your splash image
             )

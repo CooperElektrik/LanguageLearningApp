@@ -667,7 +667,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         feedback_action_layout = QHBoxLayout()
         self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
         self.try_again_button.clicked.connect(self.clear_input)
-        self.submit_feedback_button = QPushButton(self.tr("Submit & Continue"))
+        self.submit_feedback_button = QPushButton(self.tr("Submit and Continue"))
         self.submit_feedback_button.clicked.connect(self._handle_submit_click)
         feedback_action_layout.addStretch(1)
         feedback_action_layout.addWidget(self.try_again_button)

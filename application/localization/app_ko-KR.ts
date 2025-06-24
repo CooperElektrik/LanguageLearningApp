@@ -40,53 +40,53 @@
 <context>
     <name>BaseExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="174"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="186"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="176"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="188"/>
         <source>Audio Error</source>
         <translation>오디오 오류</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="175"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="177"/>
         <source>Cannot prepare audio: {0}</source>
         <translation>오디오를 준비할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="187"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="189"/>
         <source>Audio file not found: {0}</source>
         <translation>오디오 파일을 찾을 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="196"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="197"/>
-        <source>Translate to %s: "%s"</source>
-        <translation>%s로 번역: "%s"</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="198"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="199"/>
+        <source>Translate to %s: &quot;%s&quot;</source>
+        <translation>%s로 번역: &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
-        <source>Choose the %s translation for: "%s" (%s)</source>
-        <translation>"%s" (%s)에 대한 %s 번역을 선택하세요</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
+        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
+        <translation>&quot;%s&quot; (%s)에 대한 %s 번역을 선택하세요</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="201"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <source>%s (Hint: %s)</source>
         <translation>%s (힌트: %s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="204"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="205"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="206"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="207"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
         <source>%s</source>
         <translation>%s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="210"/>
         <source>Exercise Prompt: %s</source>
         <translation>연습 지문: %s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="209"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="211"/>
         <source>Exercise Prompt</source>
         <translation>연습 지문</translation>
     </message>
@@ -94,7 +94,7 @@
 <context>
     <name>ContextBlockWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="508"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="512"/>
         <source>Continue</source>
         <translation>계속</translation>
     </message>
@@ -191,25 +191,24 @@ Check the logs for details.</source>
     <name>CourseOverviewView</name>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="52"/>
-        <location filename="../ui/views/course_overview_view.py" line="227"/>
+        <location filename="../ui/views/course_overview_view.py" line="226"/>
         <source>Daily Review</source>
         <translation>매일 복습</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="62"/>
-        <location filename="../ui/views/course_overview_view.py" line="228"/>
+        <location filename="../ui/views/course_overview_view.py" line="227"/>
         <source>Review Due</source>
         <translation>복습 예정</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="69"/>
-        <location filename="../ui/views/course_overview_view.py" line="229"/>
         <source>Review Weak</source>
         <translation>약점 복습</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="73"/>
-        <location filename="../ui/views/course_overview_view.py" line="232"/>
+        <location filename="../ui/views/course_overview_view.py" line="231"/>
         <source>Review items you struggle with the most.</source>
         <translation>가장 어려워하는 항목을 복습하세요.</translation>
     </message>
@@ -224,33 +223,33 @@ Check the logs for details.</source>
         <translation>이 유닛에는 레슨이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="179"/>
+        <location filename="../ui/views/course_overview_view.py" line="178"/>
         <source>Course not loaded.</source>
         <translation>코스가 로드되지 않았습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="180"/>
+        <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="188"/>
-        <location filename="../ui/views/course_overview_view.py" line="226"/>
+        <location filename="../ui/views/course_overview_view.py" line="187"/>
+        <location filename="../ui/views/course_overview_view.py" line="225"/>
         <source>Language Course</source>
         <translation>언어 강좌</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="191"/>
+        <location filename="../ui/views/course_overview_view.py" line="190"/>
         <source>Total XP: {0}</source>
         <translation>총 XP: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="204"/>
+        <location filename="../ui/views/course_overview_view.py" line="203"/>
         <source>{0} exercises due for review.</source>
         <translation>{0}개 연습이 복습 예정입니다.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="210"/>
+        <location filename="../ui/views/course_overview_view.py" line="209"/>
         <source>No exercises due for review right now!</source>
         <translation>지금 복습해야 할 연습이 없습니다!</translation>
     </message>
@@ -424,8 +423,8 @@ Please check course assets and paths.</source>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="120"/>
-        <source>Double-click to see details for '{0}'</source>
-        <translation>'{0}'의 세부 정보를 보려면 더블클릭하세요</translation>
+        <source>Double-click to see details for &apos;{0}&apos;</source>
+        <translation>&apos;{0}&apos;의 세부 정보를 보려면 더블클릭하세요</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="170"/>
@@ -619,13 +618,13 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="411"/>
-        <source>Let's go over the exercises you had trouble with.</source>
+        <source>Let&apos;s go over the exercises you had trouble with.</source>
         <translation>어려움을 겪었던 연습을 다시 살펴보겠습니다.</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="422"/>
-        <source>Lesson '{0}' completed!</source>
-        <translation>레슨 '{0}' 완료!</translation>
+        <source>Lesson &apos;{0}&apos; completed!</source>
+        <translation>레슨 &apos;{0}&apos; 완료!</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="447"/>
@@ -646,7 +645,7 @@ Explanation: {0}</source>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="395"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="397"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 오디오 재생</translation>
     </message>
@@ -657,8 +656,8 @@ Explanation: {0}</source>
         <location filename="../ui/main_window.py" line="69"/>
         <location filename="../ui/main_window.py" line="328"/>
         <location filename="../ui/main_window.py" line="540"/>
-        <source>LinguaLearn</source>
-        <translation>링구아런</translation>
+        <source>LanguageLearningApp</source>
+        <translation>LanguageLearningApp</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="168"/>
@@ -699,9 +698,8 @@ Explanation: {0}</source>
         <translation>레슨을 선택하거나 복습을 시작하세요.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="296"/>
         <source>&amp;File</source>
-        <translation>&amp;파일</translation>
+        <translation type="vanished">&amp;파일</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="298"/>
@@ -720,18 +718,18 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="466"/>
-        <source>Welcome to LinguaLearn!</source>
-        <translation>링구아런에 오신 것을 환영합니다!</translation>
+        <source>Welcome to LanguageLearningApp!</source>
+        <translation>LanguageLearningApp에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="477"/>
         <source>Welcome to your language course!
 
-Here's a quick guide to the interface:
+Here&apos;s a quick guide to the interface:
 
 • Left Panel (Course Navigation):
   - Displays course units and lessons. Click a lesson to start.
-  - Use 'Review Due' or 'Review Weak' to practice.
+  - Use &apos;Review Due&apos; or &apos;Review Weak&apos; to practice.
 
 • Right Panel (Progress):
   - Shows your XP, study streak, and achievements.
@@ -745,7 +743,7 @@ Happy learning!</source>
 
 • 왼쪽 패널 (코스 네비게이션):
   - 코스 유닛과 레슨을 표시합니다. 레슨을 시작하려면 클릭하세요.
-  - '예정된 복습' 또는 '약점 복습'을 사용하여 연습하세요.
+  - &apos;예정된 복습&apos; 또는 &apos;약점 복습&apos;을 사용하여 연습하세요.
 
 • 오른쪽 패널 (진행 상황):
   - XP, 학습 일수, 업적을 표시합니다.
@@ -851,49 +849,49 @@ Happy learning!</source>
 <context>
     <name>PronunciationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="610"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="611"/>
         <source>Please pronounce: </source>
         <translation>발음해주세요: </translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="620"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="621"/>
         <source>🔊 Play Reference</source>
         <translation>🔊 참고 음성 재생</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="635"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="841"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="636"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="826"/>
         <source>🎤 Record</source>
         <translation>🎤 녹음</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="641"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="642"/>
         <source>Tap record and speak clearly.</source>
         <translation>녹음을 탭하고 명확하게 말하세요.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="646"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="654"/>
         <source>Transcription Feedback</source>
         <translation>텍스트 변환 피드백</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="653"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
         <source>Your speech (colored by confidence):</source>
         <translation>사용자 발화 (신뢰도에 따라 색상 표시):</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="656"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="664"/>
         <source>Comparison with target text:</source>
         <translation>목표 텍스트와의 비교:</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="668"/>
         <source>🔄 Try Again</source>
         <translation>🔄 다시 시도</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="663"/>
-        <source>Submit &amp; Continue</source>
+        <location filename="../ui/widgets/exercise_widgets.py" line="670"/>
+        <source>Submit and Continue</source>
         <translation>제출 및 계속</translation>
     </message>
     <message>
@@ -917,58 +915,58 @@ Happy learning!</source>
         <translation>녹음 전에 모델을 로드해야 합니다.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="750"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="769"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="745"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="761"/>
         <source>No audio input device found!</source>
         <translation>오디오 입력 장치를 찾을 수 없습니다!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="780"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="772"/>
         <source>Loading pronunciation model ({0})...</source>
         <translation>발음 모델 로딩 중 ({0})...</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="802"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="796"/>
         <source>Recording... Speak now!</source>
         <translation>녹음 중... 지금 말하세요!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="803"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="797"/>
         <source>⏹️ Stop Recording</source>
         <translation>⏹️ 녹음 중지</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="840"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="825"/>
         <source>Processing audio... Please wait.</source>
         <translation>오디오 처리 중... 기다려주세요.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="871"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="850"/>
         <source>Error saving audio.</source>
         <translation>오디오 저장 오류.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="856"/>
         <source>No audio data to process.</source>
         <translation>처리할 오디오 데이터가 없습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="888"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="865"/>
         <source>Error: Audio file for transcription not found.</source>
         <translation>오류: 텍스트 변환을 위한 오디오 파일을 찾을 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="902"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
         <source>Transcription service not available or disabled.</source>
         <translation>텍스트 변환 서비스를 사용할 수 없거나 비활성화되었습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="922"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="894"/>
         <source>Transcription complete. Review your feedback below.</source>
         <translation>텍스트 변환 완료. 아래 피드백을 검토하세요.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="1006"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="960"/>
         <source>Transcription Error: {0}</source>
         <translation>텍스트 변환 오류: {0}</translation>
     </message>
@@ -976,7 +974,7 @@ Happy learning!</source>
 <context>
     <name>RadioButtonOptionExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="317"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="319"/>
         <source>No options available for this exercise.</source>
         <translation>이 연습에 사용 가능한 옵션이 없습니다.</translation>
     </message>
@@ -1091,7 +1089,7 @@ Explanation: {0}</source>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="414"/>
-        <source>You've completed this review session! Total exercises: {0}</source>
+        <source>You&apos;ve completed this review session! Total exercises: {0}</source>
         <translation>복습 세션이 완료되었습니다! 총 연습: {0}개</translation>
     </message>
     <message>
@@ -1108,17 +1106,17 @@ Explanation: {0}</source>
 <context>
     <name>SentenceJumbleExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="421"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="423"/>
         <source>Your sentence will appear here.</source>
         <translation>문장이 여기에 나타납니다.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="434"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="436"/>
         <source>Submit Sentence</source>
         <translation>문장 제출</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="464"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="466"/>
         <source>Click words below to build your sentence.</source>
         <translation>아래 단어를 클릭하여 문장을 만드세요.</translation>
     </message>
@@ -1152,7 +1150,7 @@ Explanation: {0}</source>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="67"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="475"/>
-        <source>Pronunciation &amp; Microphone</source>
+        <source>Pronunciation and Microphone</source>
         <translation>발음 및 마이크</translation>
     </message>
     <message>
@@ -1304,14 +1302,14 @@ The welcome guide will be shown the next time you load a course.</source>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
-        <source>Model '{0}' has been unloaded from memory.</source>
-        <translation>모델 '{0}'이(가) 메모리에서 언로드되었습니다.</translation>
+        <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
+        <translation>모델 &apos;{0}&apos;이(가) 메모리에서 언로드되었습니다.</translation>
     </message>
 </context>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="277"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="279"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 오디오 재생</translation>
     </message>

@@ -63,7 +63,7 @@ class SettingsDialog(QDialog):
 
         # Pronunciation/Microphone settings group (new, within Audio)
         self.pronunciation_settings_group = QGroupBox(
-            self.tr("Pronunciation & Microphone")
+            self.tr("Pronunciation and Microphone")
         )
         self.pronunciation_settings_layout = QFormLayout(
             self.pronunciation_settings_group
@@ -471,7 +471,7 @@ class SettingsDialog(QDialog):
         self.unload_model_button.setText(self.tr("Unload Model from Memory"))
 
         self.pronunciation_settings_group.setTitle(
-            self.tr("Pronunciation & Microphone")
+            self.tr("Pronunciation and Microphone")
         )
         # Retranslate labels within the QFormLayout for pronunciation settings
         whisper_label = self.pronunciation_settings_layout.labelForField(

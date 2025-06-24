@@ -40,53 +40,53 @@
 <context>
     <name>BaseExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="174"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="186"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="176"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="188"/>
         <source>Audio Error</source>
         <translation>Lỗi âm thanh</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="175"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="177"/>
         <source>Cannot prepare audio: {0}</source>
         <translation>Không thể chuẩn bị âm thanh: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="187"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="189"/>
         <source>Audio file not found: {0}</source>
         <translation>Không tìm thấy tệp âm thanh: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="196"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="197"/>
-        <source>Translate to %s: "%s"</source>
-        <translation>Dịch sang %s: "%s"</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="198"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="199"/>
+        <source>Translate to %s: &quot;%s&quot;</source>
+        <translation>Dịch sang %s: &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="200"/>
-        <source>Choose the %s translation for: "%s" (%s)</source>
-        <translation>Chọn bản dịch %s cho: "%s" (%s)</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
+        <source>Choose the %s translation for: &quot;%s&quot; (%s)</source>
+        <translation>Chọn bản dịch %s cho: &quot;%s&quot; (%s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="201"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <source>%s (Hint: %s)</source>
         <translation>%s (Gợi ý: %s)</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="202"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="203"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="204"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="205"/>
         <location filename="../ui/widgets/exercise_widgets.py" line="206"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="207"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
         <source>%s</source>
         <translation>%s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="208"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="210"/>
         <source>Exercise Prompt: %s</source>
         <translation>Lời nhắc bài tập: %s</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="209"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="211"/>
         <source>Exercise Prompt</source>
         <translation>Lời nhắc bài tập</translation>
     </message>
@@ -94,7 +94,7 @@
 <context>
     <name>ContextBlockWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="508"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="512"/>
         <source>Continue</source>
         <translation>Tiếp tục</translation>
     </message>
@@ -191,25 +191,24 @@ Kiểm tra nhật ký để biết chi tiết.</translation>
     <name>CourseOverviewView</name>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="52"/>
-        <location filename="../ui/views/course_overview_view.py" line="227"/>
+        <location filename="../ui/views/course_overview_view.py" line="226"/>
         <source>Daily Review</source>
         <translation>Ôn tập hàng ngày</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="62"/>
-        <location filename="../ui/views/course_overview_view.py" line="228"/>
+        <location filename="../ui/views/course_overview_view.py" line="227"/>
         <source>Review Due</source>
         <translation>Ôn tập đến hạn</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="69"/>
-        <location filename="../ui/views/course_overview_view.py" line="229"/>
         <source>Review Weak</source>
         <translation>Ôn tập yếu kém</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="73"/>
-        <location filename="../ui/views/course_overview_view.py" line="232"/>
+        <location filename="../ui/views/course_overview_view.py" line="231"/>
         <source>Review items you struggle with the most.</source>
         <translation>Ôn tập những mục bạn gặp khó khăn nhất.</translation>
     </message>
@@ -224,33 +223,33 @@ Kiểm tra nhật ký để biết chi tiết.</translation>
         <translation>Đơn vị này không có bài học nào.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="179"/>
+        <location filename="../ui/views/course_overview_view.py" line="178"/>
         <source>Course not loaded.</source>
         <translation>Khóa học chưa được tải.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="180"/>
+        <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>N/A</source>
         <translation>Không áp dụng</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="188"/>
-        <location filename="../ui/views/course_overview_view.py" line="226"/>
+        <location filename="../ui/views/course_overview_view.py" line="187"/>
+        <location filename="../ui/views/course_overview_view.py" line="225"/>
         <source>Language Course</source>
         <translation>Khóa học Ngôn ngữ</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="191"/>
+        <location filename="../ui/views/course_overview_view.py" line="190"/>
         <source>Total XP: {0}</source>
         <translation>Tổng XP: {0}</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="204"/>
+        <location filename="../ui/views/course_overview_view.py" line="203"/>
         <source>{0} exercises due for review.</source>
         <translation>{0} bài tập cần ôn tập.</translation>
     </message>
     <message>
-        <location filename="../ui/views/course_overview_view.py" line="210"/>
+        <location filename="../ui/views/course_overview_view.py" line="209"/>
         <source>No exercises due for review right now!</source>
         <translation>Không có bài tập nào cần ôn tập ngay bây giờ!</translation>
     </message>
@@ -424,8 +423,8 @@ Vui lòng kiểm tra tài sản và đường dẫn của khóa học.</translat
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="120"/>
-        <source>Double-click to see details for '{0}'</source>
-        <translation>Nhấp đúp để xem chi tiết cho ''{0}''</translation>
+        <source>Double-click to see details for &apos;{0}&apos;</source>
+        <translation>Nhấp đúp để xem chi tiết cho &apos;{0}&apos;</translation>
     </message>
     <message>
         <location filename="../ui/views/glossary_view.py" line="170"/>
@@ -619,13 +618,13 @@ Giải thích: {0}</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="411"/>
-        <source>Let's go over the exercises you had trouble with.</source>
+        <source>Let&apos;s go over the exercises you had trouble with.</source>
         <translation>Hãy xem lại các bài tập bạn gặp khó khăn.</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="422"/>
-        <source>Lesson '{0}' completed!</source>
-        <translation>Bài học ''{0}'' đã hoàn thành!</translation>
+        <source>Lesson &apos;{0}&apos; completed!</source>
+        <translation>Bài học &apos;{0}&apos; đã hoàn thành!</translation>
     </message>
     <message>
         <location filename="../ui/views/lesson_view.py" line="447"/>
@@ -646,7 +645,7 @@ Giải thích: {0}</translation>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="395"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="397"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Phát Âm thanh</translation>
     </message>
@@ -657,8 +656,8 @@ Giải thích: {0}</translation>
         <location filename="../ui/main_window.py" line="69"/>
         <location filename="../ui/main_window.py" line="328"/>
         <location filename="../ui/main_window.py" line="540"/>
-        <source>LinguaLearn</source>
-        <translation>LinguaLearn</translation>
+        <source>LanguageLearningApp</source>
+        <translation>Ứng dụng Học ngôn ngữ</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="168"/>
@@ -699,9 +698,8 @@ Giải thích: {0}</translation>
         <translation>Chọn một bài học hoặc bắt đầu ôn tập.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="296"/>
-        <source>&amp;File</source>
-        <translation>&amp;Tệp</translation>
+        <source>File</source>
+        <translation type="vanished">Tệp</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="298"/>
@@ -720,18 +718,18 @@ Giải thích: {0}</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="466"/>
-        <source>Welcome to LinguaLearn!</source>
-        <translation>Chào mừng đến với LinguaLearn!</translation>
+        <source>Welcome to LanguageLearningApp!</source>
+        <translation>Chào mừng đến với Ứng dụng Học ngôn ngữ!</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="477"/>
         <source>Welcome to your language course!
 
-Here's a quick guide to the interface:
+Here&apos;s a quick guide to the interface:
 
 • Left Panel (Course Navigation):
   - Displays course units and lessons. Click a lesson to start.
-  - Use 'Review Due' or 'Review Weak' to practice.
+  - Use &apos;Review Due&apos; or &apos;Review Weak&apos; to practice.
 
 • Right Panel (Progress):
   - Shows your XP, study streak, and achievements.
@@ -745,7 +743,7 @@ Happy learning!</source>
 
 • Bảng bên trái (Điều hướng Khóa học):
   - Hiển thị các đơn vị và bài học của khóa học. Nhấp vào một bài học để bắt đầu.
-  - Sử dụng 'Ôn tập Đến hạn' hoặc 'Ôn tập Yếu kém' để luyện tập.
+  - Sử dụng &apos;Ôn tập Đến hạn&apos; hoặc &apos;Ôn tập Yếu kém&apos; để luyện tập.
 
 • Bảng bên phải (Tiến trình):
   - Hiển thị XP, chuỗi ngày học và thành tích của bạn.
@@ -851,50 +849,50 @@ Chúc bạn học tốt!</translation>
 <context>
     <name>PronunciationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="610"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="611"/>
         <source>Please pronounce: </source>
         <translation>Vui lòng phát âm: </translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="620"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="621"/>
         <source>🔊 Play Reference</source>
         <translation>🔊 Phát Tham chiếu</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="635"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="841"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="636"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="826"/>
         <source>🎤 Record</source>
         <translation>🎤 Ghi âm</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="641"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="642"/>
         <source>Tap record and speak clearly.</source>
         <translation>Chạm vào Ghi âm và nói rõ ràng.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="646"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="654"/>
         <source>Transcription Feedback</source>
         <translation>Phản hồi Phiên âm</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="653"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
         <source>Your speech (colored by confidence):</source>
         <translation>Lời nói của bạn (tô màu theo độ tin cậy):</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="656"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="664"/>
         <source>Comparison with target text:</source>
         <translation>So sánh với văn bản đích:</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="661"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="668"/>
         <source>🔄 Try Again</source>
         <translation>🔄 Thử lại</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="663"/>
-        <source>Submit &amp; Continue</source>
-        <translation>Nộp &amp; Tiếp tục</translation>
+        <location filename="../ui/widgets/exercise_widgets.py" line="670"/>
+        <source>Submit and Continue</source>
+        <translation>Gửi và Tiếp tục</translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="702"/>
@@ -917,58 +915,58 @@ Chúc bạn học tốt!</translation>
         <translation>Mô hình phải được tải trước khi ghi âm.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="750"/>
-        <location filename="../ui/widgets/exercise_widgets.py" line="769"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="745"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="761"/>
         <source>No audio input device found!</source>
         <translation>Không tìm thấy thiết bị đầu vào âm thanh nào!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="780"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="772"/>
         <source>Loading pronunciation model ({0})...</source>
         <translation>Đang tải mô hình phát âm ({0})...</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="802"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="796"/>
         <source>Recording... Speak now!</source>
         <translation>Đang ghi âm... Nói ngay!</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="803"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="797"/>
         <source>⏹️ Stop Recording</source>
         <translation>⏹️ Dừng Ghi âm</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="840"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="825"/>
         <source>Processing audio... Please wait.</source>
         <translation>Đang xử lý âm thanh... Vui lòng đợi.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="871"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="850"/>
         <source>Error saving audio.</source>
         <translation>Lỗi khi lưu âm thanh.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="856"/>
         <source>No audio data to process.</source>
         <translation>Không có dữ liệu âm thanh nào để xử lý.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="888"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="865"/>
         <source>Error: Audio file for transcription not found.</source>
         <translation>Lỗi: Không tìm thấy tệp âm thanh để phiên âm.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="902"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="877"/>
         <source>Transcription service not available or disabled.</source>
         <translation>Dịch vụ phiên âm không khả dụng hoặc đã bị tắt.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="922"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="894"/>
         <source>Transcription complete. Review your feedback below.</source>
         <translation>Phiên âm hoàn tất. Xem lại phản hồi của bạn bên dưới.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="1006"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="960"/>
         <source>Transcription Error: {0}</source>
         <translation>Lỗi Phiên âm: {0}</translation>
     </message>
@@ -976,7 +974,7 @@ Chúc bạn học tốt!</translation>
 <context>
     <name>RadioButtonOptionExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="317"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="319"/>
         <source>No options available for this exercise.</source>
         <translation>Không có tùy chọn nào cho bài tập này.</translation>
     </message>
@@ -1091,7 +1089,7 @@ Giải thích: {0}</translation>
     </message>
     <message>
         <location filename="../ui/views/review_view.py" line="414"/>
-        <source>You've completed this review session! Total exercises: {0}</source>
+        <source>You&apos;ve completed this review session! Total exercises: {0}</source>
         <translation>Bạn đã hoàn thành buổi ôn tập này! Tổng số bài tập: {0}</translation>
     </message>
     <message>
@@ -1108,17 +1106,17 @@ Giải thích: {0}</translation>
 <context>
     <name>SentenceJumbleExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="421"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="423"/>
         <source>Your sentence will appear here.</source>
         <translation>Câu của bạn sẽ xuất hiện ở đây.</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="434"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="436"/>
         <source>Submit Sentence</source>
         <translation>Nộp Câu</translation>
     </message>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="464"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="466"/>
         <source>Click words below to build your sentence.</source>
         <translation>Nhấp vào các từ bên dưới để xây dựng câu của bạn.</translation>
     </message>
@@ -1152,8 +1150,8 @@ Giải thích: {0}</translation>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="67"/>
         <location filename="../ui/dialogs/settings_dialog.py" line="475"/>
-        <source>Pronunciation &amp; Microphone</source>
-        <translation>Phát âm &amp; Micrô</translation>
+        <source>Pronunciation and Microphone</source>
+        <translation>Phát âm và Micrô</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="75"/>
@@ -1304,14 +1302,14 @@ Hướng dẫn chào mừng sẽ được hiển thị vào lần tiếp theo b�
     </message>
     <message>
         <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
-        <source>Model ''{0}'' has been unloaded from memory.</source>
-        <translation>Mô hình ''{0}'' đã được tải xuống khỏi bộ nhớ.</translation>
+        <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
+        <translation>Mô hình &apos;{0}&apos; đã được tải xuống khỏi bộ nhớ.</translation>
     </message>
 </context>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <location filename="../ui/widgets/exercise_widgets.py" line="277"/>
+        <location filename="../ui/widgets/exercise_widgets.py" line="279"/>
         <source>🔊 Play Audio</source>
         <translation>🔊 Phát Âm thanh</translation>
     </message>

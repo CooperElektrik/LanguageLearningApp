@@ -1,6 +1,6 @@
-# LL: A PySide6 Language Learning Platform & Content Editor
+# LanguageLearningApp: A PySide6 Language Learning Platform & Content Editor
 
-Welcome to LL, a desktop application inspired by Duolingo for interactive language learning, built with PySide6. This project includes a comprehensive suite of tools for creating, managing, and distributing custom language course content.
+Welcome to LanguageLearningApp, a desktop application inspired by Duolingo for interactive language learning, built with PySide6. This project includes a comprehensive suite of tools for creating, managing, and distributing custom language course content.
 
 >[!IMPORTANT]
 >This project currently primarily supports Windows 10/11.
@@ -33,7 +33,7 @@ LL offers a rich set of features to enhance your language learning journey:
 
 ## Setup
 
-To set up and run the LL project, follow these steps:
+To set up and run the LanguageLearningApp project, follow these steps:
 
 1.  **Clone the Repository (or download the files):**
     ```bash

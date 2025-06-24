@@ -22,7 +22,7 @@ IF EXIST "%SCRIPT_DIR%\venv\Scripts\activate.bat" (
 :menu
 cls
 echo =====================================================================
-echo  LinguaLearn Project Menu
+echo  Project Menu
 echo =====================================================================
 echo.
 echo  1. Run Main Application (Learning Mode)
@@ -50,7 +50,7 @@ goto menu
 
 :runApp
 cls
-echo Starting LinguaLearn Application...
+echo Starting Application...
 echo Running: python "%SCRIPT_DIR%\application\main.py"
 echo.
 python "%SCRIPT_DIR%\application\main.py"
@@ -61,7 +61,7 @@ goto menu
 
 :runEditor
 cls
-echo Starting LinguaLearn Course Editor...
+echo Starting Course Editor...
 echo Running: python -m application.tools.main_editor
 echo.
 python -m application.tools.main_editor
