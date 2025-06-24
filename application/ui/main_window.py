@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
     def _load_and_apply_initial_theme(self):
         q_settings = QSettings()
         theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, "System", type=str
+            app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
         )
         self.apply_theme(theme_name)
 

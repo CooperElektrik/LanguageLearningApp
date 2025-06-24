@@ -333,7 +333,7 @@ class SettingsDialog(QDialog):
 
         current_theme_name = self.q_settings.value(
             settings.QSETTINGS_KEY_UI_THEME,
-            "System",  # Default to "System" theme
+            "Fancy Light",  # Default to "Fancy Light" theme
             type=str,
         )
         if current_theme_name in settings.AVAILABLE_THEMES:
@@ -371,9 +371,9 @@ class SettingsDialog(QDialog):
         """Resets UI related settings (theme, font size) to their defaults and applies them live."""
         # Reset theme
         self.theme_combo.setCurrentText(
-            "System"
-        )  # Assuming "System" is the default key
-        self.theme_changed.emit("System")
+            "Fancy Light"
+        )  # Assuming "Fancy Light" is the default key
+        self.theme_changed.emit("Fancy Light")
 
         # Reset font size
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)
