@@ -74,7 +74,7 @@ class CourseOverviewView(QWidget):
         self.start_weak_review_button.clicked.connect(
             self.start_weakest_review_requested.emit
         )
-        review_buttons_layout.addWidget(self.start_weak_review_button)
+        # review_buttons_layout.addWidget(self.start_weak_review_button)
 
         srs_layout.addLayout(review_buttons_layout)
         self.main_layout.addWidget(self.srs_groupbox)
@@ -225,7 +225,7 @@ class CourseOverviewView(QWidget):
         )
         self.srs_groupbox.setTitle(self.tr("Daily Review"))
         self.start_review_button.setText(self.tr("Review Due"))
-        self.start_weak_review_button.setText(self.tr("Review Weak"))
+        # self.start_weak_review_button.setText(self.tr("Review Weak"))
         self.start_weak_review_button.setToolTip(
             self.tr("Review items you struggle with the most.")
         )
