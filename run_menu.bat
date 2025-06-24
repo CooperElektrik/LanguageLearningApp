@@ -138,7 +138,7 @@ REM For now, we use --add-data to include required directories
 
 REM Build using PyInstaller with added data directories
 pyinstaller ^
-  --onefile ^
+  --onedir ^
   --windowed ^
   --paths "%SCRIPT_DIR%\application" ^
   --add-data="courses;courses" ^
