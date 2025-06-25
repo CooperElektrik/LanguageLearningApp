@@ -31,7 +31,7 @@ class ModelLoader(QRunnable):
                 f"Background Task: Loading Whisper model '{self.model_name}' on device '{self.device}' with compute_type '{self.compute_type}'. This might take a while on first use."
             )
             model_instance = WhisperModel(
-                self.model_name, device=self.device, compute_type=self.compute_type
+                self.model_name, device=self.device, compute_type=self.compute_type, download_root="application/models"
             )
             logger.info(
                 f"Background Task: Model '{self.model_name}' loaded successfully."

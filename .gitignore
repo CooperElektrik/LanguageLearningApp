@@ -4,6 +4,7 @@ build/
 .vscode/
 courses/
 application/core/data/
+application/models/
 content.yaml
 manifest.yaml
 glossary.yaml

@@ -93,6 +93,7 @@ python -m nuitka ^
   --mingw64 ^
   --include-data-dir="courses=courses" ^
   --include-data-dir="assets=assets" ^
+  --include-data-dir="models=models" ^
   --include-data-dir="ui/styles=ui/styles" ^
   --include-data-dir="localization=localization" ^
   --output-dir=dist ^
@@ -143,6 +144,7 @@ pyinstaller ^
   --paths "%SCRIPT_DIR%\application" ^
   --add-data="courses;courses" ^
   --add-data="assets;assets" ^
+  --add-data="models;models" ^
   --add-data="ui/styles;ui/styles" ^
   --add-data="localization;localization" ^
   --distpath=dist ^
