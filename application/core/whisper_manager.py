@@ -2,8 +2,10 @@ import logging
 from faster_whisper import WhisperModel
 from PySide6.QtCore import QObject, Signal, QThread, QSettings, QRunnable, QThreadPool
 from typing import Optional, Tuple
+from huggingface_hub.errors import LocalEntryNotFoundError
 import settings as app_settings
 import os
+import sys
 import torch
 
 logger = logging.getLogger(__name__)
@@ -30,9 +32,18 @@ class ModelLoader(QRunnable):
             logger.info(
                 f"Background Task: Loading Whisper model '{self.model_name}' on device '{self.device}' with compute_type '{self.compute_type}'. This might take a while on first use."
             )
-            model_instance = WhisperModel(
-                self.model_name, device=self.device, compute_type=self.compute_type, download_root="application/models"
-            )
+            download_root = "application/models" if not hasattr(sys, "_MEIPASS") else os.path.join(sys._MEIPASS, "models")
+            try:
+                logger.info(f"Background Task: Attempting to load local model at {download_root}")
+                model_instance = WhisperModel(
+                    self.model_name, device=self.device, compute_type=self.compute_type, download_root=download_root, local_files_only=True
+                )
+                logger.info("Background Task: Local model loaded.")
+            except LocalEntryNotFoundError:
+                model_instance = WhisperModel(
+                    self.model_name, device=self.device, compute_type=self.compute_type, download_root=download_root, local_files_only=False
+                )
+                logger.info("Background Task: New model downloaded from HuggingFace.")
             logger.info(
                 f"Background Task: Model '{self.model_name}' loaded successfully."
             )
