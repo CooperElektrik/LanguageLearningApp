@@ -494,6 +494,41 @@ Thiết bị được đề xuất: {device_rec}</translation>
     </message>
 </context>
 <context>
+    <name>InitialUISetupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="32"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="153"/>
+        <source>Initial Setup</source>
+        <translation type="unfinished">Cài đặt ban đầu</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="44"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="159"/>
+        <source>Welcome!
+Since this is your first time opening this application, let&apos;s set up your user interface. You can change the UI theme, language, and font size here and preview the changes live. These can be adjusted later in the main settings menu.</source>
+        <translation type="unfinished">Chào mừng!
+Vì đây là lần đầu tiên bạn mở ứng dụng này, hãy thiết lập giao diện người dùng của bạn. Bạn có thể thay đổi chủ đề giao diện, ngôn ngữ và kích thước chữ ở đây và xem trước các thay đổi trực tiếp. Điều này có thể được điều chỉnh sau trong menu cài đặt chính.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="55"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="160"/>
+        <source>Theme:</source>
+        <translation type="unfinished">Chủ đề:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="62"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="161"/>
+        <source>Language:</source>
+        <translation type="unfinished">Ngôn ngữ:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="74"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="162"/>
+        <source>Font Size:</source>
+        <translation type="unfinished">Cỡ Chữ:</translation>
+    </message>
+</context>
+<context>
     <name>LessonView</name>
     <message>
         <location filename="../ui/views/lesson_view.py" line="66"/>
@@ -653,47 +688,47 @@ Giải thích: {0}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="69"/>
-        <location filename="../ui/main_window.py" line="328"/>
-        <location filename="../ui/main_window.py" line="540"/>
+        <location filename="../ui/main_window.py" line="70"/>
+        <location filename="../ui/main_window.py" line="332"/>
+        <location filename="../ui/main_window.py" line="562"/>
         <source>LanguageLearningApp</source>
         <translation>Ứng dụng Học ngôn ngữ</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="168"/>
-        <location filename="../ui/main_window.py" line="198"/>
+        <location filename="../ui/main_window.py" line="172"/>
+        <location filename="../ui/main_window.py" line="202"/>
         <source>Course Load Error</source>
         <translation>Lỗi Tải Khóa học</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="169"/>
+        <location filename="../ui/main_window.py" line="173"/>
         <source>Failed to load course.</source>
         <translation>Không tải được khóa học.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="189"/>
+        <location filename="../ui/main_window.py" line="193"/>
         <source>Open Course Manifest</source>
         <translation>Mở Tệp Manifest Khóa học</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="199"/>
+        <location filename="../ui/main_window.py" line="203"/>
         <source>Failed to load selected course for editing.</source>
         <translation>Không tải được khóa học đã chọn để chỉnh sửa.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="218"/>
-        <location filename="../ui/main_window.py" line="550"/>
+        <location filename="../ui/main_window.py" line="222"/>
+        <location filename="../ui/main_window.py" line="572"/>
         <source>Course Navigation</source>
         <translation>Điều hướng Khóa học</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="229"/>
-        <location filename="../ui/main_window.py" line="552"/>
+        <location filename="../ui/main_window.py" line="233"/>
+        <location filename="../ui/main_window.py" line="574"/>
         <source>Progress</source>
         <translation>Tiến trình</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="250"/>
+        <location filename="../ui/main_window.py" line="254"/>
         <source>Select a lesson or start a review.</source>
         <translation>Chọn một bài học hoặc bắt đầu ôn tập.</translation>
     </message>
@@ -702,27 +737,27 @@ Giải thích: {0}</translation>
         <translation type="vanished">Tệp</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="298"/>
+        <location filename="../ui/main_window.py" line="302"/>
         <source>Open Course for Editing...</source>
         <translation>Mở Khóa học để Chỉnh sửa...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="312"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source>Return to Course Selection</source>
         <translation>Quay lại Chọn Khóa học</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="318"/>
+        <location filename="../ui/main_window.py" line="322"/>
         <source>Start Due Review</source>
         <translation>Bắt đầu Ôn tập Đến hạn</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="466"/>
+        <location filename="../ui/main_window.py" line="488"/>
         <source>Welcome to LanguageLearningApp!</source>
         <translation>Chào mừng đến với Ứng dụng Học ngôn ngữ!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="477"/>
+        <location filename="../ui/main_window.py" line="499"/>
         <source>Welcome to your language course!
 
 Here&apos;s a quick guide to the interface:
@@ -753,7 +788,7 @@ Happy learning!</source>
 Chúc bạn học tốt!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="569"/>
+        <location filename="../ui/main_window.py" line="591"/>
         <source>Dev Info</source>
         <translation>Thông tin Dev</translation>
     </message>
@@ -1284,24 +1319,24 @@ Thời gian xử lý dự kiến (CPU): {ptime}
         <translation>Chủ đề, cỡ chữ và ngôn ngữ đã được đặt lại về mặc định. Nhấp OK hoặc Áp dụng để lưu.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="545"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="546"/>
         <source>Onboarding Reset</source>
         <translation>Đặt lại Hướng dẫn</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="548"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="549"/>
         <source>The onboarding message flag has been reset.
 The welcome guide will be shown the next time you load a course.</source>
         <translation>Cờ thông báo hướng dẫn đã được đặt lại.
 Hướng dẫn chào mừng sẽ được hiển thị vào lần tiếp theo bạn tải khóa học.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="556"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
         <source>Model Unloaded</source>
         <translation>Mô hình Đã Tải Xuống</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="558"/>
         <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
         <translation>Mô hình &apos;{0}&apos; đã được tải xuống khỏi bộ nhớ.</translation>
     </message>

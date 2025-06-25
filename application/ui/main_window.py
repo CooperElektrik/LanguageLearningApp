@@ -51,6 +51,7 @@ from ui.views.course_selection_view import CourseSelectionView
 from ui.views.course_editor_view import CourseEditorView
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
+from ui.dialogs.initial_ui_setup_dialog import InitialUISetupDialog
 from ui.dialogs.dev_info_dialog import DevInfoDialog
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,9 @@ class MainWindow(QMainWindow):
         self._setup_ui_elements()  # Set up early UI related stuff
         self._load_and_apply_initial_theme()
         self._return_to_selection_screen()  # Start in the selection screen
+
+        # New: Check for initial UI setup after everything is ready
+        QTimer.singleShot(2000, self._check_and_show_ui_setup)
 
     def _load_and_apply_initial_theme(self):
         q_settings = QSettings()
@@ -428,6 +432,24 @@ class MainWindow(QMainWindow):
             self.course_manager, self.progress_manager, current_exercise, self
         )
         dialog.exec()
+
+    def _check_and_show_ui_setup(self):
+        """Checks if the initial UI setup has been done and shows the dialog if not."""
+        q_settings = QSettings()
+        # NOTE: QSETTINGS_KEY_INITIAL_UI_SETUP_DONE should be added to settings.py
+        setup_done = q_settings.value(
+            app_settings.QSETTINGS_KEY_INITIAL_UI_SETUP_DONE, False, type=bool
+        )
+
+        if not setup_done:
+            logger.info("Initial UI setup not completed. Showing setup dialog.")
+            dialog = InitialUISetupDialog(self)
+            # Connect signals for live preview
+            dialog.theme_changed.connect(self.apply_theme)
+            dialog.locale_changed.connect(self.apply_locale)
+            dialog.font_size_changed.connect(self.apply_font_size)
+            dialog.exec()
+            # After this, settings are saved by the dialog itself.
 
     def _check_and_show_initial_setup(self):
         """Checks if the initial audio setup has been done and shows the dialog if not."""

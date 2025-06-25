@@ -205,6 +205,7 @@ pyside6-lupdate ^
   "%SCRIPT_DIR%\application\ui\views\base_exercise_player_view.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\settings_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\initial_audio_setup_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\initial_ui_setup_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\glossary_detail_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\glossary_lookup_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\dev_info_dialog.py" ^

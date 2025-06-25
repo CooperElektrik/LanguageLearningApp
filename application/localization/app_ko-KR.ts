@@ -494,6 +494,41 @@ Recommended Device: {device_rec}</source>
     </message>
 </context>
 <context>
+    <name>InitialUISetupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="32"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="153"/>
+        <source>Initial Setup</source>
+        <translation>초기 설정</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="44"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="159"/>
+        <source>Welcome!
+Since this is your first time opening this application, let&apos;s set up your user interface. You can change the UI theme, language, and font size here and preview the changes live. These can be adjusted later in the main settings menu.</source>
+        <translation>환영합니다!
+이 애플리케이션을 처음 여는 것이므로 사용자 인터페이스를 설정해 봅시다. 여기서 UI 테마, 언어, 글꼴 크기를 변경하고 변경 사항을 실시간으로 미리 볼 수 있습니다. 이는 나중에 메인 설정 메뉴에서 조정할 수 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="55"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="160"/>
+        <source>Theme:</source>
+        <translation>테마:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="62"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="161"/>
+        <source>Language:</source>
+        <translation>언어:</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="74"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="162"/>
+        <source>Font Size:</source>
+        <translation>글꼴 크기:</translation>
+    </message>
+</context>
+<context>
     <name>LessonView</name>
     <message>
         <location filename="../ui/views/lesson_view.py" line="66"/>
@@ -653,47 +688,47 @@ Explanation: {0}</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="69"/>
-        <location filename="../ui/main_window.py" line="328"/>
-        <location filename="../ui/main_window.py" line="540"/>
+        <location filename="../ui/main_window.py" line="70"/>
+        <location filename="../ui/main_window.py" line="332"/>
+        <location filename="../ui/main_window.py" line="562"/>
         <source>LanguageLearningApp</source>
         <translation>LanguageLearningApp</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="168"/>
-        <location filename="../ui/main_window.py" line="198"/>
+        <location filename="../ui/main_window.py" line="172"/>
+        <location filename="../ui/main_window.py" line="202"/>
         <source>Course Load Error</source>
         <translation>코스 로드 오류</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="169"/>
+        <location filename="../ui/main_window.py" line="173"/>
         <source>Failed to load course.</source>
         <translation>코스를 로드하지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="189"/>
+        <location filename="../ui/main_window.py" line="193"/>
         <source>Open Course Manifest</source>
         <translation>코스 매니페스트 열기</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="199"/>
+        <location filename="../ui/main_window.py" line="203"/>
         <source>Failed to load selected course for editing.</source>
         <translation>편집할 선택된 코스를 로드하지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="218"/>
-        <location filename="../ui/main_window.py" line="550"/>
+        <location filename="../ui/main_window.py" line="222"/>
+        <location filename="../ui/main_window.py" line="572"/>
         <source>Course Navigation</source>
         <translation>코스 네비게이션</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="229"/>
-        <location filename="../ui/main_window.py" line="552"/>
+        <location filename="../ui/main_window.py" line="233"/>
+        <location filename="../ui/main_window.py" line="574"/>
         <source>Progress</source>
         <translation>진행 상황</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="250"/>
+        <location filename="../ui/main_window.py" line="254"/>
         <source>Select a lesson or start a review.</source>
         <translation>레슨을 선택하거나 복습을 시작하세요.</translation>
     </message>
@@ -702,27 +737,27 @@ Explanation: {0}</source>
         <translation type="vanished">&amp;파일</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="298"/>
+        <location filename="../ui/main_window.py" line="302"/>
         <source>Open Course for Editing...</source>
         <translation>편집용 코스 열기...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="312"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source>Return to Course Selection</source>
         <translation>코스 선택으로 돌아가기</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="318"/>
+        <location filename="../ui/main_window.py" line="322"/>
         <source>Start Due Review</source>
         <translation>예정된 복습 시작</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="466"/>
+        <location filename="../ui/main_window.py" line="488"/>
         <source>Welcome to LanguageLearningApp!</source>
         <translation>LanguageLearningApp에 오신 것을 환영합니다!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="477"/>
+        <location filename="../ui/main_window.py" line="499"/>
         <source>Welcome to your language course!
 
 Here&apos;s a quick guide to the interface:
@@ -753,7 +788,7 @@ Happy learning!</source>
 즐거운 학습하세요!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="569"/>
+        <location filename="../ui/main_window.py" line="591"/>
         <source>Dev Info</source>
         <translation>개발자 정보</translation>
     </message>
@@ -1284,24 +1319,24 @@ Expected processing time (CPU): {ptime}
         <translation>테마, 글꼴 크기, 언어가 기본값으로 재설정되었습니다. 저장하려면 확인 또는 적용을 클릭하세요.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="545"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="546"/>
         <source>Onboarding Reset</source>
         <translation>온보딩 재설정</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="548"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="549"/>
         <source>The onboarding message flag has been reset.
 The welcome guide will be shown the next time you load a course.</source>
         <translation>온보딩 메시지 플래그가 재설정되었습니다.
 다음에 코스를 로드할 때 환영 가이드가 표시됩니다.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="556"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
         <source>Model Unloaded</source>
         <translation>모델 언로드됨</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="558"/>
         <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
         <translation>모델 &apos;{0}&apos;이(가) 메모리에서 언로드되었습니다.</translation>
     </message>

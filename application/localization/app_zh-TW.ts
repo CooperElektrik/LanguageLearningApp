@@ -493,6 +493,41 @@ Recommended Device: {device_rec}</source>
     </message>
 </context>
 <context>
+    <name>InitialUISetupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="32"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="153"/>
+        <source>Initial Setup</source>
+        <translation>初始設定</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="44"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="159"/>
+        <source>Welcome!
+Since this is your first time opening this application, let&apos;s set up your user interface. You can change the UI theme, language, and font size here and preview the changes live. These can be adjusted later in the main settings menu.</source>
+        <translation>歡迎！
+由於這是您第一次開啟此應用程式，讓我們設定您的使用者介面。您可以在這裡更改 UI 主題、語言和字體大小，並即時預覽變更。這些可以稍後在主設定選單中調整。</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="55"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="160"/>
+        <source>Theme:</source>
+        <translation>主題：</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="62"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="161"/>
+        <source>Language:</source>
+        <translation>語言：</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="74"/>
+        <location filename="../ui/dialogs/initial_ui_setup_dialog.py" line="162"/>
+        <source>Font Size:</source>
+        <translation>字體大小：</translation>
+    </message>
+</context>
+<context>
     <name>LessonView</name>
     <message>
         <location filename="../ui/views/lesson_view.py" line="66"/>
@@ -652,72 +687,72 @@ Explanation: {0}</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="69"/>
-        <location filename="../ui/main_window.py" line="328"/>
-        <location filename="../ui/main_window.py" line="540"/>
+        <location filename="../ui/main_window.py" line="70"/>
+        <location filename="../ui/main_window.py" line="332"/>
+        <location filename="../ui/main_window.py" line="562"/>
         <source>LanguageLearningApp</source>
         <translation>語言學習應用程式</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="168"/>
-        <location filename="../ui/main_window.py" line="198"/>
+        <location filename="../ui/main_window.py" line="172"/>
+        <location filename="../ui/main_window.py" line="202"/>
         <source>Course Load Error</source>
         <translation>課程載入錯誤</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="169"/>
+        <location filename="../ui/main_window.py" line="173"/>
         <source>Failed to load course.</source>
         <translation>無法載入課程。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="189"/>
+        <location filename="../ui/main_window.py" line="193"/>
         <source>Open Course Manifest</source>
         <translation>開啟課程清單</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="199"/>
+        <location filename="../ui/main_window.py" line="203"/>
         <source>Failed to load selected course for editing.</source>
         <translation>無法載入選定的課程以進行編輯。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="218"/>
-        <location filename="../ui/main_window.py" line="550"/>
+        <location filename="../ui/main_window.py" line="222"/>
+        <location filename="../ui/main_window.py" line="572"/>
         <source>Course Navigation</source>
         <translation>課程導覽</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="229"/>
-        <location filename="../ui/main_window.py" line="552"/>
+        <location filename="../ui/main_window.py" line="233"/>
+        <location filename="../ui/main_window.py" line="574"/>
         <source>Progress</source>
         <translation>進度</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="250"/>
+        <location filename="../ui/main_window.py" line="254"/>
         <source>Select a lesson or start a review.</source>
         <translation>選擇一堂課程或開始複習。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="298"/>
+        <location filename="../ui/main_window.py" line="302"/>
         <source>Open Course for Editing...</source>
         <translation>開啟課程以進行編輯...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="312"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source>Return to Course Selection</source>
         <translation>返回課程選擇</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="318"/>
+        <location filename="../ui/main_window.py" line="322"/>
         <source>Start Due Review</source>
         <translation>開始到期複習</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="466"/>
+        <location filename="../ui/main_window.py" line="488"/>
         <source>Welcome to LanguageLearningApp!</source>
         <translation>歡迎使用語言學習應用程式！</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="477"/>
+        <location filename="../ui/main_window.py" line="499"/>
         <source>Welcome to your language course!
 
 Here&apos;s a quick guide to the interface:
@@ -748,7 +783,7 @@ Happy learning!</source>
 學習愉快！</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="569"/>
+        <location filename="../ui/main_window.py" line="591"/>
         <source>Dev Info</source>
         <translation>開發者資訊</translation>
     </message>
@@ -1279,24 +1314,24 @@ Expected processing time (CPU): {ptime}
         <translation>主題、字體大小和語言已重設為預設值。請點擊確定或套用以儲存。</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="545"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="546"/>
         <source>Onboarding Reset</source>
         <translation>引導重設</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="548"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="549"/>
         <source>The onboarding message flag has been reset.
 The welcome guide will be shown the next time you load a course.</source>
         <translation>引導訊息標誌已重設。
 下次您載入課程時，將顯示歡迎指南。</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="556"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
         <source>Model Unloaded</source>
         <translation>模型已卸載</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="557"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="558"/>
         <source>Model &apos;{0}&apos; has been unloaded from memory.</source>
         <translation>模型「{0}」已從記憶體卸載。</translation>
     </message>
