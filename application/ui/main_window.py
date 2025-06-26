@@ -124,7 +124,7 @@ class MainWindow(QMainWindow):
             app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
         )
 
-        dark_themes = ["Fancy Dark", "Fancy Midnight"]
+        dark_themes = ["Fancy Dark", "Midnight", "Dark"]
         icon_suffix = "_dark.png" if theme_name in dark_themes else "_light.png"
 
         # Icon paths
@@ -629,10 +629,12 @@ class MainWindow(QMainWindow):
         self.view_menu.actions()[0].setText(self.tr("Toggle Toolbar")) # Toolbar toggle
 
         # --- Retranslate dynamic parts ---
-        if self.navigation_dock_widget:
-            self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
-        if self.progress_dock_widget:
-            self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
+        if hasattr(MainWindow, "navigation_dock_widget"):
+            if self.navigation_dock_widget:
+                self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
+        if hasattr(MainWindow, "progress_dock_widget"):
+            if self.progress_dock_widget:
+                self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
 
         if self.dev_info_button:
             self.dev_info_button.setText(self.tr("Dev Info"))
