@@ -105,35 +105,35 @@ class ProgressView(QWidget):
                 "title": self.tr("First Step"),
                 "description": self.tr("Complete your first lesson."),
                 "check": lambda: self.progress_manager.get_total_xp() >= 10,
-                "icon": "trophy_bronze.png",
+                "icon": "novice.png",
             },
             {
                 "id": "xp_enthusiast",
                 "title": self.tr("XP Enthusiast"),
                 "description": self.tr("Reach 1000 XP."),
                 "check": lambda: self.progress_manager.get_total_xp() >= 1000,
-                "icon": "star_silver.png",
+                "icon": "enthusiast.png",
             },
             {
                 "id": "7_day_streak",
                 "title": self.tr("7-Day Streak"),
                 "description": self.tr("Study for 7 consecutive days."),
                 "check": lambda: self.progress_manager.get_current_streak() >= 7,
-                "icon": "streak_gold.png",
+                "icon": "7day.png",
             },
             {
                 "id": "30_day_streak",
                 "title": self.tr("30-Day Streak"),
                 "description": self.tr("Study for 30 consecutive days."),
                 "check": lambda: self.progress_manager.get_current_streak() >= 30,
-                "icon": "streak_platinum.png",
+                "icon": "30day.png",
             },
             {
                 "id": "all_lessons_completed",
                 "title": self.tr("Lesson Master"),
                 "description": self.tr("Complete all lessons in the course."),
                 "check": self._check_all_lessons_completed,
-                "icon": "lessons_complete.png",
+                "icon": "master.png",
             },
         ]
 
@@ -210,7 +210,9 @@ class ProgressView(QWidget):
             painter.end()
             pixmap = grayscale_pixmap
 
-        icon_label.setPixmap(pixmap)
+        icon_label.setPixmap(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio))
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setScaledContents(True)
         achievement_layout.addWidget(
             icon_label,
             stretch=1,
