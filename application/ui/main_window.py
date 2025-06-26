@@ -21,7 +21,7 @@ from PySide6.QtGui import (
     QGuiApplication,
     QCloseEvent,
     QIcon,
-)  # Keep QCloseEvent
+)
 from PySide6.QtCore import (
     Qt,
     QCoreApplication,
@@ -77,9 +77,10 @@ class MainWindow(QMainWindow):
 
         # Main stack to switch between app states (selection, learning, editing)
         self.main_stack = QStackedWidget()
-        self.setCentralWidget(self.main_stack)  # Set this ONCE and never change it.
+        self.setCentralWidget(self.main_stack)
 
         self._setup_main_toolbar()
+        self._setup_main_menu() # <<<< UNIFIED MENU SETUP
 
         # Create the permanent course selection page
         self.course_selection_view = CourseSelectionView()
@@ -99,9 +100,9 @@ class MainWindow(QMainWindow):
         self.current_translator = utils.setup_initial_translation(
             QApplication.instance()
         )
-        self._setup_ui_elements()  # Set up early UI related stuff
+        self._setup_ui_elements()
         self._load_and_apply_initial_theme()
-        self._return_to_selection_screen()  # Start in the selection screen
+        self._return_to_selection_screen() # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
         QTimer.singleShot(2000, self._check_and_show_ui_setup)
@@ -123,7 +124,7 @@ class MainWindow(QMainWindow):
             app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
         )
 
-        dark_themes = ["Dark", "Fancy Dark", "Win95"] 
+        dark_themes = ["Fancy Dark", "Fancy Midnight"]
         icon_suffix = "_dark.png" if theme_name in dark_themes else "_light.png"
 
         # Icon paths
@@ -142,7 +143,7 @@ class MainWindow(QMainWindow):
         settings_action.setToolTip(self.tr("Open application settings"))
         settings_action.triggered.connect(self.show_settings_dialog)
         self.main_toolbar.addAction(settings_action)
-        
+
         # Help Action
         help_action = QAction(QIcon(help_icon_path), self.tr("Help"), self)
         help_action.setToolTip(self.tr("Show help and FAQ"))
@@ -166,9 +167,7 @@ class MainWindow(QMainWindow):
         qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)
 
         if theme_name == "System" or qss_filename == "system_default":
-            QApplication.instance().setStyleSheet(
-                ""
-            )  # Clear stylesheet to use system default
+            QApplication.instance().setStyleSheet("")
             logger.info("Applied system default theme.")
             return
 
@@ -176,9 +175,7 @@ class MainWindow(QMainWindow):
             theme_abs_path = utils.get_resource_path(
                 os.path.join(app_settings.THEME_DIR, qss_filename)
             )
-            utils.apply_stylesheet(
-                QApplication.instance(), theme_abs_path
-            )  # Use a utility for this
+            utils.apply_stylesheet(QApplication.instance(), theme_abs_path)
         else:
             logger.warning(
                 f"Theme '{theme_name}' not found in AVAILABLE_THEMES. Applying system default."
@@ -186,25 +183,19 @@ class MainWindow(QMainWindow):
             QApplication.instance().setStyleSheet("")
 
     def apply_font_size(self, new_size: int):
-        """
-        Applies a new base font size to the entire application.
-        """
         font = QApplication.instance().font()
         font.setPointSize(new_size)
         QApplication.instance().setFont(font)
         logger.info(f"Global font size changed to: {new_size} pt")
 
     def _setup_ui_elements(self):
-        """
-        Set font before any widgets are created (MainWindow's UI)
-        """
         q_settings = QSettings()
         saved_font_size = q_settings.value(
             app_settings.QSETTINGS_KEY_FONT_SIZE,
             app_settings.DEFAULT_FONT_SIZE,
             type=int,
         )
-        self.apply_font_size(saved_font_size)  # Apply saved or default font size
+        self.apply_font_size(saved_font_size)
 
     def _setup_status_bar(self):
         self.status_bar = QStatusBar()
@@ -216,11 +207,9 @@ class MainWindow(QMainWindow):
         )
         self.dev_info_button.clicked.connect(self._show_dev_info_dialog)
         self.status_bar.addPermanentWidget(self.dev_info_button)
-        # Visibility is controlled by _update_dev_info_button_visibility
         self._update_dev_info_button_visibility()
 
     def _load_course_for_learning(self, manifest_path: str):
-        """Initializes services and UI for the LEARNING mode."""
         self.course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not self.course_manager.course:
             QMessageBox.critical(
@@ -233,17 +222,13 @@ class MainWindow(QMainWindow):
 
         self._setup_learning_ui()
         self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
-        self.show_course_overview()  # Shows the central placeholder
+        self.show_course_overview()
 
-        # Check and show onboarding AFTER learning UI is set up and visible
-        QTimer.singleShot(
-            150, self._check_and_show_onboarding
-        )  # Small delay for UI to settle
+        QTimer.singleShot(150, self._check_and_show_onboarding)
         self._update_dev_info_button_visibility()
         QTimer.singleShot(200, self._check_and_show_initial_setup)
 
-    def _load_course_for_editing(self):  # Keep existing definition
-        """Opens a file dialog and loads a course into the EDITOR mode."""
+    def _load_course_for_editing(self):
         manifest_path, _ = QFileDialog.getOpenFileName(
             self, self.tr("Open Course Manifest"), "", "YAML Files (*.yaml)"
         )
@@ -257,18 +242,16 @@ class MainWindow(QMainWindow):
                 self.tr("Course Load Error"),
                 self.tr("Failed to load selected course for editing."),
             )
+            return
 
         self._setup_editing_ui(editor_course_manager)
         self.setWindowTitle(f"LL Editor - {editor_course_manager.get_course_title()}")
         self._update_dev_info_button_visibility()
 
     def _setup_learning_ui(self):
-        """Builds the main learning interface with docks and views."""
-        # self._clear_dynamic_widgets()
-
-        # The learning UI has docks, so it needs its own QMainWindow instance.
-        # We then add this entire QMainWindow as a page to the main stack.
         self.learning_widget = QMainWindow()
+        # IMPORTANT: Prevent the nested QMainWindow from having its own menu bar
+        self.learning_widget.setMenuBar(None)
 
         right_panel_stack = QStackedWidget()
         self.learning_widget.setCentralWidget(right_panel_stack)
@@ -292,9 +275,15 @@ class MainWindow(QMainWindow):
         self.learning_widget.addDockWidget(
             Qt.DockWidgetArea.RightDockWidgetArea, self.progress_dock_widget
         )
-        self.progress_dock_widget.setVisible(False) # Hide initially
+        self.progress_dock_widget.setVisible(False)
 
-        # We need to store these view references to switch the stack inside this learning_widget
+        # Store the toggle actions to add them to the main menu
+        self.toggle_nav_dock_action = self.navigation_dock_widget.toggleViewAction()
+        self.toggle_progress_dock_action = self.progress_dock_widget.toggleViewAction()
+        self.view_menu.addSeparator()
+        self.view_menu.addAction(self.toggle_nav_dock_action)
+        self.view_menu.addAction(self.toggle_progress_dock_action)
+
         self.learning_ui_views = {
             "overview": course_overview_view,
             "progress": progress_view,
@@ -332,81 +321,106 @@ class MainWindow(QMainWindow):
 
         self.main_stack.addWidget(self.learning_widget)
         self.main_stack.setCurrentWidget(self.learning_widget)
-        self._setup_learning_menu()
-
-        self.menuBar().setVisible(False)
+        self._update_menu_state()
 
     def _setup_editing_ui(self, course_manager):
-        """Builds the editing interface."""
-        # self._clear_dynamic_widgets()
-
         self.editor_view = CourseEditorView(course_manager)
         self.editor_view.editor_closed.connect(self._return_to_selection_screen)
 
         self.main_stack.addWidget(self.editor_view)
         self.main_stack.setCurrentWidget(self.editor_view)
+        self._update_menu_state()
+
+    def _setup_main_menu(self):
+        """Creates the main, unified menu bar and all possible actions ONCE."""
         self.menuBar().clear()
 
-        self.menuBar().setVisible(False)
+        # --- File Menu ---
+        file_menu = self.menuBar().addMenu(self.tr("&File"))
+        self.return_to_selection_action = QAction(self.tr("Return to Course Selection"), self)
+        self.return_to_selection_action.triggered.connect(self._return_to_selection_screen)
+        file_menu.addAction(self.return_to_selection_action)
 
-    def _setup_file_menu(self):
-        """Menu for the initial selection screen."""
-        self.menuBar().clear()
-        file_menu = self.menuBar().addMenu("&File")
-        file_menu.addAction(
-            self.tr("Open Course for Editing..."), self._load_course_for_editing
-        )
-        file_menu.addSeparator()
-        file_menu.addAction(self.tr("&Settings..."), self.show_settings_dialog)
-        file_menu.addSeparator()
-        file_menu.addAction(self.tr("&Quit"), self.close)
+        self.open_for_editing_action = QAction(self.tr("Open Course for Editing..."), self)
+        self.open_for_editing_action.triggered.connect(self._load_course_for_editing)
+        file_menu.addAction(self.open_for_editing_action)
 
-        view_menu = self.menuBar().addMenu("&View")
+        file_menu.addSeparator()
+        self.settings_action = QAction(self.tr("&Settings..."), self)
+        self.settings_action.triggered.connect(self.show_settings_dialog)
+        file_menu.addAction(self.settings_action)
+        
+        file_menu.addSeparator()
+        self.quit_action = QAction(self.tr("&Quit"), self)
+        self.quit_action.triggered.connect(self.close)
+        file_menu.addAction(self.quit_action)
+
+        # --- Learning Menu ---
+        learning_menu = self.menuBar().addMenu(self.tr("&Learning"))
+        self.start_due_review_action = QAction(self.tr("Start Due Review"), self)
+        self.start_due_review_action.triggered.connect(self.start_review_session)
+        learning_menu.addAction(self.start_due_review_action)
+
+        # --- View Menu ---
+        self.view_menu = self.menuBar().addMenu(self.tr("&View"))
         toggle_toolbar_action = self.main_toolbar.toggleViewAction()
-        toggle_toolbar_action.setText("Toggle Toolbar")
-        view_menu.addAction(toggle_toolbar_action)
+        toggle_toolbar_action.setText(self.tr("Toggle Toolbar"))
+        self.view_menu.addAction(toggle_toolbar_action)
 
-    def _setup_learning_menu(self):
-        """Menu for the main learning mode."""
-        # Use the menu bar from the nested QMainWindow for learning mode
-        menu_bar = self.learning_widget.menuBar()
-        menu_bar.clear()
-        file_menu = menu_bar.addMenu("&File")
-        file_menu.addAction(
-            self.tr("Return to Course Selection"), self._return_to_selection_screen
-        )
-        file_menu.addSeparator()
-        file_menu.addAction("&Settings...", self.show_settings_dialog)
+        # Dock actions will be added dynamically when the learning UI is created
+        self.toggle_nav_dock_action = None
+        self.toggle_progress_dock_action = None
 
-        learning_menu = menu_bar.addMenu("&Learning")
-        learning_menu.addAction(self.tr("Start Due Review"), self.start_review_session)
+    def _update_menu_state(self):
+        """Updates the enabled/disabled state of all menu actions based on the current view."""
+        current_view = self.main_stack.currentWidget()
+        is_selection_view = current_view == self.course_selection_view
+        is_learning_view = current_view == self.learning_widget
+        is_editor_view = current_view == self.editor_view
 
-        view_menu = menu_bar.addMenu("&View")
-        if hasattr(self, "navigation_dock_widget") and self.navigation_dock_widget:
-            view_menu.addAction(self.navigation_dock_widget.toggleViewAction())
-        if hasattr(self, "progress_dock_widget") and self.progress_dock_widget:
-            view_menu.addAction(self.progress_dock_widget.toggleViewAction())
+        # File Menu Actions
+        self.return_to_selection_action.setEnabled(is_learning_view or is_editor_view)
+        self.open_for_editing_action.setEnabled(is_selection_view)
+        # Settings and Quit are always enabled
+        self.settings_action.setEnabled(True)
+        self.quit_action.setEnabled(True)
 
-        toggle_toolbar_action = self.main_toolbar.toggleViewAction()
-        toggle_toolbar_action.setText("Toggle Toolbar")
-        view_menu.addAction(toggle_toolbar_action)
+        # Learning Menu Actions
+        self.start_due_review_action.setEnabled(is_learning_view)
+        
+        # View Menu Dock Actions (check if they exist)
+        if self.toggle_nav_dock_action:
+            self.toggle_nav_dock_action.setEnabled(is_learning_view)
+            self.toggle_nav_dock_action.setVisible(is_learning_view)
+        if self.toggle_progress_dock_action:
+            self.toggle_progress_dock_action.setEnabled(is_learning_view)
+            self.toggle_progress_dock_action.setVisible(is_learning_view)
 
     def _return_to_selection_screen(self):
         self._clear_dynamic_widgets()
         self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.main_stack.setCurrentWidget(self.course_selection_view)
-        self.menuBar().setVisible(False)
         self._update_dev_info_button_visibility()
-
-        self._setup_file_menu()
+        self._update_menu_state()
 
     def _clear_dynamic_widgets(self):
-        """Removes learning or editor widgets from the stack to prevent memory leaks."""
         if self.learning_widget:
+            # Remove dynamic dock actions from the main menu
+            if self.toggle_nav_dock_action:
+                self.view_menu.removeAction(self.toggle_nav_dock_action)
+                self.toggle_nav_dock_action = None
+            if self.toggle_progress_dock_action:
+                self.view_menu.removeAction(self.toggle_progress_dock_action)
+                self.toggle_progress_dock_action = None
+
             self.main_stack.removeWidget(self.learning_widget)
             self.learning_widget.deleteLater()
             self.learning_widget = None
             self.learning_ui_views = {}
+            # Clean up dock widget references to be safe
+            self.navigation_dock_widget = None
+            self.progress_dock_widget = None
+
         if self.editor_view:
             self.main_stack.removeWidget(self.editor_view)
             self.editor_view.deleteLater()
@@ -417,16 +431,13 @@ class MainWindow(QMainWindow):
         self._update_dev_info_button_visibility()
 
     def show_settings_dialog(self):
-        dialog = SettingsDialog(self.whisper_manager, self)  # Pass the manager
-        dialog.theme_changed.connect(self.apply_theme)  # Connect to the new signal
+        dialog = SettingsDialog(self.whisper_manager, self)
+        dialog.theme_changed.connect(self.apply_theme)
         dialog.locale_changed.connect(self.apply_locale)
-        dialog.font_size_changed.connect(
-            self.apply_font_size
-        )  # Connect font size changes
+        dialog.font_size_changed.connect(self.apply_font_size)
         dialog.exec()
 
     def apply_locale(self, locale_code: str):
-        """Applies a new locale to the application."""
         app = QApplication.instance()
         if self.current_translator:
             app.removeTranslator(self.current_translator)
@@ -434,7 +445,7 @@ class MainWindow(QMainWindow):
             logger.debug("Removed existing translator.")
 
         actual_locale_to_load = ""
-        if locale_code == app_settings.DEFAULT_LOCALE:  # "System"
+        if locale_code == app_settings.DEFAULT_LOCALE:
             actual_locale_to_load = (
                 app_settings.FORCE_LOCALE
                 if app_settings.FORCE_LOCALE
@@ -451,7 +462,7 @@ class MainWindow(QMainWindow):
         )
 
         loaded_successfully = new_translator.load(qm_file_path)
-        if not loaded_successfully:  # Try short code if full (e.g. en_US) failed
+        if not loaded_successfully:
             short_locale_code = actual_locale_to_load.split("_")[0]
             if short_locale_code != actual_locale_to_load:
                 qm_file_path = utils.get_resource_path(
@@ -465,11 +476,11 @@ class MainWindow(QMainWindow):
             app.installTranslator(new_translator)
             self.current_translator = new_translator
             logger.info(
-                f"Successfully loaded and installed translator for locale code: {actual_locale_to_load} from {qm_file_path}"
+                f"Successfully loaded translator for locale: {actual_locale_to_load}"
             )
         else:
             logger.warning(
-                f"Failed to load translator for locale code: {actual_locale_to_load}. Tried path: {qm_file_path}. UI might not update."
+                f"Failed to load translator for locale: {actual_locale_to_load}"
             )
 
         self._retranslate_main_window_ui()
@@ -482,58 +493,44 @@ class MainWindow(QMainWindow):
 
     def _show_dev_info_dialog(self):
         current_exercise: Optional[Exercise] = None
-
-        # Check if we are in learning mode and which view is active
         if self.learning_widget and self.learning_widget.isVisible():
             central_stack = self.learning_ui_views.get("central_stack")
             if central_stack:
                 current_player_widget = central_stack.currentWidget()
                 if hasattr(current_player_widget, "current_exercise_obj"):
                     current_exercise = current_player_widget.current_exercise_obj
-
         dialog = DevInfoDialog(
             self.course_manager, self.progress_manager, current_exercise, self
         )
         dialog.exec()
 
     def _check_and_show_ui_setup(self):
-        """Checks if the initial UI setup has been done and shows the dialog if not."""
         q_settings = QSettings()
-        # NOTE: QSETTINGS_KEY_INITIAL_UI_SETUP_DONE should be added to settings.py
         setup_done = q_settings.value(
             app_settings.QSETTINGS_KEY_INITIAL_UI_SETUP_DONE, False, type=bool
         )
-
         if not setup_done:
             logger.info("Initial UI setup not completed. Showing setup dialog.")
             dialog = InitialUISetupDialog(self)
-            # Connect signals for live preview
             dialog.theme_changed.connect(self.apply_theme)
             dialog.locale_changed.connect(self.apply_locale)
             dialog.font_size_changed.connect(self.apply_font_size)
             dialog.exec()
-            # After this, settings are saved by the dialog itself.
 
     def _check_and_show_initial_setup(self):
-        """Checks if the initial audio setup has been done and shows the dialog if not."""
         q_settings = QSettings()
         setup_done = q_settings.value(
             app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool
         )
-
-        # Only show if not done, and if there are any audio input devices.
         if not setup_done and QMediaDevices.audioInputs():
             logger.info("Initial audio setup not completed. Showing setup dialog.")
             dialog = InitialAudioSetupDialog(self)
             dialog.exec()
-            # After this, settings are saved. The app will use them on the next exercise.
         elif not setup_done and not QMediaDevices.audioInputs():
             logger.warning("Initial audio setup skipped: No audio input devices found.")
 
     def _check_and_show_onboarding(self):
-        """Checks if onboarding has been seen and shows it if not."""
         if not self.learning_widget or not self.learning_widget.isVisible():
-            # If learning widget isn't ready, try again shortly
             QTimer.singleShot(250, self._check_and_show_onboarding)
             return
 
@@ -541,12 +538,8 @@ class MainWindow(QMainWindow):
         onboarding_seen = q_settings.value(
             app_settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, False, type=bool
         )
-
         if not onboarding_seen:
-            logger.info(
-                "First time loading a course or onboarding not seen. Displaying onboarding message."
-            )
-
+            logger.info("Displaying onboarding message.")
             title = self.tr("Welcome to LanguageLearningApp!")
             message = self.tr(
                 "Welcome to your language course!\n\n"
@@ -559,17 +552,13 @@ class MainWindow(QMainWindow):
                 "• Central Area: Lessons and review exercises appear here.\n\n"
                 "Happy learning!"
             )
-            QMessageBox.information(
-                self.learning_widget, title, message
-            )  # Parent to learning_widget
-
+            QMessageBox.information(self.learning_widget, title, message)
             q_settings.setValue(app_settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, True)
             logger.info("Onboarding message shown and flag set.")
 
     # --- Learning Mode Methods ---
     def show_course_overview(self):
-        if not self.learning_widget:
-            return
+        if not self.learning_widget: return
         self.learning_ui_views["overview"].refresh_view()
         self.learning_ui_views["progress"].refresh_view()
         self.learning_ui_views["central_stack"].setCurrentWidget(
@@ -577,15 +566,13 @@ class MainWindow(QMainWindow):
         )
 
     def start_lesson(self, lesson_id: str):
-        if not self.learning_widget:
-            return
+        if not self.learning_widget: return
         lesson_view = self.learning_ui_views["lesson"]
         lesson_view.start_lesson(lesson_id)
         self.learning_ui_views["central_stack"].setCurrentWidget(lesson_view)
 
     def start_review_session(self):
-        if not self.learning_widget:
-            return
+        if not self.learning_widget: return
         review_view = self.learning_ui_views["review"]
         review_view.start_review_session()
         if review_view.total_exercises_in_session > 0:
@@ -593,80 +580,62 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F11:
-            if self.isFullScreen():
-                self.showNormal()
-            else:
-                self.showFullScreen()
+            if self.isFullScreen(): self.showNormal()
+            else: self.showFullScreen()
         elif event.key() == Qt.Key.Key_Alt:
             self.menuBar().setVisible(not self.menuBar().isVisible())
-
         super().keyPressEvent(event)
 
-    # --- Overridden Events ---
-    def closeEvent(self, event: QCloseEvent):  # Added type hint
-        if self.progress_manager:
-            self.progress_manager.save_progress()
-
+    def closeEvent(self, event: QCloseEvent):
+        if self.progress_manager: self.progress_manager.save_progress()
         self.whisper_manager.unload_model()
-
         if self.editor_view and self.editor_view.is_dirty:
             self.editor_view.close_editor()
             if self.editor_view.isVisible():
                 event.ignore()
                 return
-
         super().closeEvent(event)
 
-    def changeEvent(self, event: QEvent):  # Add changeEvent for MainWindow itself
+    def changeEvent(self, event: QEvent):
         if event.type() == QEvent.Type.LanguageChange:
             logger.debug("MainWindow received LanguageChange event.")
             self._retranslate_main_window_ui()
         super().changeEvent(event)
 
     def _retranslate_main_window_ui(self):
-        """Retranslates parts of the MainWindow UI that might not update automatically."""
+        logger.debug("MainWindow UI elements re-translation starting.")
         # Window Title
-        current_title = self.windowTitle()
         if self.course_manager and self.course_manager.course:
             self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
         elif self.editor_view:
-            # Assuming editor_view has a way to get its course title
-            pass  # self.setWindowTitle(f"LL Editor - {self.editor_view.get_course_title()}")
+            pass  # Title is set when editor is loaded
         else:
             self.setWindowTitle(self.tr("LanguageLearningApp"))
-
-        # Update toolbar to apply translations to actions and tooltips
+        
         self._update_toolbar_icons()
+        
+        # --- Retranslate the persistent menu bar ---
+        # Menu Titles
+        self.menuBar().actions()[0].setText(self.tr("&File"))
+        self.menuBar().actions()[1].setText(self.tr("&Learning"))
+        self.menuBar().actions()[2].setText(self.tr("&View"))
+        
+        # Action Texts
+        self.return_to_selection_action.setText(self.tr("Return to Course Selection"))
+        self.open_for_editing_action.setText(self.tr("Open Course for Editing..."))
+        self.settings_action.setText(self.tr("&Settings..."))
+        self.quit_action.setText(self.tr("&Quit"))
+        self.start_due_review_action.setText(self.tr("Start Due Review"))
+        self.view_menu.actions()[0].setText(self.tr("Toggle Toolbar")) # Toolbar toggle
 
-        # Menus (re-creating them is a common way to ensure re-translation)
-        if self.main_stack.currentWidget() == self.course_selection_view:
-            self._setup_file_menu()
-        elif self.main_stack.currentWidget() == self.learning_widget:
-            self._setup_learning_menu()
-
-        # Dock widget titles (if they exist and are set directly)
-        if hasattr(self, "navigation_dock_widget") and self.navigation_dock_widget:
+        # --- Retranslate dynamic parts ---
+        if self.navigation_dock_widget:
             self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
-        if hasattr(self, "progress_dock_widget") and self.progress_dock_widget:
+        if self.progress_dock_widget:
             self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
 
-        # Retranslate currently visible views if they have a retranslateUi method
-        # This is a fallback / explicit call, QEvent.LanguageChange should handle most of it.
-        current_main_widget = self.main_stack.currentWidget()
-        if hasattr(current_main_widget, "retranslateUi"):
-            logger.debug(
-                f"Explicitly calling retranslateUi for {current_main_widget.__class__.__name__}"
-            )
-            current_main_widget.retranslateUi()
+        if self.dev_info_button:
+            self.dev_info_button.setText(self.tr("Dev Info"))
 
-        if self.learning_widget and self.learning_widget.isVisible():
-            # The learning_widget is a QMainWindow, its menuBar should update.
-            # Its internal views (overview, progress, lesson, etc.) should handle their own retranslation via changeEvent.
-            # pass
-
-            if self.dev_info_button:
-                self.dev_info_button.setText(self.tr("Dev Info"))
-
-        # Inform child views if necessary (more advanced)
-        # For now, rely on QEvent.LanguageChange and the restart prompt.
+        # The changeEvent should propagate to child widgets, so they handle their own retranslation.
         logger.debug("MainWindow UI elements re-translation attempted.")

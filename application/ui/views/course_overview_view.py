@@ -84,8 +84,10 @@ class CourseOverviewView(QWidget):
         self.scroll_area.setObjectName("course_units_scroll_area")
         self.scroll_area.setWidgetResizable(True)
 
-        self.scroll_content_widget = QWidget()  # Container for the units_layout
+        self.scroll_content_widget = QWidget()
+        self.scroll_content_widget.setObjectName("course_units_container")
         self.units_layout = QVBoxLayout(self.scroll_content_widget)
+        self.units_layout.setSpacing(10)
         self.units_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.scroll_content_widget)
 

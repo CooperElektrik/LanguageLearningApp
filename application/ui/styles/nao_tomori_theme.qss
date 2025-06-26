@@ -1,0 +1,313 @@
+/* application/ui/styles/fancy_sky_theme.qss */
+
+/* --- Base Styles --- */
+/* A bright, airy theme inspired by a clear sky and ocean. */
+QWidget {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10pt;
+    color: #2C3E50; /* Dark, desaturated blue text for high contrast */
+}
+
+#course_units_container {
+    background-color: #F0F4FA;
+    border: 1px solid #D0DDEB;
+    border-radius: 8px;
+}
+
+QMainWindow, QDialog {
+    /* Subtle gradient from a lighter to a deeper sky blue, like a clear sky */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #EAF2FA);
+}
+
+QGroupBox {
+    border: 1px solid #D0DDEB; /* Soft, light blue-gray border */
+    border-radius: 8px; /* Consistent rounded corners */
+    margin-top: 1em; /* Space for title */
+    padding: 10px;
+    background-color: #F0F4FA; /* Slightly deeper blue-white for panels */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 8px;
+    color: #34495E; /* Slightly softer dark blue for titles */
+    font-weight: bold;
+}
+
+/* --- Buttons --- */
+QPushButton {
+    /* Clean, off-white to light gray-blue gradient */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FDFDFD, stop:1 #E8EEF7);
+    border: 1px solid #D0DDEB; /* Soft border */
+    border-radius: 8px;
+    padding: 8px 16px;
+    min-height: 24px;
+    color: #2C3E50;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    /* Brighter, friendly blue on hover */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #D6EAF8, stop:1 #AED6F1);
+    border-color: #A9CCE3;
+}
+
+QPushButton:pressed {
+    /* Deeper blue on press */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #AED6F1, stop:1 #85C1E9);
+    border-color: #5D99C6;
+}
+
+QPushButton:disabled {
+    background: #F4F6F6;
+    color: #AAB7B8;
+    border-color: #E5E8E8;
+}
+
+/* Specific primary action buttons - The main sky blue accent */
+QPushButton#start_review_button_main, QPushButton#load_model_button {
+    /* Vibrant sky blue gradient */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5DADE2, stop:1 #3498DB);
+    color: white;
+    font-weight: bold;
+    border: 1px solid #2E86C1;
+}
+QPushButton#start_review_button_main:hover, QPushButton#load_model_button:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6DBEEB, stop:1 #45A3E0);
+    border-color: #3498DB;
+}
+QPushButton#start_review_button_main:pressed, QPushButton#load_model_button:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3498DB, stop:1 #2E86C1);
+    border-color: #2874A6;
+}
+QPushButton#lesson_button {
+    text-align: left;
+}
+
+QPushButton#course_select_button {
+    min-height: 80px;
+}
+
+/* --- Input Fields --- */
+QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #FFFFFF; /* Pure white for clarity */
+    border: 1px solid #D0DDEB; /* Soft blue-gray border */
+    border-radius: 6px;
+    padding: 6px;
+    color: #2C3E50;
+    selection-background-color: #3498DB; /* Sky blue selection */
+    selection-color: white;
+}
+QTextEdit:focus, QLineEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 1px solid #3498DB; /* Sky blue focus ring */
+}
+
+/* --- Other Widgets --- */
+QListWidget, QTreeView, QTableView {
+    background-color: #F0F4FA; /* Panel background color */
+    border: 1px solid #D0DDEB; /* Soft border */
+    border-radius: 8px;
+    alternate-background-color: #EAF2FA; /* For alternating rows */
+    color: #2C3E50;
+}
+QListWidget::item:hover, QTreeView::item:hover {
+    background-color: rgba(133, 193, 233, 0.4); /* Semi-transparent sky blue */
+    border-radius: 4px;
+}
+QListWidget::item:selected, QTreeView::item:selected {
+    background-color: #3498DB; /* Solid sky blue selection */
+    color: white;
+    border-radius: 4px;
+}
+
+QHeaderView::section {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #EAF2FA, stop:1 #D6EAF8);
+    color: #34495E;
+    padding: 6px;
+    border: 1px solid #D0DDEB;
+    border-bottom: 1px solid #A9CCE3;
+    font-weight: 500;
+}
+
+QProgressBar {
+    border: 1px solid #D0DDEB;
+    border-radius: 6px;
+    text-align: center;
+    background-color: #EAECEE;
+    color: #34495E;
+    font-weight: 500;
+}
+QProgressBar::chunk {
+    /* Vibrant sky blue progress chunk */
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #5DADE2, stop:1 #3498DB);
+    border-radius: 5px;
+    margin: 0.5px;
+}
+
+QComboBox {
+    border: 1px solid #D0DDEB;
+    border-radius: 6px;
+    padding: 4px 18px 4px 8px;
+    min-width: 6em;
+    min-height: 28px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FDFDFD, stop:1 #E8EEF7);
+    color: #2C3E50;
+}
+QComboBox:hover {
+    border-color: #A9CCE3;
+}
+QComboBox:on { /* When popup is open */
+    border-color: #3498DB;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: #DDE5F0;
+    border-left-style: solid;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+QComboBox::down-arrow {
+    image: url(application/assets/icons/down_arrow.png); /* Ensure this contrasts well */
+    width: 12px;
+    height: 12px;
+}
+QComboBox QAbstractItemView { /* The dropdown list */
+    border: 1px solid #A9CCE3;
+    background-color: #FFFFFF;
+    selection-background-color: #3498DB;
+    selection-color: white;
+    color: #2C3E50;
+    border-radius: 6px;
+    margin-top: 2px;
+}
+QComboBox QAbstractItemView::item {
+    padding: 5px;
+    min-height: 20px;
+}
+QComboBox QAbstractItemView::item:hover {
+    background-color: rgba(133, 193, 233, 0.4);
+}
+
+QTabWidget::pane {
+    border: 1px solid #D0DDEB;
+    border-radius: 8px;
+    background-color: #F7F9FC; /* Main light base background */
+}
+QTabBar::tab {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F0F4FA, stop:1 #E8EEF7);
+    border: 1px solid #D0DDEB;
+    border-bottom-color: transparent;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    padding: 8px 15px;
+    margin-right: 4px;
+    color: #5D6D7E;
+    font-weight: 500;
+}
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #F0F4FA);
+    border-color: #C0CFDE;
+    color: #2C3E50;
+}
+QTabBar::tab:selected {
+    border-bottom-color: #F7F9FC; /* Match pane for seamless look */
+    font-weight: bold;
+}
+QTabBar::tab:hover:!selected {
+    color: #34495E;
+}
+
+QDockWidget {
+    titlebar-close-icon: url(application/assets/icons/close.png);
+    titlebar-normal-icon: url(application/assets/icons/float.png);
+}
+QDockWidget::title {
+    text-align: left;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #EAF2FA, stop:1 #D6EAF8);
+    padding: 8px;
+    border: 1px solid #D0DDEB;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    color: #34495E;
+    font-weight: bold;
+}
+
+/* ScrollBars */
+QScrollBar:vertical {
+    border: none;
+    background: #F0F4FA;
+    width: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #B8C6D8;
+    min-height: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #A0B0C4;
+}
+QScrollBar::handle:vertical:pressed {
+    background: #8898AA;
+}
+QScrollBar:horizontal {
+    border: none;
+    background: #F0F4FA;
+    height: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #B8C6D8;
+    min-width: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #A0B0C4;
+}
+QScrollBar::handle:horizontal:pressed {
+    background: #8898AA;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    background: none;
+    width: 0px; height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QScrollArea {
+    border: 0px;
+}
+
+/* --- Specific Object Names & Labels --- */
+QLabel {
+    background-color: transparent;
+    color: #2C3E50;
+}
+
+QLabel#course_title_label {
+    font-size: 16pt;
+    font-weight: bold;
+    padding-bottom: 10px;
+    color: #1A5276; /* Deeper blue for main titles */
+}
+
+QLabel#prompt_label, QLabel#feedback_label {
+    font-size: 12pt;
+}
+
+/* Subtle pink accent for specific feedback areas, from the character's sweater */
+QTextBrowser#confidence_browser, QTextBrowser#diff_browser {
+    background-color: #FFF9FA; /* Very light, soft pink */
+    border: 1px solid #F5E6E8; /* Soft pinkish-gray border */
+    border-radius: 8px;
+    padding: 10px;
+    color: #5E3D44; /* Muted dark pink text */
+}
