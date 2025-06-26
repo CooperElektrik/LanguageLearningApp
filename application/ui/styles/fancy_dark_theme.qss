@@ -85,6 +85,9 @@ QPushButton#lesson_button {
     text-align: left;
 }
 
+QPushButton#course_select_button {
+    min-height: 80px;
+}
 
 /* --- Input Fields --- */
 QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QSpinBox, QDoubleSpinBox {

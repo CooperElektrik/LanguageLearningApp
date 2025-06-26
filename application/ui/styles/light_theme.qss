@@ -32,6 +32,10 @@ QPushButton:disabled {
     border-color: #DDDDDD;
 }
 
+QPushButton#course_select_button {
+    min-height: 80px;
+}
+
 /* Input Fields */
 QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     background-color: #FFFFFF; /* White input background */

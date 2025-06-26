@@ -109,6 +109,10 @@ QGroupBox::title {
     color: black;
 }
 
+QPushButton#course_select_button {
+    min-height: 80px;
+}
+
 /* ScrollArea and its viewport - ensure consistency */
 QScrollArea {
     border: 1px solid #808080; /* Dark gray border */
