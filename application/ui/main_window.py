@@ -635,6 +635,9 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowTitle(self.tr("LanguageLearningApp"))
 
+        # Update toolbar to apply translations to actions and tooltips
+        self._update_toolbar_icons()
+
         # Menus (re-creating them is a common way to ensure re-translation)
         if self.main_stack.currentWidget() == self.course_selection_view:
             self._setup_file_menu()

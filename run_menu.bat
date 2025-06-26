@@ -209,6 +209,7 @@ pyside6-lupdate ^
   "%SCRIPT_DIR%\application\ui\dialogs\glossary_detail_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\glossary_lookup_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\dialogs\dev_info_dialog.py" ^
+  "%SCRIPT_DIR%\application\ui\dialogs\help_dialog.py" ^
   "%SCRIPT_DIR%\application\ui\widgets\exercise_widgets.py" ^
   "%SCRIPT_DIR%\application\core\course_manager.py" ^
   -ts "%SCRIPT_DIR%\application\localization\app_zh-TW.ts" ^

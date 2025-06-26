@@ -433,6 +433,65 @@ Please check course assets and paths.</source>
     </message>
 </context>
 <context>
+    <name>HelpDialog</name>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="16"/>
+        <location filename="../ui/dialogs/help_dialog.py" line="48"/>
+        <source>Help - FAQ</source>
+        <translation>說明 - 常見問題</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="67"/>
+        <source>Navigation</source>
+        <translation>導覽</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="68"/>
+        <source>How do I start a lesson?</source>
+        <translation>如何開始課程？</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="70"/>
+        <source>From the &apos;Course Navigation&apos; panel on the left, simply click on the lesson you wish to begin.</source>
+        <translation>從左側的&apos;課程導覽&apos;面板中，點擊您想開始的課程即可。</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="72"/>
+        <source>How do I return to the course selection screen?</source>
+        <translation>如何返回課程選擇畫面？</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="75"/>
+        <source>Use the &apos;File&apos; menu and select &apos;Return to Course Selection&apos;.</source>
+        <translation>使用&apos;檔案&apos;選單並選擇&apos;返回課程選擇&apos;。</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="77"/>
+        <source>Whisper Model</source>
+        <translation>Whisper 模型</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="78"/>
+        <source>What is the Whisper model used for?</source>
+        <translation>Whisper 模型用於什麼？</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="80"/>
+        <source>The Whisper model is used for speech-to-text transcription. It analyzes your pronunciation exercises and provides feedback.</source>
+        <translation>Whisper 模型用於語音轉文字的轉錄。它會分析您的發音練習並提供回饋。</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="82"/>
+        <source>How can I change the Whisper model?</source>
+        <translation>如何更改 Whisper 模型？</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="88"/>
+        <source>You can select a different Whisper model from the &apos;Settings&apos; dialog. Larger models are more accurate but require more resources.</source>
+        <translation>您可以從&apos;設定&apos;對話框中選擇不同的 Whisper 模型。較大的模型更準確，但需要更多資源。</translation>
+    </message>
+</context>
+<context>
     <name>InitialAudioSetupDialog</name>
     <message>
         <location filename="../ui/dialogs/initial_audio_setup_dialog.py" line="29"/>
@@ -687,72 +746,112 @@ Explanation: {0}</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="70"/>
-        <location filename="../ui/main_window.py" line="332"/>
-        <location filename="../ui/main_window.py" line="562"/>
+        <location filename="../ui/main_window.py" line="74"/>
+        <location filename="../ui/main_window.py" line="396"/>
+        <location filename="../ui/main_window.py" line="636"/>
         <source>LanguageLearningApp</source>
         <translation>語言學習應用程式</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="172"/>
-        <location filename="../ui/main_window.py" line="202"/>
+        <location filename="../ui/main_window.py" line="135"/>
+        <source>Exit</source>
+        <translation>結束</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="136"/>
+        <source>Close the application</source>
+        <translation>關閉應用程式</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="141"/>
+        <source>Settings</source>
+        <translation>設定</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="142"/>
+        <source>Open application settings</source>
+        <translation>開啟應用程式設定</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="147"/>
+        <source>Help</source>
+        <translation>說明</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="148"/>
+        <source>Show help and FAQ</source>
+        <translation>顯示說明與常見問題</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="227"/>
+        <location filename="../ui/main_window.py" line="257"/>
         <source>Course Load Error</source>
         <translation>課程載入錯誤</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="173"/>
+        <location filename="../ui/main_window.py" line="228"/>
         <source>Failed to load course.</source>
         <translation>無法載入課程。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="193"/>
+        <location filename="../ui/main_window.py" line="248"/>
         <source>Open Course Manifest</source>
         <translation>開啟課程清單</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="203"/>
+        <location filename="../ui/main_window.py" line="258"/>
         <source>Failed to load selected course for editing.</source>
         <translation>無法載入選定的課程以進行編輯。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="222"/>
-        <location filename="../ui/main_window.py" line="572"/>
+        <location filename="../ui/main_window.py" line="277"/>
+        <location filename="../ui/main_window.py" line="646"/>
         <source>Course Navigation</source>
         <translation>課程導覽</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="233"/>
-        <location filename="../ui/main_window.py" line="574"/>
+        <location filename="../ui/main_window.py" line="288"/>
+        <location filename="../ui/main_window.py" line="648"/>
         <source>Progress</source>
         <translation>進度</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="254"/>
+        <location filename="../ui/main_window.py" line="309"/>
         <source>Select a lesson or start a review.</source>
         <translation>選擇一堂課程或開始複習。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="302"/>
+        <location filename="../ui/main_window.py" line="357"/>
         <source>Open Course for Editing...</source>
         <translation>開啟課程以進行編輯...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="316"/>
+        <location filename="../ui/main_window.py" line="360"/>
+        <source>&amp;Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="362"/>
+        <source>&amp;Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="376"/>
         <source>Return to Course Selection</source>
         <translation>返回課程選擇</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="322"/>
+        <location filename="../ui/main_window.py" line="382"/>
         <source>Start Due Review</source>
         <translation>開始到期複習</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="488"/>
+        <location filename="../ui/main_window.py" line="551"/>
         <source>Welcome to LanguageLearningApp!</source>
         <translation>歡迎使用語言學習應用程式！</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="499"/>
+        <location filename="../ui/main_window.py" line="562"/>
         <source>Welcome to your language course!
 
 Here&apos;s a quick guide to the interface:
@@ -783,7 +882,7 @@ Happy learning!</source>
 學習愉快！</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="591"/>
+        <location filename="../ui/main_window.py" line="665"/>
         <source>Dev Info</source>
         <translation>開發者資訊</translation>
     </message>
@@ -881,7 +980,7 @@ Happy learning!</source>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="611"/>
         <source>Please pronounce: </source>
-        <translation>請發音：「</translation>
+        <translation>請發音： </translation>
     </message>
     <message>
         <location filename="../ui/widgets/exercise_widgets.py" line="621"/>

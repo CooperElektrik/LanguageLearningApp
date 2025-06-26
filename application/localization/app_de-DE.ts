@@ -230,7 +230,7 @@ Check the logs for details.</source>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="179"/>
         <source>N/A</source>
-        <translation>N/A.</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <location filename="../ui/views/course_overview_view.py" line="187"/>
@@ -324,7 +324,7 @@ Check the logs for details.</source>
         <location filename="../ui/dialogs/glossary_detail_dialog.py" line="180"/>
         <location filename="../ui/dialogs/glossary_detail_dialog.py" line="192"/>
         <source>N/A</source>
-        <translation>N/A.</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <location filename="../ui/dialogs/glossary_detail_dialog.py" line="205"/>
@@ -430,6 +430,65 @@ Bitte überprüfen Sie Kurs-Assets und Pfade.</translation>
         <location filename="../ui/views/glossary_view.py" line="170"/>
         <source>No glossary entries</source>
         <translation>Keine Glossareinträge</translation>
+    </message>
+</context>
+<context>
+    <name>HelpDialog</name>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="16"/>
+        <location filename="../ui/dialogs/help_dialog.py" line="48"/>
+        <source>Help - FAQ</source>
+        <translation>Hilfe – FAQ</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="67"/>
+        <source>Navigation</source>
+        <translation>Navigation</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="68"/>
+        <source>How do I start a lesson?</source>
+        <translation>Wie starte ich eine Lektion?</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="70"/>
+        <source>From the &apos;Course Navigation&apos; panel on the left, simply click on the lesson you wish to begin.</source>
+        <translation>Klicken Sie im Bereich &apos;Kursnavigation&apos; auf der linken Seite einfach auf die Lektion, die Sie beginnen möchten.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="72"/>
+        <source>How do I return to the course selection screen?</source>
+        <translation>Wie kehre ich zum Bildschirm zur Kursauswahl zurück?</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="75"/>
+        <source>Use the &apos;File&apos; menu and select &apos;Return to Course Selection&apos;.</source>
+        <translation>Verwenden Sie das Menü &apos;Datei&apos; und wählen Sie &apos;Zurück zur Kursauswahl&apos;.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="77"/>
+        <source>Whisper Model</source>
+        <translation>Whisper-Modell</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="78"/>
+        <source>What is the Whisper model used for?</source>
+        <translation>Wofür wird das Whisper-Modell verwendet?</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="80"/>
+        <source>The Whisper model is used for speech-to-text transcription. It analyzes your pronunciation exercises and provides feedback.</source>
+        <translation>Das Whisper-Modell wird für die Spracherkennung (Speech-to-Text) verwendet. Es analysiert Ihre Ausspracheübungen und gibt Feedback.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="82"/>
+        <source>How can I change the Whisper model?</source>
+        <translation>Wie kann ich das Whisper-Modell ändern?</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/help_dialog.py" line="88"/>
+        <source>You can select a different Whisper model from the &apos;Settings&apos; dialog. Larger models are more accurate but require more resources.</source>
+        <translation>Sie können ein anderes Whisper-Modell über das Dialogfeld &apos;Einstellungen&apos; auswählen. Größere Modelle sind genauer, benötigen aber mehr Ressourcen.</translation>
     </message>
 </context>
 <context>
@@ -688,47 +747,77 @@ Erklärung: {0}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="70"/>
-        <location filename="../ui/main_window.py" line="332"/>
-        <location filename="../ui/main_window.py" line="562"/>
+        <location filename="../ui/main_window.py" line="74"/>
+        <location filename="../ui/main_window.py" line="396"/>
+        <location filename="../ui/main_window.py" line="636"/>
         <source>LanguageLearningApp</source>
         <translation>Sprachlern-App</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="172"/>
-        <location filename="../ui/main_window.py" line="202"/>
+        <location filename="../ui/main_window.py" line="135"/>
+        <source>Exit</source>
+        <translation>Beenden</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="136"/>
+        <source>Close the application</source>
+        <translation>Anwendung schließen</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="141"/>
+        <source>Settings</source>
+        <translation>Einstellungen</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="142"/>
+        <source>Open application settings</source>
+        <translation>Anwendungseinstellungen öffnen</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="147"/>
+        <source>Help</source>
+        <translation>Hilfe</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="148"/>
+        <source>Show help and FAQ</source>
+        <translation>Hilfe und häufig gestellte Fragen anzeigen</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="227"/>
+        <location filename="../ui/main_window.py" line="257"/>
         <source>Course Load Error</source>
         <translation>Kursladefehler</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="173"/>
+        <location filename="../ui/main_window.py" line="228"/>
         <source>Failed to load course.</source>
         <translation>Kurs konnte nicht geladen werden.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="193"/>
+        <location filename="../ui/main_window.py" line="248"/>
         <source>Open Course Manifest</source>
         <translation>Kursmanifest öffnen</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="203"/>
+        <location filename="../ui/main_window.py" line="258"/>
         <source>Failed to load selected course for editing.</source>
         <translation>Ausgewählten Kurs zum Bearbeiten konnte nicht geladen werden.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="222"/>
-        <location filename="../ui/main_window.py" line="572"/>
+        <location filename="../ui/main_window.py" line="277"/>
+        <location filename="../ui/main_window.py" line="646"/>
         <source>Course Navigation</source>
         <translation>Kursnavigation</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="233"/>
-        <location filename="../ui/main_window.py" line="574"/>
+        <location filename="../ui/main_window.py" line="288"/>
+        <location filename="../ui/main_window.py" line="648"/>
         <source>Progress</source>
         <translation>Fortschritt</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="254"/>
+        <location filename="../ui/main_window.py" line="309"/>
         <source>Select a lesson or start a review.</source>
         <translation>Wählen Sie eine Lektion oder starten Sie eine Prüfung.</translation>
     </message>
@@ -737,27 +826,37 @@ Erklärung: {0}</translation>
         <translation type="vanished">&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="302"/>
+        <location filename="../ui/main_window.py" line="357"/>
         <source>Open Course for Editing...</source>
         <translation>Kurs zum Bearbeiten öffnen...</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="316"/>
+        <location filename="../ui/main_window.py" line="360"/>
+        <source>&amp;Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="362"/>
+        <source>&amp;Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="376"/>
         <source>Return to Course Selection</source>
         <translation>Zurück zur Kursauswahl</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="322"/>
+        <location filename="../ui/main_window.py" line="382"/>
         <source>Start Due Review</source>
         <translation>Fällige Prüfung starten</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="488"/>
+        <location filename="../ui/main_window.py" line="551"/>
         <source>Welcome to LanguageLearningApp!</source>
         <translation>Willkommen bei LanguageLearningApp!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="499"/>
+        <location filename="../ui/main_window.py" line="562"/>
         <source>Welcome to your language course!
 
 Here&apos;s a quick guide to the interface:
@@ -788,7 +887,7 @@ Hier ist eine kurze Anleitung zur Benutzeroberfläche:
 Viel Erfolg beim Lernen!</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="591"/>
+        <location filename="../ui/main_window.py" line="665"/>
         <source>Dev Info</source>
         <translation>Entwicklerinfos</translation>
     </message>
