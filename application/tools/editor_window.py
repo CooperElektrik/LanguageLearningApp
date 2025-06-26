@@ -1474,6 +1474,7 @@ class EditorWindow(QMainWindow):
             version=version,
             author=author,
             description=description,
+            image_file=self.manifest_data.get("image_file"),
         )
 
         if not self.course_data:

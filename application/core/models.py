@@ -190,6 +190,7 @@ class Course:
     version: str
     author: Optional[str] = None
     description: Optional[str] = None
+    image_file: Optional[str] = None
     units: List[Unit] = field(default_factory=list)
     content_file: Optional[str] = None
 

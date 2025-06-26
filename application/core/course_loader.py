@@ -168,6 +168,7 @@ def load_course_content(
     version: str,
     author: Optional[str] = None,
     description: Optional[str] = None,
+    image_file: Optional[str] = None,
 ) -> Optional[Course]:
     """Loads and parses the course content YAML file into a Course object."""
     if not os.path.exists(content_filepath):
@@ -199,6 +200,7 @@ def load_course_content(
         version=version,
         author=author,
         description=description,
+        image_file=image_file,
         content_file=os.path.basename(content_filepath),
     )
 

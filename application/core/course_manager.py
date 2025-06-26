@@ -103,6 +103,7 @@ class CourseManager(QObject):
             self.manifest_data.get("version", "0.0.0"),
             self.manifest_data.get("author"),
             self.manifest_data.get("description"),
+            self.manifest_data.get("image_file"),
         )
         if self.course:
             logger.info(
