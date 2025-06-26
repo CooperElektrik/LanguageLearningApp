@@ -13,12 +13,14 @@ from PySide6.QtWidgets import (
     QApplication,
     QPushButton,
     QStatusBar,
+    QToolBar,
 )
 from PySide6.QtGui import (
     QAction,
     QFont,
     QGuiApplication,
     QCloseEvent,
+    QIcon,
 )  # Keep QCloseEvent
 from PySide6.QtCore import (
     Qt,
@@ -28,6 +30,7 @@ from PySide6.QtCore import (
     QLocale,
     QEvent,
     QTimer,
+    QSize,
 )
 from PySide6.QtMultimedia import QMediaDevices
 
@@ -53,6 +56,7 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
 from ui.dialogs.initial_ui_setup_dialog import InitialUISetupDialog
 from ui.dialogs.dev_info_dialog import DevInfoDialog
+from ui.dialogs.help_dialog import HelpDialog
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +73,13 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.setGeometry(100, 100, 1024, 768)
+        self.showFullScreen()
 
         # Main stack to switch between app states (selection, learning, editing)
         self.main_stack = QStackedWidget()
         self.setCentralWidget(self.main_stack)  # Set this ONCE and never change it.
+
+        self._setup_main_toolbar()
 
         # Create the permanent course selection page
         self.course_selection_view = CourseSelectionView()
@@ -99,6 +106,53 @@ class MainWindow(QMainWindow):
         # New: Check for initial UI setup after everything is ready
         QTimer.singleShot(2000, self._check_and_show_ui_setup)
 
+    def _setup_main_toolbar(self):
+        self.main_toolbar = QToolBar("Main Toolbar")
+        self.main_toolbar.setMovable(False)
+        self.main_toolbar.setFloatable(False)
+        self.main_toolbar.setIconSize(QSize(24, 24))
+        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, self.main_toolbar)
+
+        self._update_toolbar_icons()
+
+    def _update_toolbar_icons(self):
+        self.main_toolbar.clear()
+
+        q_settings = QSettings()
+        theme_name = q_settings.value(
+            app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
+        )
+
+        dark_themes = ["Dark", "Fancy Dark", "Win95"] 
+        icon_suffix = "_dark.png" if theme_name in dark_themes else "_light.png"
+
+        # Icon paths
+        exit_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"power{icon_suffix}"))
+        settings_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"cog{icon_suffix}"))
+        help_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"help{icon_suffix}"))
+
+        # Exit Action
+        exit_action = QAction(QIcon(exit_icon_path), self.tr("Exit"), self)
+        exit_action.setToolTip(self.tr("Close the application"))
+        exit_action.triggered.connect(self.close)
+        self.main_toolbar.addAction(exit_action)
+
+        # Settings Action
+        settings_action = QAction(QIcon(settings_icon_path), self.tr("Settings"), self)
+        settings_action.setToolTip(self.tr("Open application settings"))
+        settings_action.triggered.connect(self.show_settings_dialog)
+        self.main_toolbar.addAction(settings_action)
+        
+        # Help Action
+        help_action = QAction(QIcon(help_icon_path), self.tr("Help"), self)
+        help_action.setToolTip(self.tr("Show help and FAQ"))
+        help_action.triggered.connect(self._show_help_dialog)
+        self.main_toolbar.addAction(help_action)
+
+    def _show_help_dialog(self):
+        dialog = HelpDialog(self)
+        dialog.exec()
+
     def _load_and_apply_initial_theme(self):
         q_settings = QSettings()
         theme_name = q_settings.value(
@@ -108,6 +162,7 @@ class MainWindow(QMainWindow):
 
     def apply_theme(self, theme_name: str):
         logger.info(f"Attempting to apply theme: {theme_name}")
+        self._update_toolbar_icons()
         qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)
 
         if theme_name == "System" or qss_filename == "system_default":
@@ -297,14 +352,19 @@ class MainWindow(QMainWindow):
     def _setup_file_menu(self):
         """Menu for the initial selection screen."""
         self.menuBar().clear()
-        file_menu = self.menuBar().addMenu("File")
+        file_menu = self.menuBar().addMenu("&File")
         file_menu.addAction(
             self.tr("Open Course for Editing..."), self._load_course_for_editing
         )
         file_menu.addSeparator()
-        file_menu.addAction("&Settings...", self.show_settings_dialog)
+        file_menu.addAction(self.tr("&Settings..."), self.show_settings_dialog)
         file_menu.addSeparator()
-        file_menu.addAction("&Quit", self.close)
+        file_menu.addAction(self.tr("&Quit"), self.close)
+
+        view_menu = self.menuBar().addMenu("&View")
+        toggle_toolbar_action = self.main_toolbar.toggleViewAction()
+        toggle_toolbar_action.setText("Toggle Toolbar")
+        view_menu.addAction(toggle_toolbar_action)
 
     def _setup_learning_menu(self):
         """Menu for the main learning mode."""
@@ -327,11 +387,15 @@ class MainWindow(QMainWindow):
         if hasattr(self, "progress_dock_widget") and self.progress_dock_widget:
             view_menu.addAction(self.progress_dock_widget.toggleViewAction())
 
+        toggle_toolbar_action = self.main_toolbar.toggleViewAction()
+        toggle_toolbar_action.setText("Toggle Toolbar")
+        view_menu.addAction(toggle_toolbar_action)
+
     def _return_to_selection_screen(self):
         self._clear_dynamic_widgets()
         self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.main_stack.setCurrentWidget(self.course_selection_view)
-        self.menuBar().setVisible(True)
+        self.menuBar().setVisible(False)
         self._update_dev_info_button_visibility()
 
         self._setup_file_menu()
@@ -413,9 +477,8 @@ class MainWindow(QMainWindow):
     def _update_dev_info_button_visibility(self):
         if self.dev_info_button:
             is_dev_mode = utils.is_developer_mode_active()
-            # Only show if in dev mode AND a course is loaded (for learning or editing)
-            # Or always show in dev mode, and dialog handles "no course"
             self.dev_info_button.setVisible(is_dev_mode)
+            self.status_bar.setVisible(is_dev_mode)
 
     def _show_dev_info_dialog(self):
         current_exercise: Optional[Exercise] = None
@@ -527,6 +590,17 @@ class MainWindow(QMainWindow):
         review_view.start_review_session()
         if review_view.total_exercises_in_session > 0:
             self.learning_ui_views["central_stack"].setCurrentWidget(review_view)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_F11:
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+        elif event.key() == Qt.Key.Key_Alt:
+            self.menuBar().setVisible(not self.menuBar().isVisible())
+
+        super().keyPressEvent(event)
 
     # --- Overridden Events ---
     def closeEvent(self, event: QCloseEvent):  # Added type hint
