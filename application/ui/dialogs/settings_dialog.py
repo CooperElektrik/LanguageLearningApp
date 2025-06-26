@@ -153,6 +153,9 @@ class SettingsDialog(QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
+        font_size_note = QLabel(self.tr("Note: Themes that set font sizes explicitly cannot be changed."))
+        font_size_note.setWordWrap(True)
+        ui_layout.addRow(font_size_note)
 
         self.autoshow_hints_checkbox = QCheckBox(
             self.tr("Show hints automatically in exercises")

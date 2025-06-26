@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         self._return_to_selection_screen() # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
-        QTimer.singleShot(2000, self._check_and_show_ui_setup)
+        QTimer.singleShot(500, self._check_and_show_ui_setup)
 
     def _setup_main_toolbar(self):
         self.main_toolbar = QToolBar("Main Toolbar")
@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
 
         q_settings = QSettings()
         theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
+            app_settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
         )
 
         dark_themes = ["Fancy Dark", "Midnight", "Dark"]
@@ -157,7 +157,7 @@ class MainWindow(QMainWindow):
     def _load_and_apply_initial_theme(self):
         q_settings = QSettings()
         theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
+            app_settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
         )
         self.apply_theme(theme_name)
 

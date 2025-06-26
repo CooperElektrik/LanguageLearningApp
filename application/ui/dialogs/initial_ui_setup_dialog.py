@@ -109,7 +109,7 @@ class InitialUISetupDialog(QDialog):
         """Loads current settings to initialize the dialog's state."""
         # Theme
         current_theme_name = self.q_settings.value(
-            settings.QSETTINGS_KEY_UI_THEME, "Fancy Light", type=str
+            settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
         )
         self.theme_combo.setCurrentText(current_theme_name)
 
