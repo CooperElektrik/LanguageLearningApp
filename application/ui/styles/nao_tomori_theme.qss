@@ -14,6 +14,10 @@ QWidget {
     border-radius: 8px;
 }
 
+#course_selection_scroll_content {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #EAF2FA);
+}
+
 QMainWindow, QDialog {
     /* Subtle gradient from a lighter to a deeper sky blue, like a clear sky */
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #EAF2FA);

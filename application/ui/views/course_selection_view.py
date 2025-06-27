@@ -137,6 +137,7 @@ class CourseSelectionView(QWidget):
         main_layout.addWidget(scroll_area)
 
         self.scroll_content = QWidget()
+        self.scroll_content.setObjectName("course_selection_scroll_content")
         self.courses_layout = QVBoxLayout(self.scroll_content)
         self.courses_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll_area.setWidget(self.scroll_content)

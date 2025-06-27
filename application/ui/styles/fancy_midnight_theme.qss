@@ -6,7 +6,20 @@ QWidget {
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     font-size: 10pt;
     color: #DCDDEE; /* Off-white with a cool tint for better readability */
-    background-color: #1A1B26; /* Very dark, deep blue base background */
+}
+
+#course_units_container {
+    background-color: #1A1B26;
+    border: 1px solid #3A3F5E;
+    border-radius: 8px;
+}
+
+#course_selection_scroll_content {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #24283B, stop:1 #1A1B26);
+}
+
+QToolBar {
+    border: 0px;
 }
 
 QMainWindow, QDialog {
