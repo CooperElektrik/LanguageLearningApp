@@ -8,6 +8,10 @@ QWidget {
     color: #2C3E50; /* Dark, desaturated blue text for high contrast */
 }
 
+QToolBar {
+    border: 0px;
+}
+
 #course_units_container {
     background-color: #F0F4FA;
     border: 1px solid #D0DDEB;
