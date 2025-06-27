@@ -28,21 +28,23 @@ echo.
 echo  1. Run Main Application (Learning Mode)
 echo  2. Open Course Editor
 echo  3. Compile Application to EXE (with Nuitka)
-echo  4. Compile Application to EXE (with PyInstaller) 
-echo  5. Run Automated Tests (with pytest)
-echo  6. Update/Compile Translations
-echo  7. Exit
+echo  4. Compile Application to EXE (with PyInstaller - Onefile)
+echo  5. Compile Application to EXE (with PyInstaller - Onedir)
+echo  6. Run Automated Tests (with pytest)
+echo  7. Update/Compile Translations
+echo  8. Exit
 echo.
 set "choice="
-set /p choice="Enter your choice (1-7): "
+set /p choice="Enter your choice (1-8): "
 
 if "%choice%"=="1" goto runApp
 if "%choice%"=="2" goto runEditor
 if "%choice%"=="3" goto compileNuitka
-if "%choice%"=="4" goto compilePyInstaller
-if "%choice%"=="5" goto runTests
-if "%choice%"=="6" goto updateTranslations
-if "%choice%"=="7" goto end
+if "%choice%"=="4" goto compilePyInstallerOnefile
+if "%choice%"=="5" goto compilePyInstallerOnedir
+if "%choice%"=="6" goto runTests
+if "%choice%"=="7" goto updateTranslations
+if "%choice%"=="8" goto end
 
 echo Invalid choice. Please press any key to try again.
 pause >nul
@@ -114,10 +116,62 @@ pause >nul
 cd /D "%SCRIPT_DIR%"
 goto menu
 
-:compilePyInstaller
+:compilePyInstallerOnefile
 cls
 echo =====================================================================
-echo  Compiling Main Application to Executable (using PyInstaller)
+echo  Compiling Main Application to Executable (using PyInstaller - Onefile)
+echo =====================================================================
+echo.
+echo This may take several minutes. Please wait...
+echo The compiled executable will be placed in: "%SCRIPT_DIR%\application\dist\"
+echo.
+echo Changing directory to: "%SCRIPT_DIR%\application\"
+cd /D "%SCRIPT_DIR%\application"
+
+echo Generating spec file and building with PyInstaller...
+echo.
+
+REM Generate spec file only once if not already present
+if not exist "main.spec" (
+    pyinstaller --name=main --onefile --specpath=. main.py
+)
+
+REM Modify spec file or manually add datas entries here if needed
+REM For now, we use --add-data to include required directories
+
+REM Build using PyInstaller with added data directories
+pyinstaller ^
+  --onefile ^
+  --windowed ^
+  --paths "%SCRIPT_DIR%\application" ^
+  --add-data="courses;courses" ^
+  --add-data="assets;assets" ^
+  --add-data="models;models" ^
+  --add-data="ui/styles;ui/styles" ^
+  --add-data="localization;localization" ^
+  --distpath=dist ^
+  --workpath=build ^
+  main.py
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: PyInstaller compilation failed.
+    echo Please check the console output above for details.
+) else (
+    echo.
+    echo PyInstaller compilation successful.
+    echo Executable located at: "%SCRIPT_DIR%\application\dist\main.exe"
+)
+echo.
+echo Press any key to return to the menu.
+pause >nul
+cd /D "%SCRIPT_DIR%"
+goto menu
+
+:compilePyInstallerOnedir
+cls
+echo =====================================================================
+echo  Compiling Main Application to Executable (using PyInstaller - Onedir)
 echo =====================================================================
 echo.
 echo This may take several minutes. Please wait...

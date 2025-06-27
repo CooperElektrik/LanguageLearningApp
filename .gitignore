@@ -5,9 +5,6 @@ build/
 courses/
 application/core/data/
 application/models/
-content.yaml
-manifest.yaml
-glossary.yaml
 *.pyc
 *.spec
 pate_egg.txt
