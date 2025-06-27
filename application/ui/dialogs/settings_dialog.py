@@ -97,17 +97,17 @@ class SettingsDialog(QDialog):
         )  # Add as a new row in the form layout
 
         # Add CUDA availability status
+        self.cuda_availability_label = QLabel()
+        self.cuda_availability_label.setObjectName("cuda_availability_label")
         if IS_CUDA_AVAILABLE:
-            cuda_status_text = self.tr(
-                "CUDA Status: Available"
-            )
+            self.cuda_availability_label.setText(self.tr("Available"))
+            self.cuda_availability_label.setProperty("available", True)
         else:
-            cuda_status_text = self.tr(
-                "CUDA Status: Not Available"
-            )
-
-        self.cuda_status_label = QLabel(cuda_status_text)
-        self.pronunciation_settings_layout.addRow(self.cuda_status_label)
+            self.cuda_availability_label.setText(self.tr("Not Available"))
+            self.cuda_availability_label.setProperty("available", False)
+        self.pronunciation_settings_layout.addRow(
+            self.tr("CUDA Status:"), self.cuda_availability_label
+        )
 
         audio_layout.addWidget(
             self.pronunciation_settings_group
@@ -493,14 +493,16 @@ class SettingsDialog(QDialog):
                 "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
             )
         )
+        cuda_status_label = self.pronunciation_settings_layout.labelForField(
+            self.cuda_availability_label
+        )
+        if cuda_status_label:
+            cuda_status_label.setText(self.tr("CUDA Status:"))
+
         if IS_CUDA_AVAILABLE:
-            self.cuda_status_label.setText(
-                self.tr("CUDA Status: Available")
-            )
+            self.cuda_availability_label.setText(self.tr("Available"))
         else:
-            self.cuda_status_label.setText(
-                self.tr("CUDA Status: Not Available")
-            )
+            self.cuda_availability_label.setText(self.tr("Not Available"))
 
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label

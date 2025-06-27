@@ -18,6 +18,14 @@ QWidget {
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #EAF2FA);
 }
 
+#cuda_availability_label[available="true"] {
+    color: green;
+    font-weight: bold;
+}
+#cuda_availability_label[available="false"] {
+    color: red;
+}
+
 QMainWindow, QDialog {
     /* Subtle gradient from a lighter to a deeper sky blue, like a clear sky */
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F7F9FC, stop:1 #EAF2FA);
