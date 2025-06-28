@@ -559,14 +559,19 @@ class SettingsDialog(QDialog):
         """Checks for PyTorch and CUDA availability and updates the label."""
         self.cuda_availability_label.setText(self.tr("Checking..."))
         try:
-            import torch
+            from application.core.whisper_manager import _TORCH_AVAILABLE
 
-            if torch.cuda.is_available():
-                self.cuda_availability_label.setText(self.tr("Available"))
-                self.cuda_availability_label.setProperty("available", True)
+            if _TORCH_AVAILABLE:
+                import torch # type: ignore
+                if torch.cuda.is_available():
+                    self.cuda_availability_label.setText(self.tr("Available"))
+                    self.cuda_availability_label.setProperty("available", True)
+                else:
+                    self.cuda_availability_label.setText(self.tr("Not Available"))
+                    self.cuda_availability_label.setProperty("available", False)
             else:
-                self.cuda_availability_label.setText(self.tr("Not Available"))
+                self.cuda_availability_label.setText(self.tr("PyTorch not installed"))
                 self.cuda_availability_label.setProperty("available", False)
-        except ImportError:
-            self.cuda_availability_label.setText(self.tr("PyTorch not installed"))
+        except Exception:
+            self.cuda_availability_label.setText(self.tr("Error checking PyTorch"))
             self.cuda_availability_label.setProperty("available", False)

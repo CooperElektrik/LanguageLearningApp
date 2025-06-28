@@ -149,15 +149,21 @@ class InitialAudioSetupDialog(QDialog):
         """Checks for PyTorch and CUDA availability and updates the label."""
         self.cuda_status_label.setText(self.tr("Checking..."))
         try:
-            import torch
+            from application.core.whisper_manager import _TORCH_AVAILABLE
 
-            if torch.cuda.is_available():
-                self.cuda_status_label.setText(self.tr("CUDA Status: Available"))
+            if _TORCH_AVAILABLE:
+                import torch # type: ignore
+                if torch.cuda.is_available():
+                    self.cuda_status_label.setText(self.tr("CUDA Status: Available"))
+                else:
+                    self.cuda_status_label.setText(
+                        self.tr("CUDA Status: Not Available (PyTorch installed)")
+                    )
             else:
                 self.cuda_status_label.setText(
-                    self.tr("CUDA Status: Not Available (PyTorch installed)")
+                    self.tr("CUDA Status: Not Available (PyTorch not installed)")
                 )
-        except ImportError:
+        except Exception:
             self.cuda_status_label.setText(
-                self.tr("CUDA Status: Not Available (PyTorch not installed)")
+                self.tr("CUDA Status: Not Available (Error checking PyTorch)")
             )

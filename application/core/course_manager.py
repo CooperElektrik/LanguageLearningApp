@@ -6,6 +6,7 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
+from .whisper_manager import _FASTER_WHISPER_AVAILABLE
 
 try:
     from application import utils  # For developer mode check
@@ -353,6 +354,9 @@ class CourseManager(QObject):
         self, exercise: Exercise, user_transcription: str
     ) -> Tuple[bool, str]:
         """Checks answer for pronunciation exercises by comparing transcription."""
+        if not _FASTER_WHISPER_AVAILABLE:
+            return False, self.tr("Pronunciation exercises require faster_whisper, which is not installed.")
+
         target_text_display = exercise.target_pronunciation_text
 
         user_transcription_norm = self._normalize_answer_for_comparison(

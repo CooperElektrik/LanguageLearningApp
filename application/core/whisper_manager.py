@@ -1,11 +1,26 @@
 import logging
-from faster_whisper import WhisperModel
 from PySide6.QtCore import QObject, Signal, QThread, QSettings, QRunnable, QThreadPool
 from typing import Optional, Tuple
-from huggingface_hub.errors import LocalEntryNotFoundError
 import settings as app_settings
 import os
 import sys
+
+try:
+    from faster_whisper import WhisperModel
+    from huggingface_hub.errors import LocalEntryNotFoundError
+    _FASTER_WHISPER_AVAILABLE = True
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("faster_whisper not found. Pronunciation exercises will be skipped.")
+    _FASTER_WHISPER_AVAILABLE = False
+
+try:
+    import torch # type: ignore
+    _TORCH_AVAILABLE = True
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("PyTorch not found. Whisper will fall back to CPU or be unavailable.")
+    _TORCH_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +42,9 @@ class ModelLoader(QRunnable):
         error = Signal(str, str)  # model_name, error_message
 
     def run(self):
+        if not _FASTER_WHISPER_AVAILABLE:
+            self.signals.error.emit(self.model_name, "faster_whisper is not available.")
+            return
         try:
             logger.info(
                 f"Background Task: Loading Whisper model '{self.model_name}' on device '{self.device}' with compute_type '{self.compute_type}'. This might take a while on first use."
@@ -79,6 +97,9 @@ class TranscriptionTask(QRunnable):
         error = Signal(str, str)  # exercise_id, error_message
 
     def run(self):
+        if not _FASTER_WHISPER_AVAILABLE:
+            self.signals.error.emit(self.exercise_id, "faster_whisper is not available.")
+            return
         try:
             lang_info = (
                 f" with language '{self.language_code}'" if self.language_code else ""
@@ -127,8 +148,10 @@ class WhisperManager(QObject):
 
     def _get_best_device_config(self) -> Tuple[str, str]:
         """Determines the best available device (cuda or cpu) and corresponding compute type."""
+        if not _TORCH_AVAILABLE:
+            logger.warning("PyTorch not available, falling back to CPU.")
+            return "cpu", "int8"
         try:
-            import torch
             if torch.cuda.is_available():
                 # Check if the GPU supports float16, which is much faster.
                 # This is a simplification; a more robust check would involve compute capability.
@@ -141,8 +164,8 @@ class WhisperManager(QObject):
                         f"Could not determine CUDA device capability, falling back. Error: {e}"
                     )
                 return "cuda", "int8"
-        except ImportError:
-            logger.warning("PyTorch not found, falling back to CPU.")
+        except Exception as e:
+            logger.warning(f"Error checking for CUDA availability: {e}, falling back to CPU.")
         return "cpu", "int8"
 
     def get_selected_model_name(self) -> str:
