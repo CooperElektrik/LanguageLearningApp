@@ -6,19 +6,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
     QMessageBox,
+    QPushButton,
+    QHBoxLayout,
 )
 from PySide6.QtMultimedia import QMediaDevices
 from PySide6.QtCore import QSettings, Qt
 import settings as app_settings
-
-try:
-    import torch
-
-    IS_CUDA_AVAILABLE = torch.cuda.is_available()
-except ImportError:
-    IS_CUDA_AVAILABLE = False
-    torch = None  # Prevent linting errors if torch is used elsewhere conditionally
-
 
 logger = logging.getLogger(__name__)
 
@@ -69,21 +62,19 @@ class InitialAudioSetupDialog(QDialog):
         cuda_note_label.setWordWrap(True)
         main_layout.addWidget(cuda_note_label)
 
-        # Add CUDA availability status
-        if IS_CUDA_AVAILABLE:
-            cuda_status_text = self.tr(
-                "CUDA Status: Available"
-            )
-        else:
-            cuda_status_text = self.tr(
-                "CUDA Status: Not Available"
-            )
+        # CUDA Status Layout
+        cuda_layout = QHBoxLayout()
+        self.cuda_status_label = QLabel(self.tr("CUDA Status: Unknown"))
+        cuda_layout.addWidget(self.cuda_status_label)
 
-        cuda_status_label = QLabel(cuda_status_text)
-        main_layout.addWidget(cuda_status_label)
+        check_cuda_button = QPushButton(self.tr("Check Now"))
+        check_cuda_button.clicked.connect(self.check_cuda_availability)
+        cuda_layout.addWidget(check_cuda_button)
+        main_layout.addLayout(cuda_layout)
 
         # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+
         buttons.accepted.connect(self.save_and_accept)
         main_layout.addWidget(buttons)
 
@@ -153,3 +144,20 @@ class InitialAudioSetupDialog(QDialog):
             )
 
         self.accept()
+
+    def check_cuda_availability(self):
+        """Checks for PyTorch and CUDA availability and updates the label."""
+        self.cuda_status_label.setText(self.tr("Checking..."))
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                self.cuda_status_label.setText(self.tr("CUDA Status: Available"))
+            else:
+                self.cuda_status_label.setText(
+                    self.tr("CUDA Status: Not Available (PyTorch installed)")
+                )
+        except ImportError:
+            self.cuda_status_label.setText(
+                self.tr("CUDA Status: Not Available (PyTorch not installed)")
+            )

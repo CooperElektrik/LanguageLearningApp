@@ -6,7 +6,6 @@ from huggingface_hub.errors import LocalEntryNotFoundError
 import settings as app_settings
 import os
 import sys
-import torch
 
 logger = logging.getLogger(__name__)
 
@@ -128,18 +127,22 @@ class WhisperManager(QObject):
 
     def _get_best_device_config(self) -> Tuple[str, str]:
         """Determines the best available device (cuda or cpu) and corresponding compute type."""
-        if torch.cuda.is_available():
-            # Check if the GPU supports float16, which is much faster.
-            # This is a simplification; a more robust check would involve compute capability.
-            # Most modern NVIDIA GPUs support float16.
-            try:
-                if torch.cuda.get_device_capability(0)[0] >= 7:
-                    return "cuda", "float16"
-            except Exception as e:
-                logger.warning(
-                    f"Could not determine CUDA device capability, falling back. Error: {e}"
-                )
-            return "cuda", "int8"
+        try:
+            import torch
+            if torch.cuda.is_available():
+                # Check if the GPU supports float16, which is much faster.
+                # This is a simplification; a more robust check would involve compute capability.
+                # Most modern NVIDIA GPUs support float16.
+                try:
+                    if torch.cuda.get_device_capability(0)[0] >= 7:
+                        return "cuda", "float16"
+                except Exception as e:
+                    logger.warning(
+                        f"Could not determine CUDA device capability, falling back. Error: {e}"
+                    )
+                return "cuda", "int8"
+        except ImportError:
+            logger.warning("PyTorch not found, falling back to CPU.")
         return "cpu", "int8"
 
     def get_selected_model_name(self) -> str:

@@ -21,15 +21,6 @@ import utils
 
 from core.whisper_manager import WhisperManager
 
-try:
-    import torch
-
-    IS_CUDA_AVAILABLE = torch.cuda.is_available()
-except ImportError:
-    IS_CUDA_AVAILABLE = False
-    torch = None  # Prevent linting errors if torch is used elsewhere conditionally
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -96,17 +87,18 @@ class SettingsDialog(QDialog):
             self.cuda_note_label
         )  # Add as a new row in the form layout
 
-        # Add CUDA availability status
-        self.cuda_availability_label = QLabel()
+        # CUDA Status Layout
+        cuda_status_layout = QHBoxLayout()
+        self.cuda_availability_label = QLabel(self.tr("Unknown"))
         self.cuda_availability_label.setObjectName("cuda_availability_label")
-        if IS_CUDA_AVAILABLE:
-            self.cuda_availability_label.setText(self.tr("Available"))
-            self.cuda_availability_label.setProperty("available", True)
-        else:
-            self.cuda_availability_label.setText(self.tr("Not Available"))
-            self.cuda_availability_label.setProperty("available", False)
+        cuda_status_layout.addWidget(self.cuda_availability_label)
+
+        self.check_cuda_button = QPushButton(self.tr("Check Now"))
+        self.check_cuda_button.clicked.connect(self.check_cuda_availability)
+        cuda_status_layout.addWidget(self.check_cuda_button)
+
         self.pronunciation_settings_layout.addRow(
-            self.tr("CUDA Status:"), self.cuda_availability_label
+            self.tr("CUDA Status:"), cuda_status_layout
         )
 
         audio_layout.addWidget(
@@ -499,10 +491,8 @@ class SettingsDialog(QDialog):
         if cuda_status_label:
             cuda_status_label.setText(self.tr("CUDA Status:"))
 
-        if IS_CUDA_AVAILABLE:
-            self.cuda_availability_label.setText(self.tr("Available"))
-        else:
-            self.cuda_availability_label.setText(self.tr("Not Available"))
+        # Re-check the availability to update the text properly
+        # self.check_cuda_availability() # This might be too slow to do here.
 
         self.autoplay_audio_checkbox.setText(self.tr("Autoplay audio in exercises"))
         # Assuming volume_label was defined as self.volume_label
@@ -564,3 +554,19 @@ class SettingsDialog(QDialog):
                 loaded_model or "None"
             ),
         )
+
+    def check_cuda_availability(self):
+        """Checks for PyTorch and CUDA availability and updates the label."""
+        self.cuda_availability_label.setText(self.tr("Checking..."))
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                self.cuda_availability_label.setText(self.tr("Available"))
+                self.cuda_availability_label.setProperty("available", True)
+            else:
+                self.cuda_availability_label.setText(self.tr("Not Available"))
+                self.cuda_availability_label.setProperty("available", False)
+        except ImportError:
+            self.cuda_availability_label.setText(self.tr("PyTorch not installed"))
+            self.cuda_availability_label.setProperty("available", False)
