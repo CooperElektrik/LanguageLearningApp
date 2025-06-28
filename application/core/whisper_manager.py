@@ -14,6 +14,13 @@ except ImportError:
     logger.warning("faster_whisper not found. Pronunciation exercises will be skipped.")
     _FASTER_WHISPER_AVAILABLE = False
 
+    # Define a dummy WhisperModel for type hinting purposes when faster_whisper is not available
+    class WhisperModel:
+        def __init__(self, *args, **kwargs):
+            pass
+        def transcribe(self, *args, **kwargs):
+            raise NotImplementedError("faster_whisper is not installed.")
+
 try:
     import torch # type: ignore
     _TORCH_AVAILABLE = True

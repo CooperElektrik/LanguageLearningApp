@@ -1,6 +1,7 @@
 import sys
 import logging
 import os
+import subprocess
 from PySide6.QtWidgets import (
     QMainWindow,
     QStackedWidget,
@@ -57,6 +58,7 @@ from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
 from ui.dialogs.initial_ui_setup_dialog import InitialUISetupDialog
 from ui.dialogs.dev_info_dialog import DevInfoDialog
 from ui.dialogs.help_dialog import HelpDialog
+from ui.dialogs.pyglet_script_runner_dialog import PygletScriptRunnerDialog
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +133,7 @@ class MainWindow(QMainWindow):
         exit_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"power{icon_suffix}"))
         settings_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"cog{icon_suffix}"))
         help_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"help{icon_suffix}"))
+        pyglet_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"code{icon_suffix}"))
 
         # Exit Action
         exit_action = QAction(QIcon(exit_icon_path), self.tr("Exit"), self)
@@ -150,8 +153,18 @@ class MainWindow(QMainWindow):
         help_action.triggered.connect(self._show_help_dialog)
         self.main_toolbar.addAction(help_action)
 
+        # Pyglet App Action
+        pyglet_action = QAction(QIcon(pyglet_icon_path), self.tr("Pyglet App"), self)
+        pyglet_action.setToolTip(self.tr("Run a sample Pyglet application"))
+        pyglet_action.triggered.connect(self._run_pyglet_app)
+        self.main_toolbar.addAction(pyglet_action)
+
     def _show_help_dialog(self):
         dialog = HelpDialog(self)
+        dialog.exec()
+
+    def _run_pyglet_app(self):
+        dialog = PygletScriptRunnerDialog(self)
         dialog.exec()
 
     def _load_and_apply_initial_theme(self):
