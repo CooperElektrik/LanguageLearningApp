@@ -147,6 +147,7 @@ pyinstaller ^
   --add-data="courses;courses" ^
   --add-data="assets;assets" ^
   --add-data="models;models" ^
+  --add-data="scripts;scripts" ^
   --add-data="ui/styles;ui/styles" ^
   --add-data="localization;localization" ^
   --distpath=dist ^
@@ -199,6 +200,7 @@ pyinstaller ^
   --add-data="courses;courses" ^
   --add-data="assets;assets" ^
   --add-data="models;models" ^
+  --add-data="scripts;scripts" ^
   --add-data="ui/styles;ui/styles" ^
   --add-data="localization;localization" ^
   --distpath=dist ^

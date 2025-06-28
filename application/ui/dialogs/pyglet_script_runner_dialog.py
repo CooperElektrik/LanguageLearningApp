@@ -15,7 +15,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from application import utils
+try:
+    from application import utils
+except ImportError:
+    import utils
 
 logger = logging.getLogger(__name__)
 
