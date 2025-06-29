@@ -73,17 +73,20 @@ class STTManager(QObject):
 
     def load_model(self):
         selected_engine = self.get_selected_stt_engine()
+        logger.info(f"Attempting to load STT model for engine: {selected_engine}")
         model_to_load = None
 
         if selected_engine == "whisper":
             model_to_load = self.get_selected_whisper_model_name()
             if not model_to_load or model_to_load.lower() == "none":
+                logger.info("No Whisper model selected or 'None' specified. Skipping load.")
                 self.modelLoadingFinished.emit("None", True)
                 return
             if self._active_model_name_loaded == model_to_load and self._active_whisper_model_instance:
-                logger.info(f"Whisper model '{model_to_load}' is already loaded.")
+                logger.info(f"Whisper model '{model_to_load}' is already loaded. No action needed.")
                 self.modelLoadingFinished.emit(model_to_load, True)
                 return
+            logger.info(f"Loading Whisper model: {model_to_load}")
             self.unload_model() # Unload any previously loaded model
             self._is_loading = True
             self.modelLoadingStarted.emit(model_to_load)
@@ -95,12 +98,14 @@ class STTManager(QObject):
         elif selected_engine == "vosk":
             model_to_load = self.get_selected_vosk_model_path()
             if not model_to_load or model_to_load.lower() == "none":
+                logger.info("No Vosk model selected or 'None' specified. Skipping load.")
                 self.modelLoadingFinished.emit("None", True)
                 return
             if self._active_model_name_loaded == model_to_load and self._active_vosk_model_instance:
-                logger.info(f"Vosk model '{model_to_load}' is already loaded.")
+                logger.info(f"Vosk model '{model_to_load}' is already loaded. No action needed.")
                 self.modelLoadingFinished.emit(model_to_load, True)
                 return
+            logger.info(f"Loading Vosk model: {model_to_load}")
             self.unload_model() # Unload any previously loaded model
             self._is_loading = True
             self.modelLoadingStarted.emit(model_to_load)
@@ -109,7 +114,7 @@ class STTManager(QObject):
             loader_task.signals.error.connect(self._on_vosk_model_load_error)
             self.thread_pool.start(loader_task)
         else:
-            logger.warning(f"Unknown STT engine selected: {selected_engine}")
+            logger.warning(f"Unknown STT engine selected: {selected_engine}. Cannot load model.")
             self.modelLoadingFinished.emit("Unknown", False)
 
     def _on_whisper_model_loaded(self, model_name: str, model_instance: object):

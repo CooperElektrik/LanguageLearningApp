@@ -37,6 +37,7 @@ class SettingsDialog(QDialog):
         self.stt_manager = stt_manager
         self.setWindowTitle(self.tr("Settings"))
         self.setMinimumWidth(400)
+        logger.info("SettingsDialog initialized.")
 
         self.q_settings = QSettings()
 

@@ -42,6 +42,7 @@ class ModelLoader(QRunnable):
         super().__init__()
         self.model_path = model_path
         self.signals = self.Signals()
+        logger.debug(f"VOSK ModelLoader task created for model: {model_path}")
 
     class Signals(QObject):
         finished = Signal(str, object)  # model_path, model_instance
@@ -49,7 +50,9 @@ class ModelLoader(QRunnable):
 
     def run(self):
         if not _VOSK_AVAILABLE:
-            self.signals.error.emit(self.model_path, "VOSK is not available.")
+            error_msg = "VOSK is not available. Please install vosk and its dependencies."
+            logger.error(error_msg)
+            self.signals.error.emit(self.model_path, error_msg)
             return
         try:
             logger.info(f"Background Task: Attempting to load VOSK model '{self.model_path}'.")
@@ -57,7 +60,7 @@ class ModelLoader(QRunnable):
             actual_model_dir = utils.get_stt_model_path(app_settings.STT_ENGINE_VOSK, self.model_path)
 
             if not os.path.exists(actual_model_dir):
-                logger.info(f"Model directory '{actual_model_dir}' not found. Checking for zip file.")
+                logger.info(f"Model directory '{actual_model_dir}' not found. Checking for zip/7z archive.")
                 # Construct potential archive file paths
                 archive_paths = {
                     ".zip": actual_model_dir + ".zip",
@@ -67,7 +70,7 @@ class ModelLoader(QRunnable):
                 extracted = False
                 for ext, archive_path in archive_paths.items():
                     if os.path.exists(archive_path):
-                        logger.info(f"Found VOSK model {ext} file: '{archive_path}'. Extracting...")
+                        logger.info(f"Found VOSK model {ext} file: '{archive_path}'. Attempting extraction...")
                         try:
                             if ext == ".zip":
                                 with zipfile.ZipFile(archive_path, 'r') as zip_ref:
@@ -85,30 +88,25 @@ class ModelLoader(QRunnable):
                             return
 
                 if not extracted:
-                    error_msg = f"VOSK model directory '{actual_model_dir}' and no archive files found." # Updated error message
-                    logger.error(error_msg)
-                    self.signals.error.emit(self.model_path, error_msg)
-                    return
+                    error_msg = f"VOSK model directory '{actual_model_dir}' not found and no corresponding archive files (.zip, .7z) were found. Please ensure the model is downloaded and placed correctly."
                     logger.error(error_msg)
                     self.signals.error.emit(self.model_path, error_msg)
                     return
 
             # If we reach here, the model directory should exist (either pre-existing or extracted)
             if not os.path.exists(actual_model_dir):
-                error_msg = f"VOSK model directory '{actual_model_dir}' does not exist after extraction attempt."
+                error_msg = f"VOSK model directory '{actual_model_dir}' does not exist after extraction attempt. This indicates a problem with the extraction process."
                 logger.error(error_msg)
                 self.signals.error.emit(self.model_path, error_msg)
                 return
 
             model_instance = Model(actual_model_dir)
-            logger.info(f"Background Task: Model '{self.model_path}' loaded successfully from '{actual_model_dir}'.")
+            logger.info(f"Background Task: VOSK model '{self.model_path}' loaded successfully from '{actual_model_dir}'.")
             self.signals.finished.emit(self.model_path, model_instance)
         except Exception as e:
-            logger.error(
-                f"Background Task: Failed to load VOSK model '{self.model_path}': {e}",
-                exc_info=True,
-            )
-            self.signals.error.emit(self.model_path, str(e))
+            error_msg = f"Background Task: Failed to load VOSK model '{self.model_path}': {e}"
+            logger.error(error_msg, exc_info=True)
+            self.signals.error.emit(self.model_path, error_msg)
 
 class TranscriptionTask(QRunnable):
     """

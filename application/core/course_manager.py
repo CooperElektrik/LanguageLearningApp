@@ -61,7 +61,7 @@ class CourseManager(QObject):
             "context_block": self._check_completion_answer,
             "pronunciation_practice": self._check_pronunciation_answer,
         }
-
+        logger.debug(f"CourseManager initialized for manifest: {manifest_path}")
         self._load_course_from_manifest()
 
     def _load_course_from_manifest(self):
@@ -79,6 +79,7 @@ class CourseManager(QObject):
         if not self.manifest_data:
             logger.error("Failed to load manifest. Course cannot be initialized.")
             return
+        logger.debug("Manifest loaded. Extracting course metadata.")
         self.target_language = self.manifest_data.get(
             "target_language", "Unknown Target"
         )
@@ -86,14 +87,17 @@ class CourseManager(QObject):
             "source_language", "Unknown Source"
         )
         self.target_language_code = self.manifest_data.get("target_language_code")
+        logger.debug(f"Target Language: {self.target_language}, Source Language: {self.source_language}")
 
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
             logger.error("Manifest does not specify a 'content_file'.")
             return
+        logger.debug(f"Content file specified: {content_filename}")
 
         manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
         content_filepath = os.path.join(manifest_dir_abs, content_filename)
+        logger.debug(f"Absolute path to content file: {content_filepath}")
 
         self.course = course_loader.load_course_content(
             content_filepath,
@@ -111,13 +115,18 @@ class CourseManager(QObject):
                 f"Course '{self.course.title}' content loaded successfully from {content_filepath}."
             )
         else:
-            logger.error(f"Failed to load course content from {content_filepath}.")
+            logger.error(f"Failed to load course content from {content_filepath}. Course object is None.")
 
         glossary_filename = self.manifest_data.get("glossary_file")
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
+            logger.debug(f"Attempting to load glossary from: {glossary_filepath}")
             self.glossary = glossary_loader.load_glossary(glossary_filepath)
-            self._build_glossary_map()  # NEW: Build the lookup map
+            if self.glossary:
+                self._build_glossary_map()
+                logger.info(f"Glossary loaded successfully with {len(self.glossary)} entries.")
+            else:
+                logger.warning(f"Failed to load glossary from {glossary_filepath}. Glossary will be empty.")
         else:
             logger.info(
                 "Manifest does not specify a 'glossary_file'. Skipping glossary loading."

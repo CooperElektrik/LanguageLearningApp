@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class ProgressManager:
     def __init__(self, course_id: str):
         self.course_id = course_id
+        logger.info(f"Initializing ProgressManager for course: {course_id}")
 
         app_data_base_dir = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.AppDataLocation
@@ -36,6 +37,7 @@ class ProgressManager:
         self.progress_file = os.path.join(
             self.progress_data_dir, f"{self.course_id}_progress.json"
         )
+        logger.debug(f"Progress file path set to: {self.progress_file}")
 
         # Initialize progress data structures with new 'is_initially_learned' flag
         self.exercise_srs_data: Dict[str, Dict[str, Any]] = defaultdict(
@@ -81,6 +83,7 @@ class ProgressManager:
         try:
             with open(self.progress_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                logger.debug(f"Raw progress data loaded from {self.progress_file}.")
 
                 raw_srs_data = data.get("exercise_srs_data", {})
                 for ex_id, srs_attrs in raw_srs_data.items():
@@ -101,22 +104,26 @@ class ProgressManager:
                             srs_attrs.get("repetitions", 0) > 0
                         )
                         logger.info(
-                            f"Populated 'is_initially_learned' for {ex_id} based on repetitions."
+                            f"Populated 'is_initially_learned' for {ex_id} based on repetitions for backward compatibility."
                         )
 
                     self.exercise_srs_data[ex_id] = srs_attrs
 
                 self.xp = data.get("xp", 0)
+                logger.debug(f"Loaded XP: {self.xp}")
 
                 raw_last_study_date = data.get("last_study_date")
                 if raw_last_study_date:
                     self.last_study_date = date.fromisoformat(raw_last_study_date)
+                    logger.debug(f"Loaded last study date: {self.last_study_date}")
                 self.current_streak_days = data.get("current_streak_days", 0)
+                logger.debug(f"Loaded current streak: {self.current_streak_days} days.")
 
                 self.exercise_notes = data.get("exercise_notes", {})
+                logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
 
                 logger.info(
-                    f"Progress loaded for course '{self.course_id}' from {self.progress_file}."
+                    f"Progress loaded for course '{self.course_id}' from {self.progress_file}. Total exercises with SRS data: {len(self.exercise_srs_data)}"
                 )
         except json.JSONDecodeError as e:
             logger.error(
@@ -127,6 +134,7 @@ class ProgressManager:
                 f"Failed to load progress from {self.progress_file}: {e}. Progress may be reset."
             )
             # Reset all progress data if loading fails critically
+            logger.warning("Resetting all progress data due to critical loading failure.")
             self.exercise_srs_data = defaultdict(
                 lambda: {
                     "last_reviewed": None,
@@ -145,6 +153,7 @@ class ProgressManager:
 
     def save_progress(self):
         """Saves current progress data to the JSON file."""
+        logger.info(f"Attempting to save progress for course '{self.course_id}' to {self.progress_file}")
         self._ensure_data_dir_exists()
 
         srs_data_for_save = {}
@@ -168,8 +177,8 @@ class ProgressManager:
         try:
             with open(self.progress_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
-            logger.debug(
-                f"Progress saved for course '{self.course_id}' to {self.progress_file}"
+            logger.info(
+                f"Progress saved successfully for course '{self.course_id}' to {self.progress_file}"
             )
             return True
         except IOError as e:
@@ -259,6 +268,10 @@ class ProgressManager:
         is_correct indicates if the user's answer was objectively correct.
         quality_score_sm2 (0-5) reflects user's self-assessment of recall difficulty.
         """
+        srs_attrs = self.exercise_srs_data[exercise_id]
+        srs_attrs["exercise_id"] = exercise_id
+
+        logger.debug(f"Updating SRS data for exercise '{exercise_id}'. Correct: {is_correct}, Quality: {quality_score_sm2}")
         srs_attrs = self.exercise_srs_data[exercise_id]
         srs_attrs["exercise_id"] = exercise_id
 

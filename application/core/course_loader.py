@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
     """Loads the course manifest YAML file."""
+    logger.debug(f"Attempting to load manifest from: {manifest_path}")
     if not os.path.exists(manifest_path):
         logger.error(f"Manifest file not found: {manifest_path}")
         return None
@@ -32,6 +33,7 @@ def _parse_exercise_options(
     options_data: Any, correct_option_text: Optional[str] = None
 ) -> List[ExerciseOption]:
     """Helper to parse options data into a list of ExerciseOption objects."""
+    logger.debug(f"Parsing exercise options: {options_data}, correct_option_text: {correct_option_text}")
     parsed_options = []
     if isinstance(options_data, list):
         if all(isinstance(opt, dict) for opt in options_data):
@@ -40,19 +42,21 @@ def _parse_exercise_options(
                 ExerciseOption(text=opt["text"], correct=opt.get("correct", False))
                 for opt in options_data
             ]
+            logger.debug(f"Parsed options (dict format): {parsed_options}")
         elif all(isinstance(opt, str) for opt in options_data):
             # Format: ["Option A", "Option B", "Option C"]
             if correct_option_text is None:
                 logger.warning(
-                    f"Simple options list provided {options_data} but 'correct_option' is missing."
+                    f"Simple options list provided {options_data} but 'correct_option' is missing. Options might not be correctly marked as correct."
                 )
             parsed_options = [
                 ExerciseOption(text=opt, correct=(opt == correct_option_text))
                 for opt in options_data
             ]
             random.shuffle(parsed_options)
+            logger.debug(f"Parsed options (list format): {parsed_options}")
     else:
-        logger.warning(f"Invalid options data format: {options_data}. Expected a list.")
+        logger.warning(f"Invalid options data format: {options_data}. Expected a list. Returning empty options.")
     return parsed_options
 
 
@@ -66,6 +70,7 @@ def _parse_exercise(
     """Parses a single exercise entry from YAML data into an Exercise object."""
     ex_id = f"{lesson_id}_ex{index}"
     ex_type = exercise_data.get("type")
+    logger.debug(f"Attempting to parse exercise {ex_id} of type '{ex_type}'.")
 
     if not ex_type:
         logger.warning(f"Skipping exercise {ex_id}: 'type' field is missing.")
@@ -171,12 +176,14 @@ def load_course_content(
     image_file: Optional[str] = None,
 ) -> Optional[Course]:
     """Loads and parses the course content YAML file into a Course object."""
+    logger.debug(f"Attempting to load course content from: {content_filepath}")
     if not os.path.exists(content_filepath):
         logger.error(f"Course content file not found: {content_filepath}")
         return None
     try:
         with open(content_filepath, "r", encoding="utf-8") as f:
             raw_course_data = yaml.safe_load(f)
+        logger.info(f"Successfully loaded raw course data from {content_filepath}")
     except yaml.YAMLError as e:
         logger.error(f"Error parsing course content YAML file {content_filepath}: {e}")
         return None
@@ -188,7 +195,7 @@ def load_course_content(
 
     if not raw_course_data or "units" not in raw_course_data:
         logger.error(
-            f"Course content file {content_filepath} is empty or 'units' key is missing."
+            f"Course content file {content_filepath} is empty or 'units' key is missing. Cannot load course."
         )
         return None
 
@@ -203,6 +210,7 @@ def load_course_content(
         image_file=image_file,
         content_file=os.path.basename(content_filepath),
     )
+    logger.debug(f"Initialized Course object for '{course_title}' (ID: {course_id})")
 
     for unit_data in raw_course_data.get("units", []):
         unit_id = unit_data.get("unit_id")
@@ -213,6 +221,7 @@ def load_course_content(
             )
             continue
         unit_obj = Unit(unit_id=unit_id, title=unit_title)
+        logger.debug(f"Parsed unit '{unit_title}' (ID: {unit_id})")
 
         for lesson_data in unit_data.get("lessons", []):
             lesson_id = lesson_data.get("lesson_id")
@@ -227,20 +236,24 @@ def load_course_content(
                 title=lesson_title,
                 unit_id=unit_obj.unit_id,
             )
+            logger.debug(f"Parsed lesson '{lesson_title}' (ID: {lesson_id}) in unit {unit_id}")
             for i, ex_data in enumerate(lesson_data.get("exercises", [])):
                 exercise_obj = _parse_exercise(
                     ex_data, lesson_obj.lesson_id, i, target_lang, source_lang
                 )
                 if exercise_obj:
                     lesson_obj.exercises.append(exercise_obj)
+                    logger.debug(f"Added exercise {exercise_obj.exercise_id} to lesson {lesson_id}")
                 else:
                     logger.warning(
                         f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping."
                     )
             unit_obj.lessons.append(lesson_obj)
+            logger.debug(f"Added lesson {lesson_id} to unit {unit_id}")
         course.units.append(unit_obj)
+        logger.debug(f"Added unit {unit_id} to course {course_id}")
 
     logger.info(
-        f"Course '{course_title}' loaded successfully with {len(course.units)} units."
+        f"Course '{course_title}' loaded successfully with {len(course.units)} units and {sum(len(u.lessons) for u in course.units)} lessons."
     )
     return course

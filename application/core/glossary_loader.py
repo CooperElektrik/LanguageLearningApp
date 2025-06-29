@@ -13,6 +13,7 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
     Loads and parses the glossary YAML file into a list of GlossaryEntry objects.
     Returns an empty list if the file is not found or parsing fails.
     """
+    logger.debug(f"Attempting to load glossary from: {glossary_path}")
     if not os.path.exists(glossary_path):
         logger.info(
             f"Glossary file not found at expected path: {glossary_path}. Returning empty list."
@@ -22,6 +23,7 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
     try:
         with open(glossary_path, "r", encoding="utf-8") as f:
             raw_glossary_data = yaml.safe_load(f)
+        logger.info(f"Successfully loaded raw glossary data from {glossary_path}")
     except (
         FileNotFoundError
     ):  # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears
@@ -38,7 +40,7 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
 
     if not isinstance(raw_glossary_data, list):
         logger.error(
-            f"Glossary content file {glossary_path} is not a list of entries. Found type: {type(raw_glossary_data).__name__}."
+            f"Glossary content file {glossary_path} is not a list of entries. Found type: {type(raw_glossary_data).__name__}. Returning empty list."
         )
         return []
 
@@ -70,6 +72,7 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
                     audio_file=entry_data.get("audio_file"),
                 )
             )
+            logger.debug(f"Successfully parsed glossary entry for word: '{word}'")
         except Exception as e:
             logger.warning(
                 f"Error creating GlossaryEntry from entry at index {i} in {glossary_path}: {e}. Data: {entry_data}"

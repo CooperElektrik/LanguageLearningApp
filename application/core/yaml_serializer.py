@@ -27,6 +27,7 @@ def manifest_to_yaml_data(manifest_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def save_course_to_yaml(course: Course, filepath: str):
     """Saves a Course object to a YAML file."""
+    logger.info(f"Attempting to save course content to {filepath}")
     try:
         yaml_data = course_to_yaml_data(course)
         with open(filepath, "w", encoding="utf-8") as f:
@@ -44,6 +45,7 @@ def save_course_to_yaml(course: Course, filepath: str):
 
 def save_manifest_to_yaml(manifest_data: Dict[str, Any], filepath: str):
     """Saves manifest data to a YAML file."""
+    logger.info(f"Attempting to save manifest to {filepath}")
     try:
         with open(filepath, "w", encoding="utf-8") as f:
             yaml.safe_dump(

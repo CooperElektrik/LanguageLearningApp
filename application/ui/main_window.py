@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
             None  # Store the active translator
         )
 
+        logger.info("MainWindow initializing...")
         self.setWindowTitle(self.tr("LanguageLearningApp"))
         self.setGeometry(100, 100, 1024, 768)
         self.showFullScreen()
@@ -78,6 +79,7 @@ class MainWindow(QMainWindow):
         # Main stack to switch between app states (selection, learning, editing)
         self.main_stack = QStackedWidget()
         self.setCentralWidget(self.main_stack)
+        logger.debug("Main QStackedWidget set as central widget.")
 
         self._setup_main_toolbar()
         self._setup_main_menu() # <<<< UNIFIED MENU SETUP
@@ -88,6 +90,7 @@ class MainWindow(QMainWindow):
             self._load_course_for_learning
         )
         self.main_stack.addWidget(self.course_selection_view)
+        logger.debug("CourseSelectionView added to main stack.")
 
         # Placeholders for other modes' main widgets
         self.learning_widget = None
@@ -106,6 +109,7 @@ class MainWindow(QMainWindow):
 
         # New: Check for initial UI setup after everything is ready
         QTimer.singleShot(500, self._check_and_show_initial_setup)
+        logger.info("MainWindow initialization complete.")
 
     def _setup_main_toolbar(self):
         self.main_toolbar = QToolBar("Main Toolbar")
@@ -221,15 +225,19 @@ class MainWindow(QMainWindow):
         self._update_dev_info_button_visibility()
 
     def _load_course_for_learning(self, manifest_path: str):
+        logger.info(f"Attempting to load course for learning from manifest: {manifest_path}")
         self.course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not self.course_manager.course:
+            logger.error(f"Failed to load course from {manifest_path}. Displaying error message.")
             QMessageBox.critical(
                 self, self.tr("Course Load Error"), self.tr("Failed to load course.")
             )
             return
+        logger.info(f"Course '{self.course_manager.get_course_title()}' loaded successfully for learning.")
         self.progress_manager = ProgressManager(
             course_id=self.course_manager.course.course_id
         )
+        logger.debug(f"ProgressManager initialized for course ID: {self.course_manager.course.course_id}")
 
         self._setup_learning_ui()
         self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
