@@ -8,3 +8,4 @@ application/models/
 *.pyc
 *.spec
 pate_egg.txt
+.env

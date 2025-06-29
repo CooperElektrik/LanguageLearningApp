@@ -271,6 +271,26 @@ class HelpDialog(QDialog):
                     "question": self.tr("How can I change the Whisper model?"),
                     "answer": self.tr("You can select a different Whisper model from the 'Settings' dialog. Larger models are more accurate but require more resources.")
                 }
+            },
+            self.tr("VOSK Model"): {
+                "5": {
+                    "question": self.tr("What is the VOSK model used for?"),
+                    "answer": self.tr("The VOSK model is an alternative speech-to-text transcription engine. It is generally smaller and faster than Whisper models, making it suitable for devices with limited resources or for real-time transcription where absolute accuracy is not the primary concern.")
+                },
+                "6": {
+                    "question": self.tr("How can I change the VOSK model?"),
+                    "answer": self.tr("You can select a different VOSK model from the 'Settings' dialog. VOSK models are typically language-specific and need to be downloaded separately.")
+                }
+            },
+            self.tr("Whisper vs. VOSK"): {
+                "7": {
+                    "question": self.tr("What are the main differences between Whisper and VOSK?"),
+                    "answer": self.tr(
+                        "Whisper models are generally more accurate and support a wider range of languages, but they are larger and require more computational resources (especially for larger models). "
+                        "VOSK models are typically smaller, faster, and can run efficiently on less powerful hardware, but they are language-specific and may not be as accurate as Whisper for all use cases. "
+                        "Choose Whisper for higher accuracy and broader language support if you have the resources, and VOSK for speed and efficiency on more constrained systems."
+                    )
+                }
             }
         }
         

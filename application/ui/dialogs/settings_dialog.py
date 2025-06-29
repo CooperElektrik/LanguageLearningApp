@@ -75,12 +75,6 @@ class SettingsDialog(QDialog):
             self.whisper_model_label, self.whisper_model_combo
         )
 
-        self.cuda_note_label = QLabel(
-            self.tr(
-                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
-            )
-        )
-        self.cuda_note_label.setWordWrap(True)
         self.cuda_availability_label = QLabel(self.tr("Unknown"))
         self.cuda_availability_label.setObjectName("cuda_availability_label")
         self.check_cuda_button = QPushButton(self.tr("Check Now"))
@@ -424,7 +418,6 @@ class SettingsDialog(QDialog):
 
         self.whisper_model_label.setVisible(is_whisper)
         self.whisper_model_combo.setVisible(is_whisper)
-        self.cuda_note_label.setVisible(is_whisper)
         self.cuda_availability_label.setVisible(is_whisper)
         self.check_cuda_button.setVisible(is_whisper)
         self.cuda_status_label.setVisible(is_whisper)
@@ -578,11 +571,6 @@ class SettingsDialog(QDialog):
         if mic_label:
             mic_label.setText(self.tr("Microphone Input Device:"))
 
-        self.cuda_note_label.setText(
-            self.tr(
-                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
-            )
-        )
         cuda_status_label = self.pronunciation_settings_layout.labelForField(
             self.cuda_availability_label
         )
