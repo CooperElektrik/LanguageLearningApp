@@ -124,21 +124,30 @@ def get_app_root_dir() -> str:
         # Attempt a fallback for non-frozen, non-set scenarios (e.g., running a utility script directly)
         logger.warning("_APP_ROOT_DIR not set explicitly. Attempting fallback.")
         try:
-            # Try to get the directory of the script that was initially run.
-            # This assumes __main__ module has a __file__ attribute.
-            main_module_file = sys.modules["__main__"].__file__
-            fallback_root = os.path.dirname(os.path.abspath(main_module_file))
+            # Try to get the directory of the main application script.
+            # This is more robust than __main__.__file__ for certain execution contexts.
+            import application.main
+            fallback_root = os.path.dirname(os.path.abspath(application.main.__file__))
             logger.info(
-                f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __main__.__file__)"
+                f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from application.main.__file__)"
             )
             return fallback_root
-        except (AttributeError, KeyError):
-            # If __main__.__file__ is not available (e.g., interactive interpreter), use current working directory.
-            fallback_root = os.getcwd()
-            logger.warning(
-                f"Could not derive __main__.__file__. Fallback _APP_ROOT_DIR set to current working directory: {fallback_root}"
-            )
-            return fallback_root
+        except (AttributeError, KeyError, ImportError):
+            try:
+                # Fallback to __main__.__file__ if application.main is not available or doesn't have __file__
+                main_module_file = sys.modules["__main__"].__file__
+                fallback_root = os.path.dirname(os.path.abspath(main_module_file))
+                logger.info(
+                    f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __main__.__file__)"
+                )
+                return fallback_root
+            except (AttributeError, KeyError):
+                # If __main__.__file__ is not available (e.g., interactive interpreter), use current working directory.
+                fallback_root = os.getcwd()
+                logger.warning(
+                    f"Could not derive _APP_ROOT_DIR from application.main or __main__.__file__. Fallback to current working directory: {fallback_root}"
+                )
+                return fallback_root
     return _APP_ROOT_DIR
 
 
