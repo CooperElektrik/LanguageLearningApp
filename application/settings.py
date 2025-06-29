@@ -135,7 +135,7 @@ QSETTINGS_KEY_STT_ENGINE = "audio/stt_engine_selection"
 STT_ENGINE_WHISPER = "whisper"
 STT_ENGINE_VOSK = "vosk"
 STT_ENGINES_AVAILABLE = [STT_ENGINE_WHISPER, STT_ENGINE_VOSK]
-STT_ENGINE_DEFAULT = STT_ENGINE_WHISPER
+STT_ENGINE_DEFAULT = STT_ENGINE_VOSK
 
 # These are for VOSK Transcription
 QSETTINGS_KEY_VOSK_MODEL = "audio/vosk_model_selection"
@@ -149,7 +149,7 @@ VOSK_MODEL_INFO = {
         "description": "Vietnamese model.",
     }
 }
-VOSK_MODEL_DEFAULT = "vosk-model-small-en-us-0.15" # A good default for initial setup
+VOSK_MODEL_DEFAULT = "vosk-model-vn-0.4" # A good default for initial setup
 
 
 # --- UI Font Settings ---
