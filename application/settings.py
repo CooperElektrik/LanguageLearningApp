@@ -22,6 +22,7 @@ NAO_TOMORI_THEME_FILE = "nao_tomori_theme.qss"  # Waifu
 FANCY_DARK_THEME_FILE = "fancy_dark_theme.qss"  # Fancy theme (Dark)
 FANCY_MIDNIGHT_THEME_FILE = "fancy_midnight_theme.qss"  # Fancy midnight theme (Dark)
 WINDOWS_95_FILE = "win95_theme.qss"  # Windows 95'ish theme
+FANCY_WINDOWS_95_FILE = "fancy_win95_theme.qss"  # Windows 95'ish theme
 TEMPLE_OS_FILE = "temple_os_theme.qss"  # Terry A. Davis
 SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Splash screen image
 AVAILABLE_THEMES = {
@@ -33,6 +34,7 @@ AVAILABLE_THEMES = {
     "Fancy Dark": FANCY_DARK_THEME_FILE,
     "Midnight": FANCY_MIDNIGHT_THEME_FILE,
     "Windows 95": WINDOWS_95_FILE,
+    "Fancy Windows 95": FANCY_WINDOWS_95_FILE,
     "Temple OS": TEMPLE_OS_FILE,
 }  # Name to filename mapping
 

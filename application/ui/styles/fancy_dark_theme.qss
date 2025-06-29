@@ -8,6 +8,16 @@ QWidget {
     background-color: #2E2E2E; /* Base dark background for most widgets */
 }
 
+QToolBar {
+    border: 0px;
+}
+
+#course_units_container {
+    background-color: #343434;
+    border: 1px solid #505050;
+    border-radius: 8px;
+}
+
 QMainWindow, QDialog {
     /* Subtle dark gradient for main window background */
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #2E2E2E);
@@ -27,12 +37,6 @@ QGroupBox::title {
     padding: 0 8px; /* More padding for title (from light theme) */
     color: #E0E0E0; /* Light title color */
     font-weight: bold;
-    /* Optional: background for title if desired, e.g.
-    background-color: rgba(255, 255, 255, 0.05);
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
-    padding-top: 2px; padding-bottom: 2px;
-    */
 }
 
 /* --- Buttons --- */
@@ -144,6 +148,178 @@ QProgressBar::chunk {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0078D4, stop:1 #005FAA);
     border-radius: 5px; /* Slightly smaller than bar radius */
     margin: 0.5px;
+}
+
+QComboBox {
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 4px 18px 4px 8px; /* More padding, space for arrow */
+    min-width: 6em;
+    min-height: 28px; /* Taller */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #454545, stop:1 #3D3D3D); /* Subtle dark gradient */
+    color: #E0E0E0;
+}
+QComboBox:hover {
+    border-color: #607090; /* Subtle hover border (matches button hover) */
+}
+QComboBox:on { /* When popup is open */
+    border-color: #0078D4; /* Accent color border */
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px; /* Slightly wider dropdown area */
+    border-left-width: 1px;
+    border-left-color: #4A4A4A; /* Darker separator */
+    border-left-style: solid;
+    border-top-right-radius: 5px; /* Matches QComboBox border-radius -1 */
+    border-bottom-right-radius: 5px;
+}
+QComboBox::down-arrow {
+    /* IMPORTANT: This icon must be light-colored to be visible on a dark background */
+    image: url(application/assets/icons/down_arrow_light.png); /* Assumes a light version of the arrow icon exists */
+    width: 12px;
+    height: 12px;
+}
+QComboBox QAbstractItemView { /* The dropdown list */
+    border: 1px solid #606060; /* Slightly more prominent border for popup */
+    background-color: #3C3C3C; /* Dark background */
+    selection-background-color: #0078D4;
+    selection-color: white;
+    color: #E0E0E0; /* Text color for items */
+    border-radius: 6px; /* Rounded corners for the popup */
+    margin-top: 2px; /* Small gap to main combo box */
+}
+QComboBox QAbstractItemView::item {
+    padding: 5px; /* Add padding to items */
+    min-height: 20px; /* Ensure items are tall enough */
+}
+QComboBox QAbstractItemView::item:hover {
+    background-color: rgba(60, 85, 115, 0.8); /* Darker blue on hover */
+    color: #FFFFFF;
+}
+
+QTabWidget::pane {
+    border: 1px solid #5A5A5A; /* Darker border */
+    border-radius: 8px; /* Consistent with other panels */
+    background-color: #353535; /* Dark background for pane */
+}
+QTabBar::tab {
+    /* Subtle dark gradient for unselected tabs */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:1 #404040);
+    border: 1px solid #5A5A5A;
+    border-bottom-color: transparent; /* Makes the selected tab appear to merge with the pane */
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    padding: 8px 15px; /* More generous padding */
+    margin-right: 4px; /* More space between tabs */
+    color: #B0B0B0; /* Dimmed light text for unselected tabs */
+    font-weight: 500;
+}
+QTabBar::tab:selected, QTabBar::tab:hover {
+    /* Lighter dark gradient for selected/hovered tabs */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #353535);
+    border-color: #6A6A6A;
+    color: #FFFFFF; /* Bright text for selected/hovered */
+}
+QTabBar::tab:selected {
+    border-bottom-color: #353535; /* Match pane background color for seamless merge */
+    font-weight: bold; /* Bold selected tab */
+}
+QTabBar::tab:hover:!selected { /* Hover only for non-selected tabs */
+    color: #E0E0E0;
+}
+
+
+QDockWidget {
+    /* IMPORTANT: These icons must be light-colored for visibility */
+    titlebar-close-icon: url(application/assets/icons/close_light.png);
+    titlebar-normal-icon: url(application/assets/icons/float_light.png);
+}
+QDockWidget::title {
+    text-align: left;
+    /* Subtle dark gradient for dock widget title bar */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #484848, stop:1 #3D3D3D);
+    padding: 8px; /* More padding */
+    border: 1px solid #555555;
+    border-bottom: none; /* Title bar is on top */
+    border-top-left-radius: 8px; /* Consistent radius */
+    border-top-right-radius: 8px;
+    color: #E0E0E0;
+    font-weight: bold;
+}
+
+/* ScrollBars */
+QScrollBar:vertical {
+    border: 1px solid #4A4A4A;
+    background: #3C3C3C;
+    width: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #5A5A5A;
+    min-height: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #6A6A6A;
+}
+QScrollBar::handle:vertical:pressed {
+    background: #4F4F4F;
+}
+QScrollBar:horizontal {
+    border: 1px solid #4A4A4A;
+    background: #3C3C3C;
+    height: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #5A5A5A;
+    min-width: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #6A6A6A;
+}
+QScrollBar::handle:horizontal:pressed {
+    background: #4F4F4F;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    background: none;
+    width: 0px; /* Hide arrows */
+    height: 0px; /* Hide arrows */
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none; /* Make trough transparent to show scrollbar background */
+}
+
+
+/* --- Specific Object Names & Labels --- */
+QLabel { /* Generic Label styling from original dark theme */
+    background-color: transparent;
+    color: #E0E0E0;
+}
+
+QLabel#course_title_label {
+    font-size: 16pt;
+    font-weight: bold;
+    padding-bottom: 10px;
+    color: #F0F0F0; /* Brighter text for titles */
+}
+
+/* Specific labels from original dark theme (if needed by application) */
+QLabel#prompt_label, QLabel#feedback_label {
+    font-size: 12pt;
+}
+
+QTextBrowser#confidence_browser, QTextBrowser#diff_browser {
+    background-color: #2C3038; /* Very dark, slightly blueish background for feedback */
+    border: 1px solid #3A4050; /* Softer, blueish border */
+    border-radius: 8px; /* Consistent radius */
+    padding: 10px; /* More padding for content */
+    color: #D0D8E0; /* Light blueish text */
 }
 
 QComboBox {

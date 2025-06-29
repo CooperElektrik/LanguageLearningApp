@@ -7,15 +7,33 @@ QWidget {
     color: #333333; /* Slightly softer dark text color */
 }
 
-QMainWindow {
+QToolBar {
+    border: 0px;
+}
+
+#course_units_container {
+    background-color: #F0F0F0;
+    border: 1px solid #D0D0D0;
+    border-radius: 8px;
+}
+
+QMainWindow, QDialog {
     /* Subtle gradient for main window background */
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F9F9F9, stop:1 #F2F2F2);
+}
+
+QGroupBox {
+    border: 1px solid #D0D0D0; /* Soft, light blue-gray border */
+    border-radius: 8px; /* Consistent rounded corners */
+    margin-top: 1em; /* Space for title */
+    padding: 10px;
+    background-color: #F0F0F0; /* Slightly deeper blue-white for panels */
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 0 8px; /* More padding for title */
+    padding: 0 8px;
     color: #444444; /* Slightly softer title color */
     font-weight: bold;
 }
@@ -77,23 +95,26 @@ QPushButton#course_select_button {
 
 
 /* --- Input Fields --- */
-QLineEdit, QTextEdit, QTextBrowser {
+QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
     background-color: #FFFFFF; /* Pure white for input clarity */
     border: 1px solid #D0D0D0; /* Lighter, cleaner border */
     border-radius: 6px; /* Consistent rounded corners */
     padding: 6px; /* More padding */
+    color: #333333;
     selection-background-color: #0078D4;
     selection-color: white;
 }
-QTextEdit:focus, QLineEdit:focus {
+QTextEdit:focus, QLineEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
     border: 1px solid #0078D4; /* Retain strong focus border */
 }
 
 /* --- Other Widgets --- */
-QListWidget, QTreeView {
+QListWidget, QTreeView, QTableView {
     background-color: rgba(255, 255, 255, 0.95); /* Pure white, near opaque background */
     border: 1px solid #E0E0E0; /* Subtle border */
     border-radius: 8px; /* Consistent with panels */
+    alternate-background-color: #F8F8F8;
+    color: #333333;
 }
 QListWidget::item:hover, QTreeView::item:hover {
     background-color: rgba(220, 235, 255, 0.8); /* Softer, lighter blue on hover */
@@ -103,6 +124,15 @@ QListWidget::item:selected, QTreeView::item:selected {
     background-color: #0078D4;
     color: white;
     border-radius: 4px; /* Small radius for individual items */
+}
+
+QHeaderView::section {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F0F0F0, stop:1 #E0E0E0);
+    color: #444444;
+    padding: 6px;
+    border: 1px solid #D0D0D0;
+    border-bottom: 1px solid #C0C0C0;
+    font-weight: 500;
 }
 
 QProgressBar {
@@ -161,6 +191,7 @@ QComboBox QAbstractItemView { /* The dropdown list */
 }
 QComboBox QAbstractItemView::item {
     padding: 5px; /* Add padding to items */
+    min-height: 20px;
 }
 QComboBox QAbstractItemView::item:hover {
     background-color: rgba(220, 235, 255, 0.8); /* Softer blue on hover */
@@ -193,6 +224,9 @@ QTabBar::tab:selected, QTabBar::tab:hover {
 QTabBar::tab:selected {
     font-weight: bold; /* Bold selected tab */
 }
+QTabBar::tab:hover:!selected {
+    color: #333333;
+}
 
 QDockWidget {
     titlebar-close-icon: url(application/assets/icons/close.png); /* Example */
@@ -211,16 +245,76 @@ QDockWidget::title {
     font-weight: bold;
 }
 
-/* Specific Object Names for further customization */
+/* ScrollBars */
+QScrollBar:vertical {
+    border: none;
+    background: #F0F0F0;
+    width: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #C0C0C0;
+    min-height: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #B0B0B0;
+}
+QScrollBar::handle:vertical:pressed {
+    background: #A0A0A0;
+}
+QScrollBar:horizontal {
+    border: none;
+    background: #F0F0F0;
+    height: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #C0C0C0;
+    min-width: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #B0B0B0;
+}
+QScrollBar::handle:horizontal:pressed {
+    background: #A0A0A0;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    background: none;
+    width: 0px; height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QScrollArea {
+    border: 0px;
+}
+
+/* --- Specific Object Names & Labels --- */
+QLabel {
+    background-color: transparent;
+    color: #333333;
+}
+
 QLabel#course_title_label {
     font-size: 16pt;
     font-weight: bold;
     padding-bottom: 10px;
     color: #1C1C1C; /* Ensure dark text */
 }
+
+QLabel#prompt_label, QLabel#feedback_label {
+    font-size: 12pt;
+}
+
 QTextBrowser#confidence_browser, QTextBrowser#diff_browser {
     background-color: #F8FBFF; /* Very light blueish background for feedback */
     border: 1px solid #E0E0F0; /* Softer, blueish border */
     border-radius: 8px; /* Consistent radius */
     padding: 10px; /* More padding for content */
+    color: #333333;
 }

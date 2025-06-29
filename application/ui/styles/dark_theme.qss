@@ -2,7 +2,18 @@
 QWidget {
     background-color: #2E2E2E; /* Dark gray background */
     color: #E0E0E0; /* Light gray text */
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10pt;
+}
+
+QToolBar {
+    border: 0px;
+}
+
+#course_units_container {
+    background-color: #383838;
+    border: 1px solid #5A5A5A;
+    border-radius: 8px;
 }
 
 QMainWindow, QDialog {
@@ -14,9 +25,10 @@ QPushButton {
     background-color: #4A4A4A; /* Medium-dark gray */
     color: #E0E0E0;
     border: 1px solid #5A5A5A;
-    padding: 6px 12px;
-    border-radius: 4px;
-    min-width: 80px;
+    border-radius: 8px;
+    padding: 8px 16px;
+    min-height: 24px;
+    font-weight: 500;
 }
 QPushButton:hover {
     background-color: #5A5A5A; /* Slightly lighter on hover */
@@ -35,78 +47,174 @@ QPushButton#course_select_button {
     min-height: 80px;
 }
 
-/* Input Fields */
-QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
-    background-color: #3C3C3C; /* Darker input background */
-    color: #E0E0E0;
-    border: 1px solid #5A5A5A;
-    padding: 4px;
-    border-radius: 3px;
+QProgressBar::chunk {
+    background: #007ACC;
+    border-radius: 5px;
+    margin: 0.5px;
 }
-QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-    border-color: #007ACC; /* Blue border on focus, common in dark themes */
+
+QComboBox {
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 4px 18px 4px 8px;
+    min-width: 6em;
+    min-height: 28px;
+    background-color: #3C3C3C;
+    color: #E0E0E0;
+}
+QComboBox:hover {
+    border-color: #6A6A6A;
+}
+QComboBox:on { /* When popup is open */
+    border-color: #007ACC;
 }
 QComboBox::drop-down {
-    border: none;
-    background-color: #4A4A4A;
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: #5A5A5A;
+    border-left-style: solid;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 QComboBox::down-arrow {
-    image: url(:/qt-project.org/styles/commonstyle/images/down_arrow.png); /* Consider a custom dark theme arrow */
+    image: url(application/assets/icons/down_arrow_dark.png); /* Custom dark theme arrow */
+    width: 12px;
+    height: 12px;
 }
-
-/* Labels */
-QLabel {
-    background-color: transparent; /* Ensure labels don't have their own background unless intended */
+QComboBox QAbstractItemView { /* The dropdown list */
+    border: 1px solid #6A6A6A;
+    background-color: #3C3C3C;
+    selection-background-color: #007ACC;
+    selection-color: white;
     color: #E0E0E0;
+    border-radius: 6px;
+    margin-top: 2px;
 }
-QLabel#prompt_label, QLabel#feedback_label { /* Specific labels if needed */
-    font-size: 12pt;
+QComboBox QAbstractItemView::item {
+    padding: 5px;
+    min-height: 20px;
+}
+QComboBox QAbstractItemView::item:hover {
+    background-color: #5A5A5A;
 }
 
-/* GroupBox */
-QGroupBox {
-    background-color: #383838;
+QTabWidget::pane {
     border: 1px solid #5A5A5A;
-    border-radius: 4px;
-    margin-top: 10px; /* Space for title */
-    padding: 10px;
+    border-radius: 8px;
+    background-color: #2E2E2E; /* Main dark base background */
 }
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 5px;
+QTabBar::tab {
+    background: #3C3C3C;
+    border: 1px solid #5A5A5A;
+    border-bottom-color: transparent;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    padding: 8px 15px;
+    margin-right: 4px;
     color: #E0E0E0;
-    left: 10px;
+    font-weight: 500;
+}
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: #2E2E2E;
+    border-color: #6A6A6A;
+    color: #E0E0E0;
+}
+QTabBar::tab:selected {
+    border-bottom-color: #2E2E2E; /* Match pane for seamless look */
+    font-weight: bold;
+}
+QTabBar::tab:hover:!selected {
+    color: #B0B0B0;
+}
+
+QDockWidget {
+    titlebar-close-icon: url(application/assets/icons/close.png);
+    titlebar-normal-icon: url(application/assets/icons/float.png);
+}
+QDockWidget::title {
+    text-align: left;
+    background: #3C3C3C;
+    padding: 8px;
+    border: 1px solid #5A5A5A;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    color: #E0E0E0;
+    font-weight: bold;
 }
 
 /* ScrollBars */
-QScrollBar:vertical, QScrollBar:horizontal {
-    border: 1px solid #4A4A4A;
-    background: #3C3C3C;
-    width: 12px;
-    height: 12px;
+QScrollBar:vertical {
+    border: none;
+    background: #2E2E2E;
+    width: 15px;
     margin: 0px 0px 0px 0px;
 }
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+QScrollBar::handle:vertical {
     background: #5A5A5A;
-    min-height: 20px;
-    min-width: 20px;
-    border-radius: 6px;
+    min-height: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #6A6A6A;
+}
+QScrollBar::handle:vertical:pressed {
+    background: #7A7A7A;
+}
+QScrollBar:horizontal {
+    border: none;
+    background: #2E2E2E;
+    height: 15px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #5A5A5A;
+    min-width: 25px;
+    border-radius: 7px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #6A6A6A;
+}
+QScrollBar::handle:horizontal:pressed {
+    background: #7A7A7A;
 }
 QScrollBar::add-line, QScrollBar::sub-line {
     border: none;
     background: none;
+    width: 0px; height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
 }
 
-/* TreeView, ListView, TableView */
-QTreeView, QListView, QTableView {
-    background-color: #3C3C3C;
-    border: 1px solid #5A5A5A;
-    alternate-background-color: #424242; /* For alternating row colors */
+QScrollArea {
+    border: 0px;
 }
-QHeaderView::section {
-    background-color: #4A4A4A;
+
+/* --- Specific Object Names & Labels --- */
+QLabel {
+    background-color: transparent;
     color: #E0E0E0;
-    padding: 4px;
-    border: 1px solid #5A5A5A;
+}
+
+QLabel#course_title_label {
+    font-size: 16pt;
+    font-weight: bold;
+    padding-bottom: 10px;
+    color: #E0E0E0; /* Deeper blue for main titles */
+}
+
+QLabel#prompt_label, QLabel#feedback_label {
+    font-size: 12pt;
+}
+
+QTextBrowser#confidence_browser, QTextBrowser#diff_browser {
+    background-color: #383838; /* Very light, soft pink */
+    border: 1px solid #5A5A5A; /* Soft pinkish-gray border */
+    border-radius: 8px;
+    padding: 10px;
+    color: #E0E0E0; /* Muted dark pink text */
 }
