@@ -131,6 +131,27 @@ class WhisperTranscriptionTask(QRunnable):
             )
             self.signals.error.emit(self.exercise_id, str(e))
 
+def check_whisper_model_downloaded(model_name: str) -> bool:
+    """Checks if a given Whisper model has been downloaded locally."""
+    if not _FASTER_WHISPER_AVAILABLE:
+        return False
+    try:
+        # faster_whisper's WhisperModel constructor checks for local files
+        # by attempting to load them. If local_files_only=True and it fails,
+        # it raises LocalEntryNotFoundError.
+        # We don't need to actually load the model, just check if the files exist.
+        # The download_root is where faster_whisper stores the models.
+        download_root = utils.get_stt_model_path(app_settings.STT_ENGINE_WHISPER, "")
+        # This will raise LocalEntryNotFoundError if the model is not found locally
+        # when local_files_only is True.
+        WhisperModel(model_name, device="cpu", compute_type="int8", download_root=download_root, local_files_only=True)
+        return True
+    except LocalEntryNotFoundError:
+        return False
+    except Exception as e:
+        logger.warning(f"Error checking Whisper model {model_name} download status: {e}")
+        return False
+
 def get_best_whisper_device_config() -> Tuple[str, str]:
     """Determines the best available device (cuda or cpu) and corresponding compute type for Whisper."""
     if not _TORCH_AVAILABLE:

@@ -94,8 +94,16 @@ class InitialAudioSetupDialog(QDialog):
         """Populates the Whisper model combo box with detailed tooltips."""
         self.whisper_combo.addItem("None", userData="None")  # Option to disable
 
+        from application.core.whisper_engine import check_whisper_model_downloaded
+
         for model_name, info in app_settings.WHISPER_MODEL_INFO.items():
-            self.whisper_combo.addItem(model_name, userData=model_name)
+            display_name = model_name
+            if check_whisper_model_downloaded(model_name):
+                display_name += self.tr(" (Downloaded)")
+            else:
+                display_name += self.tr(" (Not Downloaded)")
+
+            self.whisper_combo.addItem(display_name, userData=model_name)
             # Set the tooltip for the item we just added
             tooltip_text = self.tr(
                 "Model: {model_name}\n"
@@ -121,7 +129,7 @@ class InitialAudioSetupDialog(QDialog):
         logger.info(f"Initial setup: Saved audio input device ID: {selected_mic_id}")
 
         # Save Whisper model choice
-        selected_model = self.whisper_combo.currentText()
+        selected_model = self.whisper_combo.currentData()
         self.q_settings.setValue(
             app_settings.QSETTINGS_KEY_WHISPER_MODEL,
             selected_model if selected_model != "None" else "",

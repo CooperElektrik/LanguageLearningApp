@@ -214,8 +214,16 @@ class SettingsDialog(QDialog):
         """Populates the Whisper model combo box with detailed tooltips."""
         self.whisper_model_combo.addItem("None", userData="None")  # Option to disable
 
+        from application.core.whisper_engine import check_whisper_model_downloaded
+
         for model_name, info in settings.WHISPER_MODEL_INFO.items():
-            self.whisper_model_combo.addItem(model_name, userData=model_name)
+            display_name = model_name
+            if check_whisper_model_downloaded(model_name):
+                display_name += self.tr(" (Downloaded)")
+            else:
+                display_name += self.tr(" (Not Downloaded)")
+
+            self.whisper_model_combo.addItem(display_name, userData=model_name)
             # Set the tooltip for the item we just added
             tooltip_text = self.tr(
                 "Model: {model_name}\n"
@@ -480,8 +488,8 @@ class SettingsDialog(QDialog):
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_WHISPER_MODEL,
             (
-                self.whisper_model_combo.currentText()
-                if self.whisper_model_combo.currentText() != "None"
+                self.whisper_model_combo.currentData()
+                if self.whisper_model_combo.currentData() != "None"
                 else ""
             ),
         )
