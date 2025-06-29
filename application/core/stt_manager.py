@@ -3,7 +3,7 @@ from PySide6.QtCore import QObject, Signal, QSettings, QThreadPool, QRunnable
 from typing import Optional
 import settings as app_settings
 import soundfile as sf
-import resampy
+import av
 import numpy as np
 
 from .whisper_engine import WhisperModelLoader, WhisperTranscriptionTask, get_best_whisper_device_config
@@ -150,6 +150,69 @@ class STTManager(QObject):
             self.modelUnloaded.emit(unloaded_model_path)
             logger.info(f"Model '{unloaded_model_path}' unloaded.")
 
+    def _resample_audio(self, input_path: str, target_sr: int, engine_name: str) -> Optional[str]:
+        """
+        Resamples an audio file to a target sample rate using PyAV and saves it.
+
+        Args:
+            input_path (str): Path to the input audio file.
+            target_sr (int): The target sample rate (e.g., 16000).
+            engine_name (str): The name of the STT engine (e.g., "whisper" or "vosk"),
+                               used for logging and file naming.
+
+        Returns:
+            Optional[str]: The path to the new resampled audio file, or None on failure.
+        """
+        logger.info(
+            f"Resampling audio from '{input_path}' to {target_sr}Hz for {engine_name.capitalize()} using PyAV."
+        )
+        try:
+            # Define a unique output path based on the engine and sample rate
+            if engine_name == "whisper":
+                output_path = input_path.replace(".wav", "_resampled_whisper.wav")
+            else:
+                output_path = input_path.replace(".wav", f"_resampled_vosk_{target_sr}.wav")
+
+            # Use a 'with' statement for proper resource management
+            with av.open(input_path) as in_container:
+                # Find the first audio stream
+                in_stream = next((s for s in in_container.streams if s.type == 'audio'), None)
+                if in_stream is None:
+                    logger.error(f"No audio streams found in {input_path}")
+                    return None
+
+                # Set up the resampler to convert to mono, float, with the target sample rate
+                resampler = av.AudioResampler(
+                    format="fltp",    # Output format: float, planar
+                    layout="mono",   # Output layout: single channel
+                    rate=target_sr,      # Output sample rate
+                )
+
+                resampled_frames = []
+                # Decode all frames from the input stream and resample them
+                for frame in in_container.decode(in_stream):
+                    resampled_frames.extend(resampler.resample(frame))
+
+                # **IMPORTANT**: Flush the resampler to get any buffered frames
+                resampled_frames.extend(resampler.resample(None))
+
+                if not resampled_frames:
+                    logger.error(f"Resampling produced no frames for {input_path}. The file might be empty or corrupt.")
+                    return None
+
+                # Concatenate all resampled frames into a single numpy array
+                # .to_ndarray() for fltp/mono gives a shape of (1, n_samples), so we reshape to a 1D array.
+                resampled_audio_data = np.concatenate([frame.to_ndarray().reshape(-1) for frame in resampled_frames])
+
+                # Write the resampled data to the new file
+                sf.write(output_path, resampled_audio_data, target_sr)
+                logger.info(f"Successfully saved resampled audio to '{output_path}'")
+                return output_path
+
+        except Exception as e:
+            logger.error(f"Error during audio resampling for {engine_name.capitalize()}: {e}", exc_info=True)
+            return None
+
     def transcribe_audio(
         self, audio_path: str, recorded_samplerate: int, exercise_id: str, language_code: Optional[str] = None
     ) -> Optional[QRunnable]: # Return QRunnable for consistency
@@ -161,18 +224,15 @@ class STTManager(QObject):
                     f"Cannot transcribe: Whisper model '{self.get_selected_whisper_model_name()}' is not loaded."
                 )
                 return None
-            # Resample audio to 16kHz for Whisper
-            try:
-                data, sr = sf.read(audio_path, dtype='float32')
-                if sr != 16000:
-                    logger.info(f"Resampling audio from {sr}Hz to 16000Hz for Whisper.")
-                    data = resampy.resample(data, sr, 16000)
-                    resampled_audio_path = audio_path.replace(".wav", "_resampled_whisper.wav")
-                    sf.write(resampled_audio_path, data, 16000)
-                    audio_path = resampled_audio_path
-            except Exception as e:
-                logger.error(f"Error resampling audio for Whisper: {e}")
-                return None
+
+            # Resample audio to 16kHz for Whisper if necessary
+            target_sr = 16000
+            if recorded_samplerate != target_sr:
+                resampled_path = self._resample_audio(audio_path, target_sr, "whisper")
+                if resampled_path is None:
+                    # _resample_audio already logged the specific error
+                    return None
+                audio_path = resampled_path # Use the new resampled file path
 
             task = WhisperTranscriptionTask(
                 self._active_whisper_model_instance,
@@ -189,18 +249,14 @@ class STTManager(QObject):
                     f"Cannot transcribe: VOSK model '{self.get_selected_vosk_model_path()}' is not loaded."
                 )
                 return None
-            # Resample audio to Vosk's required samplerate if necessary
-            try:
-                data, sr = sf.read(audio_path, dtype='float32')
-                if sr != self.vosk_samplerate:
-                    logger.info(f"Resampling audio from {sr}Hz to {self.vosk_samplerate}Hz for Vosk.")
-                    data = resampy.resample(data, sr, self.vosk_samplerate)
-                    resampled_audio_path = audio_path.replace(".wav", f"_resampled_vosk_{self.vosk_samplerate}.wav")
-                    sf.write(resampled_audio_path, data, self.vosk_samplerate)
-                    audio_path = resampled_audio_path
-            except Exception as e:
-                logger.error(f"Error resampling audio for Vosk: {e}")
-                return None
+
+            # Resample audio for Vosk if necessary
+            if recorded_samplerate != self.vosk_samplerate:
+                resampled_path = self._resample_audio(audio_path, self.vosk_samplerate, "vosk")
+                if resampled_path is None:
+                    # _resample_audio already logged the specific error
+                    return None
+                audio_path = resampled_path # Use the new resampled file path
 
             task = VoskTranscriptionTask(
                 self._active_vosk_model_instance,

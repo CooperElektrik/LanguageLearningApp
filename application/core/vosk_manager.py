@@ -8,6 +8,9 @@ from PySide6.QtCore import QObject, Signal, QThread, QSettings, QRunnable, QThre
 from typing import Optional, Tuple
 import settings as app_settings
 import utils
+import zipfile
+import shutil
+import py7zr
 
 try:
     from vosk import Model, KaldiRecognizer
@@ -49,11 +52,56 @@ class ModelLoader(QRunnable):
             self.signals.error.emit(self.model_path, "VOSK is not available.")
             return
         try:
-            logger.info(f"Background Task: Loading VOSK model from '{self.model_path}'.")
-            # Resolve the actual model path using the utility function
-            actual_model_path = utils.get_stt_model_path(app_settings.STT_ENGINE_VOSK, self.model_path)
-            model_instance = Model(actual_model_path)
-            logger.info(f"Background Task: Model '{self.model_path}' loaded successfully.")
+            logger.info(f"Background Task: Attempting to load VOSK model '{self.model_path}'.")
+            # Resolve the actual model path (expected directory)
+            actual_model_dir = utils.get_stt_model_path(app_settings.STT_ENGINE_VOSK, self.model_path)
+
+            if not os.path.exists(actual_model_dir):
+                logger.info(f"Model directory '{actual_model_dir}' not found. Checking for zip file.")
+                # Construct potential archive file paths
+                archive_paths = {
+                    ".zip": actual_model_dir + ".zip",
+                    ".7z": actual_model_dir + ".7z",
+                }
+
+                extracted = False
+                for ext, archive_path in archive_paths.items():
+                    if os.path.exists(archive_path):
+                        logger.info(f"Found VOSK model {ext} file: '{archive_path}'. Extracting...")
+                        try:
+                            if ext == ".zip":
+                                with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                                    zip_ref.extractall(os.path.dirname(actual_model_dir))
+                            elif ext == ".7z":
+                                with py7zr.SevenZipFile(archive_path, mode='r') as sz_ref:
+                                    sz_ref.extractall(path=os.path.dirname(actual_model_dir))
+                            logger.info(f"Successfully extracted '{archive_path}' to '{os.path.dirname(actual_model_dir)}'.")
+                            extracted = True
+                            break # Stop after first successful extraction
+                        except Exception as archive_e:
+                            error_msg = f"Failed to extract VOSK model {ext} '{archive_path}': {archive_e}"
+                            logger.error(error_msg, exc_info=True)
+                            self.signals.error.emit(self.model_path, error_msg)
+                            return
+
+                if not extracted:
+                    error_msg = f"VOSK model directory '{actual_model_dir}' and no archive files found." # Updated error message
+                    logger.error(error_msg)
+                    self.signals.error.emit(self.model_path, error_msg)
+                    return
+                    logger.error(error_msg)
+                    self.signals.error.emit(self.model_path, error_msg)
+                    return
+
+            # If we reach here, the model directory should exist (either pre-existing or extracted)
+            if not os.path.exists(actual_model_dir):
+                error_msg = f"VOSK model directory '{actual_model_dir}' does not exist after extraction attempt."
+                logger.error(error_msg)
+                self.signals.error.emit(self.model_path, error_msg)
+                return
+
+            model_instance = Model(actual_model_dir)
+            logger.info(f"Background Task: Model '{self.model_path}' loaded successfully from '{actual_model_dir}'.")
             self.signals.finished.emit(self.model_path, model_instance)
         except Exception as e:
             logger.error(

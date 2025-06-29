@@ -10,7 +10,6 @@ import difflib
 import time
 from typing import Any, Dict, Optional, Type, List
 import soundfile as sf
-import resampy
 import numpy as np
 
 from PySide6.QtWidgets import (

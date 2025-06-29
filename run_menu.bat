@@ -150,6 +150,7 @@ pyinstaller ^
   --add-data="scripts;scripts" ^
   --add-data="ui/styles;ui/styles" ^
   --add-data="localization;localization" ^
+  --collect-all vosk ^
   --distpath=dist ^
   --workpath=build ^
   main.py
@@ -203,6 +204,7 @@ pyinstaller ^
   --add-data="scripts;scripts" ^
   --add-data="ui/styles;ui/styles" ^
   --add-data="localization;localization" ^
+  --collect-all vosk ^
   --distpath=dist ^
   --workpath=build ^
   main.py
