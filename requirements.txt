@@ -50,6 +50,8 @@ RapidFuzz==3.13.0
 requests==2.32.4
 shiboken6==6.9.1
 six==1.17.0
+resampy==0.4.2
+soundfile==0.12.1
 striprtf==0.0.29
 sympy==1.14.0
 tokenizers==0.21.1

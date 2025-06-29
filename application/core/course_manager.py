@@ -6,7 +6,7 @@ from typing import Optional, List, Tuple, Any, Dict, Callable
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
 from . import course_loader
 from . import glossary_loader
-from .whisper_manager import _FASTER_WHISPER_AVAILABLE
+from .whisper_engine import _FASTER_WHISPER_AVAILABLE
 
 try:
     from application import utils  # For developer mode check

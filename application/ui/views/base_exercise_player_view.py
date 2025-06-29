@@ -22,7 +22,7 @@ from typing import Optional, Type, Dict  # For EXERCISE_WIDGET_MAP type hint
 from core.models import Exercise
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
-from core.whisper_manager import WhisperManager
+from core.stt_manager import STTManager
 from ui.widgets.exercise_widgets import BaseExerciseWidget, EXERCISE_WIDGET_MAP
 import settings as app_settings  # For QSettings keys
 from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
@@ -46,13 +46,13 @@ class BaseExercisePlayerView(QWidget):
         self,
         course_manager: CourseManager,
         progress_manager: ProgressManager,
-        whisper_manager: WhisperManager,
+        stt_manager: STTManager,
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self.course_manager = course_manager
         self.progress_manager = progress_manager
-        self.whisper_manager = whisper_manager
+        self.stt_manager = stt_manager
 
         self.current_exercise_obj: Optional[Exercise] = None
         self.current_exercise_widget: Optional[BaseExerciseWidget] = None
@@ -156,7 +156,7 @@ class BaseExercisePlayerView(QWidget):
                 self.current_exercise_widget = widget_class(
                     exercise,
                     self.course_manager,
-                    self.whisper_manager,
+                    self.stt_manager,
                     self.exercise_area_container,  # Parent to container
                 )
             else:

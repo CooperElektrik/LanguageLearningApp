@@ -19,7 +19,7 @@ import utils
 from core.models import Lesson, Exercise
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
-from core.whisper_manager import WhisperManager
+from core.stt_manager import STTManager
 from ui.views.base_exercise_player_view import BaseExercisePlayerView
 from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
 from ..dialogs.glossary_lookup_dialog import GlossaryLookupDialog
@@ -44,10 +44,10 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         self,
         course_manager: CourseManager,
         progress_manager: ProgressManager,
-        whisper_manager: WhisperManager,
+        stt_manager: STTManager,
         parent: Optional[QWidget] = None,
     ):
-        super().__init__(course_manager, progress_manager, whisper_manager, parent)
+        super().__init__(course_manager, progress_manager, stt_manager, parent)
 
         self.current_lesson: Optional[Lesson] = None
         self.exercises_in_session: List[Exercise] = []

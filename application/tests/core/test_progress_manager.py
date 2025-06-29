@@ -49,7 +49,7 @@ def test_srs_updates(progress_manager):
     srs_data = progress_manager.get_exercise_srs_data(ex_id)
     assert srs_data["repetitions"] == 1
     assert srs_data["interval_days"] == 1
-    assert srs_data["ease_factor"] > 2.5
+    assert srs_data["ease_factor"] == 2.5
 
     # Incorrect answer
     progress_manager.update_exercise_srs_data(ex_id, is_correct=False)

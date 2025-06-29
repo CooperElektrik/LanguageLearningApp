@@ -16,6 +16,21 @@ _DEVELOPER_MODE_CACHE: Optional[bool] = None
 _audio_output = None
 
 
+def get_stt_model_path(engine: str, model_name: str) -> str:
+    """
+    Constructs the expected local path for STT models (VOSK or Whisper).
+    """
+    if engine == settings.STT_ENGINE_VOSK:
+        # Assuming VOSK models are downloaded into a 'vosk_models' subdirectory
+        # within the application's models directory.
+        return get_resource_path(os.path.join("models", "vosk_models", model_name))
+    elif engine == settings.STT_ENGINE_WHISPER:
+        # Whisper models are managed by faster_whisper, which uses 'application/models'
+        # as its download_root. We just need the model name.
+        return get_resource_path("models")
+    else:
+        return ""
+
 def _init_sound_player():
     """Initializes the shared QMediaPlayer instance for sound effects."""
     global _sound_player, _audio_output

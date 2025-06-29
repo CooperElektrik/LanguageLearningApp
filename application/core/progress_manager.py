@@ -225,6 +225,12 @@ class ProgressManager:
             srs_attrs["ease_factor"] += 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
             srs_attrs["ease_factor"] = max(1.3, srs_attrs["ease_factor"])
 
+        # Cap interval_days to prevent excessively large intervals
+        MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
+        srs_attrs["interval_days"] = min(srs_attrs["interval_days"], MAX_INTERVAL_DAYS)
+
+        logger.debug(f"_calculate_srs_parameters: Before timedelta, interval_days={srs_attrs['interval_days']}")
+
         # NEW: Set 'is_initially_learned' if criteria are met and it's not already true
         if (
             not srs_attrs["is_initially_learned"]

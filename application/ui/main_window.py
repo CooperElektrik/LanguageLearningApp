@@ -44,7 +44,7 @@ except ImportError:
     import utils
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
-from core.whisper_manager import WhisperManager
+from core.stt_manager import STTManager
 from core.models import Exercise
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView
@@ -64,11 +64,11 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, stt_manager, parent=None):
         super().__init__(parent)
         self.course_manager: Optional[CourseManager] = None
         self.progress_manager: Optional[ProgressManager] = None
-        self.whisper_manager = WhisperManager(self)
+        self.stt_manager = stt_manager
         self.current_translator: Optional[QTranslator] = (
             None  # Store the active translator
         )
@@ -301,10 +301,10 @@ class MainWindow(QMainWindow):
             "overview": course_overview_view,
             "progress": progress_view,
             "lesson": LessonView(
-                self.course_manager, self.progress_manager, self.whisper_manager
+                self.course_manager, self.progress_manager, self.stt_manager
             ),
             "review": ReviewView(
-                self.course_manager, self.progress_manager, self.whisper_manager
+                self.course_manager, self.progress_manager, self.stt_manager
             ),
             "glossary": GlossaryView(self.course_manager),
             "placeholder": QLabel(
@@ -444,7 +444,7 @@ class MainWindow(QMainWindow):
         self._update_dev_info_button_visibility()
 
     def show_settings_dialog(self):
-        dialog = SettingsDialog(self.whisper_manager, self)
+        dialog = SettingsDialog(self.stt_manager, self)
         dialog.theme_changed.connect(self.apply_theme)
         dialog.locale_changed.connect(self.apply_locale)
         dialog.font_size_changed.connect(self.apply_font_size)
@@ -601,7 +601,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent):
         if self.progress_manager: self.progress_manager.save_progress()
-        self.whisper_manager.unload_model()
+        self.stt_manager.unload_model()
         if self.editor_view and self.editor_view.is_dirty:
             self.editor_view.close_editor()
             if self.editor_view.isVisible():

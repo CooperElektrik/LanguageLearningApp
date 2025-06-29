@@ -177,8 +177,10 @@ def main():
     # With project root on sys.path, use absolute import for MainWindow
     try:
         from application.ui.main_window import MainWindow
+        from application.core.stt_manager import STTManager
     except ImportError:  # Nuitka will complain without this
         from ui.main_window import MainWindow
+        from core.stt_manager import STTManager
 
     if splash:
         splash.showMessage(
@@ -188,7 +190,8 @@ def main():
         )
         app.processEvents()
 
-    main_window = MainWindow()
+    stt_manager = STTManager()
+    main_window = MainWindow(stt_manager=stt_manager)
     # Initial translation is now handled inside MainWindow's __init__
 
     if utils.is_developer_mode_active():

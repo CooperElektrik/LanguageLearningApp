@@ -9,6 +9,9 @@ import tempfile
 import difflib
 import time
 from typing import Any, Dict, Optional, Type, List
+import soundfile as sf
+import resampy
+import numpy as np
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -62,7 +65,8 @@ try:
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
-    from application.core.whisper_manager import WhisperManager, TranscriptionTask
+    from application.core.stt_manager import STTManager
+    from application.core.whisper_engine import _TORCH_AVAILABLE, WhisperTranscriptionTask # For CUDA check and Whisper-specific task
     from application import settings as app_settings  # For reading autoplay setting
     from application.ui.dialogs.glossary_detail_dialog import (
         GlossaryDetailDialog,
@@ -82,7 +86,8 @@ except ImportError:  # This makes Nuitka happy
         PROMPT_KEY_CONTEXT_BLOCK,
         PROMPT_KEY_DICTATION,
     )
-    from core.whisper_manager import WhisperManager, TranscriptionTask
+    from core.stt_manager import STTManager
+    from core.whisper_engine import _TORCH_AVAILABLE, WhisperTranscriptionTask # For CUDA check and Whisper-specific task
     import settings as app_settings  # Fallback for Nuitka
     from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
 
@@ -594,11 +599,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self,
         exercise: Exercise,
         course_manager: CourseManager,
-        whisper_manager: WhisperManager,
+        stt_manager: STTManager,
         parent=None,
     ):
         super().__init__(exercise, course_manager, parent)
-        self.whisper_manager = whisper_manager
+        self.stt_manager = stt_manager
         self._audio_recorder: Optional[QAudioSource] = None
         self._audio_buffer: Optional[QByteArray] = None
         self._qbuffer: Optional[QBuffer] = None
@@ -677,39 +682,52 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
         self.layout.addWidget(self.feedback_group)
 
-        self.whisper_manager.modelLoadingStarted.connect(self._on_model_loading_started)
-        self.whisper_manager.modelLoadingFinished.connect(
+        self.stt_manager.modelLoadingStarted.connect(self._on_model_loading_started)
+        self.stt_manager.modelLoadingFinished.connect(
             self._on_model_loading_finished
         )
-        self.whisper_manager.modelUnloaded.connect(self._on_model_unloaded)
+        self.stt_manager.modelUnloaded.connect(self._on_model_unloaded)
 
         self.submit_feedback_button.setVisible(False)
         self._update_ui_for_model_state()
 
     def _update_ui_for_model_state(self):
-        target_model = self.whisper_manager.get_selected_model_name()
-        loaded_model = self.whisper_manager.get_loaded_model_name()
+        selected_engine = self.stt_manager.get_selected_stt_engine()
+        target_model_name = None
+        
+        if selected_engine == app_settings.STT_ENGINE_WHISPER:
+            target_model_name = self.stt_manager.get_selected_whisper_model_name()
+        elif selected_engine == app_settings.STT_ENGINE_VOSK:
+            target_model_name = self.stt_manager.get_selected_vosk_model_path()
+
+        loaded_model_name = self.stt_manager.get_loaded_model_name()
+        is_loading = self.stt_manager.is_loading()
+
         self.feedback_group.setVisible(False)
         self.submit_feedback_button.setVisible(False)
 
-        if not target_model or target_model.lower() == "none":
+        logger.debug(f"STT UI Update: selected_engine={selected_engine}, target_model_name='{target_model_name}', loaded_model_name='{loaded_model_name}', is_loading={is_loading}")
+
+        if not target_model_name or target_model_name.lower() == "none":
             self.load_model_button.setVisible(False)
             self.record_button.setVisible(False)
             self.status_label.setText(
                 self.tr(
-                    "Please select a Whisper model in Settings to enable pronunciation practice."
+                    "Please select an STT model in Settings to enable pronunciation practice."
                 )
             )
-        elif self.whisper_manager.is_loading():
-            self._on_model_loading_started(target_model)
-        elif target_model == loaded_model:
+        elif is_loading:
+            self._on_model_loading_started(target_model_name)
+        elif target_model_name == loaded_model_name:
+            logger.debug(f"STT UI Update: Model '{target_model_name}' is loaded and matches target.")
             self.load_model_button.setVisible(False)
             self.record_button.setVisible(True)
             self.record_button.setEnabled(True)
             self.status_label.setText(self.tr("Tap record to speak."))
         else:
+            logger.debug(f"STT UI Update: Target model '{target_model_name}' does not match loaded model '{loaded_model_name}'.")
             self.load_model_button.setText(
-                self.tr("Load Model: {0}").format(target_model)
+                self.tr("Load Model: {0}").format(target_model_name)
             )
             self.load_model_button.setVisible(True)
             self.load_model_button.setEnabled(True)
@@ -750,7 +768,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 return False
         if selected_device_info and not selected_device_info.isNull():
             audio_format = QAudioFormat()
-            audio_format.setSampleRate(16000)
+            # Use the device's default sample rate for recording
+            audio_format.setSampleRate(int(selected_device_info.maximumSampleRate()))
             audio_format.setChannelCount(1)
             audio_format.setSampleFormat(QAudioFormat.SampleFormat.Int16)
             self._audio_recorder = QAudioSource(
@@ -782,8 +801,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self._update_ui_for_model_state()
 
     def _handle_load_model_click(self):
-        target_model = self.whisper_manager.get_selected_model_name()
-        self.whisper_manager.load_model(target_model)
+        self.stt_manager.load_model()
 
     def _handle_record_toggle(self, checked: bool):
         if checked:
@@ -829,18 +847,24 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                     self._qbuffer.close()
                 if self._temp_audio_file and self._audio_buffer:
                     try:
-                        import wave
+                        # Get the actual sample rate from the audio recorder's format
+                        recorded_samplerate = self._audio_recorder.format().sampleRate()
 
-                        with wave.open(self._temp_audio_file.name, "wb") as wf:
-                            wf.setnchannels(1)
-                            wf.setsampwidth(2)
-                            wf.setframerate(16000)
-                            wf.writeframes(self._audio_buffer.data())
+                        # Save the recorded audio to a WAV file using soundfile
+                        # soundfile automatically handles the sample width based on the data type
+                        sf.write(
+                            self._temp_audio_file.name,
+                            np.frombuffer(self._audio_buffer.data(), dtype=np.int16),
+                            recorded_samplerate,
+                            format='WAV',
+                            subtype='PCM_16'
+                        )
                         logger.info(
-                            f"Buffered raw PCM audio saved as WAV to {self._temp_audio_file.name}"
+                            f"Buffered raw PCM audio saved as WAV to {self._temp_audio_file.name} at {recorded_samplerate} Hz"
                         )
                         self._start_transcription(
                             self._temp_audio_file.name,
+                            recorded_samplerate,
                             self.course_manager.target_language_code,
                         )
                     except Exception as e:
@@ -857,7 +881,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                     self.record_button.setEnabled(True)
 
     def _start_transcription(
-        self, audio_file_path: str, language_code: str | None = None
+        self, audio_file_path: str, recorded_samplerate: int, language_code: str | None = None
     ):
         if not audio_file_path or not os.path.exists(audio_file_path):
             self.status_label.setText(
@@ -865,8 +889,8 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             )
             self.record_button.setEnabled(True)
             return
-        task = self.whisper_manager.transcribe_audio(
-            audio_file_path, self.exercise.exercise_id, language_code
+        task = self.stt_manager.transcribe_audio(
+            audio_file_path, recorded_samplerate, self.exercise.exercise_id, language_code
         )
         if task:
             task.signals.finished.connect(self._on_transcription_finished)
@@ -877,22 +901,31 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             )
             self.record_button.setEnabled(True)
 
-    def _on_transcription_finished(self, exercise_id: str, segments, info):
+    def _on_transcription_finished(self, exercise_id: str, result):
         logger.debug("Transcription finished.")
         if exercise_id != self.exercise.exercise_id:
             return
-        all_words = []
+
         full_text = ""
-        segment_list = list(segments)
-        for segment in segment_list:
-            full_text += segment.text
-            if segment.words:
-                all_words.extend(segment.words)
-        full_text = full_text.strip()
+        confidence_html = ""
+
+        if isinstance(result, str):  # VOSK result is a string
+            full_text = result.strip()
+            confidence_html = self.tr("VOSK does not provide word-level confidence. Transcribed text: {0}").format(full_text)
+        else:  # Assume Whisper result (segments, info)
+            segments = result
+            all_words = []
+            segment_list = list(segments)
+            for segment in segment_list:
+                full_text += segment.text
+                if segment.words:
+                    all_words.extend(segment.words)
+            full_text = full_text.strip()
+            confidence_html = self._generate_confidence_html(all_words)
+
         self.status_label.setText(
             self.tr("Transcription complete. Review your feedback below.")
         )
-        confidence_html = self._generate_confidence_html(all_words)
         self.confidence_browser.setHtml(confidence_html)
         target_text = self.exercise.target_pronunciation_text
         diff_html = self._generate_diff_html(target_text, full_text)

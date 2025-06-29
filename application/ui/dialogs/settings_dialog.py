@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt, QSettings, Signal, QEvent
 import settings
 import utils
 
-from core.whisper_manager import WhisperManager
+from core.stt_manager import STTManager
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,9 @@ class SettingsDialog(QDialog):
         str
     )  # Emitted when locale is changed (sends locale code e.g. "en", "vi", or "System")
 
-    def __init__(self, whisper_manager: WhisperManager, parent=None):
+    def __init__(self, stt_manager: STTManager, parent=None):
         super().__init__(parent)
-        self.whisper_manager = whisper_manager
+        self.stt_manager = stt_manager
         self.setWindowTitle(self.tr("Settings"))
         self.setMinimumWidth(400)
 
@@ -60,10 +60,46 @@ class SettingsDialog(QDialog):
             self.pronunciation_settings_group
         )
 
+        self.stt_engine_combo = QComboBox()
+        self.stt_engine_combo.addItems(settings.STT_ENGINES_AVAILABLE)
+        self.stt_engine_combo.currentTextChanged.connect(self._on_stt_engine_changed)
+        self.pronunciation_settings_layout.addRow(
+            self.tr("STT Engine:"), self.stt_engine_combo
+        )
+
+        # Whisper-specific widgets
         self.whisper_model_combo = QComboBox()
         self._populate_whisper_models()
+        self.whisper_model_label = QLabel(self.tr("Whisper Model:"))
         self.pronunciation_settings_layout.addRow(
-            self.tr("Whisper Model:"), self.whisper_model_combo
+            self.whisper_model_label, self.whisper_model_combo
+        )
+
+        self.cuda_note_label = QLabel(
+            self.tr(
+                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
+            )
+        )
+        self.cuda_note_label.setWordWrap(True)
+        self.cuda_availability_label = QLabel(self.tr("Unknown"))
+        self.cuda_availability_label.setObjectName("cuda_availability_label")
+        self.check_cuda_button = QPushButton(self.tr("Check Now"))
+        self.check_cuda_button.clicked.connect(self.check_cuda_availability)
+
+        cuda_status_layout = QHBoxLayout()
+        cuda_status_layout.addWidget(self.cuda_availability_label)
+        cuda_status_layout.addWidget(self.check_cuda_button)
+        self.cuda_status_label = QLabel(self.tr("CUDA Status:"))
+        self.pronunciation_settings_layout.addRow(
+            self.cuda_status_label, cuda_status_layout
+        )
+
+        # VOSK-specific widgets
+        self.vosk_model_combo = QComboBox()
+        self._populate_vosk_models()
+        self.vosk_model_label = QLabel(self.tr("VOSK Model:"))
+        self.pronunciation_settings_layout.addRow(
+            self.vosk_model_label, self.vosk_model_combo
         )
 
         self.unload_model_button = QPushButton(self.tr("Unload Model from Memory"))
@@ -74,31 +110,6 @@ class SettingsDialog(QDialog):
         self._populate_audio_input_devices()
         self.pronunciation_settings_layout.addRow(
             self.tr("Microphone Input Device:"), self.audio_input_device_combo
-        )
-
-        # Add a note about CUDA build requirements
-        self.cuda_note_label = QLabel(
-            self.tr(
-                "Note: For GPU acceleration, a CUDA-enabled PyTorch build is required."
-            )
-        )
-        self.cuda_note_label.setWordWrap(True)
-        self.pronunciation_settings_layout.addRow(
-            self.cuda_note_label
-        )  # Add as a new row in the form layout
-
-        # CUDA Status Layout
-        cuda_status_layout = QHBoxLayout()
-        self.cuda_availability_label = QLabel(self.tr("Unknown"))
-        self.cuda_availability_label.setObjectName("cuda_availability_label")
-        cuda_status_layout.addWidget(self.cuda_availability_label)
-
-        self.check_cuda_button = QPushButton(self.tr("Check Now"))
-        self.check_cuda_button.clicked.connect(self.check_cuda_availability)
-        cuda_status_layout.addWidget(self.check_cuda_button)
-
-        self.pronunciation_settings_layout.addRow(
-            self.tr("CUDA Status:"), cuda_status_layout
         )
 
         audio_layout.addWidget(
@@ -219,6 +230,25 @@ class SettingsDialog(QDialog):
                 Qt.ItemDataRole.ToolTipRole,
             )
 
+    def _populate_vosk_models(self):
+        """Populates the VOSK model combo box with detailed tooltips."""
+        self.vosk_model_combo.addItem("None", userData="None")  # Option to disable
+
+        for model_name, info in settings.VOSK_MODEL_INFO.items():
+            self.vosk_model_combo.addItem(model_name, userData=model_name)
+            # Set the tooltip for the item we just added
+            tooltip_text = self.tr(
+                "Model: {model_name}\n"
+                "Size: {size}\n"
+                "Language: {lang}\n"
+                "Description: {description}\n"
+            ).format(**info, model_name=model_name)
+            self.vosk_model_combo.setItemData(
+                self.vosk_model_combo.count() - 1,
+                tooltip_text,
+                Qt.ItemDataRole.ToolTipRole,
+            )
+
     def _populate_audio_input_devices(self):
         """Populates the audio input device combo box."""
         # QMediaDevices is imported at the top of the file
@@ -307,6 +337,23 @@ class SettingsDialog(QDialog):
             current_whisper_model if current_whisper_model else "None"
         )
 
+        current_vosk_model = self.q_settings.value(
+            settings.QSETTINGS_KEY_VOSK_MODEL,
+            settings.VOSK_MODEL_DEFAULT,
+            type=str,
+        )
+        self.vosk_model_combo.setCurrentText(
+            current_vosk_model if current_vosk_model else "None"
+        )
+
+        current_stt_engine = self.q_settings.value(
+            settings.QSETTINGS_KEY_STT_ENGINE,
+            settings.STT_ENGINE_DEFAULT,
+            type=str,
+        )
+        self.stt_engine_combo.setCurrentText(current_stt_engine)
+        self._on_stt_engine_changed(current_stt_engine) # Manually trigger to set visibility
+
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
             settings.AUTOSHOW_HINTS_DEFAULT,
@@ -362,6 +409,24 @@ class SettingsDialog(QDialog):
         self.font_size_label.setText(str(value) + " pt")
         self.font_size_changed.emit(value)  # Emit as live-update signal
 
+    def _on_stt_engine_changed(self, engine_name: str):
+        """Toggles visibility of Whisper/VOSK specific settings based on selected engine."""
+        is_whisper = (engine_name == settings.STT_ENGINE_WHISPER)
+        is_vosk = (engine_name == settings.STT_ENGINE_VOSK)
+
+        self.whisper_model_label.setVisible(is_whisper)
+        self.whisper_model_combo.setVisible(is_whisper)
+        self.cuda_note_label.setVisible(is_whisper)
+        self.cuda_availability_label.setVisible(is_whisper)
+        self.check_cuda_button.setVisible(is_whisper)
+        self.cuda_status_label.setVisible(is_whisper)
+
+        self.vosk_model_label.setVisible(is_vosk)
+        self.vosk_model_combo.setVisible(is_vosk)
+
+        # Unload button is always visible, but its action depends on the active engine
+        # self.unload_model_button.setVisible(is_whisper or is_vosk)
+
     def _reset_ui_settings(self):
         """Resets UI related settings (theme, font size) to their defaults and applies them live."""
         # Reset theme
@@ -409,10 +474,22 @@ class SettingsDialog(QDialog):
             settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_device_id
         )
         self.q_settings.setValue(
+            settings.QSETTINGS_KEY_STT_ENGINE,
+            self.stt_engine_combo.currentText(),
+        )
+        self.q_settings.setValue(
             settings.QSETTINGS_KEY_WHISPER_MODEL,
             (
                 self.whisper_model_combo.currentText()
                 if self.whisper_model_combo.currentText() != "None"
+                else ""
+            ),
+        )
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_VOSK_MODEL,
+            (
+                self.vosk_model_combo.currentText()
+                if self.vosk_model_combo.currentText() != "None"
                 else ""
             ),
         )
@@ -469,11 +546,24 @@ class SettingsDialog(QDialog):
             self.tr("Pronunciation and Microphone")
         )
         # Retranslate labels within the QFormLayout for pronunciation settings
-        whisper_label = self.pronunciation_settings_layout.labelForField(
+        stt_engine_label = self.pronunciation_settings_layout.labelForField(
+            self.stt_engine_combo
+        )
+        if stt_engine_label:
+            stt_engine_label.setText(self.tr("STT Engine:"))
+
+        whisper_model_label = self.pronunciation_settings_layout.labelForField(
             self.whisper_model_combo
         )
-        if whisper_label:
-            whisper_label.setText(self.tr("Whisper Model:"))
+        if whisper_model_label:
+            whisper_model_label.setText(self.tr("Whisper Model:"))
+
+        vosk_model_label = self.pronunciation_settings_layout.labelForField(
+            self.vosk_model_combo
+        )
+        if vosk_model_label:
+            vosk_model_label.setText(self.tr("VOSK Model:"))
+
         mic_label = self.pronunciation_settings_layout.labelForField(
             self.audio_input_device_combo
         )
@@ -545,21 +635,53 @@ class SettingsDialog(QDialog):
         )
 
     def _unload_model(self):
-        loaded_model = self.whisper_manager.get_loaded_model_name()
-        self.whisper_manager.unload_model()
-        QMessageBox.information(
-            self,
-            self.tr("Model Unloaded"),
-            self.tr("Model '{0}' has been unloaded from memory.").format(
-                loaded_model or "None"
-            ),
-        )
+        selected_engine = self.stt_manager.get_selected_stt_engine()
+        loaded_model_name = self.stt_manager.get_loaded_model_name()
+
+        if selected_engine == settings.STT_ENGINE_WHISPER:
+            if self.stt_manager._active_whisper_model_instance:
+                self.stt_manager.unload_model()
+                QMessageBox.information(
+                    self,
+                    self.tr("Model Unloaded"),
+                    self.tr("Whisper model '{0}' has been unloaded from memory.").format(
+                        loaded_model_name or "None"
+                    ),
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    self.tr("No Model Loaded"),
+                    self.tr("No Whisper model is currently loaded."),
+                )
+        elif selected_engine == settings.STT_ENGINE_VOSK:
+            if self.stt_manager._active_vosk_model_instance:
+                self.stt_manager.unload_model()
+                QMessageBox.information(
+                    self,
+                    self.tr("Model Unloaded"),
+                    self.tr("VOSK model '{0}' has been unloaded from memory.").format(
+                        loaded_model_name or "None"
+                    ),
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    self.tr("No Model Loaded"),
+                    self.tr("No VOSK model is currently loaded."),
+                )
+        else:
+            QMessageBox.warning(
+                self,
+                self.tr("Unknown Engine"),
+                self.tr("Cannot unload model for unknown STT engine."),
+            )
 
     def check_cuda_availability(self):
         """Checks for PyTorch and CUDA availability and updates the label."""
         self.cuda_availability_label.setText(self.tr("Checking..."))
         try:
-            from application.core.whisper_manager import _TORCH_AVAILABLE
+            from application.core.whisper_engine import _TORCH_AVAILABLE
 
             if _TORCH_AVAILABLE:
                 import torch # type: ignore
