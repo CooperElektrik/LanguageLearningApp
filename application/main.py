@@ -84,7 +84,12 @@ def setup_logging():
     return logger
 
 
+import time # Import time module for wall time measurement
+
 def main():
+    # Record the start time for wall time measurement
+    start_time = time.perf_counter()
+
     # QApplication must be created before QPixmap for splash if GUI elements are used early.
     # However, for a simple splash, QPixmap can be loaded first.
     # For consistency and potential future needs (e.g., early dialogs), create QApplication first.
@@ -106,58 +111,70 @@ def main():
 
     # --- Splash Screen Setup ---
     try:
-        splash_image_path_relative = settings.SPLASH_IMAGE_FILE
-        splash_image_path_abs = utils.get_resource_path(splash_image_path_relative)
-        logger.debug(f"Attempting to load splash image from: {splash_image_path_abs}")
+        # --- Splash Screen Setup ---
+        # Define target size for splash screen
+        target_width = 896
+        target_height = target_width
 
-        # --- Load and Resize Image using Pillow ---
-        pil_image = None
-        try:
-            pil_image = Image.open(splash_image_path_abs)
-            # Define your desired splash screen size
-            target_width = 896
-            target_height = target_width
+        # Paths for original and optimized splash images
+        original_splash_path_relative = settings.SPLASH_IMAGE_FILE
+        optimized_splash_path_relative = settings.SPLASH_IMAGE_OPTIMIZED_FILE
+        
+        original_splash_path_abs = utils.get_resource_path(original_splash_path_relative)
+        optimized_splash_path_abs = utils.get_resource_path(optimized_splash_path_relative)
 
-            # Resize the image while maintaining aspect ratio
-            pil_image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
-            logger.debug(f"Resized splash image to: {pil_image.size}")
+        pixmap = QPixmap()
+        splash_image_loaded = False
 
-            # Convert PIL Image to QPixmap
-            # Need to save to a buffer first
-            buffer = QBuffer()
-            buffer.open(QIODevice.OpenModeFlag.ReadWrite)
-            # Determine format based on original file extension
-            image_format = (
-                os.path.splitext(splash_image_path_abs)[1].lstrip(".").upper()
-            )
+        # Try to load the optimized image first
+        if os.path.exists(optimized_splash_path_abs):
+            logger.debug(f"Attempting to load optimized splash image from: {optimized_splash_path_abs}")
+            if pixmap.load(optimized_splash_path_abs):
+                logger.info("Loaded optimized splash image.")
+                splash_image_loaded = True
+            else:
+                logger.warning(f"Failed to load optimized splash image from {optimized_splash_path_abs}. Attempting to re-generate.")
+        
+        if not splash_image_loaded:
+            # If optimized not found or failed to load, process the original
+            logger.debug(f"Attempting to load original splash image from: {original_splash_path_abs}")
+            try:
+                pil_image = Image.open(original_splash_path_abs)
+                
+                # Resize the image while maintaining aspect ratio
+                pil_image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
+                logger.debug(f"Resized splash image to: {pil_image.size}")
 
-            save_format = image_format
-            if image_format == "JPG":  # Pillow uses 'JPEG'
-                save_format = "JPEG"
-            elif image_format not in [
-                "PNG",
-                "JPEG",
-                "BMP",
-                "GIF",
-            ]:  # Check against Pillow's common save formats
-                image_format = "PNG"  # Default to PNG if format is unknown/unsupported
+                # Determine format based on original file extension for saving
+                image_format = os.path.splitext(original_splash_path_abs)[1].lstrip(".").upper()
+                save_format = image_format
+                if image_format == "JPG":  # Pillow uses 'JPEG'
+                    save_format = "JPEG"
+                elif image_format not in ["PNG", "JPEG", "BMP", "GIF", "WEBP"]: # Added WEBP
+                    logger.warning(
+                        f"Unknown image format for splash: {os.path.splitext(original_splash_path_abs)[1]}. Defaulting to PNG for saving."
+                    )
+                    save_format = "PNG" # Default to PNG if format is unknown/unsupported
+
+                # Save the optimized image for future use
+                pil_image.save(optimized_splash_path_abs, format=save_format)
+                logger.info(f"Saved optimized splash image to: {optimized_splash_path_abs}")
+
+                # Load the newly saved optimized image into QPixmap
+                if pixmap.load(optimized_splash_path_abs):
+                    splash_image_loaded = True
+                else:
+                    logger.error(f"Failed to load newly optimized splash image from {optimized_splash_path_abs}.")
+
+            except FileNotFoundError:
                 logger.warning(
-                    f"Unknown image format for splash: {os.path.splitext(splash_image_path_abs)[1]}. Defaulting to PNG."
+                    f"Original splash image not found: {original_splash_path_abs}. Skipping splash screen."
                 )
-                save_format = "PNG"  # And for saving
+            except Exception as e:
+                logger.error(f"Error processing original splash image: {e}", exc_info=True)
 
-            pil_image.save(buffer, format=save_format)
-            pixmap = QPixmap()
-            pixmap.loadFromData(buffer.data(), image_format)
-            buffer.close()
-        except FileNotFoundError:
-            logger.warning(
-                f"Splash image not found or invalid: {splash_image_path_abs}. Skipping splash screen."
-            )
-            pixmap = QPixmap()  # Create a null pixmap
-        else:
+        if splash_image_loaded and not pixmap.isNull():
             splash = QSplashScreen(pixmap)
-
             splash_timer = QElapsedTimer()
             splash_timer.start()  # Start timing how long the splash is shown
             splash.show()
@@ -167,6 +184,8 @@ def main():
                 Qt.GlobalColor.white,  # Adjust color for visibility against your splash image
             )
             app.processEvents()  # Ensure splash screen is displayed and message is updated
+        else:
+            logger.warning("No splash image could be loaded or generated. Proceeding without splash screen.")
     except Exception as e:
         logger.error(f"Error during splash screen setup: {e}", exc_info=True)
     # --- End Splash Screen Setup ---
@@ -201,7 +220,19 @@ def main():
 
     main_window.show()
     logger.info("Application main window shown.")
-    sys.exit(app.exec())
+
+    # Record the end time for startup wall time measurement
+    startup_end_time = time.perf_counter()
+    startup_elapsed_time = startup_end_time - start_time
+    logger.info(f"Application startup wall time (until main window shown): {startup_elapsed_time:.2f} seconds.")
+    exit_code = app.exec()
+
+    # Record the end time and print the elapsed time
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    logger.info(f"Application total runtime (wall time): {elapsed_time:.2f} seconds.")
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

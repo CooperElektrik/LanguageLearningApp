@@ -44,7 +44,6 @@ except ImportError:
     import utils
 from core.course_manager import CourseManager
 from core.progress_manager import ProgressManager
-from core.stt_manager import STTManager
 from core.models import Exercise
 from ui.views.course_overview_view import CourseOverviewView
 from ui.views.lesson_view import LessonView

@@ -24,7 +24,8 @@ FANCY_MIDNIGHT_THEME_FILE = "fancy_midnight_theme.qss"  # Fancy midnight theme (
 WINDOWS_95_FILE = "win95_theme.qss"  # Windows 95'ish theme
 FANCY_WINDOWS_95_FILE = "fancy_win95_theme.qss"  # Windows 95'ish theme
 TEMPLE_OS_FILE = "temple_os_theme.qss"  # Terry A. Davis
-SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Splash screen image
+SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Original splash screen image
+SPLASH_IMAGE_OPTIMIZED_FILE = os.path.join(IMAGES_DIR, "splash_optimized.jpg") # Optimized splash screen image
 AVAILABLE_THEMES = {
     "System": {
         "file": "system_default",
