@@ -26,16 +26,46 @@ FANCY_WINDOWS_95_FILE = "fancy_win95_theme.qss"  # Windows 95'ish theme
 TEMPLE_OS_FILE = "temple_os_theme.qss"  # Terry A. Davis
 SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Splash screen image
 AVAILABLE_THEMES = {
-    "System": "system_default",
-    "Light": LIGHT_THEME_FILE,
-    "Fancy Light": FANCY_LIGHT_THEME_FILE,
-    "Nao Tomori": NAO_TOMORI_THEME_FILE,
-    "Dark": DARK_THEME_FILE,
-    "Fancy Dark": FANCY_DARK_THEME_FILE,
-    "Midnight": FANCY_MIDNIGHT_THEME_FILE,
-    "Windows 95": WINDOWS_95_FILE,
-    "Fancy Windows 95": FANCY_WINDOWS_95_FILE,
-    "Temple OS": TEMPLE_OS_FILE,
+    "System": {
+        "file": "system_default",
+        "description": "Uses the default system look and feel."
+    },
+    "Light": {
+        "file": LIGHT_THEME_FILE,
+        "description": "A clean and simple light theme."
+    },
+    "Fancy Light": {
+        "file": FANCY_LIGHT_THEME_FILE,
+        "description": "A more visually rich light theme."
+    },
+    "Nao Tomori": {
+        "file": NAO_TOMORI_THEME_FILE,
+        "description": "A theme inspired by the character Nao Tomori from the anime 'Charlotte'."
+    },
+    "Dark": {
+        "file": DARK_THEME_FILE,
+        "description": "A clean and simple dark theme."
+    },
+    "Fancy Dark": {
+        "file": FANCY_DARK_THEME_FILE,
+        "description": "A more visually rich dark theme."
+    },
+    "Midnight": {
+        "file": FANCY_MIDNIGHT_THEME_FILE,
+        "description": "A dark theme with a blueish tint."
+    },
+    "Windows 95": {
+        "file": WINDOWS_95_FILE,
+        "description": "A retro theme that mimics the look of Windows 95."
+    },
+    "Fancy Windows 95": {
+        "file": FANCY_WINDOWS_95_FILE,
+        "description": "A more visually rich retro theme that mimics the look of Windows 95."
+    },
+    "Temple OS": {
+        "file": TEMPLE_OS_FILE,
+        "description": "A retro theme that mimics the look of the TempleOS operating system."
+    },
 }  # Name to filename mapping
 
 # --- Sound Settings ---

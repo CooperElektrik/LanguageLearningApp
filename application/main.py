@@ -199,21 +199,6 @@ def main():
         main_window.setWindowTitle(f"{current_title} [DEV MODE]")
         logger.info("Developer Mode is active. UI indicates this in the window title.")
 
-    # --- Finish Splash Screen ---
-    if splash and splash_timer:
-        elapsed_ms = splash_timer.elapsed()
-        minimum_display_time_ms = 1000  # 1 second
-
-        if elapsed_ms < minimum_display_time_ms:
-            remaining_time = minimum_display_time_ms - elapsed_ms
-            logger.debug(
-                f"App loaded quickly ({elapsed_ms}ms). Waiting {remaining_time}ms for minimum splash display."
-            )
-            QTimer.singleShot(remaining_time, lambda: splash.finish(main_window))
-        else:
-            logger.debug(f"App loading took {elapsed_ms}ms. Minimum splash time met.")
-        splash.finish(main_window)  # Close splash when main window is ready
-
     main_window.show()
     logger.info("Application main window shown.")
     sys.exit(app.exec())

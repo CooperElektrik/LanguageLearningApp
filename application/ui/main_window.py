@@ -53,9 +53,8 @@ from ui.views.progress_view import ProgressView
 from ui.views.glossary_view import GlossaryView
 from ui.views.course_selection_view import CourseSelectionView
 from ui.views.course_editor_view import CourseEditorView
+from ui.dialogs.unified_setup_dialog import UnifiedSetupDialog
 from ui.dialogs.settings_dialog import SettingsDialog
-from ui.dialogs.initial_audio_setup_dialog import InitialAudioSetupDialog
-from ui.dialogs.initial_ui_setup_dialog import InitialUISetupDialog
 from ui.dialogs.dev_info_dialog import DevInfoDialog
 from ui.dialogs.help_dialog import HelpDialog
 from ui.dialogs.pyglet_script_runner_dialog import PygletScriptRunnerDialog
@@ -107,7 +106,7 @@ class MainWindow(QMainWindow):
         self._return_to_selection_screen() # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
-        QTimer.singleShot(500, self._check_and_show_ui_setup)
+        QTimer.singleShot(500, self._check_and_show_initial_setup)
 
     def _setup_main_toolbar(self):
         self.main_toolbar = QToolBar("Main Toolbar")
@@ -177,7 +176,7 @@ class MainWindow(QMainWindow):
     def apply_theme(self, theme_name: str):
         logger.info(f"Attempting to apply theme: {theme_name}")
         self._update_toolbar_icons()
-        qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)
+        qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)["file"]
 
         if theme_name == "System" or qss_filename == "system_default":
             QApplication.instance().setStyleSheet("")
@@ -239,7 +238,6 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(150, self._check_and_show_onboarding)
         self._update_dev_info_button_visibility()
-        QTimer.singleShot(200, self._check_and_show_initial_setup)
 
     def _load_course_for_editing(self):
         manifest_path, _ = QFileDialog.getOpenFileName(
@@ -517,30 +515,24 @@ class MainWindow(QMainWindow):
         )
         dialog.exec()
 
-    def _check_and_show_ui_setup(self):
+    def _check_and_show_initial_setup(self):
         q_settings = QSettings()
-        setup_done = q_settings.value(
+        ui_setup_done = q_settings.value(
             app_settings.QSETTINGS_KEY_INITIAL_UI_SETUP_DONE, False, type=bool
         )
-        if not setup_done:
-            logger.info("Initial UI setup not completed. Showing setup dialog.")
-            dialog = InitialUISetupDialog(self)
+        audio_setup_done = q_settings.value(
+            app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool
+        )
+
+        # Show the unified dialog if either setup has not been completed.
+        if not ui_setup_done or not audio_setup_done:
+            logger.info("Initial setup not fully completed. Showing unified setup dialog.")
+            dialog = UnifiedSetupDialog(self)
             dialog.theme_changed.connect(self.apply_theme)
             dialog.locale_changed.connect(self.apply_locale)
             dialog.font_size_changed.connect(self.apply_font_size)
             dialog.exec()
 
-    def _check_and_show_initial_setup(self):
-        q_settings = QSettings()
-        setup_done = q_settings.value(
-            app_settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, False, type=bool
-        )
-        if not setup_done and QMediaDevices.audioInputs():
-            logger.info("Initial audio setup not completed. Showing setup dialog.")
-            dialog = InitialAudioSetupDialog(self)
-            dialog.exec()
-        elif not setup_done and not QMediaDevices.audioInputs():
-            logger.warning("Initial audio setup skipped: No audio input devices found.")
 
     def _check_and_show_onboarding(self):
         if not self.learning_widget or not self.learning_widget.isVisible():
