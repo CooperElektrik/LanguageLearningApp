@@ -29,43 +29,53 @@ SPLASH_IMAGE_OPTIMIZED_FILE = os.path.join(IMAGES_DIR, "splash_optimized.jpg") #
 AVAILABLE_THEMES = {
     "System": {
         "file": "system_default",
-        "description": "Uses the default system look and feel."
+        "description": "Uses the default system look and feel.",
+        "is_dark": False,
     },
     "Light": {
         "file": LIGHT_THEME_FILE,
-        "description": "A clean and simple light theme."
+        "description": "A clean and simple light theme.",
+        "is_dark": False,
     },
     "Fancy Light": {
         "file": FANCY_LIGHT_THEME_FILE,
-        "description": "A more visually rich light theme."
+        "description": "A more visually rich light theme.",
+        "is_dark": False,
     },
     "Nao Tomori": {
         "file": NAO_TOMORI_THEME_FILE,
-        "description": "A theme inspired by the character Nao Tomori from the anime 'Charlotte'."
+        "description": "A theme inspired by the character Nao Tomori from the anime 'Charlotte'.",
+        "is_dark": False,
     },
     "Dark": {
         "file": DARK_THEME_FILE,
-        "description": "A clean and simple dark theme."
+        "description": "A clean and simple dark theme.",
+        "is_dark": True,
     },
     "Fancy Dark": {
         "file": FANCY_DARK_THEME_FILE,
-        "description": "A more visually rich dark theme."
+        "description": "A more visually rich dark theme.",
+        "is_dark": True,
     },
     "Midnight": {
         "file": FANCY_MIDNIGHT_THEME_FILE,
-        "description": "A dark theme with a blueish tint."
+        "description": "A dark theme with a blueish tint.",
+        "is_dark": True,
     },
     "Windows 95": {
         "file": WINDOWS_95_FILE,
-        "description": "A retro theme that mimics the look of Windows 95."
+        "description": "A retro theme that mimics the look of Windows 95.",
+        "is_dark": False,
     },
     "Fancy Windows 95": {
         "file": FANCY_WINDOWS_95_FILE,
-        "description": "A more visually rich retro theme that mimics the look of Windows 95."
+        "description": "A more visually rich retro theme that mimics the look of Windows 95.",
+        "is_dark": False,
     },
     "Temple OS": {
         "file": TEMPLE_OS_FILE,
-        "description": "A retro theme that mimics the look of the TempleOS operating system."
+        "description": "A retro theme that mimics the look of the TempleOS operating system.",
+        "is_dark": True,
     },
 }  # Name to filename mapping
 

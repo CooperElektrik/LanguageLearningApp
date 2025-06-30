@@ -128,8 +128,8 @@ class MainWindow(QMainWindow):
             app_settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
         )
 
-        dark_themes = ["Fancy Dark", "Midnight", "Dark"]
-        icon_suffix = "_dark.png" if theme_name in dark_themes else "_light.png"
+        is_dark_theme = app_settings.AVAILABLE_THEMES.get(theme_name, {}).get("is_dark", False)
+        icon_suffix = "_dark.png" if is_dark_theme else "_light.png"
 
         # Icon paths
         exit_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"power{icon_suffix}"))
