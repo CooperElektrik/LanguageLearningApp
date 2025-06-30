@@ -60,6 +60,7 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.dev_info_dialog import DevInfoDialog
 from ui.dialogs.help_dialog import HelpDialog
 from ui.dialogs.pyglet_script_runner_dialog import PygletScriptRunnerDialog
+from ui.widgets.animated_placeholder import AnimatedPlaceholder
 
 logger = logging.getLogger(__name__)
 
@@ -390,9 +391,7 @@ class MainWindow(QMainWindow):
                 self.course_manager, self.progress_manager, self.stt_manager
             ),
             "glossary": GlossaryView(self.course_manager),
-            "placeholder": QLabel(
-                self.tr("Select a lesson or start a review."), alignment=Qt.AlignCenter
-            ),
+            "placeholder": AnimatedPlaceholder(),
             "central_stack": right_panel_stack,
         }
 

@@ -3,7 +3,7 @@
 /* --- Base Styles --- */
 /* A bright, airy theme inspired by a clear sky and ocean. */
 QWidget {
-    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: "Cascadia Code", "Helvetica Neue", Arial, sans-serif;
     font-size: 10pt;
     color: #2C3E50; /* Dark, desaturated blue text for high contrast */
 }
