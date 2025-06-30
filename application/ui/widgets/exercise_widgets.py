@@ -561,11 +561,17 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
 
         self.current_sentence_words: List[str] = []
         self.word_bank_buttons: List[QPushButton] = []
+        self.sentence_word_buttons: List[QPushButton] = [] # New list to hold buttons in the sentence display
 
-        self.sentence_display = QLabel(self.tr("Your sentence will appear here."))
-        self.sentence_display.setObjectName("sentence_jumble_display")
-        self.sentence_display.setWordWrap(True)
-        self.layout.addWidget(self.sentence_display)
+        self.sentence_display_layout = QHBoxLayout()
+        self.sentence_display_layout.setSpacing(5)
+        self.sentence_display_layout.setAlignment(Qt.AlignLeft)
+        self.layout.addLayout(self.sentence_display_layout)
+
+        self.sentence_placeholder_label = QLabel(self.tr("Click words below to build your sentence."))
+        self.sentence_placeholder_label.setObjectName("sentence_jumble_placeholder")
+        self.sentence_placeholder_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.sentence_placeholder_label)
 
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
@@ -597,20 +603,53 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
     def _add_word_to_sentence(self, word: str, button: QPushButton):
         self.current_sentence_words.append(word)
         button.setEnabled(False)
+        
+        # Create a new button for the sentence display
+        sentence_button = QPushButton(word)
+        sentence_button.setObjectName("sentence_word_button")
+        sentence_button.clicked.connect(lambda: self._remove_word_from_sentence(word, sentence_button))
+        self.sentence_word_buttons.append(sentence_button)
+        self.sentence_display_layout.addWidget(sentence_button)
+
+        self._update_display()
+
+    def _remove_word_from_sentence(self, word: str, button: QPushButton):
+        # Find the first occurrence of the word in the current sentence and remove it
+        try:
+            self.current_sentence_words.remove(word)
+        except ValueError:
+            logger.warning(f"Attempted to remove word '{word}' not found in current sentence.")
+            return
+
+        # Remove the button from the layout and delete it
+        self.sentence_display_layout.removeWidget(button)
+        button.deleteLater()
+        self.sentence_word_buttons.remove(button)
+
+        # Re-enable the corresponding button in the word bank
+        for wb_button in self.word_bank_buttons:
+            if wb_button.text() == word and not wb_button.isEnabled():
+                wb_button.setEnabled(True)
+                break
         self._update_display()
 
     def _update_display(self):
         if self.current_sentence_words:
-            self.sentence_display.setText(" ".join(self.current_sentence_words))
+            self.sentence_placeholder_label.setVisible(False)
         else:
-            self.sentence_display.setText(
-                self.tr("Click words below to build your sentence.")
-            )
+            self.sentence_placeholder_label.setVisible(True)
 
     def clear_input(self):
         self.current_sentence_words = []
         for btn in self.word_bank_buttons:
             btn.setEnabled(True)
+        
+        # Remove all word buttons from the sentence display layout
+        for btn in self.sentence_word_buttons:
+            self.sentence_display_layout.removeWidget(btn)
+            btn.deleteLater() # Properly delete the widget
+        self.sentence_word_buttons.clear()
+
         self._update_display()
 
     def get_answer(self) -> str:
