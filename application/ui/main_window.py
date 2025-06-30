@@ -15,7 +15,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStatusBar,
     QToolBar,
+    QGraphicsOpacityEffect,
 )
+from PySide6.QtCore import QPropertyAnimation, QPoint, QEasingCurve
 from PySide6.QtGui import (
     QAction,
     QFont,
@@ -23,6 +25,7 @@ from PySide6.QtGui import (
     QCloseEvent,
     QIcon,
 )
+
 from PySide6.QtCore import (
     Qt,
     QCoreApplication,
@@ -96,6 +99,10 @@ class MainWindow(QMainWindow):
         self.learning_widget = None
         self.editor_view = None
 
+        # Animation objects for learning view's central stack
+        self.central_stack_fade_effect: Optional[QGraphicsOpacityEffect] = None
+        self.central_stack_fade_animation: Optional[QPropertyAnimation] = None
+
         # Status bar button for dev info
         self.dev_info_button: Optional[QPushButton] = None
         self._setup_status_bar()
@@ -108,8 +115,57 @@ class MainWindow(QMainWindow):
         self._return_to_selection_screen() # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
+        self._setup_animations()
+
+        # New: Check for initial UI setup after everything is ready
         QTimer.singleShot(500, self._check_and_show_initial_setup)
         logger.info("MainWindow initialization complete.")
+
+    def _setup_animations(self):
+        self.fade_effect = QGraphicsOpacityEffect(self)
+        self.fade_animation = QPropertyAnimation(self.fade_effect, b"opacity")
+        self.fade_animation.setDuration(200)
+        self.fade_animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        self.main_stack.currentChanged.connect(self._animate_fade_transition)
+        logger.debug("Main stack animations set up.")
+
+    def _animate_fade_transition(self, index):
+        current_widget = self.main_stack.widget(index)
+
+        # --- FIX ---
+        # The learning_widget has its own internal animation system. Applying a
+        # second graphics effect to it from the main stack causes QPainter
+        # conflicts. We must prevent this.
+        if current_widget is self.learning_widget:
+            # Explicitly remove any effect from the main animation system.
+            # This ensures the internal animations of the learning view
+            # can run without conflicts.
+            if current_widget.graphicsEffect() is not None:
+                 current_widget.setGraphicsEffect(None)
+            return  # Stop here and let the internal animation handle the fade
+
+        # For all other widgets, apply the standard fade-in.
+        self._animate_fade_in(current_widget)
+
+    def _animate_fade_in(self, widget):
+        if widget is None: return
+        widget.setGraphicsEffect(self.fade_effect)
+        self.fade_animation.setTargetObject(self.fade_effect)
+        self.fade_animation.setPropertyName(b"opacity")
+        self.fade_animation.setStartValue(0.0)
+        self.fade_animation.setEndValue(1.0)
+        self.fade_animation.start()
+
+    def _animate_central_stack_fade(self, index: int):
+        """Animates a fade-in for the central widget stack in the learning view."""
+        if self.central_stack_fade_animation and self.central_stack_fade_animation.targetObject():
+            # Stop any ongoing animation
+            self.central_stack_fade_animation.stop()
+            # Set start and end values for a fade-in effect
+            self.central_stack_fade_animation.setStartValue(0.0)
+            self.central_stack_fade_animation.setEndValue(1.0)
+            # Start the animation
+            self.central_stack_fade_animation.start()
 
     def _setup_main_toolbar(self):
         self.main_toolbar = QToolBar("Main Toolbar")
@@ -241,10 +297,19 @@ class MainWindow(QMainWindow):
 
         self._setup_learning_ui()
         self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
-        self.show_course_overview()
-
+        
+        # Ensure the learning_widget is added before setting it as current
+        if self.learning_widget not in [self.main_stack.widget(i) for i in range(self.main_stack.count())]:
+            self.main_stack.addWidget(self.learning_widget)
+        
+        # Set the learning_widget as current. The transition is handled by the
+        # main_stack.currentChanged signal, which has special logic to prevent
+        # QPainter errors with the learning view's internal animations.
+        self.main_stack.setCurrentWidget(self.learning_widget)
+        
         QTimer.singleShot(150, self._check_and_show_onboarding)
         self._update_dev_info_button_visibility()
+        self._update_menu_state()
 
     def _load_course_for_editing(self):
         manifest_path, _ = QFileDialog.getOpenFileName(
@@ -273,6 +338,19 @@ class MainWindow(QMainWindow):
 
         right_panel_stack = QStackedWidget()
         self.learning_widget.setCentralWidget(right_panel_stack)
+
+        # --- Animation setup for the central learning area ---
+        self.central_stack_fade_effect = QGraphicsOpacityEffect(right_panel_stack)
+        right_panel_stack.setGraphicsEffect(self.central_stack_fade_effect)
+
+        self.central_stack_fade_animation = QPropertyAnimation(
+            self.central_stack_fade_effect, b"opacity"
+        )
+        self.central_stack_fade_animation.setDuration(250)
+        self.central_stack_fade_animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        right_panel_stack.currentChanged.connect(self._animate_central_stack_fade)
+        # --- END ---
 
         self.navigation_dock_widget = QDockWidget(
             self.tr("Course Navigation"), self.learning_widget
@@ -431,6 +509,10 @@ class MainWindow(QMainWindow):
                 self.view_menu.removeAction(self.toggle_progress_dock_action)
                 self.toggle_progress_dock_action = None
 
+            # Clear animation objects to prevent dangling references
+            self.central_stack_fade_animation = None
+            self.central_stack_fade_effect = None
+
             self.main_stack.removeWidget(self.learning_widget)
             self.learning_widget.deleteLater()
             self.learning_widget = None
@@ -570,7 +652,14 @@ class MainWindow(QMainWindow):
 
     # --- Learning Mode Methods ---
     def show_course_overview(self):
-        if not self.learning_widget: return
+        if not self.learning_widget: 
+            return
+        
+        # Reveal navigation dock
+        if self.navigation_dock_widget:
+            self.navigation_dock_widget.setVisible(True)
+        
+        # Existing refresh logic
         self.learning_ui_views["overview"].refresh_view()
         self.learning_ui_views["progress"].refresh_view()
         self.learning_ui_views["central_stack"].setCurrentWidget(
@@ -578,7 +667,13 @@ class MainWindow(QMainWindow):
         )
 
     def start_lesson(self, lesson_id: str):
-        if not self.learning_widget: return
+        if not self.learning_widget:
+            return
+
+        # Hide navigation dock when starting a lesson
+        if self.navigation_dock_widget:
+            self.navigation_dock_widget.setVisible(False)
+
         lesson_view = self.learning_ui_views["lesson"]
         lesson_view.start_lesson(lesson_id)
         self.learning_ui_views["central_stack"].setCurrentWidget(lesson_view)
