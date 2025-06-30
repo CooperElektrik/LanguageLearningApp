@@ -5,12 +5,17 @@ from datetime import datetime
 
 @dataclass
 class ExerciseOption:
-    text: str
+    text: Optional[str] = None
+    image_file: Optional[str] = None
     correct: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the ExerciseOption object to a dictionary."""
-        data = {"text": self.text}
+        data = {}
+        if self.text:
+            data["text"] = self.text
+        if self.image_file:
+            data["image_file"] = self.image_file
         if self.correct:
             data["correct"] = self.correct
         return data

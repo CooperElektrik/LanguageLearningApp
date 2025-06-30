@@ -276,7 +276,17 @@ class CourseManager(QObject):
         self, exercise: Exercise, user_answer: str
     ) -> Tuple[bool, str]:
         """Checks answer for multiple choice exercise types."""
+        try:
+            selected_index = int(user_answer)
+        except (ValueError, TypeError):
+            return False, self.tr("Invalid answer format.")
+
+        if not (0 <= selected_index < len(exercise.options)):
+            return False, self.tr("Selected option is out of range.")
+
+        selected_option = exercise.options[selected_index]
         correct_option = next((opt for opt in exercise.options if opt.correct), None)
+
         if not correct_option:
             logger.error(
                 f"No correct option defined for MC exercise {exercise.exercise_id}."
@@ -284,12 +294,13 @@ class CourseManager(QObject):
             return False, self.tr(
                 "Error: Exercise configuration issue (no correct answer)."
             )
+        
+        correct_answer_display = correct_option.text or correct_option.image_file
 
-        correct_answer_display = correct_option.text
-        is_correct_exact = user_answer.lower() == correct_option.text.lower()
-        return is_correct_exact, (
+        is_correct = selected_option.correct
+        return is_correct, (
             self.tr("Correct: {0}").format(correct_answer_display)
-            if is_correct_exact
+            if is_correct
             else self.tr("Incorrect. Correct: {0}").format(correct_answer_display)
         )
 
@@ -297,14 +308,24 @@ class CourseManager(QObject):
         self, exercise: Exercise, user_answer: str
     ) -> Tuple[bool, str]:
         """Checks answer for fill_in_the_blank exercise type."""
+        try:
+            selected_index = int(user_answer)
+        except (ValueError, TypeError):
+            return False, self.tr("Invalid answer format.")
+
+        if not (0 <= selected_index < len(exercise.options)):
+            return False, self.tr("Selected option is out of range.")
+
+        selected_option_text = exercise.options[selected_index].text
         correct_answer_display = exercise.correct_option
+        
         if not correct_answer_display:
             logger.error(
                 f"No correct option defined for FIB exercise {exercise.exercise_id}."
             )
             return False, "Error: Exercise configuration issue (no correct answer)."
 
-        user_answer_norm = self._normalize_answer_for_comparison(user_answer)
+        user_answer_norm = self._normalize_answer_for_comparison(selected_option_text)
         correct_answer_norm = self._normalize_answer_for_comparison(
             correct_answer_display
         )
@@ -319,10 +340,10 @@ class CourseManager(QObject):
         elif is_correct_fuzzy:
             return True, self.tr(
                 "Accepted (close match). Correct: {0}. You wrote: {1}"
-            ).format(correct_answer_display, user_answer)
+            ).format(correct_answer_display, selected_option_text)
         else:
             return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
-                correct_answer_display, user_answer
+                correct_answer_display, selected_option_text
             )
 
     def _check_sentence_jumble_answer(

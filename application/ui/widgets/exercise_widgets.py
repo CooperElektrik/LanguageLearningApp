@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QTextBrowser,
     QGroupBox,
     QProgressBar,
+    QSizePolicy,
 )
 from PySide6.QtCore import (
     Signal,
@@ -38,8 +39,9 @@ from PySide6.QtCore import (
     QByteArray,
     QIODevice,
     QBuffer,
+    QSize,
 )
-from PySide6.QtGui import QFont, QPixmap, QKeyEvent  # Added QKeyEvent
+from PySide6.QtGui import QFont, QPixmap, QKeyEvent, QPainter, QPainterPath  # Added QKeyEvent
 from PySide6.QtMultimedia import (
     QMediaPlayer,
     QAudioOutput,
@@ -92,6 +94,44 @@ except ImportError:  # This makes Nuitka happy
 
 logger = logging.getLogger(__name__)
 
+ICON_SIZE = QSize(256, 144)
+
+def create_rounded_pixmap(original_pixmap: QPixmap, target_size: QSize, corner_radius: int = 15) -> QPixmap:
+    """
+    Scales, crops to a 16:9 ratio, and rounds the corners of a QPixmap.
+    """
+    # Define the target aspect ratio
+    aspect_ratio = 16 / 9
+
+    # Adjust the target size to fit the 16:9 aspect ratio
+    target_width = target_size.width()
+    target_height = int(target_width / aspect_ratio)
+    final_size = QSize(target_width, target_height)
+
+    # Scale the pixmap to fill the new target size while maintaining aspect ratio
+    scaled_pixmap = original_pixmap.scaled(final_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+
+    # Center-crop the scaled pixmap
+    x = (scaled_pixmap.width() - final_size.width()) / 2
+    y = (scaled_pixmap.height() - final_size.height()) / 2
+    cropped_pixmap = scaled_pixmap.copy(x, y, final_size.width(), final_size.height())
+
+    # Create a new pixmap with a transparent background to draw on
+    rounded_pixmap = QPixmap(final_size)
+    rounded_pixmap.fill(Qt.GlobalColor.transparent)
+
+    # Use QPainter to draw the rounded rectangle
+    painter = QPainter(rounded_pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    path = QPainterPath()
+    path.addRoundedRect(0, 0, final_size.width(), final_size.height(), corner_radius, corner_radius)
+
+    painter.setClipPath(path)
+    painter.drawPixmap(0, 0, cropped_pixmap)
+    painter.end()
+
+    return rounded_pixmap
 
 class BaseExerciseWidget(QWidget):
     answer_submitted = Signal(str)
@@ -307,6 +347,102 @@ class TranslationExerciseWidget(BaseExerciseWidget):
         self.answer_input.setFocus()
 
 
+class ButtonOptionExerciseWidget(BaseExerciseWidget):
+    def __init__(self, exercise: Exercise, course_manager, parent=None):
+        super().__init__(exercise, course_manager, parent)
+
+        self.options_group = QButtonGroup(self)
+        self.options_group.setExclusive(True)
+        self.options_layout = QHBoxLayout()
+
+        options_to_display = self.exercise.options
+        if not options_to_display:
+            logger.warning(
+                f"No options found for option-based exercise: {self.exercise.exercise_id}"
+            )
+            no_options_label = QLabel(self.tr("No options available for this exercise."))
+            self.options_layout.addWidget(no_options_label)
+        else:
+            for i, option_obj in enumerate(options_to_display):
+                button = QPushButton()
+                button.setObjectName(f"option_button_{i}")
+                button.setCheckable(True)
+                button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                button.setFixedHeight(160)
+
+                button_layout = QHBoxLayout(button)
+                button_layout.setContentsMargins(10, 5, 10, 5)  # Add padding
+
+                icon_label = QLabel()
+                text_label = QLabel(option_obj.text)
+                text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+                if option_obj.image_file and self.assets_base_dir:
+                    full_image_path = os.path.join(self.assets_base_dir, option_obj.image_file)
+                    if os.path.exists(full_image_path):
+                        pixmap = QPixmap(full_image_path)
+                        if not pixmap.isNull():
+                            rounded_pixmap = create_rounded_pixmap(pixmap, ICON_SIZE)
+                            icon_label.setPixmap(rounded_pixmap)
+
+                button_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignLeft)
+
+                # Add a separator
+                separator = QFrame()
+                separator.setFrameShape(QFrame.Shape.VLine)
+                separator.setFrameShadow(QFrame.Shadow.Sunken)
+                button_layout.addWidget(separator)
+
+                button_layout.addWidget(text_label, 1)
+
+                self.options_layout.addWidget(button)
+                self.options_group.addButton(button, i)
+
+        self.layout.addLayout(self.options_layout)
+        self.options_group.buttonClicked.connect(
+            lambda button: self.answer_submitted.emit(self.get_answer())
+        )
+
+    def get_answer(self) -> str:
+        checked_button = self.options_group.checkedButton()
+        if checked_button:
+            return str(self.options_group.id(checked_button))
+        return ""
+
+    def clear_input(self):
+        checked_button = self.options_group.checkedButton()
+        if checked_button:
+            self.options_group.setExclusive(False)
+            checked_button.setChecked(False)
+            self.options_group.setExclusive(True)
+
+    def set_focus_on_input(self):
+        if self.options_group.buttons():
+            self.options_group.buttons()[0].setFocus()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Handles number key presses for selecting options."""
+        key = event.key()
+        key_to_index_map = {
+            Qt.Key_1: 0, Qt.Key_2: 1, Qt.Key_3: 2,
+            Qt.Key_4: 3, Qt.Key_5: 4, Qt.Key_6: 5,
+            Qt.Key_7: 6, Qt.Key_8: 7, Qt.Key_9: 8,
+        }
+
+        if key in key_to_index_map:
+            option_index = key_to_index_map[key]
+            if 0 <= option_index < len(self.options_group.buttons()):
+                button_to_select = self.options_group.buttons()[option_index]
+                if button_to_select.isEnabled():
+                    button_to_select.click()  # Simulate a click
+                    logger.debug(
+                        f"Option {option_index + 1} ('{button_to_select.text()}') selected via keyboard shortcut."
+                    )
+                    event.accept()
+                    return
+        super().keyPressEvent(event)
+
+
 class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
@@ -336,7 +472,9 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
 
     def get_answer(self) -> str:
         checked_button = self.options_group.checkedButton()
-        return checked_button.text() if checked_button else ""
+        if checked_button:
+            return str(self.options_group.id(checked_button))
+        return ""
 
     def clear_input(self):
         checked_button = self.options_group.checkedButton()
@@ -381,7 +519,7 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
         super().keyPressEvent(event)
 
 
-class MultipleChoiceExerciseWidget(RadioButtonOptionExerciseWidget):
+class MultipleChoiceExerciseWidget(ButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
@@ -389,7 +527,7 @@ class MultipleChoiceExerciseWidget(RadioButtonOptionExerciseWidget):
         self.prompt_label.setText(formatted_prompt)
 
 
-class ListenSelectExerciseWidget(RadioButtonOptionExerciseWidget):
+class ListenSelectExerciseWidget(ButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
 
@@ -407,7 +545,7 @@ class ListenSelectExerciseWidget(RadioButtonOptionExerciseWidget):
             self.layout.insertWidget(insert_index, self.play_audio_button)
 
 
-class FillInTheBlankExerciseWidget(RadioButtonOptionExerciseWidget):
+class FillInTheBlankExerciseWidget(ButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)

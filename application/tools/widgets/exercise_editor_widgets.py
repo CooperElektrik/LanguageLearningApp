@@ -277,17 +277,19 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
 
 
 class MultipleChoiceOptionEditDialog(QDialog):
-    def __init__(self, option_text="", is_correct=False, parent=None):
+    def __init__(self, option_text="", option_image_file="", is_correct=False, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Edit Option")
         layout = QVBoxLayout(self)
 
         self.text_edit = QLineEdit(option_text)
+        self.image_file_edit = QLineEdit(option_image_file)
         self.correct_checkbox = QCheckBox("Is Correct")
         self.correct_checkbox.setChecked(is_correct)
 
         form_layout = QFormLayout()
         form_layout.addRow("Option Text:", self.text_edit)
+        form_layout.addRow("Image File:", self.image_file_edit)
         form_layout.addRow(self.correct_checkbox)
         layout.addLayout(form_layout)
 
@@ -296,11 +298,13 @@ class MultipleChoiceOptionEditDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-    def get_data(self) -> tuple[Optional[str], bool]:
-        if not self.text_edit.text().strip():
-            QMessageBox.warning(self, "Input Error", "Option text cannot be empty.")
-            return None, False
-        return self.text_edit.text().strip(), self.correct_checkbox.isChecked()
+    def get_data(self) -> tuple[Optional[str], Optional[str], bool]:
+        text = self.text_edit.text().strip()
+        image_file = self.image_file_edit.text().strip()
+        if not text and not image_file:
+            QMessageBox.warning(self, "Input Error", "Either option text or an image file must be provided.")
+            return None, None, False
+        return text, image_file, self.correct_checkbox.isChecked()
 
 
 class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
@@ -362,7 +366,11 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
     def _populate_options_list(self):
         self.options_list_widget.clear()
         for option_obj in self.exercise.options:
-            item_text = option_obj.text
+            item_text = ""
+            if option_obj.text:
+                item_text += option_obj.text
+            if option_obj.image_file:
+                item_text += f" [{option_obj.image_file}]"
             if option_obj.correct:
                 item_text += " (Correct)"
             list_item = QListWidgetItem(item_text)
@@ -396,9 +404,9 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
     def _add_option_dialog(self):
         dialog = MultipleChoiceOptionEditDialog(parent=self)
         if dialog.exec() == QDialog.Accepted:
-            text, is_correct = dialog.get_data()
-            if text is not None:
-                new_option = ExerciseOption(text=text, correct=is_correct)
+            text, image_file, is_correct = dialog.get_data()
+            if text is not None or image_file is not None:
+                new_option = ExerciseOption(text=text, image_file=image_file, correct=is_correct)
 
                 if is_correct:
                     for opt in self.exercise.options:
@@ -420,12 +428,13 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
         option_obj: ExerciseOption = current_item.data(Qt.UserRole)
 
         dialog = MultipleChoiceOptionEditDialog(
-            option_text=option_obj.text, is_correct=option_obj.correct, parent=self
+            option_text=option_obj.text, option_image_file=option_obj.image_file, is_correct=option_obj.correct, parent=self
         )
         if dialog.exec() == QDialog.Accepted:
-            text, is_correct = dialog.get_data()
-            if text is not None:
+            text, image_file, is_correct = dialog.get_data()
+            if text is not None or image_file is not None:
                 option_obj.text = text
+                option_obj.image_file = image_file
 
                 if is_correct:
                     for opt in self.exercise.options:
@@ -468,7 +477,7 @@ class MultipleChoiceExerciseEditorWidget(BaseExerciseEditorWidget):
         if not any(opt.correct for opt in self.exercise.options):
             return False, "Multiple Choice must have at least one correct option."
         for opt in self.exercise.options:
-            if not opt.text.strip():
+            if not opt.text.strip() and not opt.image_file.strip():
                 return False, "Multiple Choice options cannot be empty."
         return True, ""
 

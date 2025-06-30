@@ -37,9 +37,13 @@ def _parse_exercise_options(
     parsed_options = []
     if isinstance(options_data, list):
         if all(isinstance(opt, dict) for opt in options_data):
-            # Format: [{"text": "Option A", "correct": true}]
+            # Format: [{"text": "Option A", "image_file": "path/to/image.png", "correct": true}]
             parsed_options = [
-                ExerciseOption(text=opt["text"], correct=opt.get("correct", False))
+                ExerciseOption(
+                    text=opt.get("text"),
+                    image_file=opt.get("image_file"),
+                    correct=opt.get("correct", False),
+                )
                 for opt in options_data
             ]
             logger.debug(f"Parsed options (dict format): {parsed_options}")

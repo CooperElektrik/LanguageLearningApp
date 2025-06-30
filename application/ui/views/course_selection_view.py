@@ -171,6 +171,7 @@ class CourseSelectionView(QWidget):
                         image_file = manifest_data.get("image_file")
                         
                         image_path = None
+                        potential_path = ''
                         if image_file:
                             potential_path = os.path.join(course_path, "images", image_file)
                         if os.path.exists(potential_path):

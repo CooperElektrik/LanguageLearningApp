@@ -9,3 +9,4 @@ application/models/
 *.spec
 pate_egg.txt
 .env
+gemini.md
