@@ -9,6 +9,23 @@ from .models import Course, Unit, Lesson, Exercise, ExerciseOption
 logger = logging.getLogger(__name__)
 
 
+def _validate_asset_path(
+    asset_path: Optional[str], course_base_dir: str, pool_base_dir: str
+) -> None:
+    """Checks if an asset exists in the course or shared pool directories."""
+    if not asset_path:
+        return
+
+    # Construct full paths
+    course_asset_path = os.path.join(course_base_dir, asset_path)
+    pool_asset_path = os.path.join(pool_base_dir, asset_path)
+
+    if not os.path.exists(course_asset_path) and not os.path.exists(pool_asset_path):
+        logger.warning(
+            f"Asset not found: '{asset_path}'. Looked in '{course_base_dir}' and '{pool_base_dir}'."
+        )
+
+
 def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
     """Loads the course manifest YAML file."""
     logger.debug(f"Attempting to load manifest from: {manifest_path}")
@@ -30,22 +47,29 @@ def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
 
 
 def _parse_exercise_options(
-    options_data: Any, correct_option_text: Optional[str] = None
+    options_data: Any,
+    correct_option_text: Optional[str],
+    course_base_dir: str,
+    pool_base_dir: str,
 ) -> List[ExerciseOption]:
     """Helper to parse options data into a list of ExerciseOption objects."""
-    logger.debug(f"Parsing exercise options: {options_data}, correct_option_text: {correct_option_text}")
+    logger.debug(
+        f"Parsing exercise options: {options_data}, correct_option_text: {correct_option_text}"
+    )
     parsed_options = []
     if isinstance(options_data, list):
         if all(isinstance(opt, dict) for opt in options_data):
             # Format: [{"text": "Option A", "image_file": "path/to/image.png", "correct": true}]
-            parsed_options = [
-                ExerciseOption(
-                    text=opt.get("text"),
-                    image_file=opt.get("image_file"),
-                    correct=opt.get("correct", False),
+            for opt in options_data:
+                image_file = opt.get("image_file")
+                _validate_asset_path(image_file, course_base_dir, pool_base_dir)
+                parsed_options.append(
+                    ExerciseOption(
+                        text=opt.get("text"),
+                        image_file=image_file,
+                        correct=opt.get("correct", False),
+                    )
                 )
-                for opt in options_data
-            ]
             logger.debug(f"Parsed options (dict format): {parsed_options}")
         elif all(isinstance(opt, str) for opt in options_data):
             # Format: ["Option A", "Option B", "Option C"]
@@ -60,7 +84,9 @@ def _parse_exercise_options(
             random.shuffle(parsed_options)
             logger.debug(f"Parsed options (list format): {parsed_options}")
     else:
-        logger.warning(f"Invalid options data format: {options_data}. Expected a list. Returning empty options.")
+        logger.warning(
+            f"Invalid options data format: {options_data}. Expected a list. Returning empty options."
+        )
     return parsed_options
 
 
@@ -70,6 +96,8 @@ def _parse_exercise(
     index: int,
     target_language: str,
     source_language: str,
+    course_base_dir: str,
+    pool_base_dir: str,
 ) -> Optional[Exercise]:
     """Parses a single exercise entry from YAML data into an Exercise object."""
     ex_id = f"{lesson_id}_ex{index}"
@@ -94,6 +122,9 @@ def _parse_exercise(
     target_pron_text = exercise_data.get("target_pronunciation_text")
     allowed_lev_dist = exercise_data.get("allowed_levenshtein_distance")
 
+    _validate_asset_path(audio_file, course_base_dir, pool_base_dir)
+    _validate_asset_path(image_file, course_base_dir, pool_base_dir)
+
     options: List[ExerciseOption] = []
     if ex_type in [
         "multiple_choice_translation",
@@ -102,7 +133,10 @@ def _parse_exercise(
         "listen_and_select",
     ]:
         options = _parse_exercise_options(
-            exercise_data.get("options", []), correct_option
+            exercise_data.get("options", []),
+            correct_option,
+            course_base_dir,
+            pool_base_dir,
         )
         if not options:
             logger.warning(f"No valid options parsed for {ex_type} exercise {ex_id}.")
@@ -178,6 +212,8 @@ def load_course_content(
     author: Optional[str] = None,
     description: Optional[str] = None,
     image_file: Optional[str] = None,
+    course_base_dir: Optional[str] = None,
+    pool_base_dir: Optional[str] = None,
 ) -> Optional[Course]:
     """Loads and parses the course content YAML file into a Course object."""
     logger.debug(f"Attempting to load course content from: {content_filepath}")
@@ -202,6 +238,8 @@ def load_course_content(
             f"Course content file {content_filepath} is empty or 'units' key is missing. Cannot load course."
         )
         return None
+
+    _validate_asset_path(image_file, course_base_dir, pool_base_dir)
 
     course = Course(
         course_id=course_id,
@@ -240,14 +278,24 @@ def load_course_content(
                 title=lesson_title,
                 unit_id=unit_obj.unit_id,
             )
-            logger.debug(f"Parsed lesson '{lesson_title}' (ID: {lesson_id}) in unit {unit_id}")
+            logger.debug(
+                f"Parsed lesson '{lesson_title}' (ID: {lesson_id}) in unit {unit_id}"
+            )
             for i, ex_data in enumerate(lesson_data.get("exercises", [])):
                 exercise_obj = _parse_exercise(
-                    ex_data, lesson_obj.lesson_id, i, target_lang, source_lang
+                    ex_data,
+                    lesson_obj.lesson_id,
+                    i,
+                    target_lang,
+                    source_lang,
+                    course_base_dir,
+                    pool_base_dir,
                 )
                 if exercise_obj:
                     lesson_obj.exercises.append(exercise_obj)
-                    logger.debug(f"Added exercise {exercise_obj.exercise_id} to lesson {lesson_id}")
+                    logger.debug(
+                        f"Added exercise {exercise_obj.exercise_id} to lesson {lesson_id}"
+                    )
                 else:
                     logger.warning(
                         f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping."
@@ -261,3 +309,4 @@ def load_course_content(
         f"Course '{course_title}' loaded successfully with {len(course.units)} units and {sum(len(u.lessons) for u in course.units)} lessons."
     )
     return course
+

@@ -115,6 +115,8 @@ class CourseManager(QObject):
             self.manifest_data.get("author"),
             self.manifest_data.get("description"),
             self.manifest_data.get("image_file"),
+            manifest_dir_abs, # course_base_dir
+            os.path.join(os.path.dirname(manifest_dir_abs), "pool") # pool_base_dir
         )
         if self.course:
             logger.info(
