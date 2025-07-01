@@ -302,22 +302,29 @@ class GlossaryDetailDialog(QDialog):
 
         self._init_audio_player()
 
-        # Determine the base directory for assets (manifest_dir is preferred)
-        assets_base_dir = self.course_manager.get_asset_directory()
-        if not assets_base_dir:
-            assets_base_dir = self.course_manager.get_course_content_directory()
-            if not assets_base_dir:
-                logger.error(
-                    "Could not determine asset base directory for audio playback."
-                )
-                QMessageBox.warning(
-                    self,
-                    self.tr("Audio Error"),
-                    self.tr("Could not determine asset base directory for audio."),
-                )
-                return
+        # Determine the course's base directory (where its manifest is)
+        course_base_dir = self.course_manager.get_course_manifest_directory()
+        if not course_base_dir:
+            logger.error("Could not determine course base directory for audio playback.")
+            QMessageBox.warning(
+                self,
+                self.tr("Audio Error"),
+                self.tr("Could not determine course base directory for audio."),
+            )
+            return
 
-        full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
+        # First, try to find the audio file relative to the course's base directory
+        full_audio_path = os.path.join(course_base_dir, self.entry.audio_file)
+
+        # If not found, try the shared asset pool or other configured asset directory
+        if not os.path.exists(full_audio_path):
+            assets_base_dir = self.course_manager.get_asset_directory()
+            if assets_base_dir:
+                full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
+            else:
+                logger.warning("Shared asset directory not found or configured, falling back to course base directory.")
+                # If get_asset_directory also fails, we stick with the course_base_dir path
+                # which was already constructed.
 
         if os.path.exists(full_audio_path):
             self._media_player.setSource(QUrl.fromLocalFile(full_audio_path))
