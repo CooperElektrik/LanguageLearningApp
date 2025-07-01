@@ -4,11 +4,12 @@ import os
 from typing import List, Dict, Any, Optional
 
 from .models import GlossaryEntry
+from .course_loader import _validate_asset_path
 
 logger = logging.getLogger(__name__)
 
 
-def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
+def load_glossary(glossary_path: str, course_base_dir: str, pool_base_dir: str) -> List[GlossaryEntry]:
     """
     Loads and parses the glossary YAML file into a list of GlossaryEntry objects.
     Returns an empty list if the file is not found or parsing fails.
@@ -62,6 +63,8 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
             continue
 
         try:
+            audio_file = entry_data.get("audio_file")
+            _validate_asset_path(audio_file, course_base_dir, pool_base_dir)
             glossary_entries.append(
                 GlossaryEntry(
                     word=word,
@@ -69,7 +72,7 @@ def load_glossary(glossary_path: str) -> List[GlossaryEntry]:
                     part_of_speech=entry_data.get("part_of_speech"),
                     example_sentence=entry_data.get("example_sentence"),
                     notes=entry_data.get("notes"),
-                    audio_file=entry_data.get("audio_file"),
+                    audio_file=audio_file,
                 )
             )
             logger.debug(f"Successfully parsed glossary entry for word: '{word}'")

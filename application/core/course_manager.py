@@ -129,7 +129,7 @@ class CourseManager(QObject):
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
             logger.debug(f"Attempting to load glossary from: {glossary_filepath}")
-            self.glossary = glossary_loader.load_glossary(glossary_filepath)
+            self.glossary = glossary_loader.load_glossary(glossary_filepath, manifest_dir_abs, os.path.join(os.path.dirname(manifest_dir_abs), "pool"))
             if self.glossary:
                 self._build_glossary_map()
                 logger.info(f"Glossary loaded successfully with {len(self.glossary)} entries.")
