@@ -303,7 +303,7 @@ class GlossaryDetailDialog(QDialog):
         self._init_audio_player()
 
         # Determine the base directory for assets (manifest_dir is preferred)
-        assets_base_dir = self.course_manager.get_course_manifest_directory()
+        assets_base_dir = self.course_manager.get_asset_directory()
         if not assets_base_dir:
             assets_base_dir = self.course_manager.get_course_content_directory()
             if not assets_base_dir:

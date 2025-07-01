@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QMessageBox,
     QTextEdit,
+    QCheckBox,
 )
 from PySide6.QtCore import Signal, Qt
 from typing import Any, Dict
@@ -91,6 +92,14 @@ class ManifestEditorWidget(QWidget):
         image_file_layout.addWidget(browse_button)
         self.form_layout.addRow("Image File:", image_file_layout)
 
+        self.use_shared_pool_checkbox = QCheckBox(
+            "Use the shared asset pool (application/courses/pool)"
+        )
+        self.use_shared_pool_checkbox.stateChanged.connect(
+            lambda: self.data_changed.emit()
+        )
+        self.form_layout.addRow("Asset Pool:", self.use_shared_pool_checkbox)
+
         self.required_inputs = [
             self.course_title_input,
             self.target_lang_input,
@@ -149,6 +158,9 @@ class ManifestEditorWidget(QWidget):
         self.author_input.setText(manifest_data.get("author", ""))
         self.description_input.setPlainText(manifest_data.get("description", ""))
         self.image_file_input.setText(manifest_data.get("image_file", ""))
+        self.use_shared_pool_checkbox.setChecked(
+            manifest_data.get("use_shared_pool", False)
+        )
 
         for widget in self.required_inputs:
             self._validate_field(widget)
@@ -162,6 +174,7 @@ class ManifestEditorWidget(QWidget):
         manifest_data["author"] = self.author_input.text()
         manifest_data["description"] = self.description_input.toPlainText()
         manifest_data["image_file"] = self.image_file_input.text()
+        manifest_data["use_shared_pool"] = self.use_shared_pool_checkbox.isChecked()
 
         if course_obj:
             course_obj.title = self.course_title_input.text()

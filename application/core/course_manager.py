@@ -43,6 +43,7 @@ class CourseManager(QObject):
         self.source_language: str = "Unknown"
         self.target_language_code: Optional[str] = None
         self.glossary: List[GlossaryEntry] = []
+        self.use_shared_pool: bool = False
 
         self.manifest_path = manifest_path
 
@@ -88,6 +89,11 @@ class CourseManager(QObject):
         )
         self.target_language_code = self.manifest_data.get("target_language_code")
         logger.debug(f"Target Language: {self.target_language}, Source Language: {self.source_language}")
+
+        # Handle asset pool
+        self.use_shared_pool = self.manifest_data.get("use_shared_pool", False)
+        if self.use_shared_pool:
+            logger.info("Course is configured to use the shared asset pool.")
 
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
@@ -176,6 +182,23 @@ class CourseManager(QObject):
         if self.manifest_path and os.path.exists(self.manifest_path):
             return os.path.dirname(os.path.abspath(self.manifest_path))
         return None
+
+    def get_asset_directory(self) -> Optional[str]:
+        """Returns the primary directory for course assets (shared pool or manifest dir)."""
+        if self.use_shared_pool:
+            # Construct path to application/courses/pool from the manifest path
+            # This is a bit brittle, but it's the most reliable way without a global app context
+            manifest_dir = self.get_course_manifest_directory()
+            if manifest_dir:
+                # Navigate up from the course directory to the application directory
+                # e.g., from D:\...\py-bsc-2\application\courses\my-course to D:\...\py-bsc-2\application
+                application_dir = os.path.dirname(os.path.dirname(manifest_dir))
+                pool_path = os.path.join(application_dir, "courses", "pool")
+                if os.path.isdir(pool_path):
+                    return pool_path
+                else:
+                    logger.warning(f"Shared asset pool enabled, but directory not found at: {pool_path}")
+        return self.get_course_manifest_directory()
 
     def get_course_title(self) -> Optional[str]:
         return self.course.title if self.course else None

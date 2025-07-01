@@ -140,7 +140,7 @@ class BaseExerciseWidget(QWidget):
         super().__init__(parent)
         self.exercise = exercise
         self.course_manager: CourseManager = course_manager
-        self.assets_base_dir = self.course_manager.get_course_manifest_directory()
+        self.assets_base_dir = self.course_manager.get_asset_directory()
         if not self.assets_base_dir:
             self.assets_base_dir = self.course_manager.get_course_content_directory()
 

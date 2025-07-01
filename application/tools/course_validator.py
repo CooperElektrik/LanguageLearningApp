@@ -446,6 +446,7 @@ def perform_manifest_validation(
                 errors,
                 f"Manifest 'content_file' points to a non-existent file: '{content_filepath}' (relative to manifest location)",
             )
+
     return errors
 
 
