@@ -189,10 +189,10 @@ class MainWindow(QMainWindow):
         icon_suffix = "_dark.png" if is_dark_theme else "_light.png"
 
         # Icon paths
-        exit_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"power{icon_suffix}"))
-        settings_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"cog{icon_suffix}"))
-        help_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"help{icon_suffix}"))
-        pyglet_icon_path = utils.get_resource_path(os.path.join("assets", "images", f"code{icon_suffix}"))
+        exit_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"power{icon_suffix}"))
+        settings_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"cog{icon_suffix}"))
+        help_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"help{icon_suffix}"))
+        pyglet_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"code{icon_suffix}"))
 
         # Exit Action
         exit_action = QAction(QIcon(exit_icon_path), self.tr("Exit"), self)
