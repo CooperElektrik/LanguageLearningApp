@@ -454,4 +454,4 @@ class CourseManager(QObject):
         """
         Returns a dictionary with a template_key and arguments for formatting the prompt.
         """
-        return {"template_key": PROMPT_KEY_DEFAULT, "args": [exercise.prompt or ""]}
+        return {"template_key": PROMPT_KEY_DEFAULT, "args": [exercise.prompt or exercise.sentence_template or ""]}

@@ -155,7 +155,7 @@ class BaseExerciseWidget(QWidget):
         self.image_label.setObjectName("image_label")
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setMaximumWidth(640)
-        self.image_label.setMaximumHeight(99999)
+        self.image_label.setMaximumHeight(400)
         self.image_label.setScaledContents(False)
         self._setup_image()
         self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
@@ -538,8 +538,7 @@ class FillInTheBlankExerciseWidget(ButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
-        formatted_prompt = self._format_prompt_from_data(prompt_data)
-        self.prompt_label.setText(formatted_prompt)
+        self.prompt_label.setText(self.tr("Fill in the blank: {0}").format(prompt_data.get("args", [""])[0]))
 
 
 class SentenceJumbleExerciseWidget(BaseExerciseWidget):

@@ -206,7 +206,7 @@ DEFAULT_LOCALE = "System"  # Represents using the system's locale or English fal
 
 # --- Logging Settings ---
 # Valid levels: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
-LOG_LEVEL = "INFO"
+LOG_LEVEL = "WARNING"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - [%(name)s:%(lineno)d] - %(message)s"
 # For direct use with logging module:
 LOG_LEVEL_INT = getattr(logging, LOG_LEVEL.upper(), logging.INFO)

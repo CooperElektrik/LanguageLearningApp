@@ -28,7 +28,7 @@ def _validate_asset_path(
         return pool_asset_path
 
     logger.warning(
-        f"Asset not found: '{asset_path}'. Looked in '{course_base_dir}' and '{pool_base_dir}'."
+        f"Asset not found: '{asset_path}'."
     )
     return None
 

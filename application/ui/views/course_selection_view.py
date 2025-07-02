@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget
 )
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Signal, Qt, QEvent
+from PySide6.QtCore import Signal, Qt, QEvent, QSize
 
 import settings
 import utils
@@ -45,11 +45,26 @@ class CourseButton(QPushButton):
         if image_path:
             pixmap = QPixmap(image_path)
             image_label = QLabel()
-            image_label.setPixmap(
-                pixmap.scaled(
-                    150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-                )
+            
+            # Define a minimum width for the image
+            MIN_IMAGE_WIDTH = 150
+            
+            # Scale the pixmap while maintaining aspect ratio
+            scaled_pixmap = pixmap.scaled(
+                QSize(MIN_IMAGE_WIDTH, 150), # Use MIN_IMAGE_WIDTH as base for scaling
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
             )
+            
+            # Ensure the scaled pixmap's width is at least MIN_IMAGE_WIDTH
+            if scaled_pixmap.width() < MIN_IMAGE_WIDTH:
+                scaled_pixmap = pixmap.scaled(
+                    QSize(MIN_IMAGE_WIDTH, int(pixmap.height() * (MIN_IMAGE_WIDTH / pixmap.width()))),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+            
+            image_label.setPixmap(scaled_pixmap)
             main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         # Text section in the middle
