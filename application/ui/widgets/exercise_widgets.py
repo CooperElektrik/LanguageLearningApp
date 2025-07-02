@@ -257,40 +257,7 @@ class BaseExerciseWidget(QWidget):
 
     def _format_prompt_from_data(self, prompt_data: Dict[str, Any]) -> str:
         """Helper to format the prompt using tr() and arguments from prompt_data."""
-        template_key = prompt_data.get("template_key", PROMPT_KEY_DEFAULT)
-        args = prompt_data.get("args", [])
-
-        template_str_map = {
-            PROMPT_KEY_TRANSLATE_TO_TARGET: self.tr('Translate to %s: "%s"'),
-            PROMPT_KEY_TRANSLATE_TO_SOURCE: self.tr('Translate to %s: "%s"'),
-            PROMPT_KEY_MCQ_TRANSLATION: self.tr(
-                'Choose the %s translation for: "%s" (%s)'
-            ),
-            PROMPT_KEY_FIB: self.tr("%s (Hint: %s)"),
-            PROMPT_KEY_DICTATION: self.tr("%s"),
-            PROMPT_KEY_IMAGE_ASSOCIATION: self.tr("%s"),
-            PROMPT_KEY_LISTEN_SELECT: self.tr("%s"),
-            PROMPT_KEY_SENTENCE_JUMBLE: self.tr("%s"),
-            PROMPT_KEY_CONTEXT_BLOCK: self.tr("%s"),
-            PROMPT_KEY_DEFAULT: (
-                self.tr("Exercise Prompt: %s") if args else self.tr("Exercise Prompt")
-            ),
-        }
-
-        template_str = template_str_map.get(template_key, "")
-
-        formatted_string = template_str
-        if args:
-            str_args = tuple(str(arg) for arg in args)
-            try:
-                formatted_string = template_str % str_args
-            except TypeError:
-                logger.error(
-                    f"String formatting error for template key '{template_key}'."
-                )
-                formatted_string = f"{template_str} ({', '.join(str_args)})"
-
-        return formatted_string
+        return prompt_data.get("args", [""])[0]
 
     def get_answer(self) -> str:
         raise NotImplementedError("Subclasses must implement get_answer")

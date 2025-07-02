@@ -11,19 +11,26 @@ logger = logging.getLogger(__name__)
 
 def _validate_asset_path(
     asset_path: Optional[str], course_base_dir: str, pool_base_dir: str
-) -> None:
-    """Checks if an asset exists in the course or shared pool directories."""
+) -> Optional[str]:
+    """
+    Checks if an asset exists in the course or shared pool directories and returns the valid path.
+    """
     if not asset_path:
-        return
+        return None
 
     # Construct full paths
     course_asset_path = os.path.join(course_base_dir, asset_path)
-    pool_asset_path = os.path.join(pool_base_dir, asset_path)
+    if os.path.exists(course_asset_path):
+        return course_asset_path
 
-    if not os.path.exists(course_asset_path) and not os.path.exists(pool_asset_path):
-        logger.warning(
-            f"Asset not found: '{asset_path}'. Looked in '{course_base_dir}' and '{pool_base_dir}'."
-        )
+    pool_asset_path = os.path.join(pool_base_dir, asset_path)
+    if os.path.exists(pool_asset_path):
+        return pool_asset_path
+
+    logger.warning(
+        f"Asset not found: '{asset_path}'. Looked in '{course_base_dir}' and '{pool_base_dir}'."
+    )
+    return None
 
 
 def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
@@ -62,11 +69,13 @@ def _parse_exercise_options(
             # Format: [{"text": "Option A", "image_file": "path/to/image.png", "correct": true}]
             for opt in options_data:
                 image_file = opt.get("image_file")
-                _validate_asset_path(image_file, course_base_dir, pool_base_dir)
+                validated_image_path = _validate_asset_path(
+                    image_file, course_base_dir, pool_base_dir
+                )
                 parsed_options.append(
                     ExerciseOption(
                         text=opt.get("text"),
-                        image_file=image_file,
+                        image_file=validated_image_path or image_file,
                         correct=opt.get("correct", False),
                     )
                 )
@@ -122,8 +131,12 @@ def _parse_exercise(
     target_pron_text = exercise_data.get("target_pronunciation_text")
     allowed_lev_dist = exercise_data.get("allowed_levenshtein_distance")
 
-    _validate_asset_path(audio_file, course_base_dir, pool_base_dir)
-    _validate_asset_path(image_file, course_base_dir, pool_base_dir)
+    validated_audio_path = _validate_asset_path(
+        audio_file, course_base_dir, pool_base_dir
+    )
+    validated_image_path = _validate_asset_path(
+        image_file, course_base_dir, pool_base_dir
+    )
 
     options: List[ExerciseOption] = []
     if ex_type in [
@@ -192,8 +205,8 @@ def _parse_exercise(
         sentence_template=sentence_template,
         correct_option=correct_option,
         translation_hint=translation_hint,
-        audio_file=audio_file,
-        image_file=image_file,
+        audio_file=validated_audio_path or audio_file,
+        image_file=validated_image_path or image_file,
         words=words_data if isinstance(words_data, list) else None,
         explanation=explanation_text,
         target_pronunciation_text=target_pron_text,
@@ -239,7 +252,9 @@ def load_course_content(
         )
         return None
 
-    _validate_asset_path(image_file, course_base_dir, pool_base_dir)
+    validated_image_path = _validate_asset_path(
+        image_file, course_base_dir, pool_base_dir
+    )
 
     course = Course(
         course_id=course_id,
@@ -249,7 +264,7 @@ def load_course_content(
         version=version,
         author=author,
         description=description,
-        image_file=image_file,
+        image_file=validated_image_path or image_file,
         content_file=os.path.basename(content_filepath),
     )
     logger.debug(f"Initialized Course object for '{course_title}' (ID: {course_id})")

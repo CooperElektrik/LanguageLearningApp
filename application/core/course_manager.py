@@ -454,47 +454,4 @@ class CourseManager(QObject):
         """
         Returns a dictionary with a template_key and arguments for formatting the prompt.
         """
-        prompt_text = exercise.prompt or ""
-
-        if exercise.type == "translate_to_target":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
-                "args": [self.target_language, prompt_text],
-            }
-        elif exercise.type == "translate_to_source":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
-                "args": [self.source_language, prompt_text],
-            }
-        elif exercise.type == "dictation":
-            return {"template_key": PROMPT_KEY_DICTATION, "args": [prompt_text]}
-        elif exercise.type == "multiple_choice_translation":
-            return {
-                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
-                "args": [
-                    self.target_language,
-                    exercise.source_word or "",
-                    self.source_language,
-                ],
-            }
-        elif exercise.type == "fill_in_the_blank":
-            return {
-                "template_key": PROMPT_KEY_FIB,
-                "args": [
-                    exercise.sentence_template or "",
-                    exercise.translation_hint or "",
-                ],
-            }
-        elif exercise.type == "image_association":
-            return {"template_key": PROMPT_KEY_IMAGE_ASSOCIATION, "args": [prompt_text]}
-        elif exercise.type == "listen_and_select":
-            return {"template_key": PROMPT_KEY_LISTEN_SELECT, "args": [prompt_text]}
-        elif exercise.type == "sentence_jumble":
-            return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
-        elif exercise.type == "context_block":
-            return {
-                "template_key": PROMPT_KEY_CONTEXT_BLOCK,
-                "args": [exercise.title or ""],
-            }
-
-        return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}
+        return {"template_key": PROMPT_KEY_DEFAULT, "args": [exercise.prompt or ""]}
