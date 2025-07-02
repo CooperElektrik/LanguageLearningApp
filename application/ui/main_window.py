@@ -77,6 +77,11 @@ class MainWindow(QMainWindow):
 
         logger.info("MainWindow initializing...")
         self.setWindowTitle(self.tr("LanguageLearningApp"))
+        
+        # Set application icon
+        app_icon_path = utils.get_resource_path(os.path.join("assets", "icons", "logo.png"))
+        self.setWindowIcon(QIcon(app_icon_path))
+
         self.setGeometry(100, 100, 1024, 768)
         self.showFullScreen()
 

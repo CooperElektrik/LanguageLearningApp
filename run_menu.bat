@@ -143,6 +143,7 @@ REM Build using PyInstaller with added data directories
 pyinstaller ^
   --onefile ^
   --windowed ^
+  --icon="%SCRIPT_DIR%\application\assets\icons\logo.png" ^
   --paths "%SCRIPT_DIR%\application" ^
   --add-data="courses;courses" ^
   --add-data="assets;assets" ^
@@ -197,6 +198,7 @@ REM Build using PyInstaller with added data directories
 pyinstaller ^
   --onedir ^
   --windowed ^
+  --icon="%SCRIPT_DIR%\application\assets\icons\logo.png" ^
   --paths "%SCRIPT_DIR%\application" ^
   --add-data="courses;courses" ^
   --add-data="assets;assets" ^
