@@ -256,7 +256,7 @@ class UnifiedSetupDialog(QDialog):
 
     def _populate_whisper_models(self):
         self.whisper_combo.addItem("None", userData="None")
-        from application.core.whisper_engine import check_whisper_model_downloaded
+        from core.whisper_engine import check_whisper_model_downloaded
         for model_name, info in settings.WHISPER_MODEL_INFO.items():
             display_name = model_name
             if check_whisper_model_downloaded(model_name):
@@ -400,7 +400,7 @@ class UnifiedSetupDialog(QDialog):
     def check_cuda_availability(self):
         self.cuda_status_label.setText(self.tr("Checking..."))
         try:
-            from application.core.whisper_engine import _TORCH_AVAILABLE
+            from core.whisper_engine import _TORCH_AVAILABLE
             if _TORCH_AVAILABLE:
                 import torch # type: ignore
                 if torch.cuda.is_available():

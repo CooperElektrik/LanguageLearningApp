@@ -209,7 +209,7 @@ class SettingsDialog(QDialog):
         """Populates the Whisper model combo box with detailed tooltips."""
         self.whisper_model_combo.addItem("None", userData="None")  # Option to disable
 
-        from application.core.whisper_engine import check_whisper_model_downloaded
+        from core.whisper_engine import check_whisper_model_downloaded
 
         for model_name, info in settings.WHISPER_MODEL_INFO.items():
             display_name = model_name
@@ -678,7 +678,7 @@ class SettingsDialog(QDialog):
         """Checks for PyTorch and CUDA availability and updates the label."""
         self.cuda_availability_label.setText(self.tr("Checking..."))
         try:
-            from application.core.whisper_engine import _TORCH_AVAILABLE
+            from core.whisper_engine import _TORCH_AVAILABLE
 
             if _TORCH_AVAILABLE:
                 import torch # type: ignore
