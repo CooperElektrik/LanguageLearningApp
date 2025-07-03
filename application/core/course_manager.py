@@ -1,6 +1,7 @@
 import os
 import logging
 import Levenshtein
+import shutil
 from typing import Optional, List, Tuple, Any, Dict, Callable
 
 from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
@@ -63,7 +64,93 @@ class CourseManager(QObject):
             "pronunciation_practice": self._check_pronunciation_answer,
         }
         logger.debug(f"CourseManager initialized for manifest: {manifest_path}")
-        self._load_course_from_manifest()
+        if os.path.exists(manifest_path):
+            self._load_course_from_manifest()
+
+    def pull_course_from_git(self, git_url: str, progress_callback: Optional[Callable] = None):
+        """
+        Pulls a course from a git repository.
+        """
+        import git
+        import tempfile
+        from PySide6.QtWidgets import QMessageBox
+
+        class Progress(git.remote.RemoteProgress):
+            def update(self, op_code, cur_count, max_count=None, message=''):
+                if progress_callback:
+                    progress = cur_count / (max_count or 100.0) * 100
+                    
+                    stage_message = ""
+                    if op_code & git.remote.RemoteProgress.COUNTING:
+                        stage_message = "Counting objects..."
+                    elif op_code & git.remote.RemoteProgress.COMPRESSING:
+                        stage_message = "Compressing objects..."
+                    elif op_code & git.remote.RemoteProgress.WRITING:
+                        stage_message = "Writing objects..."
+                    elif op_code & git.remote.RemoteProgress.RECEIVING:
+                        stage_message = "Receiving objects..."
+                    elif op_code & git.remote.RemoteProgress.RESOLVING:
+                        stage_message = "Resolving deltas..."
+                    elif op_code & git.remote.RemoteProgress.CHECKING_OUT:
+                        stage_message = "Checking out files..."
+                    
+                    if stage_message:
+                        progress_callback(progress, stage_message)
+
+        try:
+            # Create a temporary directory to clone the repository
+            with tempfile.TemporaryDirectory() as temp_dir:
+                if progress_callback:
+                    progress_callback(0, "Cloning repository...")
+                # Clone the repository into the temporary directory
+                repo = git.Repo.clone_from(git_url, temp_dir, progress=Progress())
+
+                if progress_callback:
+                    progress_callback(50, "Copying files...")
+
+                # Get the course ID from the manifest file
+                manifest_path = os.path.join(temp_dir, "manifest.yaml")
+                if not os.path.exists(manifest_path):
+                    raise FileNotFoundError("manifest.yaml not found in the repository root.")
+
+                manifest_data = course_loader.load_manifest(manifest_path)
+                if not manifest_data:
+                    raise ValueError("Failed to load manifest data.")
+
+                course_id = manifest_data.get("course_id")
+                if not course_id:
+                    raise ValueError("course_id not found in manifest.yaml.")
+
+                # Create the course directory if it doesn't exist
+                course_dir = os.path.join(utils.get_app_root_dir(), "courses", course_id)
+                if not os.path.exists(course_dir):
+                    os.makedirs(course_dir)
+
+                # Copy the course files from the temporary directory to the course directory
+                for item in os.listdir(temp_dir):
+                    s = os.path.join(temp_dir, item)
+                    d = os.path.join(course_dir, item)
+                    if os.path.isdir(s):
+                        shutil.copytree(s, d, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(s, d)
+
+                if progress_callback:
+                    progress_callback(100, "Download complete. Installing...")
+
+                # Load the course from the new location
+                self.manifest_path = os.path.join(course_dir, "manifest.yaml")
+                self._load_course_from_manifest()
+
+                if progress_callback:
+                    progress_callback(100, "Course installed successfully.")
+
+        except git.exc.GitCommandError as e:
+            logger.error(f"Git command error: {e}")
+            QMessageBox.critical(None, "Git Error", f"Failed to pull course from Git: {e}")
+        except Exception as e:
+            logger.error(f"Error pulling course from git: {e}")
+            QMessageBox.critical(None, "Error", f"An unexpected error occurred: {e}")
 
     def _load_course_from_manifest(self):
         """

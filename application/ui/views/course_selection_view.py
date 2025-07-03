@@ -157,6 +157,15 @@ class CourseSelectionView(QWidget):
         self.courses_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll_area.setWidget(self.scroll_content)
 
+    def refresh_courses(self):
+        """Clears and re-scans for courses."""
+        # Clear existing course buttons
+        for i in reversed(range(self.courses_layout.count())):
+            widget = self.courses_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.deleteLater()
+        self._find_and_display_courses()
+
     def _find_and_display_courses(self):
         courses_dir_abs = utils.get_resource_path(settings.COURSES_DIR)
         if not os.path.isdir(courses_dir_abs):

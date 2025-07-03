@@ -431,6 +431,39 @@ class MainWindow(QMainWindow):
         self.main_stack.setCurrentWidget(self.editor_view)
         self._update_menu_state()
 
+    def _pull_course_from_git(self):
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+
+        git_url, ok = QInputDialog.getText(
+            self,
+            self.tr("Pull Course from Git"),
+            self.tr("Enter Git Repository URL:"),
+            QLineEdit.EchoMode.Normal,
+            "",
+        )
+
+        if ok and git_url:
+            self.status_bar.showMessage(self.tr("Cloning course from Git..."), 0)
+            QApplication.processEvents()  # Ensure the message is displayed
+
+            # Progress callback to update the status bar
+            def progress_callback(progress, message):
+                if progress < 100:
+                    self.status_bar.showMessage(f"{message} {progress:.2f}%", 0)
+                else:
+                    self.status_bar.showMessage(message, 0)
+                QApplication.processEvents()
+
+            # Create a temporary CourseManager to handle the git pull
+            temp_course_manager = CourseManager(manifest_path="", parent=self)
+            try:
+                temp_course_manager.pull_course_from_git(git_url, progress_callback)
+            finally:
+                self.status_bar.clearMessage()
+
+            # Refresh the course selection view
+            self.course_selection_view.refresh_courses()
+
     def _setup_main_menu(self):
         """Creates the main, unified menu bar and all possible actions ONCE."""
         self.menuBar().clear()
@@ -444,6 +477,10 @@ class MainWindow(QMainWindow):
         self.open_for_editing_action = QAction(self.tr("Open Course for Editing..."), self)
         self.open_for_editing_action.triggered.connect(self._load_course_for_editing)
         file_menu.addAction(self.open_for_editing_action)
+
+        self.pull_from_git_action = QAction(self.tr("Pull Course from Git..."), self)
+        self.pull_from_git_action.triggered.connect(self._pull_course_from_git)
+        file_menu.addAction(self.pull_from_git_action)
 
         file_menu.addSeparator()
         self.settings_action = QAction(self.tr("&Settings..."), self)
@@ -481,6 +518,7 @@ class MainWindow(QMainWindow):
         # File Menu Actions
         self.return_to_selection_action.setEnabled(is_learning_view or is_editor_view)
         self.open_for_editing_action.setEnabled(is_selection_view)
+        self.pull_from_git_action.setEnabled(is_selection_view)
         # Settings and Quit are always enabled
         self.settings_action.setEnabled(True)
         self.quit_action.setEnabled(True)
