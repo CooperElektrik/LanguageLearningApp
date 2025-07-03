@@ -206,13 +206,42 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         self.exercises_in_session = self.current_lesson.exercises
         self.lesson_title_label.setText(self.current_lesson.title)
 
-        # Attempt to resume from last saved progress
+        # Determine resume behavior based on settings
+        q_settings = QSettings()
+        resume_behavior = q_settings.value(
+            settings.QSETTINGS_KEY_LESSON_RESUME_BEHAVIOR,
+            settings.LESSON_RESUME_BEHAVIOR_DEFAULT,
+            type=str,
+        )
+
         last_index = self.progress_manager.get_lesson_progress(self.current_lesson.lesson_id)
+        
+        should_resume = False
         if last_index is not None and 0 <= last_index < len(self.exercises_in_session):
+            if resume_behavior == settings.LESSON_RESUME_ALWAYS_RESUME:
+                should_resume = True
+            elif resume_behavior == settings.LESSON_RESUME_ALWAYS_RESTART:
+                should_resume = False # Explicitly restart
+            elif resume_behavior == settings.LESSON_RESUME_PROMPT:
+                reply = QMessageBox.question(
+                    self,
+                    self.tr("Resume Lesson?"),
+                    self.tr(f"You have unfinished progress in this lesson.\n" 
+                            f"Would you like to resume from where you left off (Exercise {last_index + 1} of {len(self.exercises_in_session)})?\n\n"
+                            f"Click 'Yes' to resume, 'No' to restart from the beginning."),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes,
+                )
+                should_resume = (reply == QMessageBox.StandardButton.Yes)
+
+        if should_resume:
             self.current_exercise_index = last_index
             logger.info(f"Resuming lesson '{self.current_lesson.title}' from exercise index {self.current_exercise_index}")
         else:
             self.current_exercise_index = 0
+            # If restarting, clear previous progress for this lesson
+            if last_index is not None:
+                self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, 0)
             logger.info(f"Starting lesson '{self.current_lesson.title}' from the beginning.")
 
         self.lesson_start_index = self.current_exercise_index # Store where this session started

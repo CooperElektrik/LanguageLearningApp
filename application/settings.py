@@ -214,6 +214,18 @@ LOG_LEVEL_INT = getattr(logging, LOG_LEVEL.upper(), logging.INFO)
 # --- Developer Mode Settings ---
 DEVELOPER_MODE_DEFAULT = False
 QSETTINGS_KEY_DEVELOPER_MODE = "developer/developer_mode_enabled"
+QSETTINGS_KEY_LESSON_RESUME_BEHAVIOR = "lesson/resume_behavior"
+
+# Lesson Resume Behavior Options
+LESSON_RESUME_ALWAYS_RESUME = "always_resume"
+LESSON_RESUME_ALWAYS_RESTART = "always_restart"
+LESSON_RESUME_PROMPT = "prompt"
+LESSON_RESUME_BEHAVIOR_OPTIONS = [
+    LESSON_RESUME_ALWAYS_RESUME,
+    LESSON_RESUME_ALWAYS_RESTART,
+    LESSON_RESUME_PROMPT,
+]
+LESSON_RESUME_BEHAVIOR_DEFAULT = LESSON_RESUME_PROMPT
 ENV_VAR_DEVELOPER_MODE = "LINGUALEARN_DEV_MODE"  # Environment variable to activate dev mode (e.g., LINGUALEARN_DEV_MODE=1)
 
 

@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QPushButton,
     QMessageBox,
+    QScrollArea,
+    QWidget
 )
 from PySide6.QtMultimedia import QMediaDevices  # Added for audio device listing
 from PySide6.QtCore import Qt, QSettings, Signal, QEvent
@@ -36,12 +38,24 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.stt_manager = stt_manager
         self.setWindowTitle(self.tr("Settings"))
-        self.setMinimumWidth(400)
+        self.setFixedSize(500, 700) # Set a fixed size for the dialog
         logger.info("SettingsDialog initialized.")
 
         self.q_settings = QSettings()
 
-        main_layout = QVBoxLayout(self)
+        # Create a scroll area
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+
+        # Create a widget to hold the main layout content
+        scroll_content_widget = QWidget()
+        main_layout = QVBoxLayout(scroll_content_widget)
+
+        scroll_area.setWidget(scroll_content_widget)
+
+        # Main dialog layout to hold the scroll area and buttons
+        dialog_main_layout = QVBoxLayout(self)
+        dialog_main_layout.addWidget(scroll_area)
 
         # --- Audio Settings ---
         self.audio_group = QGroupBox(self.tr("Audio"))
@@ -163,6 +177,13 @@ class SettingsDialog(QDialog):
         self.reset_ui_button = QPushButton(self.tr("Reset UI Settings to Default"))
         self.reset_ui_button.clicked.connect(self._reset_ui_settings)
         ui_layout.addRow(self.reset_ui_button)  # Add as a new row
+
+        # Lesson Resume Behavior Setting
+        self.lesson_resume_combo = QComboBox()
+        for behavior in settings.LESSON_RESUME_BEHAVIOR_OPTIONS:
+            self.lesson_resume_combo.addItem(self.tr(behavior.replace("_", " ").title()), userData=behavior)
+        ui_layout.addRow(self.tr("Lesson Resume Behavior:"), self.lesson_resume_combo)
+
         main_layout.addWidget(self.ui_group)
 
         # --- Developer Settings ---
@@ -201,7 +222,7 @@ class SettingsDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
             self.apply_settings
         )
-        main_layout.addWidget(buttons)
+        dialog_main_layout.addWidget(buttons)
 
         self.load_settings()
 
@@ -407,6 +428,15 @@ class SettingsDialog(QDialog):
         )
         self.dev_mode_checkbox.setChecked(dev_mode_enabled)
 
+        lesson_resume_behavior = self.q_settings.value(
+            settings.QSETTINGS_KEY_LESSON_RESUME_BEHAVIOR,
+            settings.LESSON_RESUME_BEHAVIOR_DEFAULT,
+            type=str,
+        )
+        index = self.lesson_resume_combo.findData(lesson_resume_behavior)
+        if index != -1:
+            self.lesson_resume_combo.setCurrentIndex(index)
+
     def _update_font_size_label(self, value):
         """Update the font size label when the slider value changes."""
         self.font_size_label.setText(str(value) + " pt")
@@ -523,6 +553,11 @@ class SettingsDialog(QDialog):
             settings.QSETTINGS_KEY_DEVELOPER_MODE, self.dev_mode_checkbox.isChecked()
         )
 
+        self.q_settings.setValue(
+            settings.QSETTINGS_KEY_LESSON_RESUME_BEHAVIOR,
+            self.lesson_resume_combo.currentData(),
+        )
+
         logger.info("Settings applied.")
 
     def save_settings(self):
@@ -611,6 +646,12 @@ class SettingsDialog(QDialog):
                 "Requires application restart to take full effect for logging and some startup features."
             )
         )
+
+        # Retranslate lesson resume behavior options
+        for i in range(self.lesson_resume_combo.count()):
+            behavior_data = self.lesson_resume_combo.itemData(i)
+            self.lesson_resume_combo.setItemText(i, self.tr(behavior_data.replace("_", " ").title()))
+
         # Dialog Buttons - standard buttons usually retranslate automatically.
         # If custom text was set, it would need retranslation.
         logger.debug("SettingsDialog retranslated.")
