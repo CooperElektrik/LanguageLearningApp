@@ -55,6 +55,7 @@ class ProgressManager:
         self.last_study_date: Optional[date] = None
         self.current_streak_days: int = 0
         self.exercise_notes: Dict[str, str] = {}
+        self.lesson_progress: Dict[str, Dict[str, Any]] = {}
 
         self._ensure_data_dir_exists()
         self.load_progress()
@@ -122,6 +123,9 @@ class ProgressManager:
                 self.exercise_notes = data.get("exercise_notes", {})
                 logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
 
+                self.lesson_progress = data.get("lesson_progress", {})
+                logger.debug(f"Loaded progress for {len(self.lesson_progress)} lessons.")
+
                 logger.info(
                     f"Progress loaded for course '{self.course_id}' from {self.progress_file}. Total exercises with SRS data: {len(self.exercise_srs_data)}"
                 )
@@ -173,6 +177,7 @@ class ProgressManager:
             ),
             "current_streak_days": self.current_streak_days,
             "exercise_notes": self.exercise_notes,
+            "lesson_progress": self.lesson_progress,
         }
         try:
             with open(self.progress_file, "w", encoding="utf-8") as f:
@@ -186,6 +191,22 @@ class ProgressManager:
         except Exception as e:
             logger.error(f"An unexpected error occurred while saving progress: {e}")
         return False
+
+    def set_lesson_progress(self, lesson_id: str, last_exercise_index: int):
+        """Updates the last viewed exercise index for a specific lesson."""
+        if lesson_id not in self.lesson_progress:
+            self.lesson_progress[lesson_id] = {}
+        self.lesson_progress[lesson_id]["last_exercise_index"] = last_exercise_index
+        self.lesson_progress[lesson_id]["last_updated"] = datetime.now().isoformat()
+        logger.debug(f"Set lesson '{lesson_id}' progress to index {last_exercise_index}")
+        self.save_progress()
+
+    def get_lesson_progress(self, lesson_id: str) -> Optional[int]:
+        """Retrieves the last viewed exercise index for a specific lesson."""
+        progress = self.lesson_progress.get(lesson_id)
+        if progress:
+            return progress.get("last_exercise_index")
+        return None
 
     def get_exercise_note(self, exercise_id: str) -> Optional[str]:
         """Retrieves the personal note for a given exercise ID."""
