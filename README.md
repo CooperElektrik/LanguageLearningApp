@@ -1,5 +1,10 @@
 # LanguageLearningApp: A PySide6 Language Learning Platform & Content Editor
 
+> [!WARNING]
+> **I'm picking up this project — stay tuned!** 
+>
+>Documentation, features, and updates are being actively worked on.
+
 Welcome to LanguageLearningApp, a desktop application inspired by Duolingo for interactive language learning, built with PySide6. This project includes a comprehensive suite of tools for creating, managing, and distributing custom language course content.
 
 >[!IMPORTANT]
