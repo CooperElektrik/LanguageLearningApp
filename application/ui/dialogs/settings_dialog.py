@@ -1,33 +1,33 @@
 import logging
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QGroupBox,
-    QCheckBox,
-    QSlider,
-    QLabel,
-    QDialogButtonBox,
-    QHBoxLayout,
-    QComboBox,
-    QFormLayout,
-    QPushButton,
-    QMessageBox,
-    QScrollArea,
-    QWidget
-)
-from PySide6.QtMultimedia import QMediaDevices  # Added for audio device listing
-from PySide6.QtCore import Qt, QSettings, Signal, QEvent
 
 import settings
 import utils
-
 from core.stt_manager import STTManager
+from PySide6.QtCore import QEvent, QSettings, Qt, Signal
+from PySide6.QtMultimedia import QMediaDevices  # Added for audio device listing
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
+
+from . import settings_widgets
 
 logger = logging.getLogger(__name__)
 
 
 class SettingsDialog(QDialog):
-
     theme_changed = Signal(str)  # Emitted when the theme is changed
     font_size_changed = Signal(int)  # Emitted when font size slider changes
     locale_changed = Signal(
@@ -38,7 +38,7 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.stt_manager = stt_manager
         self.setWindowTitle(self.tr("Settings"))
-        self.setFixedSize(500, 700) # Set a fixed size for the dialog
+        self.setFixedSize(500, 700)  # Set a fixed size for the dialog
         logger.info("SettingsDialog initialized.")
 
         self.q_settings = QSettings()
@@ -165,7 +165,9 @@ class SettingsDialog(QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
-        font_size_note = QLabel(self.tr("Note: Themes that set font sizes explicitly cannot be changed."))
+        font_size_note = QLabel(
+            self.tr("Note: Themes that set font sizes explicitly cannot be changed.")
+        )
         font_size_note.setWordWrap(True)
         ui_layout.addRow(font_size_note)
 
@@ -181,7 +183,9 @@ class SettingsDialog(QDialog):
         # Lesson Resume Behavior Setting
         self.lesson_resume_combo = QComboBox()
         for behavior in settings.LESSON_RESUME_BEHAVIOR_OPTIONS:
-            self.lesson_resume_combo.addItem(self.tr(behavior.replace("_", " ").title()), userData=behavior)
+            self.lesson_resume_combo.addItem(
+                self.tr(behavior.replace("_", " ").title()), userData=behavior
+            )
         ui_layout.addRow(self.tr("Lesson Resume Behavior:"), self.lesson_resume_combo)
 
         main_layout.addWidget(self.ui_group)
@@ -228,84 +232,24 @@ class SettingsDialog(QDialog):
 
     def _populate_whisper_models(self):
         """Populates the Whisper model combo box with detailed tooltips."""
-        self.whisper_model_combo.addItem("None", userData="None")  # Option to disable
-
-        from core.whisper_engine import check_whisper_model_downloaded
-
-        for model_name, info in settings.WHISPER_MODEL_INFO.items():
-            display_name = model_name
-            if check_whisper_model_downloaded(model_name):
-                display_name += self.tr(" (Downloaded)")
-            else:
-                display_name += self.tr(" (Not Downloaded)")
-
-            self.whisper_model_combo.addItem(display_name, userData=model_name)
-            # Set the tooltip for the item we just added
-            tooltip_text = self.tr(
-                "Model: {model_name}\n"
-                "Size: {size}\n"
-                "Parameters: {params}\n"
-                "Recommended Device: {device_rec}\n"
-                "Expected processing time (CPU): {ptime}\n"
-            ).format(**info, model_name=model_name)
-            self.whisper_model_combo.setItemData(
-                self.whisper_model_combo.count() - 1,
-                tooltip_text,
-                Qt.ItemDataRole.ToolTipRole,
-            )
+        settings_widgets.populate_whisper_model_combo(
+            self.whisper_model_combo, self.tr, include_processing_time=True
+        )
 
     def _populate_vosk_models(self):
         """Populates the VOSK model combo box with detailed tooltips."""
-        self.vosk_model_combo.addItem("None", userData="None")  # Option to disable
-
-        for model_name, info in settings.VOSK_MODEL_INFO.items():
-            self.vosk_model_combo.addItem(model_name, userData=model_name)
-            # Set the tooltip for the item we just added
-            tooltip_text = self.tr(
-                "Model: {model_name}\n"
-                "Size: {size}\n"
-                "Language: {lang}\n"
-                "Description: {description}\n"
-            ).format(**info, model_name=model_name)
-            self.vosk_model_combo.setItemData(
-                self.vosk_model_combo.count() - 1,
-                tooltip_text,
-                Qt.ItemDataRole.ToolTipRole,
-            )
+        settings_widgets.populate_vosk_model_combo(self.vosk_model_combo, self.tr)
 
     def _populate_audio_input_devices(self):
         """Populates the audio input device combo box."""
-        # QMediaDevices is imported at the top of the file
-
-        self.audio_input_device_combo.clear()
-        default_device_info = QMediaDevices.defaultAudioInput()  # QAudioDevice object
-        default_device_id_str = (
-            default_device_info.id().toStdString()
-            if not default_device_info.isNull()
-            else ""
-        )
-
-        for device in QMediaDevices.audioInputs():
-            # Store device.id().toStdString() (str) as userData, display description()
-            self.audio_input_device_combo.addItem(
-                device.description(), userData=device.id().toStdString()
-            )
-            if device.id().toStdString() == default_device_id_str:
-                self.audio_input_device_combo.setCurrentText(
-                    device.description()
-                )  # Set default
+        settings_widgets.populate_audio_input_devices(self.audio_input_device_combo)
 
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
         self.available_locales = utils.get_available_locales()  # Store for mapping
-        # Sort by display name for user-friendliness, keeping "System" first
-        sorted_display_names = sorted(
-            self.available_locales.keys(),
-            key=lambda x: (x != settings.DEFAULT_LOCALE, x),
+        settings_widgets.populate_locale_combo(
+            self.locale_combo, self.available_locales
         )
-        for display_name in sorted_display_names:
-            locale_code = self.available_locales[display_name]
-            self.locale_combo.addItem(display_name, userData=locale_code)
 
     def load_settings(self):
         """Loads settings from QSettings and updates the UI controls."""
@@ -376,7 +320,9 @@ class SettingsDialog(QDialog):
             type=str,
         )
         self.stt_engine_combo.setCurrentText(current_stt_engine)
-        self._on_stt_engine_changed(current_stt_engine) # Manually trigger to set visibility
+        self._on_stt_engine_changed(
+            current_stt_engine
+        )  # Manually trigger to set visibility
 
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
@@ -399,7 +345,7 @@ class SettingsDialog(QDialog):
 
         current_theme_name = self.q_settings.value(
             settings.QSETTINGS_KEY_UI_THEME,
-            "Fancy Light",  # Default to "Fancy Light" theme
+            settings.DEFAULT_THEME,  # Default to "Dark" theme
             type=str,
         )
         if current_theme_name in settings.AVAILABLE_THEMES:
@@ -411,7 +357,9 @@ class SettingsDialog(QDialog):
             )
 
         current_locale_code = self.q_settings.value(
-            settings.QSETTINGS_KEY_LOCALE, settings.DEFAULT_LOCALE, type=str  # "System"
+            settings.QSETTINGS_KEY_LOCALE,
+            settings.DEFAULT_LOCALE,
+            type=str,  # "System"
         )
         # Find the display name for the saved locale code
         for display_name, code_val in self.available_locales.items():
@@ -444,8 +392,8 @@ class SettingsDialog(QDialog):
 
     def _on_stt_engine_changed(self, engine_name: str):
         """Toggles visibility of Whisper/VOSK specific settings based on selected engine."""
-        is_whisper = (engine_name == settings.STT_ENGINE_WHISPER)
-        is_vosk = (engine_name == settings.STT_ENGINE_VOSK)
+        is_whisper = engine_name == settings.STT_ENGINE_WHISPER
+        is_vosk = engine_name == settings.STT_ENGINE_VOSK
 
         self.whisper_model_label.setVisible(is_whisper)
         self.whisper_model_combo.setVisible(is_whisper)
@@ -462,10 +410,8 @@ class SettingsDialog(QDialog):
     def _reset_ui_settings(self):
         """Resets UI related settings (theme, font size) to their defaults and applies them live."""
         # Reset theme
-        self.theme_combo.setCurrentText(
-            "Fancy Light"
-        )  # Assuming "Fancy Light" is the default key
-        self.theme_changed.emit("Fancy Light")
+        self.theme_combo.setCurrentText(settings.DEFAULT_THEME)
+        self.theme_changed.emit(settings.DEFAULT_THEME)
 
         # Reset font size
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)
@@ -650,7 +596,9 @@ class SettingsDialog(QDialog):
         # Retranslate lesson resume behavior options
         for i in range(self.lesson_resume_combo.count()):
             behavior_data = self.lesson_resume_combo.itemData(i)
-            self.lesson_resume_combo.setItemText(i, self.tr(behavior_data.replace("_", " ").title()))
+            self.lesson_resume_combo.setItemText(
+                i, self.tr(behavior_data.replace("_", " ").title())
+            )
 
         # Dialog Buttons - standard buttons usually retranslate automatically.
         # If custom text was set, it would need retranslation.
@@ -682,9 +630,9 @@ class SettingsDialog(QDialog):
                 QMessageBox.information(
                     self,
                     self.tr("Model Unloaded"),
-                    self.tr("Whisper model '{0}' has been unloaded from memory.").format(
-                        loaded_model_name or "None"
-                    ),
+                    self.tr(
+                        "Whisper model '{0}' has been unloaded from memory."
+                    ).format(loaded_model_name or "None"),
                 )
             else:
                 QMessageBox.information(
@@ -718,20 +666,14 @@ class SettingsDialog(QDialog):
     def check_cuda_availability(self):
         """Checks for PyTorch and CUDA availability and updates the label."""
         self.cuda_availability_label.setText(self.tr("Checking..."))
-        try:
-            from core.whisper_engine import _TORCH_AVAILABLE
-
-            if _TORCH_AVAILABLE:
-                import torch # type: ignore
-                if torch.cuda.is_available():
-                    self.cuda_availability_label.setText(self.tr("Available"))
-                    self.cuda_availability_label.setProperty("available", True)
-                else:
-                    self.cuda_availability_label.setText(self.tr("Not Available"))
-                    self.cuda_availability_label.setProperty("available", False)
-            else:
-                self.cuda_availability_label.setText(self.tr("PyTorch not installed"))
-                self.cuda_availability_label.setProperty("available", False)
-        except Exception:
-            self.cuda_availability_label.setText(self.tr("Error checking PyTorch"))
-            self.cuda_availability_label.setProperty("available", False)
+        status = settings_widgets.detect_cuda_status()
+        if status == settings_widgets.CUDA_AVAILABLE:
+            text, available = self.tr("Available"), True
+        elif status == settings_widgets.CUDA_NOT_AVAILABLE:
+            text, available = self.tr("Not Available"), False
+        elif status == settings_widgets.CUDA_TORCH_MISSING:
+            text, available = self.tr("PyTorch not installed"), False
+        else:
+            text, available = self.tr("Error checking PyTorch"), False
+        self.cuda_availability_label.setText(text)
+        self.cuda_availability_label.setProperty("available", available)

@@ -1,29 +1,22 @@
 import logging
 from enum import Enum, auto
 
-from PySide6.QtWidgets import (
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
-    QMessageBox,
-    QStyle,
-    QWidget,
-    QDialog,
-)
-from PySide6.QtCore import Signal, Qt, QSettings, QTimer, QEvent
-
-from typing import Optional, List
-
 import settings
 import utils
-from core.models import Lesson, Exercise
 from core.course_manager import CourseManager
+from core.models import Exercise, Lesson
 from core.progress_manager import ProgressManager
 from core.stt_manager import STTManager
-from ui.views.base_exercise_player_view import BaseExercisePlayerView
-from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
-from ..dialogs.glossary_lookup_dialog import GlossaryLookupDialog
+from PySide6.QtCore import QEvent, QSettings, Qt, QTimer, Signal
 from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QWidget,
+)
+from ui.views.base_exercise_player_view import BaseExercisePlayerView
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +38,18 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         course_manager: CourseManager,
         progress_manager: ProgressManager,
         stt_manager: STTManager,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(course_manager, progress_manager, stt_manager, parent)
 
-        self.current_lesson: Optional[Lesson] = None
-        self.exercises_in_session: List[Exercise] = []
-        self.mistakes_queue: List[Exercise] = []
+        self.current_lesson: Lesson | None = None
+        self.exercises_in_session: list[Exercise] = []
+        self.mistakes_queue: list[Exercise] = []
         self.current_exercise_index: int = -1
         self.total_exercises_in_lesson: int = 0
-        self.lesson_start_index: int = 0 # New attribute to store where the lesson started
+        self.lesson_start_index: int = (
+            0  # New attribute to store where the lesson started
+        )
 
         self.view_state: LessonViewState = LessonViewState.INITIAL_LOAD
 
@@ -78,23 +73,15 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
         lesson_action_buttons_layout = QHBoxLayout()
 
-        self.toggle_notes_button = QPushButton()
-        self.toggle_notes_button.setObjectName("toggle_notes_button_lesson")
-        self.toggle_notes_button.setCheckable(True)
-        self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
+        self.toggle_notes_button = self._create_notes_button(
+            "toggle_notes_button_lesson"
+        )
         lesson_action_buttons_layout.addWidget(self.toggle_notes_button)
 
-        self.toggle_hint_button = QPushButton(self.tr("Show Hint"))
-        self.toggle_hint_button.setObjectName("toggle_hint_button_lesson")
-        self.toggle_hint_button.setCheckable(
-            False
-        )  # Behavior is to toggle, not stay pressed
-        self.toggle_hint_button.clicked.connect(self._toggle_hint_visibility_manually)
+        self.toggle_hint_button = self._create_hint_button("toggle_hint_button_lesson")
         lesson_action_buttons_layout.addWidget(self.toggle_hint_button)
 
-        self.lookup_button = QPushButton(self.tr("Lookup..."))
-        self.lookup_button.setObjectName("lookup_button_lesson")
-        self.lookup_button.clicked.connect(self._handle_lookup_word)
+        self.lookup_button = self._create_lookup_button("lookup_button_lesson")
         lesson_action_buttons_layout.addWidget(self.lookup_button)
 
         lesson_action_buttons_layout.addStretch(1)
@@ -214,40 +201,54 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             type=str,
         )
 
-        last_index = self.progress_manager.get_lesson_progress(self.current_lesson.lesson_id)
-        
+        last_index = self.progress_manager.get_lesson_progress(
+            self.current_lesson.lesson_id
+        )
+
         should_resume = False
         if last_index is not None and 0 <= last_index < len(self.exercises_in_session):
             if resume_behavior == settings.LESSON_RESUME_ALWAYS_RESUME:
                 should_resume = True
             elif resume_behavior == settings.LESSON_RESUME_ALWAYS_RESTART:
-                should_resume = False # Explicitly restart
+                should_resume = False  # Explicitly restart
             elif resume_behavior == settings.LESSON_RESUME_PROMPT:
                 reply = QMessageBox.question(
                     self,
                     self.tr("Resume Lesson?"),
-                    self.tr(f"You have unfinished progress in this lesson.\n" 
-                            f"Would you like to resume from where you left off (Exercise {last_index + 1} of {len(self.exercises_in_session)})?\n\n"
-                            f"Click 'Yes' to resume, 'No' to restart from the beginning."),
+                    self.tr(
+                        f"You have unfinished progress in this lesson.\n"
+                        f"Would you like to resume from where you left off (Exercise {last_index + 1} of {len(self.exercises_in_session)})?\n\n"
+                        f"Click 'Yes' to resume, 'No' to restart from the beginning."
+                    ),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.Yes,
                 )
-                should_resume = (reply == QMessageBox.StandardButton.Yes)
+                should_resume = reply == QMessageBox.StandardButton.Yes
 
         if should_resume:
             self.current_exercise_index = last_index
-            logger.info(f"Resuming lesson '{self.current_lesson.title}' from exercise index {self.current_exercise_index}")
+            logger.info(
+                f"Resuming lesson '{self.current_lesson.title}' from exercise index {self.current_exercise_index}"
+            )
         else:
             self.current_exercise_index = 0
             # If restarting, clear previous progress for this lesson
             if last_index is not None:
-                self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, 0)
-            logger.info(f"Starting lesson '{self.current_lesson.title}' from the beginning.")
+                self.progress_manager.set_lesson_progress(
+                    self.current_lesson.lesson_id, 0
+                )
+            logger.info(
+                f"Starting lesson '{self.current_lesson.title}' from the beginning."
+            )
 
-        self.lesson_start_index = self.current_exercise_index # Store where this session started
+        self.lesson_start_index = (
+            self.current_exercise_index
+        )  # Store where this session started
         self.total_exercises_in_lesson = len(self.exercises_in_session)
 
-        self.progress_bar.setRange(0, self.total_exercises_in_lesson - self.lesson_start_index)
+        self.progress_bar.setRange(
+            0, self.total_exercises_in_lesson - self.lesson_start_index
+        )
         self.progress_bar.setValue(0)
 
         self._load_next_exercise_in_lesson()
@@ -256,7 +257,9 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         """Loads the next exercise in the current session, or finishes the lesson."""
         self._save_current_note()
         if self.current_lesson:
-            self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, self.current_exercise_index)
+            self.progress_manager.set_lesson_progress(
+                self.current_lesson.lesson_id, self.current_exercise_index
+            )
         self.feedback_label.setText("")  # Clear feedback label
         # self._toggle_hint_visibility(force_show=False) # Done by _load_exercise_widget in base
         self.feedback_label.setStyleSheet("")
@@ -283,7 +286,9 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             # Button states (including hint button text) updated at the end of this method
 
             if self.view_state != LessonViewState.REVIEWING_MISTAKES:
-                self.progress_bar.setValue(self.current_exercise_index - self.lesson_start_index)
+                self.progress_bar.setValue(
+                    self.current_exercise_index - self.lesson_start_index
+                )
             self.view_state = (
                 LessonViewState.ASKING_QUESTION
                 if self.view_state != LessonViewState.REVIEWING_MISTAKES
@@ -296,16 +301,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
         # Defer button state update to ensure UI changes (like hint visibility) are processed
         QTimer.singleShot(0, self._update_button_states)
-
-    def _toggle_hint_visibility_manually(self):
-        """Handles manual click on the Show/Hide Hint button."""
-        if self.current_exercise_obj and self.current_exercise_obj.has_hint():
-            super()._toggle_hint_visibility()  # Call base class method
-            self.toggle_hint_button.setText(
-                self.tr("Hide Hint")
-                if self.hint_label.isVisible()
-                else self.tr("Show Hint")
-            )
 
     def _handle_submit_button_click(self):
         """Handles the 'Submit' button click."""
@@ -360,9 +355,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
                 self.feedback_label.setStyleSheet("color: orange;")
                 return
 
-            is_correct, feedback_text_display = self.course_manager.check_answer(
-                self.current_exercise_obj, user_answer
-            )
+            is_correct, feedback_text_display = self._evaluate_answer(user_answer)
             self.feedback_label.setStyleSheet(
                 "color: green;" if is_correct else "color: red;"
             )
@@ -392,10 +385,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
                     and self.current_exercise_obj not in self.mistakes_queue
                 ):
                     self.mistakes_queue.append(self.current_exercise_obj)
-                if self.current_exercise_obj.explanation:
-                    feedback_text_display += self.tr("\n\nExplanation: {0}").format(
-                        self.current_exercise_obj.explanation
-                    )
 
         self.feedback_label.setText(feedback_text_display)
 
@@ -496,26 +485,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
         self.view_state = LessonViewState.INITIAL_LOAD
         self._update_button_states()
-
-    def _handle_lookup_word(self):
-        """Opens a dialog to search for a word in the glossary."""
-        if not self.course_manager.get_glossary_entries():
-            QMessageBox.information(
-                self,
-                self.tr("Glossary Empty"),
-                self.tr("No glossary entries for this course."),
-            )
-            return
-
-        dialog = GlossaryLookupDialog(self.course_manager.get_glossary_entries(), self)
-        result = dialog.exec()
-
-        if result == QDialog.Accepted:
-            found_entry = dialog.get_selected_entry()
-
-        if found_entry:
-            dialog = GlossaryDetailDialog(found_entry, self.course_manager, self)
-            dialog.exec()
 
     def changeEvent(self, event: QEvent):
         if event.type() == QEvent.Type.LanguageChange:

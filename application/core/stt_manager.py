@@ -1,15 +1,21 @@
 import logging
-from PySide6.QtCore import QObject, Signal, QSettings, QThreadPool, QRunnable
-from typing import Optional
-import settings as app_settings
-import soundfile as sf
+
 import av
 import numpy as np
+import settings as app_settings
+import soundfile as sf
+from PySide6.QtCore import QObject, QRunnable, QSettings, QThreadPool, Signal
 
-from .whisper_engine import WhisperModelLoader, WhisperTranscriptionTask, get_best_whisper_device_config
-from .vosk_manager import ModelLoader as VoskModelLoader, TranscriptionTask as VoskTranscriptionTask # Renamed to avoid conflict
+from .vosk_manager import ModelLoader as VoskModelLoader  # Renamed to avoid conflict
+from .vosk_manager import TranscriptionTask as VoskTranscriptionTask
+from .whisper_engine import (
+    WhisperModelLoader,
+    WhisperTranscriptionTask,
+    get_best_whisper_device_config,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class STTManager(QObject):
     modelLoadingStarted = Signal(str)  # model_name or model_path
@@ -21,12 +27,18 @@ class STTManager(QObject):
         self.q_settings = QSettings()
         self.thread_pool = QThreadPool.globalInstance()
 
-        self._active_whisper_model_instance: Optional[object] = None # Use object for type hinting flexibility
-        self._active_vosk_model_instance: Optional[object] = None
-        self._active_model_name_loaded: Optional[str] = None # Stores the name/path of the currently loaded model
+        self._active_whisper_model_instance: object | None = (
+            None  # Use object for type hinting flexibility
+        )
+        self._active_vosk_model_instance: object | None = None
+        self._active_model_name_loaded: str | None = (
+            None  # Stores the name/path of the currently loaded model
+        )
         self._is_loading = False
 
-        self.whisper_device, self.whisper_compute_type = get_best_whisper_device_config()
+        self.whisper_device, self.whisper_compute_type = (
+            get_best_whisper_device_config()
+        )
         logger.info(
             f"Whisper configured to use device='{self.whisper_device}' with compute_type='{self.whisper_compute_type}'."
         )
@@ -34,11 +46,16 @@ class STTManager(QObject):
         # Determine samplerate for Vosk
         try:
             import sounddevice as sd
-            device_info = sd.query_devices(sd.default.device[0], 'input')
-            self.vosk_samplerate = int(device_info['default_samplerate'])
+
+            device_info = sd.query_devices(sd.default.device[0], "input")
+            self.vosk_samplerate = int(device_info["default_samplerate"])
         except Exception as e:
-            logger.warning(f"Could not determine default audio device samplerate for Vosk: {e}. Using default 16000.")
-            self.vosk_samplerate = 16000 # Default samplerate if detection fails
+            logger.warning(
+                f"Could not determine default audio device samplerate for Vosk: {e}. Using default {app_settings.AUDIO_SAMPLE_RATE}."
+            )
+            self.vosk_samplerate = (
+                app_settings.AUDIO_SAMPLE_RATE
+            )  # Default if detection fails
 
         logger.info(f"Vosk configured with samplerate={self.vosk_samplerate}.")
 
@@ -65,14 +82,14 @@ class STTManager(QObject):
             type=str,
         )
 
-    def get_stt_model_name(self, engine: str) -> Optional[str]:
+    def get_stt_model_name(self, engine: str) -> str | None:
         if engine == app_settings.STT_ENGINE_WHISPER:
             return self.get_selected_whisper_model_name()
         elif engine == app_settings.STT_ENGINE_VOSK:
             return self.get_selected_vosk_model_path()
         return None
 
-    def get_loaded_model_name(self) -> Optional[str]:
+    def get_loaded_model_name(self) -> str | None:
         return self._active_model_name_loaded
 
     def is_loading(self) -> bool:
@@ -83,7 +100,9 @@ class STTManager(QObject):
         model_to_load = self.get_stt_model_name(selected_engine)
 
         if not model_to_load or model_to_load.lower() == "none":
-            logger.info(f"No model selected for {selected_engine} or 'None' specified. Skipping load.")
+            logger.info(
+                f"No model selected for {selected_engine} or 'None' specified. Skipping load."
+            )
             self.modelLoadingFinished.emit("None", True)
             return
 
@@ -92,13 +111,17 @@ class STTManager(QObject):
             self.modelLoadingFinished.emit(model_to_load, True)
             return
 
-        logger.info(f"Attempting to load STT model for engine: {selected_engine}, model: {model_to_load}")
+        logger.info(
+            f"Attempting to load STT model for engine: {selected_engine}, model: {model_to_load}"
+        )
         self.unload_model()  # Unload any previously loaded model
         self._is_loading = True
         self.modelLoadingStarted.emit(model_to_load)
 
         if selected_engine == app_settings.STT_ENGINE_WHISPER:
-            loader_task = WhisperModelLoader(model_to_load, self.whisper_device, self.whisper_compute_type)
+            loader_task = WhisperModelLoader(
+                model_to_load, self.whisper_device, self.whisper_compute_type
+            )
             loader_task.signals.finished.connect(self._on_whisper_model_loaded)
             loader_task.signals.error.connect(self._on_whisper_model_load_error)
             self.thread_pool.start(loader_task)
@@ -108,7 +131,9 @@ class STTManager(QObject):
             loader_task.signals.error.connect(self._on_vosk_model_load_error)
             self.thread_pool.start(loader_task)
         else:
-            logger.warning(f"Unknown STT engine selected: {selected_engine}. Cannot load model.")
+            logger.warning(
+                f"Unknown STT engine selected: {selected_engine}. Cannot load model."
+            )
             self.modelLoadingFinished.emit("Unknown", False)
 
     def _on_whisper_model_loaded(self, model_name: str, model_instance: object):
@@ -149,7 +174,9 @@ class STTManager(QObject):
             self.modelUnloaded.emit(unloaded_model_path)
             logger.info(f"Model '{unloaded_model_path}' unloaded.")
 
-    def _resample_audio(self, input_path: str, target_sr: int, engine_name: str) -> Optional[str]:
+    def _resample_audio(
+        self, input_path: str, target_sr: int, engine_name: str
+    ) -> str | None:
         """
         Resamples an audio file to a target sample rate using PyAV and saves it.
 
@@ -170,21 +197,25 @@ class STTManager(QObject):
             if engine_name == "whisper":
                 output_path = input_path.replace(".wav", "_resampled_whisper.wav")
             else:
-                output_path = input_path.replace(".wav", f"_resampled_vosk_{target_sr}.wav")
+                output_path = input_path.replace(
+                    ".wav", f"_resampled_vosk_{target_sr}.wav"
+                )
 
             # Use a 'with' statement for proper resource management
             with av.open(input_path) as in_container:
                 # Find the first audio stream
-                in_stream = next((s for s in in_container.streams if s.type == 'audio'), None)
+                in_stream = next(
+                    (s for s in in_container.streams if s.type == "audio"), None
+                )
                 if in_stream is None:
                     logger.error(f"No audio streams found in {input_path}")
                     return None
 
                 # Set up the resampler to convert to mono, float, with the target sample rate
                 resampler = av.AudioResampler(
-                    format="fltp",    # Output format: float, planar
-                    layout="mono",   # Output layout: single channel
-                    rate=target_sr,      # Output sample rate
+                    format="fltp",  # Output format: float, planar
+                    layout="mono",  # Output layout: single channel
+                    rate=target_sr,  # Output sample rate
                 )
 
                 resampled_frames = []
@@ -196,12 +227,16 @@ class STTManager(QObject):
                 resampled_frames.extend(resampler.resample(None))
 
                 if not resampled_frames:
-                    logger.error(f"Resampling produced no frames for {input_path}. The file might be empty or corrupt.")
+                    logger.error(
+                        f"Resampling produced no frames for {input_path}. The file might be empty or corrupt."
+                    )
                     return None
 
                 # Concatenate all resampled frames into a single numpy array
                 # .to_ndarray() for fltp/mono gives a shape of (1, n_samples), so we reshape to a 1D array.
-                resampled_audio_data = np.concatenate([frame.to_ndarray().reshape(-1) for frame in resampled_frames])
+                resampled_audio_data = np.concatenate(
+                    [frame.to_ndarray().reshape(-1) for frame in resampled_frames]
+                )
 
                 # Write the resampled data to the new file
                 sf.write(output_path, resampled_audio_data, target_sr)
@@ -209,12 +244,19 @@ class STTManager(QObject):
                 return output_path
 
         except Exception as e:
-            logger.error(f"Error during audio resampling for {engine_name.capitalize()}: {e}", exc_info=True)
+            logger.error(
+                f"Error during audio resampling for {engine_name.capitalize()}: {e}",
+                exc_info=True,
+            )
             return None
 
     def transcribe_audio(
-        self, audio_path: str, recorded_samplerate: int, exercise_id: str, language_code: Optional[str] = None
-    ) -> Optional[QRunnable]: # Return QRunnable for consistency
+        self,
+        audio_path: str,
+        recorded_samplerate: int,
+        exercise_id: str,
+        language_code: str | None = None,
+    ) -> QRunnable | None:  # Return QRunnable for consistency
         selected_engine = self.get_selected_stt_engine()
 
         if selected_engine == "whisper":
@@ -225,13 +267,13 @@ class STTManager(QObject):
                 return None
 
             # Resample audio to 16kHz for Whisper if necessary
-            target_sr = 16000
+            target_sr = app_settings.AUDIO_SAMPLE_RATE
             if recorded_samplerate != target_sr:
                 resampled_path = self._resample_audio(audio_path, target_sr, "whisper")
                 if resampled_path is None:
                     # _resample_audio already logged the specific error
                     return None
-                audio_path = resampled_path # Use the new resampled file path
+                audio_path = resampled_path  # Use the new resampled file path
 
             task = WhisperTranscriptionTask(
                 self._active_whisper_model_instance,
@@ -251,11 +293,13 @@ class STTManager(QObject):
 
             # Resample audio for Vosk if necessary
             if recorded_samplerate != self.vosk_samplerate:
-                resampled_path = self._resample_audio(audio_path, self.vosk_samplerate, "vosk")
+                resampled_path = self._resample_audio(
+                    audio_path, self.vosk_samplerate, "vosk"
+                )
                 if resampled_path is None:
                     # _resample_audio already logged the specific error
                     return None
-                audio_path = resampled_path # Use the new resampled file path
+                audio_path = resampled_path  # Use the new resampled file path
 
             task = VoskTranscriptionTask(
                 self._active_vosk_model_instance,
@@ -267,5 +311,7 @@ class STTManager(QObject):
             self.thread_pool.start(task)
             return task
         else:
-            logger.error(f"Cannot transcribe: Unknown STT engine selected: {selected_engine}")
+            logger.error(
+                f"Cannot transcribe: Unknown STT engine selected: {selected_engine}"
+            )
             return None

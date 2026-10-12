@@ -1,20 +1,20 @@
-import os
 import logging
+import os
+from typing import Any
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QCheckBox,
+    QFileDialog,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QFileDialog,
-    QFormLayout,
     QMessageBox,
+    QPushButton,
     QTextEdit,
-    QCheckBox,
+    QWidget,
 )
-from PySide6.QtCore import Signal, Qt
-from typing import Any, Dict
 
 try:
     from application.core.models import Course
@@ -35,6 +35,7 @@ class ManifestEditorWidget(QWidget):
         super().__init__(parent)
         self.current_manifest_data: dict = None
         self.current_course_obj: Course = None
+        self.current_course_dir: str = None
 
         self.form_layout = QFormLayout(self)
 
@@ -116,7 +117,7 @@ class ManifestEditorWidget(QWidget):
             )
             return
 
-        course_dir = os.path.dirname(self.current_manifest_data.get("__file__", ""))
+        course_dir = self.current_course_dir
         if not course_dir:
             QMessageBox.warning(
                 self,
@@ -144,10 +145,20 @@ class ManifestEditorWidget(QWidget):
         else:
             input_widget.setStyleSheet("")
 
-    def load_data(self, manifest_data: Dict[str, Any], course_obj: Course):
-        """Loads manifest data and associated course object into the editor fields."""
+    def load_data(
+        self,
+        manifest_data: dict[str, Any],
+        course_obj: Course,
+        course_dir: str | None = None,
+    ):
+        """Loads manifest data and associated course object into the editor fields.
+
+        ``course_dir`` is the directory holding the manifest; it is needed to
+        resolve asset paths relative to the course root.
+        """
         self.current_manifest_data = manifest_data
         self.current_course_obj = course_obj
+        self.current_course_dir = course_dir
 
         self.course_id_input.setText(manifest_data.get("course_id", ""))
         self.course_title_input.setText(manifest_data.get("course_title", ""))
@@ -165,7 +176,7 @@ class ManifestEditorWidget(QWidget):
         for widget in self.required_inputs:
             self._validate_field(widget)
 
-    def apply_changes_to_data(self, manifest_data: Dict[str, Any], course_obj: Course):
+    def apply_changes_to_data(self, manifest_data: dict[str, Any], course_obj: Course):
         """Applies current editor field values back to the manifest data and course object."""
         manifest_data["course_title"] = self.course_title_input.text()
         manifest_data["target_language"] = self.target_lang_input.text()
@@ -190,6 +201,6 @@ class ManifestEditorWidget(QWidget):
         for widget in self.required_inputs:
             if not widget.text().strip():
                 field_name = widget.property("field_name")
-                return False, f'{field_name.replace("_", " ").title()} cannot be empty.'
+                return False, f"{field_name.replace('_', ' ').title()} cannot be empty."
 
         return True, ""

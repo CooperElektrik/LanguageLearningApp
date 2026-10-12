@@ -21,10 +21,10 @@ def test_check_answer_translation(course_manager):
 def test_check_answer_mcq(course_manager):
     """Tests answer checking for multiple choice exercises."""
     exercise = course_manager.get_lesson("u1l1").exercises[1]
-    is_correct, feedback = course_manager.check_answer(exercise, "con mèo")
+    is_correct, feedback = course_manager.check_answer(exercise, "1")
     assert is_correct is True
 
-    is_correct, feedback = course_manager.check_answer(exercise, "con chó")
+    is_correct, feedback = course_manager.check_answer(exercise, "0")
     assert is_correct is False
     assert "Correct: con mèo" in feedback
 
@@ -35,5 +35,5 @@ def test_check_answer_jumble(course_manager):
     is_correct, feedback = course_manager.check_answer(exercise, "Tôi ăn táo")
     assert is_correct is True
 
-    is_correct, feedback = course_manager.check_answer(exercise, "táo ăn Tôi")
+    is_correct, _feedback = course_manager.check_answer(exercise, "táo ăn Tôi")
     assert is_correct is False

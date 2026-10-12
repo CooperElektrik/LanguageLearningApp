@@ -1,6 +1,7 @@
-import sys
-import os
 import logging
+import os
+import sys
+
 from PySide6.QtWidgets import QApplication
 
 current_script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -1,20 +1,18 @@
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
-    QVBoxLayout,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QFileDialog,
-    QComboBox,
-    QFormLayout,
     QMessageBox,
-    QScrollArea,
-    QWidget,
-    QGroupBox,
+    QPushButton,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+
+from application.core.exercise_types import CSV_IMPORTABLE_TYPES
 
 
 class CsvImportDialog(QDialog):
@@ -49,18 +47,8 @@ class CsvImportDialog(QDialog):
         main_layout.addLayout(file_layout)
 
         type_layout = QHBoxLayout()
-        self_exercise_types = [
-            "translate_to_target",
-            "translate_to_source",
-            "dictation",
-            "multiple_choice_translation",
-            "image_association",
-            "listen_and_select",
-            "sentence_jumble",
-            "context_block",
-        ]
         self.exercise_type_combo = QComboBox()
-        self.exercise_type_combo.addItems(self_exercise_types)
+        self.exercise_type_combo.addItems(CSV_IMPORTABLE_TYPES)
         self.exercise_type_combo.currentIndexChanged.connect(self._update_column_inputs)
         type_layout.addWidget(QLabel("Exercise Type:"))
         type_layout.addWidget(self.exercise_type_combo)
@@ -181,6 +169,25 @@ class CsvImportDialog(QDialog):
                 "Incorrect Options (comma-separated):",
                 self.incorrect_options_cols_input,
             )
+        elif current_type == "fill_in_the_blank":
+            self.sentence_template_col_input = QLineEdit("sentence_template")
+            self.correct_option_col_input = QLineEdit("correct_option")
+            self.incorrect_options_cols_input = QLineEdit("incorrect_1,incorrect_2")
+            self.translation_hint_col_input = QLineEdit("translation_hint")
+            self.column_mapping_layout.addRow(
+                "Sentence Template Column (use __BLANK__):",
+                self.sentence_template_col_input,
+            )
+            self.column_mapping_layout.addRow(
+                "Correct Option Column:", self.correct_option_col_input
+            )
+            self.column_mapping_layout.addRow(
+                "Incorrect Options (comma-separated):",
+                self.incorrect_options_cols_input,
+            )
+            self.column_mapping_layout.addRow(
+                "Translation Hint Column:", self.translation_hint_col_input
+            )
         elif current_type == "sentence_jumble":
             self.prompt_col_input = QLineEdit("prompt")
             self.words_col_input = QLineEdit("words")
@@ -219,24 +226,24 @@ class CsvImportDialog(QDialog):
                 data["custom_cols"]["audio_file_col"] = self.audio_file_col_input.text()
         elif current_type == "multiple_choice_translation":
             data["custom_cols"]["source_word_col"] = self.source_word_col_input.text()
-            data["custom_cols"][
-                "correct_option_col"
-            ] = self.correct_option_col_input.text()
+            data["custom_cols"]["correct_option_col"] = (
+                self.correct_option_col_input.text()
+            )
             data["custom_cols"]["incorrect_options_cols"] = [
                 s.strip()
                 for s in self.incorrect_options_cols_input.text().split(",")
                 if s.strip()
             ]
-            data["custom_cols"][
-                "incorrect_options_prefix"
-            ] = self.incorrect_options_prefix_input.text()
+            data["custom_cols"]["incorrect_options_prefix"] = (
+                self.incorrect_options_prefix_input.text()
+            )
 
         elif current_type == "image_association":
             data["custom_cols"]["prompt_col"] = self.prompt_col_input.text()
             data["custom_cols"]["image_file_col"] = self.image_file_col_input.text()
-            data["custom_cols"][
-                "correct_option_col"
-            ] = self.correct_option_col_input.text()
+            data["custom_cols"]["correct_option_col"] = (
+                self.correct_option_col_input.text()
+            )
             data["custom_cols"]["incorrect_options_cols"] = [
                 s.strip()
                 for s in self.incorrect_options_cols_input.text().split(",")
@@ -246,14 +253,30 @@ class CsvImportDialog(QDialog):
         elif current_type == "listen_and_select":
             data["custom_cols"]["prompt_col"] = self.prompt_col_input.text()
             data["custom_cols"]["audio_file_col"] = self.audio_file_col_input.text()
-            data["custom_cols"][
-                "correct_option_col"
-            ] = self.correct_option_col_input.text()
+            data["custom_cols"]["correct_option_col"] = (
+                self.correct_option_col_input.text()
+            )
             data["custom_cols"]["incorrect_options_cols"] = [
                 s.strip()
                 for s in self.incorrect_options_cols_input.text().split(",")
                 if s.strip()
             ]
+
+        elif current_type == "fill_in_the_blank":
+            data["custom_cols"]["sentence_template_col"] = (
+                self.sentence_template_col_input.text()
+            )
+            data["custom_cols"]["correct_option_col"] = (
+                self.correct_option_col_input.text()
+            )
+            data["custom_cols"]["incorrect_options_cols"] = [
+                s.strip()
+                for s in self.incorrect_options_cols_input.text().split(",")
+                if s.strip()
+            ]
+            data["custom_cols"]["translation_hint_col"] = (
+                self.translation_hint_col_input.text()
+            )
 
         elif current_type == "sentence_jumble":
             data["custom_cols"]["prompt_col"] = self.prompt_col_input.text()

@@ -1,15 +1,13 @@
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QFileDialog,
-    QFormLayout,
     QMessageBox,
+    QPushButton,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal
 
 
 class PackageCreationDialog(QDialog):

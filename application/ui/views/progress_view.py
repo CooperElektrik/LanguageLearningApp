@@ -1,24 +1,21 @@
-import os
 import logging
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QScrollArea,
-    QFrame,
-    QGroupBox,
-    QGridLayout,
-    QStyle,
-)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap, QPainter
+import os
 
 import utils
-
 from core.course_manager import CourseManager  # For type hinting
 from core.progress_manager import ProgressManager  # For type hinting
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QLabel,
+    QScrollArea,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
 
 logger = logging.getLogger(__name__)
 

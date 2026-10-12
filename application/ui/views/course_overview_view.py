@@ -1,17 +1,18 @@
 import logging
+
+from core.course_manager import CourseManager
+from core.progress_manager import ProgressManager
+from PySide6.QtCore import QEvent, Qt, Signal  # Add QEvent
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QGroupBox,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    QGroupBox,
     QStyle,
-    QHBoxLayout,
+    QVBoxLayout,
+    QWidget,
 )  # Add QEvent
-from PySide6.QtCore import Signal, Qt, QEvent  # Add QEvent
-from core.course_manager import CourseManager
-from core.progress_manager import ProgressManager
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class CourseOverviewView(QWidget):
         self.start_weak_review_button.clicked.connect(
             self.start_weakest_review_requested.emit
         )
-        # review_buttons_layout.addWidget(self.start_weak_review_button)
+        review_buttons_layout.addWidget(self.start_weak_review_button)
 
         srs_layout.addLayout(review_buttons_layout)
         self.main_layout.addWidget(self.srs_groupbox)
@@ -120,8 +121,6 @@ class CourseOverviewView(QWidget):
             self.units_layout.addWidget(no_units_label)
             return
 
-        all_course_units_for_unlock_check = units
-
         for unit in units:
             unit_groupbox = QGroupBox(unit.title)
             unit_groupbox.setObjectName("unit_groupbox")
@@ -161,8 +160,8 @@ class CourseOverviewView(QWidget):
                     if is_unlocked or is_completed:
                         lesson_button.setEnabled(True)
                         lesson_button.clicked.connect(
-                            lambda checked=False, lid=lesson.lesson_id: self.lesson_selected.emit(
-                                lid
+                            lambda checked=False, lid=lesson.lesson_id: (
+                                self.lesson_selected.emit(lid)
                             )
                         )
                     else:
@@ -227,7 +226,7 @@ class CourseOverviewView(QWidget):
         )
         self.srs_groupbox.setTitle(self.tr("Daily Review"))
         self.start_review_button.setText(self.tr("Review Due"))
-        # self.start_weak_review_button.setText(self.tr("Review Weak"))
+        self.start_weak_review_button.setText(self.tr("Review Weak"))
         self.start_weak_review_button.setToolTip(
             self.tr("Review items you struggle with the most.")
         )

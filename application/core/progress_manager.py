@@ -1,10 +1,11 @@
 import json
-import os
 import logging
-from typing import Dict, Set, Optional, Any, List, Tuple
-from PySide6.QtCore import QStandardPaths
+import os
 from collections import defaultdict
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
+from typing import Any
+
+from PySide6.QtCore import QStandardPaths
 
 try:
     from application import utils  # For developer mode check
@@ -12,9 +13,78 @@ except ImportError:
     import utils
 import settings  # For ORG_NAME, APP_NAME, PROGRESS_DATA_SUBDIR
 
-from .models import Exercise, Lesson, Unit  # For type hinting
+from .models import Exercise, Unit  # For type hinting
 
 logger = logging.getLogger(__name__)
+
+# SM-2 scheduling constants
+SM2_DEFAULT_EASE_FACTOR = 2.5
+SM2_MIN_EASE_FACTOR = 1.3
+SM2_MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
+
+
+def default_srs_record() -> dict[str, Any]:
+    """Returns a fresh, unreviewed SRS record for an exercise."""
+    return {
+        "last_reviewed": None,
+        "next_review_due": None,
+        "interval_days": 0,
+        "ease_factor": SM2_DEFAULT_EASE_FACTOR,
+        "repetitions": 0,
+        "correct_in_a_row": 0,
+        "is_initially_learned": False,  # Gates lesson progression
+    }
+
+
+def apply_sm2_review(
+    srs_attrs: dict[str, Any],
+    quality_score_sm2: int,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Applies the SM-2 spaced-repetition update to ``srs_attrs`` in place.
+
+    Pure with respect to everything except the passed-in record and the clock,
+    so it can be unit-tested without touching the filesystem.  ``quality_score"
+    ``_sm2`` is 0-5 (0=Again, 3=Hard, 4=Good, 5=Easy).
+    """
+    now = now or datetime.now()
+    q = quality_score_sm2
+
+    if q < 3:  # Incorrect answer or major difficulty
+        srs_attrs["repetitions"] = 0
+        srs_attrs["correct_in_a_row"] = 0
+        srs_attrs["interval_days"] = 0  # Effectively makes it due immediately
+        srs_attrs["ease_factor"] = max(
+            SM2_MIN_EASE_FACTOR, srs_attrs["ease_factor"] - 0.20
+        )
+    else:  # Correct answer
+        srs_attrs["correct_in_a_row"] += 1
+        srs_attrs["repetitions"] += 1
+
+        if srs_attrs["repetitions"] == 1:
+            srs_attrs["interval_days"] = 1
+        elif srs_attrs["repetitions"] == 2:
+            srs_attrs["interval_days"] = 6
+        else:
+            srs_attrs["interval_days"] = round(
+                srs_attrs["interval_days"] * srs_attrs["ease_factor"]
+            )
+
+        srs_attrs["ease_factor"] += 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
+        srs_attrs["ease_factor"] = max(SM2_MIN_EASE_FACTOR, srs_attrs["ease_factor"])
+
+    srs_attrs["interval_days"] = min(srs_attrs["interval_days"], SM2_MAX_INTERVAL_DAYS)
+
+    if (
+        not srs_attrs["is_initially_learned"]
+        and srs_attrs["repetitions"] >= 1
+        and quality_score_sm2 >= 3
+    ):
+        srs_attrs["is_initially_learned"] = True
+
+    srs_attrs["last_reviewed"] = now
+    srs_attrs["next_review_due"] = now + timedelta(days=srs_attrs["interval_days"])
+    return srs_attrs
 
 
 class ProgressManager:
@@ -40,22 +110,14 @@ class ProgressManager:
         logger.debug(f"Progress file path set to: {self.progress_file}")
 
         # Initialize progress data structures with new 'is_initially_learned' flag
-        self.exercise_srs_data: Dict[str, Dict[str, Any]] = defaultdict(
-            lambda: {
-                "last_reviewed": None,
-                "next_review_due": None,
-                "interval_days": 0,
-                "ease_factor": 2.5,
-                "repetitions": 0,
-                "correct_in_a_row": 0,
-                "is_initially_learned": False,  # NEW FLAG for lesson progression
-            }
+        self.exercise_srs_data: dict[str, dict[str, Any]] = defaultdict(
+            default_srs_record
         )
         self.xp: int = 0
-        self.last_study_date: Optional[date] = None
+        self.last_study_date: date | None = None
         self.current_streak_days: int = 0
-        self.exercise_notes: Dict[str, str] = {}
-        self.lesson_progress: Dict[str, Dict[str, Any]] = {}
+        self.exercise_notes: dict[str, str] = {}
+        self.lesson_progress: dict[str, dict[str, Any]] = {}
 
         self._ensure_data_dir_exists()
         self.load_progress()
@@ -124,7 +186,9 @@ class ProgressManager:
                 logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
 
                 self.lesson_progress = data.get("lesson_progress", {})
-                logger.debug(f"Loaded progress for {len(self.lesson_progress)} lessons.")
+                logger.debug(
+                    f"Loaded progress for {len(self.lesson_progress)} lessons."
+                )
 
                 logger.info(
                     f"Progress loaded for course '{self.course_id}' from {self.progress_file}. Total exercises with SRS data: {len(self.exercise_srs_data)}"
@@ -138,18 +202,10 @@ class ProgressManager:
                 f"Failed to load progress from {self.progress_file}: {e}. Progress may be reset."
             )
             # Reset all progress data if loading fails critically
-            logger.warning("Resetting all progress data due to critical loading failure.")
-            self.exercise_srs_data = defaultdict(
-                lambda: {
-                    "last_reviewed": None,
-                    "next_review_due": None,
-                    "interval_days": 0,
-                    "ease_factor": 2.5,
-                    "repetitions": 0,
-                    "correct_in_a_row": 0,
-                    "is_initially_learned": False,
-                }
+            logger.warning(
+                "Resetting all progress data due to critical loading failure."
             )
+            self.exercise_srs_data = defaultdict(default_srs_record)
             self.xp = 0
             self.last_study_date = None
             self.current_streak_days = 0
@@ -157,7 +213,9 @@ class ProgressManager:
 
     def save_progress(self):
         """Saves current progress data to the JSON file."""
-        logger.info(f"Attempting to save progress for course '{self.course_id}' to {self.progress_file}")
+        logger.info(
+            f"Attempting to save progress for course '{self.course_id}' to {self.progress_file}"
+        )
         self._ensure_data_dir_exists()
 
         srs_data_for_save = {}
@@ -186,7 +244,7 @@ class ProgressManager:
                 f"Progress saved successfully for course '{self.course_id}' to {self.progress_file}"
             )
             return True
-        except IOError as e:
+        except OSError as e:
             logger.error(f"Could not write progress to file {self.progress_file}: {e}")
         except Exception as e:
             logger.error(f"An unexpected error occurred while saving progress: {e}")
@@ -198,17 +256,19 @@ class ProgressManager:
             self.lesson_progress[lesson_id] = {}
         self.lesson_progress[lesson_id]["last_exercise_index"] = last_exercise_index
         self.lesson_progress[lesson_id]["last_updated"] = datetime.now().isoformat()
-        logger.debug(f"Set lesson '{lesson_id}' progress to index {last_exercise_index}")
+        logger.debug(
+            f"Set lesson '{lesson_id}' progress to index {last_exercise_index}"
+        )
         self.save_progress()
 
-    def get_lesson_progress(self, lesson_id: str) -> Optional[int]:
+    def get_lesson_progress(self, lesson_id: str) -> int | None:
         """Retrieves the last viewed exercise index for a specific lesson."""
         progress = self.lesson_progress.get(lesson_id)
         if progress:
             return progress.get("last_exercise_index")
         return None
 
-    def get_exercise_note(self, exercise_id: str) -> Optional[str]:
+    def get_exercise_note(self, exercise_id: str) -> str | None:
         """Retrieves the personal note for a given exercise ID."""
         return self.exercise_notes.get(exercise_id)
 
@@ -226,55 +286,14 @@ class ProgressManager:
         return self.xp
 
     def _calculate_srs_parameters(
-        self, srs_attrs: Dict[str, Any], quality_score_sm2: int
+        self, srs_attrs: dict[str, Any], quality_score_sm2: int
     ):
-        """
-        Implements the SM-2 algorithm to update SRS attributes for an exercise.
-        quality_score_sm2: 0-5 (0=Again, 3=Hard, 4=Good, 5=Easy)
-        """
-        q = quality_score_sm2
-
-        if q < 3:  # Incorrect answer or major difficulty
-            srs_attrs["repetitions"] = 0
-            srs_attrs["correct_in_a_row"] = 0
-            srs_attrs["interval_days"] = 0  # Effectively makes it due immediately
-            srs_attrs["ease_factor"] = max(1.3, srs_attrs["ease_factor"] - 0.20)
-        else:  # Correct answer
-            srs_attrs["correct_in_a_row"] += 1
-            srs_attrs["repetitions"] += 1
-
-            if srs_attrs["repetitions"] == 1:
-                srs_attrs["interval_days"] = 1
-            elif srs_attrs["repetitions"] == 2:
-                srs_attrs["interval_days"] = 6
-            else:
-                srs_attrs["interval_days"] = round(
-                    srs_attrs["interval_days"] * srs_attrs["ease_factor"]
-                )
-
-            srs_attrs["ease_factor"] += 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
-            srs_attrs["ease_factor"] = max(1.3, srs_attrs["ease_factor"])
-
-        # Cap interval_days to prevent excessively large intervals
-        MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
-        srs_attrs["interval_days"] = min(srs_attrs["interval_days"], MAX_INTERVAL_DAYS)
-
-        logger.debug(f"_calculate_srs_parameters: Before timedelta, interval_days={srs_attrs['interval_days']}")
-
-        # NEW: Set 'is_initially_learned' if criteria are met and it's not already true
-        if (
-            not srs_attrs["is_initially_learned"]
-            and srs_attrs["repetitions"] >= 1
-            and quality_score_sm2 >= 3
-        ):
-            srs_attrs["is_initially_learned"] = True
-            logger.debug(
-                f"Exercise '{srs_attrs.get('exercise_id', 'N/A')}' marked as initially learned."
-            )
-
-        srs_attrs["last_reviewed"] = datetime.now()
-        srs_attrs["next_review_due"] = srs_attrs["last_reviewed"] + timedelta(
-            days=srs_attrs["interval_days"]
+        """Applies the (pure) SM-2 update to one exercise's SRS attributes."""
+        apply_sm2_review(srs_attrs, quality_score_sm2)
+        logger.debug(
+            f"Exercise '{srs_attrs.get('exercise_id', 'N/A')}' SRS updated: "
+            f"interval_days={srs_attrs['interval_days']}, "
+            f"init_learned={srs_attrs['is_initially_learned']}"
         )
 
     def update_exercise_srs_data(
@@ -289,10 +308,9 @@ class ProgressManager:
         is_correct indicates if the user's answer was objectively correct.
         quality_score_sm2 (0-5) reflects user's self-assessment of recall difficulty.
         """
-        srs_attrs = self.exercise_srs_data[exercise_id]
-        srs_attrs["exercise_id"] = exercise_id
-
-        logger.debug(f"Updating SRS data for exercise '{exercise_id}'. Correct: {is_correct}, Quality: {quality_score_sm2}")
+        logger.debug(
+            f"Updating SRS data for exercise '{exercise_id}'. Correct: {is_correct}, Quality: {quality_score_sm2}"
+        )
         srs_attrs = self.exercise_srs_data[exercise_id]
         srs_attrs["exercise_id"] = exercise_id
 
@@ -351,13 +369,13 @@ class ProgressManager:
         self.current_streak_days = 0  # Streak broken
         return 0
 
-    def get_exercise_srs_data(self, exercise_id: str) -> Dict[str, Any]:
+    def get_exercise_srs_data(self, exercise_id: str) -> dict[str, Any]:
         """Returns the current SRS attributes for a specific exercise."""
         return self.exercise_srs_data[exercise_id]
 
     def get_due_exercises(
-        self, all_course_exercises: List[Exercise], limit: Optional[int] = None
-    ) -> List[Exercise]:
+        self, all_course_exercises: list[Exercise], limit: int | None = None
+    ) -> list[Exercise]:
         """
         Returns a list of exercise objects that are due for review, sorted by due date.
         An exercise is due if it has never been reviewed (repetitions == 0) OR
@@ -385,8 +403,8 @@ class ProgressManager:
         return due_exercises[:limit] if limit is not None else due_exercises
 
     def get_weakest_exercises(
-        self, all_course_exercises: List[Exercise], limit: Optional[int] = None
-    ) -> List[Exercise]:
+        self, all_course_exercises: list[Exercise], limit: int | None = None
+    ) -> list[Exercise]:
         """
         Returns a list of exercises the user struggles with, sorted by ease factor.
         Only includes exercises that have been reviewed at least once.
@@ -408,7 +426,7 @@ class ProgressManager:
 
         return reviewed_exercises[:limit] if limit is not None else reviewed_exercises
 
-    def get_lesson_completion_status(self, lesson_exercises: List[Exercise]) -> bool:
+    def get_lesson_completion_status(self, lesson_exercises: list[Exercise]) -> bool:
         """
         Determines if a lesson is considered 'completed' for display purposes.
         A lesson is completed if ALL its exercises have been 'initially learned'
@@ -424,8 +442,8 @@ class ProgressManager:
         return True  # All exercises are initially learned
 
     def _find_lesson_position(
-        self, lesson_id: str, all_units: List[Unit]
-    ) -> Optional[Tuple[int, int]]:
+        self, lesson_id: str, all_units: list[Unit]
+    ) -> tuple[int, int] | None:
         """
         Finds the (unit_index, lesson_index) of a given lesson_id within all units.
         Returns None if not found.
@@ -440,7 +458,7 @@ class ProgressManager:
         self,
         unit_idx: int,
         lesson_idx: int,
-        all_units: List[Unit],
+        all_units: list[Unit],
         course_manager_ref: Any,
     ) -> bool:
         """
@@ -454,7 +472,7 @@ class ProgressManager:
         )
 
     def _is_previous_unit_completed(
-        self, unit_idx: int, all_units: List[Unit], course_manager_ref: Any
+        self, unit_idx: int, all_units: list[Unit], course_manager_ref: Any
     ) -> bool:
         """
         Checks if all lessons in the previous unit are completed.

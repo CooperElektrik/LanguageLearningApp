@@ -1,18 +1,15 @@
-import logging
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QTextEdit,
-    QDialogButtonBox,
-    QPushButton,
-)
-from PySide6.QtCore import Qt
-from typing import Optional, Any
 import json  # For pretty printing dictionaries
+import logging
 
 from core.course_manager import CourseManager
-from core.progress_manager import ProgressManager
 from core.models import Exercise
+from core.progress_manager import ProgressManager
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QTextEdit,
+    QVBoxLayout,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +29,8 @@ class DevInfoDialog(QDialog):
     def __init__(
         self,
         course_manager: CourseManager,
-        progress_manager: Optional[ProgressManager] = None,
-        current_exercise: Optional[Exercise] = None,
+        progress_manager: ProgressManager | None = None,
+        current_exercise: Exercise | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -57,8 +54,8 @@ class DevInfoDialog(QDialog):
     def _populate_info(
         self,
         course_manager: CourseManager,
-        progress_manager: Optional[ProgressManager],
-        current_exercise: Optional[Exercise],
+        progress_manager: ProgressManager | None,
+        current_exercise: Exercise | None,
     ):
         info_str = []
 

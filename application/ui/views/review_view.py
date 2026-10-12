@@ -1,31 +1,24 @@
 import logging
 from enum import Enum, auto
 
-from PySide6.QtWidgets import (
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
-    QMessageBox,
-    QStyle,
-    QWidget,
-    QVBoxLayout,
-    QDialog,
-)
-from PySide6.QtCore import Signal, QTimer, Qt, QSettings, QEvent
-
-from typing import List, Optional
-
 import settings
 import utils
-from core.models import Exercise
 from core.course_manager import CourseManager
+from core.models import Exercise
 from core.progress_manager import ProgressManager
 from core.stt_manager import STTManager
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 from ui.views.base_exercise_player_view import BaseExercisePlayerView
 from ui.widgets.exercise_widgets import TranslationExerciseWidget
-from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
-from ..dialogs.glossary_lookup_dialog import GlossaryLookupDialog
-from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +44,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
     ):
         super().__init__(course_manager, progress_manager, stt_manager, parent)
 
-        self.exercises_in_session: List[Exercise] = []
+        self.exercises_in_session: list[Exercise] = []
         self.current_exercise_index: int = -1
         self.total_exercises_in_session: int = 0
 
@@ -90,21 +83,15 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         control_buttons_layout = QHBoxLayout(self.control_buttons_widget)
         control_buttons_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.toggle_notes_button = QPushButton()
-        self.toggle_notes_button.setObjectName("toggle_notes_button_review")
-        self.toggle_notes_button.setCheckable(True)
-        self.toggle_notes_button.toggled.connect(self._toggle_notes_panel)
+        self.toggle_notes_button = self._create_notes_button(
+            "toggle_notes_button_review"
+        )
         control_buttons_layout.addWidget(self.toggle_notes_button)
 
-        self.toggle_hint_button = QPushButton(self.tr("Show Hint"))
-        self.toggle_hint_button.setObjectName("toggle_hint_button_review")
-        self.toggle_hint_button.setCheckable(False)
-        self.toggle_hint_button.clicked.connect(self._toggle_hint_visibility_manually)
+        self.toggle_hint_button = self._create_hint_button("toggle_hint_button_review")
         control_buttons_layout.addWidget(self.toggle_hint_button)
 
-        self.lookup_button = QPushButton(self.tr("Lookup..."))
-        self.lookup_button.setObjectName("lookup_button_review")
-        self.lookup_button.clicked.connect(self._handle_lookup_word)
+        self.lookup_button = self._create_lookup_button("lookup_button_review")
         control_buttons_layout.addWidget(self.lookup_button)
 
         control_buttons_layout.addStretch(1)
@@ -202,7 +189,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
 
     def start_review_session(
         self,
-        exercises: Optional[List[Exercise]] = None,
+        exercises: list[Exercise] | None = None,
         session_name: str = "Review Session",
     ):
         super()._save_current_note()
@@ -275,16 +262,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         # Defer button state update to ensure UI changes (like hint visibility) are processed
         QTimer.singleShot(0, self._update_button_states)
 
-    def _toggle_hint_visibility_manually(self):
-        """Handles manual click on the Show/Hide Hint button."""
-        if self.current_exercise_obj and self.current_exercise_obj.has_hint():
-            super()._toggle_hint_visibility()  # Call base class method
-            self.toggle_hint_button.setText(
-                self.tr("Hide Hint")
-                if self.hint_label.isVisible()
-                else self.tr("Show Hint")
-            )
-
     def _handle_user_submission_from_button(self):
         if (
             self.current_exercise_widget
@@ -312,9 +289,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             self.feedback_label.setStyleSheet("color: orange;")
             return
 
-        is_correct, feedback_text = self.course_manager.check_answer(
-            self.current_exercise_obj, user_answer
-        )
+        is_correct, feedback_text = self._evaluate_answer(user_answer)
 
         self.feedback_label.setText(feedback_text)
         self.feedback_label.setStyleSheet(
@@ -323,15 +298,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         utils.play_sound(
             settings.SOUND_FILE_CORRECT if is_correct else settings.SOUND_FILE_INCORRECT
         )
-
-        if not is_correct and self.current_exercise_obj.explanation:
-            current_feedback = self.feedback_label.text()
-            self.feedback_label.setText(
-                current_feedback
-                + self.tr("\n\nExplanation: {0}").format(
-                    self.current_exercise_obj.explanation
-                )
-            )
 
         self._last_submission_was_correct = is_correct
         self.view_state = ReviewState.ANSWER_SUBMITTED
@@ -430,25 +396,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
 
         self.view_state = ReviewState.INITIAL_LOAD
         self._update_button_states()
-
-    def _handle_lookup_word(self):
-        """Opens a dialog to search for a word in the glossary."""
-        if not self.course_manager.get_glossary_entries():
-            QMessageBox.information(
-                self,
-                self.tr("Glossary Empty"),
-                self.tr("No glossary entries available for this course."),
-            )
-            return
-
-        dialog = GlossaryLookupDialog(self.course_manager.get_glossary_entries(), self)
-        result = dialog.exec()
-
-        if result == QDialog.Accepted:
-            found_entry = dialog.get_selected_entry()
-            if found_entry:
-                dialog = GlossaryDetailDialog(found_entry, self.course_manager, self)
-                dialog.exec()
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handles keyboard shortcuts specific to ReviewView, like rating."""

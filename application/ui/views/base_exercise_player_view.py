@@ -1,31 +1,29 @@
 import logging
-from enum import (
-    Enum,
-    auto,
-)  # For generic state if needed, or subclasses define their own
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QFrame,
-    QProgressBar,
-    QMessageBox,
-    QGroupBox,
-    QTextEdit,
-    QStyle,
-)
-from PySide6.QtCore import Signal, Qt, QTimer, QSettings, QEvent
-from typing import Optional, Type, Dict  # For EXERCISE_WIDGET_MAP type hint
 
-from core.models import Exercise
+import settings as app_settings  # For QSettings keys
 from core.course_manager import CourseManager
+from core.models import Exercise
 from core.progress_manager import ProgressManager
 from core.stt_manager import STTManager
-from ui.widgets.exercise_widgets import BaseExerciseWidget, EXERCISE_WIDGET_MAP
-import settings as app_settings  # For QSettings keys
+from PySide6.QtCore import QEvent, QSettings, Qt, QTimer, Signal
 from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
+from PySide6.QtWidgets import (
+    QDialog,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QStyle,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
+from ui.dialogs.glossary_lookup_dialog import GlossaryLookupDialog
+from ui.widgets.exercise_widgets import EXERCISE_WIDGET_MAP, BaseExerciseWidget
 
 logger = logging.getLogger(__name__)
 
@@ -47,15 +45,15 @@ class BaseExercisePlayerView(QWidget):
         course_manager: CourseManager,
         progress_manager: ProgressManager,
         stt_manager: STTManager,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self.course_manager = course_manager
         self.progress_manager = progress_manager
         self.stt_manager = stt_manager
 
-        self.current_exercise_obj: Optional[Exercise] = None
-        self.current_exercise_widget: Optional[BaseExerciseWidget] = None
+        self.current_exercise_obj: Exercise | None = None
+        self.current_exercise_widget: BaseExerciseWidget | None = None
 
         self._setup_common_ui()
 
@@ -135,7 +133,7 @@ class BaseExercisePlayerView(QWidget):
                     self.current_exercise_widget.answer_submitted.disconnect()
             except (TypeError, RuntimeError) as e:
                 logger.debug(f"Error disconnecting signal during clear: {e}")
-                pass  # Signal might not have been connected or widget already deleting
+                # Signal might not have been connected or widget already deleting
             self.current_exercise_widget.deleteLater()
         if self.hint_label:  # Clear and hide hint
             self._toggle_hint_visibility(force_show=False)
@@ -189,7 +187,7 @@ class BaseExercisePlayerView(QWidget):
             self.current_exercise_obj = None  # Clear if widget fails to load
             return False
 
-    def _toggle_hint_visibility(self, force_show: Optional[bool] = None):
+    def _toggle_hint_visibility(self, force_show: bool | None = None):
         """
         Toggles or sets the visibility of the hint label.
         This method is intended to be called by subclasses or internal logic.
@@ -283,6 +281,71 @@ class BaseExercisePlayerView(QWidget):
             logger.debug(
                 "_update_notes_button_indicator called but toggle_notes_button not found."
             )
+
+    # --- Shared action-button factories ---
+    # Lesson and Review used to hand-roll identical buttons (and handlers);
+    # keeping them here stops the two flows from drifting apart.
+    def _create_notes_button(self, object_name: str) -> QPushButton:
+        button = QPushButton()
+        button.setObjectName(object_name)
+        button.setCheckable(True)
+        button.toggled.connect(self._toggle_notes_panel)
+        return button
+
+    def _create_hint_button(self, object_name: str) -> QPushButton:
+        button = QPushButton(self.tr("Show Hint"))
+        button.setObjectName(object_name)
+        button.setCheckable(False)  # Behavior is to toggle, not stay pressed
+        button.clicked.connect(self._toggle_hint_visibility_manually)
+        return button
+
+    def _create_lookup_button(self, object_name: str) -> QPushButton:
+        button = QPushButton(self.tr("Lookup..."))
+        button.setObjectName(object_name)
+        button.clicked.connect(self._handle_lookup_word)
+        return button
+
+    def _toggle_hint_visibility_manually(self):
+        """Handles a manual click on the Show/Hide Hint button."""
+        if self.current_exercise_obj and self.current_exercise_obj.has_hint():
+            self._toggle_hint_visibility()
+            self.toggle_hint_button.setText(
+                self.tr("Hide Hint")
+                if self.hint_label.isVisible()
+                else self.tr("Show Hint")
+            )
+
+    def _handle_lookup_word(self):
+        """Opens the glossary lookup dialog for the current course."""
+        if not self.course_manager.get_glossary_entries():
+            QMessageBox.information(
+                self,
+                self.tr("Glossary Empty"),
+                self.tr("No glossary entries available for this course."),
+            )
+            return
+
+        dialog = GlossaryLookupDialog(self.course_manager.get_glossary_entries(), self)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        found_entry = dialog.get_selected_entry()
+        if found_entry:
+            GlossaryDetailDialog(found_entry, self.course_manager, self).exec()
+
+    def _evaluate_answer(self, user_answer: str) -> tuple[bool, str]:
+        """Grades ``user_answer`` and returns ``(is_correct, feedback_text)``.
+
+        Appends the exercise explanation to the feedback when the answer is
+        wrong, so both player views present the same thing.
+        """
+        is_correct, feedback_text = self.course_manager.check_answer(
+            self.current_exercise_obj, user_answer
+        )
+        if not is_correct and self.current_exercise_obj.explanation:
+            feedback_text += self.tr("\n\nExplanation: {0}").format(
+                self.current_exercise_obj.explanation
+            )
+        return is_correct, feedback_text
 
     # --- Abstract or Overridable Methods for Subclasses ---
     def _handle_back_to_overview(self):

@@ -1,18 +1,17 @@
-import sys
-import os
 import argparse
 import logging
-import yaml
+import os
+import sys
 import zipfile
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Any
+
+import yaml
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def read_manifest(
-    manifest_filepath: str, messages: List[str]
-) -> Optional[Dict[str, Any]]:
+def read_manifest(manifest_filepath: str, messages: list[str]) -> dict[str, Any] | None:
     """Reads and parses the manifest YAML file, adding messages to the list."""
     if not os.path.exists(manifest_filepath):
         messages.append(f"Error: Manifest file not found: {manifest_filepath}")
@@ -38,9 +37,9 @@ def read_manifest(
 
 def create_package_for_gui(
     manifest_filepath: str,
-    output_dir_override: Optional[str] = None,
-    package_name_override: Optional[str] = None,
-) -> Tuple[bool, Optional[str], List[str]]:
+    output_dir_override: str | None = None,
+    package_name_override: str | None = None,
+) -> tuple[bool, str | None, list[str]]:
     messages = []
     manifest_data = read_manifest(manifest_filepath, messages)
     if not manifest_data:
@@ -161,7 +160,7 @@ def main():
 
     abs_manifest_path = os.path.abspath(args.manifest_file)
 
-    success, package_path, messages = create_package_for_gui(
+    success, _package_path, messages = create_package_for_gui(
         abs_manifest_path, args.output_dir, args.name
     )
 

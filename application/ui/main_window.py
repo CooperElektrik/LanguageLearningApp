@@ -1,65 +1,55 @@
-import sys
 import logging
 import os
 import subprocess
-from PySide6.QtWidgets import (
-    QMainWindow,
-    QStackedWidget,
-    QMessageBox,
-    QLabel,
-    QWidget,
-    QFileDialog,
-    QVBoxLayout,
-    QDockWidget,
-    QApplication,
-    QPushButton,
-    QStatusBar,
-    QToolBar,
-    QGraphicsOpacityEffect,
+import sys
+
+from PySide6.QtCore import (
+    QEasingCurve,
+    QEvent,
+    QLocale,
+    QPropertyAnimation,
+    QSettings,
+    QSize,
+    Qt,
+    QTimer,
+    QTranslator,
 )
-from PySide6.QtCore import QPropertyAnimation, QPoint, QEasingCurve
 from PySide6.QtGui import (
     QAction,
-    QFont,
-    QGuiApplication,
     QCloseEvent,
     QIcon,
 )
-
-from PySide6.QtCore import (
-    Qt,
-    QCoreApplication,
-    QSettings,
-    QTranslator,
-    QLocale,
-    QEvent,
-    QTimer,
-    QSize,
+from PySide6.QtWidgets import (
+    QApplication,
+    QDockWidget,
+    QGraphicsOpacityEffect,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QStackedWidget,
+    QStatusBar,
+    QToolBar,
 )
-from PySide6.QtMultimedia import QMediaDevices
-
-from typing import Optional
 
 try:
-    from application import settings as app_settings, utils
+    from application import settings as app_settings
+    from application import utils
 except ImportError:
     import settings as app_settings
     import utils
 from core.course_manager import CourseManager
-from core.progress_manager import ProgressManager
 from core.models import Exercise
-from ui.views.course_overview_view import CourseOverviewView
-from ui.views.lesson_view import LessonView
-from ui.views.review_view import ReviewView
-from ui.views.progress_view import ProgressView
-from ui.views.glossary_view import GlossaryView
-from ui.views.course_selection_view import CourseSelectionView
-from ui.views.course_editor_view import CourseEditorView
-from ui.dialogs.unified_setup_dialog import UnifiedSetupDialog
-from ui.dialogs.settings_dialog import SettingsDialog
+from core.progress_manager import ProgressManager
 from ui.dialogs.dev_info_dialog import DevInfoDialog
 from ui.dialogs.help_dialog import HelpDialog
-from ui.dialogs.pyglet_script_runner_dialog import PygletScriptRunnerDialog
+from ui.dialogs.settings_dialog import SettingsDialog
+from ui.dialogs.unified_setup_dialog import UnifiedSetupDialog
+from ui.views.course_overview_view import CourseOverviewView
+from ui.views.course_selection_view import CourseSelectionView
+from ui.views.glossary_view import GlossaryView
+from ui.views.lesson_view import LessonView
+from ui.views.progress_view import ProgressView
+from ui.views.review_view import ReviewView
 from ui.widgets.animated_placeholder import AnimatedPlaceholder
 
 logger = logging.getLogger(__name__)
@@ -68,18 +58,20 @@ logger = logging.getLogger(__name__)
 class MainWindow(QMainWindow):
     def __init__(self, stt_manager, parent=None):
         super().__init__(parent)
-        self.course_manager: Optional[CourseManager] = None
-        self.progress_manager: Optional[ProgressManager] = None
+        self.course_manager: CourseManager | None = None
+        self.progress_manager: ProgressManager | None = None
         self.stt_manager = stt_manager
-        self.current_translator: Optional[QTranslator] = (
+        self.current_translator: QTranslator | None = (
             None  # Store the active translator
         )
 
         logger.info("MainWindow initializing...")
         self.setWindowTitle(self.tr("LanguageLearningApp"))
-        
+
         # Set application icon
-        app_icon_path = utils.get_resource_path(os.path.join("assets", "icons", "logo.png"))
+        app_icon_path = utils.get_resource_path(
+            os.path.join("assets", "icons", "logo.png")
+        )
         self.setWindowIcon(QIcon(app_icon_path))
 
         self.setGeometry(100, 100, 1024, 768)
@@ -91,7 +83,7 @@ class MainWindow(QMainWindow):
         logger.debug("Main QStackedWidget set as central widget.")
 
         self._setup_main_toolbar()
-        self._setup_main_menu() # <<<< UNIFIED MENU SETUP
+        self._setup_main_menu()  # <<<< UNIFIED MENU SETUP
 
         # Create the permanent course selection page
         self.course_selection_view = CourseSelectionView()
@@ -103,14 +95,13 @@ class MainWindow(QMainWindow):
 
         # Placeholders for other modes' main widgets
         self.learning_widget = None
-        self.editor_view = None
 
         # Animation objects for learning view's central stack
-        self.central_stack_fade_effect: Optional[QGraphicsOpacityEffect] = None
-        self.central_stack_fade_animation: Optional[QPropertyAnimation] = None
+        self.central_stack_fade_effect: QGraphicsOpacityEffect | None = None
+        self.central_stack_fade_animation: QPropertyAnimation | None = None
 
         # Status bar button for dev info
-        self.dev_info_button: Optional[QPushButton] = None
+        self.dev_info_button: QPushButton | None = None
         self._setup_status_bar()
 
         self.current_translator = utils.setup_initial_translation(
@@ -118,7 +109,7 @@ class MainWindow(QMainWindow):
         )
         self._setup_ui_elements()
         self._load_and_apply_initial_theme()
-        self._return_to_selection_screen() # This will set the initial menu state
+        self._return_to_selection_screen()  # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
         self._setup_animations()
@@ -147,14 +138,15 @@ class MainWindow(QMainWindow):
             # This ensures the internal animations of the learning view
             # can run without conflicts.
             if current_widget.graphicsEffect() is not None:
-                 current_widget.setGraphicsEffect(None)
+                current_widget.setGraphicsEffect(None)
             return  # Stop here and let the internal animation handle the fade
 
         # For all other widgets, apply the standard fade-in.
         self._animate_fade_in(current_widget)
 
     def _animate_fade_in(self, widget):
-        if widget is None: return
+        if widget is None:
+            return
         widget.setGraphicsEffect(self.fade_effect)
         self.fade_animation.setTargetObject(self.fade_effect)
         self.fade_animation.setPropertyName(b"opacity")
@@ -164,7 +156,10 @@ class MainWindow(QMainWindow):
 
     def _animate_central_stack_fade(self, index: int):
         """Animates a fade-in for the central widget stack in the learning view."""
-        if self.central_stack_fade_animation and self.central_stack_fade_animation.targetObject():
+        if (
+            self.central_stack_fade_animation
+            and self.central_stack_fade_animation.targetObject()
+        ):
             # Stop any ongoing animation
             self.central_stack_fade_animation.stop()
             # Set start and end values for a fade-in effect
@@ -187,17 +182,24 @@ class MainWindow(QMainWindow):
 
         q_settings = QSettings()
         theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
+            app_settings.QSETTINGS_KEY_UI_THEME, app_settings.DEFAULT_THEME, type=str
         )
 
-        is_dark_theme = app_settings.AVAILABLE_THEMES.get(theme_name, {}).get("is_dark", False)
+        is_dark_theme = app_settings.AVAILABLE_THEMES.get(theme_name, {}).get(
+            "is_dark", False
+        )
         icon_suffix = "_dark.png" if is_dark_theme else "_light.png"
 
         # Icon paths
-        exit_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"power{icon_suffix}"))
-        settings_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"cog{icon_suffix}"))
-        help_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"help{icon_suffix}"))
-        pyglet_icon_path = utils.get_resource_path(os.path.join("assets", "icons", f"code{icon_suffix}"))
+        exit_icon_path = utils.get_resource_path(
+            os.path.join("assets", "icons", f"power{icon_suffix}")
+        )
+        settings_icon_path = utils.get_resource_path(
+            os.path.join("assets", "icons", f"cog{icon_suffix}")
+        )
+        help_icon_path = utils.get_resource_path(
+            os.path.join("assets", "icons", f"help{icon_suffix}")
+        )
 
         # Exit Action
         exit_action = QAction(QIcon(exit_icon_path), self.tr("Exit"), self)
@@ -217,24 +219,14 @@ class MainWindow(QMainWindow):
         help_action.triggered.connect(self._show_help_dialog)
         self.main_toolbar.addAction(help_action)
 
-        # Pyglet App Action
-        pyglet_action = QAction(QIcon(pyglet_icon_path), self.tr("Pyglet App"), self)
-        pyglet_action.setToolTip(self.tr("Run a sample Pyglet application"))
-        pyglet_action.triggered.connect(self._run_pyglet_app)
-        self.main_toolbar.addAction(pyglet_action)
-
     def _show_help_dialog(self):
         dialog = HelpDialog(self)
-        dialog.exec()
-
-    def _run_pyglet_app(self):
-        dialog = PygletScriptRunnerDialog(self)
         dialog.exec()
 
     def _load_and_apply_initial_theme(self):
         q_settings = QSettings()
         theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
+            app_settings.QSETTINGS_KEY_UI_THEME, app_settings.DEFAULT_THEME, type=str
         )
         self.apply_theme(theme_name)
 
@@ -287,55 +279,62 @@ class MainWindow(QMainWindow):
         self._update_dev_info_button_visibility()
 
     def _load_course_for_learning(self, manifest_path: str):
-        logger.info(f"Attempting to load course for learning from manifest: {manifest_path}")
+        logger.info(
+            f"Attempting to load course for learning from manifest: {manifest_path}"
+        )
         self.course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not self.course_manager.course:
-            logger.error(f"Failed to load course from {manifest_path}. Displaying error message.")
+            logger.error(
+                f"Failed to load course from {manifest_path}. Displaying error message."
+            )
             QMessageBox.critical(
                 self, self.tr("Course Load Error"), self.tr("Failed to load course.")
             )
             return
-        logger.info(f"Course '{self.course_manager.get_course_title()}' loaded successfully for learning.")
+        logger.info(
+            f"Course '{self.course_manager.get_course_title()}' loaded successfully for learning."
+        )
         self.progress_manager = ProgressManager(
             course_id=self.course_manager.course.course_id
         )
-        logger.debug(f"ProgressManager initialized for course ID: {self.course_manager.course.course_id}")
+        logger.debug(
+            f"ProgressManager initialized for course ID: {self.course_manager.course.course_id}"
+        )
 
         self._setup_learning_ui()
         self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
-        
+
         # Ensure the learning_widget is added before setting it as current
-        if self.learning_widget not in [self.main_stack.widget(i) for i in range(self.main_stack.count())]:
+        if self.learning_widget not in [
+            self.main_stack.widget(i) for i in range(self.main_stack.count())
+        ]:
             self.main_stack.addWidget(self.learning_widget)
-        
+
         # Set the learning_widget as current. The transition is handled by the
         # main_stack.currentChanged signal, which has special logic to prevent
         # QPainter errors with the learning view's internal animations.
         self.main_stack.setCurrentWidget(self.learning_widget)
-        
+
         QTimer.singleShot(150, self._check_and_show_onboarding)
         self._update_dev_info_button_visibility()
         self._update_menu_state()
 
     def _load_course_for_editing(self):
-        manifest_path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Open Course Manifest"), "", "YAML Files (*.yaml)"
+        """Launches the standalone Course Editor as a separate process."""
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
-        if not manifest_path:
-            return
-
-        editor_course_manager = CourseManager(manifest_path=manifest_path, parent=self)
-        if not editor_course_manager.course:
+        try:
+            subprocess.Popen(
+                [sys.executable, "-m", "application.tools.main_editor"],
+                cwd=project_root,
+            )
+        except Exception as e:
             QMessageBox.critical(
                 self,
-                self.tr("Course Load Error"),
-                self.tr("Failed to load selected course for editing."),
+                self.tr("Editor Launch Error"),
+                self.tr("Could not launch the Course Editor: {0}").format(str(e)),
             )
-            return
-
-        self._setup_editing_ui(editor_course_manager)
-        self.setWindowTitle(f"LL Editor - {editor_course_manager.get_course_title()}")
-        self._update_dev_info_button_visibility()
 
     def _setup_learning_ui(self):
         self.learning_widget = QMainWindow()
@@ -409,6 +408,9 @@ class MainWindow(QMainWindow):
         course_overview_view.start_review_session_requested.connect(
             self.start_review_session
         )
+        course_overview_view.start_weakest_review_requested.connect(
+            self.start_weakest_review_session
+        )
         self.learning_ui_views["review"].review_session_finished.connect(
             self.show_course_overview
         )
@@ -423,70 +425,31 @@ class MainWindow(QMainWindow):
         self.main_stack.setCurrentWidget(self.learning_widget)
         self._update_menu_state()
 
-    def _setup_editing_ui(self, course_manager):
-        self.editor_view = CourseEditorView(course_manager)
-        self.editor_view.editor_closed.connect(self._return_to_selection_screen)
-
-        self.main_stack.addWidget(self.editor_view)
-        self.main_stack.setCurrentWidget(self.editor_view)
-        self._update_menu_state()
-
-    def _pull_course_from_git(self):
-        from PySide6.QtWidgets import QInputDialog, QLineEdit
-
-        git_url, ok = QInputDialog.getText(
-            self,
-            self.tr("Pull Course from Git"),
-            self.tr("Enter Git Repository URL:"),
-            QLineEdit.EchoMode.Normal,
-            "",
-        )
-
-        if ok and git_url:
-            self.status_bar.showMessage(self.tr("Cloning course from Git..."), 0)
-            QApplication.processEvents()  # Ensure the message is displayed
-
-            # Progress callback to update the status bar
-            def progress_callback(progress, message):
-                if progress < 100:
-                    self.status_bar.showMessage(f"{message} {progress:.2f}%", 0)
-                else:
-                    self.status_bar.showMessage(message, 0)
-                QApplication.processEvents()
-
-            # Create a temporary CourseManager to handle the git pull
-            temp_course_manager = CourseManager(manifest_path="", parent=self)
-            try:
-                temp_course_manager.pull_course_from_git(git_url, progress_callback)
-            finally:
-                self.status_bar.clearMessage()
-
-            # Refresh the course selection view
-            self.course_selection_view.refresh_courses()
-
     def _setup_main_menu(self):
         """Creates the main, unified menu bar and all possible actions ONCE."""
         self.menuBar().clear()
 
         # --- File Menu ---
         file_menu = self.menuBar().addMenu(self.tr("&File"))
-        self.return_to_selection_action = QAction(self.tr("Return to Course Selection"), self)
-        self.return_to_selection_action.triggered.connect(self._return_to_selection_screen)
+        self.return_to_selection_action = QAction(
+            self.tr("Return to Course Selection"), self
+        )
+        self.return_to_selection_action.triggered.connect(
+            self._return_to_selection_screen
+        )
         file_menu.addAction(self.return_to_selection_action)
 
-        self.open_for_editing_action = QAction(self.tr("Open Course for Editing..."), self)
+        self.open_for_editing_action = QAction(
+            self.tr("Open Course for Editing..."), self
+        )
         self.open_for_editing_action.triggered.connect(self._load_course_for_editing)
         file_menu.addAction(self.open_for_editing_action)
-
-        self.pull_from_git_action = QAction(self.tr("Pull Course from Git..."), self)
-        self.pull_from_git_action.triggered.connect(self._pull_course_from_git)
-        file_menu.addAction(self.pull_from_git_action)
 
         file_menu.addSeparator()
         self.settings_action = QAction(self.tr("&Settings..."), self)
         self.settings_action.triggered.connect(self.show_settings_dialog)
         file_menu.addAction(self.settings_action)
-        
+
         file_menu.addSeparator()
         self.quit_action = QAction(self.tr("&Quit"), self)
         self.quit_action.triggered.connect(self.close)
@@ -497,6 +460,12 @@ class MainWindow(QMainWindow):
         self.start_due_review_action = QAction(self.tr("Start Due Review"), self)
         self.start_due_review_action.triggered.connect(self.start_review_session)
         learning_menu.addAction(self.start_due_review_action)
+
+        self.start_weak_review_action = QAction(self.tr("Start Weak Review"), self)
+        self.start_weak_review_action.triggered.connect(
+            self.start_weakest_review_session
+        )
+        learning_menu.addAction(self.start_weak_review_action)
 
         # --- View Menu ---
         self.view_menu = self.menuBar().addMenu(self.tr("&View"))
@@ -513,19 +482,19 @@ class MainWindow(QMainWindow):
         current_view = self.main_stack.currentWidget()
         is_selection_view = current_view == self.course_selection_view
         is_learning_view = current_view == self.learning_widget
-        is_editor_view = current_view == self.editor_view
 
         # File Menu Actions
-        self.return_to_selection_action.setEnabled(is_learning_view or is_editor_view)
+        self.return_to_selection_action.setEnabled(is_learning_view)
         self.open_for_editing_action.setEnabled(is_selection_view)
-        self.pull_from_git_action.setEnabled(is_selection_view)
         # Settings and Quit are always enabled
         self.settings_action.setEnabled(True)
         self.quit_action.setEnabled(True)
 
         # Learning Menu Actions
         self.start_due_review_action.setEnabled(is_learning_view)
-        
+        if hasattr(self, "start_weak_review_action"):
+            self.start_weak_review_action.setEnabled(is_learning_view)
+
         # View Menu Dock Actions (check if they exist)
         if self.toggle_nav_dock_action:
             self.toggle_nav_dock_action.setEnabled(is_learning_view)
@@ -562,11 +531,6 @@ class MainWindow(QMainWindow):
             # Clean up dock widget references to be safe
             self.navigation_dock_widget = None
             self.progress_dock_widget = None
-
-        if self.editor_view:
-            self.main_stack.removeWidget(self.editor_view)
-            self.editor_view.deleteLater()
-            self.editor_view = None
 
         self.course_manager = None
         self.progress_manager = None
@@ -634,7 +598,7 @@ class MainWindow(QMainWindow):
             self.status_bar.setVisible(is_dev_mode)
 
     def _show_dev_info_dialog(self):
-        current_exercise: Optional[Exercise] = None
+        current_exercise: Exercise | None = None
         if self.learning_widget and self.learning_widget.isVisible():
             central_stack = self.learning_ui_views.get("central_stack")
             if central_stack:
@@ -657,13 +621,14 @@ class MainWindow(QMainWindow):
 
         # Show the unified dialog if either setup has not been completed.
         if not ui_setup_done or not audio_setup_done:
-            logger.info("Initial setup not fully completed. Showing unified setup dialog.")
+            logger.info(
+                "Initial setup not fully completed. Showing unified setup dialog."
+            )
             dialog = UnifiedSetupDialog(self)
             dialog.theme_changed.connect(self.apply_theme)
             dialog.locale_changed.connect(self.apply_locale)
             dialog.font_size_changed.connect(self.apply_font_size)
             dialog.exec()
-
 
     def _check_and_show_onboarding(self):
         if not self.learning_widget or not self.learning_widget.isVisible():
@@ -694,13 +659,13 @@ class MainWindow(QMainWindow):
 
     # --- Learning Mode Methods ---
     def show_course_overview(self):
-        if not self.learning_widget: 
+        if not self.learning_widget:
             return
-        
+
         # Reveal navigation dock
         if self.navigation_dock_widget:
             self.navigation_dock_widget.setVisible(True)
-        
+
         # Existing refresh logic
         self.learning_ui_views["overview"].refresh_view()
         self.learning_ui_views["progress"].refresh_view()
@@ -721,28 +686,41 @@ class MainWindow(QMainWindow):
         self.learning_ui_views["central_stack"].setCurrentWidget(lesson_view)
 
     def start_review_session(self):
-        if not self.learning_widget: return
+        if not self.learning_widget:
+            return
         review_view = self.learning_ui_views["review"]
         review_view.start_review_session()
         if review_view.total_exercises_in_session > 0:
             self.learning_ui_views["central_stack"].setCurrentWidget(review_view)
 
+    def start_weakest_review_session(self):
+        """Starts a review session containing only the user's weakest exercises."""
+        if not self.learning_widget:
+            return
+        review_view = self.learning_ui_views["review"]
+        weak_exercises = self.progress_manager.get_weakest_exercises(
+            self.course_manager.get_all_exercises()
+        )
+        review_view.start_review_session(
+            exercises=weak_exercises, session_name=self.tr("Review Weak")
+        )
+        if review_view.total_exercises_in_session > 0:
+            self.learning_ui_views["central_stack"].setCurrentWidget(review_view)
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F11:
-            if self.isFullScreen(): self.showNormal()
-            else: self.showFullScreen()
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
         elif event.key() == Qt.Key.Key_Alt:
             self.menuBar().setVisible(not self.menuBar().isVisible())
         super().keyPressEvent(event)
 
     def closeEvent(self, event: QCloseEvent):
-        if self.progress_manager: self.progress_manager.save_progress()
+        if self.progress_manager:
+            self.progress_manager.save_progress()
         self.stt_manager.unload_model()
-        if self.editor_view and self.editor_view.is_dirty:
-            self.editor_view.close_editor()
-            if self.editor_view.isVisible():
-                event.ignore()
-                return
         super().closeEvent(event)
 
     def changeEvent(self, event: QEvent):
@@ -756,34 +734,31 @@ class MainWindow(QMainWindow):
         # Window Title
         if self.course_manager and self.course_manager.course:
             self.setWindowTitle(f"LL - {self.course_manager.get_course_title()}")
-        elif self.editor_view:
-            pass  # Title is set when editor is loaded
         else:
             self.setWindowTitle(self.tr("LanguageLearningApp"))
-        
+
         self._update_toolbar_icons()
-        
+
         # --- Retranslate the persistent menu bar ---
         # Menu Titles
         self.menuBar().actions()[0].setText(self.tr("&File"))
         self.menuBar().actions()[1].setText(self.tr("&Learning"))
         self.menuBar().actions()[2].setText(self.tr("&View"))
-        
+
         # Action Texts
         self.return_to_selection_action.setText(self.tr("Return to Course Selection"))
         self.open_for_editing_action.setText(self.tr("Open Course for Editing..."))
         self.settings_action.setText(self.tr("&Settings..."))
         self.quit_action.setText(self.tr("&Quit"))
         self.start_due_review_action.setText(self.tr("Start Due Review"))
-        self.view_menu.actions()[0].setText(self.tr("Toggle Toolbar")) # Toolbar toggle
+        self.start_weak_review_action.setText(self.tr("Start Weak Review"))
+        self.view_menu.actions()[0].setText(self.tr("Toggle Toolbar"))  # Toolbar toggle
 
         # --- Retranslate dynamic parts ---
-        if hasattr(MainWindow, "navigation_dock_widget"):
-            if self.navigation_dock_widget:
-                self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
-        if hasattr(MainWindow, "progress_dock_widget"):
-            if self.progress_dock_widget:
-                self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
+        if getattr(self, "navigation_dock_widget", None):
+            self.navigation_dock_widget.setWindowTitle(self.tr("Course Navigation"))
+        if getattr(self, "progress_dock_widget", None):
+            self.progress_dock_widget.setWindowTitle(self.tr("Progress"))
 
         if self.dev_info_button:
             self.dev_info_button.setText(self.tr("Dev Info"))

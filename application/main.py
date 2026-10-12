@@ -1,22 +1,17 @@
-import sys
-import os
 import logging
+import os
+import sys
+
+from PySide6.QtCore import (
+    QCoreApplication,
+    QElapsedTimer,
+    Qt,
+)  # Qt for alignment flags, Timers, Buffer
+from PySide6.QtGui import QPixmap  # For splash screen
 from PySide6.QtWidgets import (
     QApplication,
     QSplashScreen,
 )  # QMessageBox is no longer directly used here
-from PySide6.QtGui import QPixmap  # For splash screen
-from PySide6.QtCore import (
-    QCoreApplication,
-    Qt,
-    QElapsedTimer,
-    QTimer,
-    QBuffer,
-    QIODevice,
-)  # Qt for alignment flags, Timers, Buffer
-from PIL import Image  # Import Pillow
-
-from typing import Optional
 
 # --- Start of Patched Section for PyInstaller Compatibility ---
 
@@ -44,8 +39,7 @@ if _project_root not in sys.path:
 # With `sys.path` correctly set, we can now import our application modules.
 # We use a try-except to handle different ways the script might be run.
 try:
-    from . import settings
-    from . import utils
+    from . import settings, utils
 except (ImportError, ModuleNotFoundError):
     # This fallback is for scenarios like running `main.py` directly from inside
     # the `application` directory, where the `application` package itself isn't
@@ -84,7 +78,8 @@ def setup_logging():
     return logger
 
 
-import time # Import time module for wall time measurement
+import time  # Import time module for wall time measurement
+
 
 def main():
     # Record the start time for wall time measurement
@@ -94,8 +89,8 @@ def main():
     # However, for a simple splash, QPixmap can be loaded first.
     # For consistency and potential future needs (e.g., early dialogs), create QApplication first.
     app = QApplication(sys.argv)
-    splash: Optional[QSplashScreen] = None
-    splash_timer: Optional[QElapsedTimer] = None
+    splash: QSplashScreen | None = None
+    splash_timer: QElapsedTimer | None = None
 
     # Set Organization and Application Name EARLY for QSettings and other Qt features
     QCoreApplication.setOrganizationName(settings.ORG_NAME)
@@ -111,69 +106,11 @@ def main():
 
     # --- Splash Screen Setup ---
     try:
-        # --- Splash Screen Setup ---
-        # Define target size for splash screen
-        target_width = 896
-        target_height = target_width
-
-        # Paths for original and optimized splash images
-        original_splash_path_relative = settings.SPLASH_IMAGE_FILE
-        optimized_splash_path_relative = settings.SPLASH_IMAGE_OPTIMIZED_FILE
-        
-        original_splash_path_abs = utils.get_resource_path(original_splash_path_relative)
-        optimized_splash_path_abs = utils.get_resource_path(optimized_splash_path_relative)
+        splash_path_abs = utils.get_resource_path(settings.SPLASH_IMAGE_FILE)
 
         pixmap = QPixmap()
-        splash_image_loaded = False
-
-        # Try to load the optimized image first
-        if os.path.exists(optimized_splash_path_abs):
-            logger.debug(f"Attempting to load optimized splash image from: {optimized_splash_path_abs}")
-            if pixmap.load(optimized_splash_path_abs):
-                logger.info("Loaded optimized splash image.")
-                splash_image_loaded = True
-            else:
-                logger.warning(f"Failed to load optimized splash image from {optimized_splash_path_abs}. Attempting to re-generate.")
-        
-        if not splash_image_loaded:
-            # If optimized not found or failed to load, process the original
-            logger.debug(f"Attempting to load original splash image from: {original_splash_path_abs}")
-            try:
-                pil_image = Image.open(original_splash_path_abs)
-                
-                # Resize the image while maintaining aspect ratio
-                pil_image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
-                logger.debug(f"Resized splash image to: {pil_image.size}")
-
-                # Determine format based on original file extension for saving
-                image_format = os.path.splitext(original_splash_path_abs)[1].lstrip(".").upper()
-                save_format = image_format
-                if image_format == "JPG":  # Pillow uses 'JPEG'
-                    save_format = "JPEG"
-                elif image_format not in ["PNG", "JPEG", "BMP", "GIF", "WEBP"]: # Added WEBP
-                    logger.warning(
-                        f"Unknown image format for splash: {os.path.splitext(original_splash_path_abs)[1]}. Defaulting to PNG for saving."
-                    )
-                    save_format = "PNG" # Default to PNG if format is unknown/unsupported
-
-                # Save the optimized image for future use
-                pil_image.save(optimized_splash_path_abs, format=save_format)
-                logger.info(f"Saved optimized splash image to: {optimized_splash_path_abs}")
-
-                # Load the newly saved optimized image into QPixmap
-                if pixmap.load(optimized_splash_path_abs):
-                    splash_image_loaded = True
-                else:
-                    logger.error(f"Failed to load newly optimized splash image from {optimized_splash_path_abs}.")
-
-            except FileNotFoundError:
-                logger.warning(
-                    f"Original splash image not found: {original_splash_path_abs}. Skipping splash screen."
-                )
-            except Exception as e:
-                logger.error(f"Error processing original splash image: {e}", exc_info=True)
-
-        if splash_image_loaded and not pixmap.isNull():
+        if os.path.exists(splash_path_abs) and pixmap.load(splash_path_abs):
+            logger.info("Loaded splash image.")
             splash = QSplashScreen(pixmap)
             splash_timer = QElapsedTimer()
             splash_timer.start()  # Start timing how long the splash is shown
@@ -185,7 +122,9 @@ def main():
             )
             app.processEvents()  # Ensure splash screen is displayed and message is updated
         else:
-            logger.warning("No splash image could be loaded or generated. Proceeding without splash screen.")
+            logger.warning(
+                f"Splash image not found at: {splash_path_abs}. Proceeding without splash screen."
+            )
     except Exception as e:
         logger.error(f"Error during splash screen setup: {e}", exc_info=True)
     # --- End Splash Screen Setup ---
@@ -195,11 +134,11 @@ def main():
     # The MainWindow now handles the course selection and initialization internally.
     # With project root on sys.path, use absolute import for MainWindow
     try:
-        from application.ui.main_window import MainWindow
         from application.core.stt_manager import STTManager
+        from application.ui.main_window import MainWindow
     except ImportError:  # Nuitka will complain without this
-        from ui.main_window import MainWindow
         from core.stt_manager import STTManager
+        from ui.main_window import MainWindow
 
     if splash:
         splash.showMessage(
@@ -224,7 +163,9 @@ def main():
     # Record the end time for startup wall time measurement
     startup_end_time = time.perf_counter()
     startup_elapsed_time = startup_end_time - start_time
-    logger.info(f"Application startup wall time (until main window shown): {startup_elapsed_time:.2f} seconds.")
+    logger.info(
+        f"Application startup wall time (until main window shown): {startup_elapsed_time:.2f} seconds."
+    )
     exit_code = app.exec()
 
     # Record the end time and print the elapsed time

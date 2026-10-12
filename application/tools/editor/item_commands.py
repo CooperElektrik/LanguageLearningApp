@@ -1,0 +1,243 @@
+"""Item CRUD commands for the course editor.
+
+These add/duplicate/delete operations were five near-identical method triples
+buried in the 1,700-line ``EditorWindow``.  Grouping them here keeps the
+god-class in check while leaving the calling code untouched (the methods are
+still reached as ``self._add_lesson(...)`` etc.).
+
+The mixin relies on host attributes supplied by ``EditorWindow``:
+``course_data``, ``tree_widget``, ``item_actions_widget`` and the helpers
+``update_tree_view``, ``_set_dirty_state``, ``_expand_and_select_item`` and
+``_clear_editor_pane``.
+"""
+
+import copy
+import uuid
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QInputDialog, QMessageBox, QTreeWidgetItem
+
+from application.core.exercise_types import CREATABLE_EXERCISE_TYPES
+from application.core.models import Exercise, Lesson, Unit
+
+
+class ItemCommandsMixin:
+    """Add / duplicate / delete operations on the in-memory course model."""
+
+    # --- ID regeneration -------------------------------------------------
+    def _generate_new_ids_for_exercise(self, exercise: Exercise):
+        exercise.exercise_id = f"ex_{uuid.uuid4().hex[:8]}"
+
+    def _generate_new_ids_for_lesson(self, lesson: Lesson):
+        lesson.lesson_id = f"lesson_{uuid.uuid4().hex[:8]}"
+        for ex in lesson.exercises:
+            self._generate_new_ids_for_exercise(ex)
+
+    def _generate_new_ids_for_unit(self, unit: Unit):
+        unit.unit_id = f"unit_{uuid.uuid4().hex[:8]}"
+        for l in unit.lessons:
+            l.unit_id = unit.unit_id
+            self._generate_new_ids_for_lesson(l)
+
+    # --- Duplication -----------------------------------------------------
+    def _duplicate_unit(self, original_unit_item: QTreeWidgetItem):
+        original_unit: Unit = original_unit_item.data(0, Qt.UserRole)
+        if not original_unit or not self.course_data:
+            return
+
+        new_unit = copy.deepcopy(original_unit)
+        self._generate_new_ids_for_unit(new_unit)
+        new_unit.title = f"{original_unit.title}_copy"
+
+        original_index = self.course_data.units.index(original_unit)
+        self.course_data.units.insert(original_index + 1, new_unit)
+
+        self.update_tree_view()
+        self._set_dirty_state(True)
+        self._expand_and_select_item(new_unit)
+
+    def _duplicate_lesson(self, original_lesson_item: QTreeWidgetItem):
+        original_lesson: Lesson = original_lesson_item.data(0, Qt.UserRole)
+        parent_unit_item = original_lesson_item.parent()
+        parent_unit: Unit = (
+            parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
+        )
+
+        if not original_lesson or not parent_unit:
+            return
+
+        new_lesson = copy.deepcopy(original_lesson)
+        new_lesson.unit_id = parent_unit.unit_id
+        self._generate_new_ids_for_lesson(new_lesson)
+        new_lesson.title = f"{original_lesson.title}_copy"
+
+        original_index = parent_unit.lessons.index(original_lesson)
+        parent_unit.lessons.insert(original_index + 1, new_lesson)
+
+        self.update_tree_view()
+        self._set_dirty_state(True)
+        self._expand_and_select_item(new_lesson)
+
+    def _duplicate_exercise(self, original_exercise_item: QTreeWidgetItem):
+        original_exercise: Exercise = original_exercise_item.data(0, Qt.UserRole)
+        parent_lesson_item = original_exercise_item.parent()
+        parent_lesson: Lesson = (
+            parent_lesson_item.data(0, Qt.UserRole) if parent_lesson_item else None
+        )
+
+        if not original_exercise or not parent_lesson:
+            return
+
+        new_exercise = copy.deepcopy(original_exercise)
+        self._generate_new_ids_for_exercise(new_exercise)
+        if new_exercise.prompt:
+            new_exercise.prompt += "_copy"
+        elif new_exercise.source_word:
+            new_exercise.source_word += "_copy"
+
+        original_index = parent_lesson.exercises.index(original_exercise)
+        parent_lesson.exercises.insert(original_index + 1, new_exercise)
+
+        self.update_tree_view()
+        self._set_dirty_state(True)
+        self._expand_and_select_item(new_exercise)
+
+    # --- Units -----------------------------------------------------------
+    def _add_unit(self):
+        if not self.course_data:
+            return
+        unit_id_suffix = str(uuid.uuid4().hex[:8])
+        default_title = f"New Unit {len(self.course_data.units) + 1}"
+        unit_title, ok = QInputDialog.getText(
+            self, "New Unit", "Enter Unit Title:", text=default_title
+        )
+        if ok and unit_title and unit_title.strip():
+            new_unit = Unit(
+                unit_id=f"unit_{unit_id_suffix}", title=unit_title.strip(), lessons=[]
+            )
+            self.course_data.units.append(new_unit)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_unit)
+        elif ok:
+            QMessageBox.warning(self, "Invalid Input", "Unit title cannot be empty.")
+
+    def _delete_unit(self, item: QTreeWidgetItem):
+        unit_to_delete: Unit = item.data(0, Qt.UserRole)
+        if not unit_to_delete:
+            return
+        reply = QMessageBox.question(
+            self,
+            "Delete Unit",
+            f"Are you sure you want to delete unit '{unit_to_delete.title}' and all its contents?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            self.course_data.units = [
+                u for u in self.course_data.units if u.unit_id != unit_to_delete.unit_id
+            ]
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._clear_editor_pane()
+            self.item_actions_widget.setVisible(False)
+
+    # --- Lessons ---------------------------------------------------------
+    def _add_lesson(self, unit_item: QTreeWidgetItem):
+        unit: Unit = unit_item.data(0, Qt.UserRole)
+        if not unit:
+            return
+        lesson_id_suffix = str(uuid.uuid4().hex[:8])
+        default_title = f"New Lesson {len(unit.lessons) + 1}"
+        lesson_title, ok = QInputDialog.getText(
+            self, "New Lesson", "Enter Lesson Title:", text=default_title
+        )
+        if ok and lesson_title and lesson_title.strip():
+            new_lesson = Lesson(
+                lesson_id=f"lesson_{lesson_id_suffix}",
+                title=lesson_title.strip(),
+                exercises=[],
+                unit_id=unit.unit_id,
+            )
+            unit.lessons.append(new_lesson)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_lesson)
+        elif ok:
+            QMessageBox.warning(self, "Invalid Input", "Lesson title cannot be empty.")
+
+    def _delete_lesson(self, item: QTreeWidgetItem):
+        lesson_to_delete: Lesson = item.data(0, Qt.UserRole)
+        if not lesson_to_delete:
+            return
+        reply = QMessageBox.question(
+            self,
+            "Delete Lesson",
+            f"Are you sure you want to delete lesson '{lesson_to_delete.title}' and all its exercises?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            parent_unit_item = item.parent()
+            parent_unit: Unit = (
+                parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
+            )
+            if parent_unit:
+                parent_unit.lessons = [
+                    l
+                    for l in parent_unit.lessons
+                    if l.lesson_id != lesson_to_delete.lesson_id
+                ]
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._clear_editor_pane()
+                self.item_actions_widget.setVisible(False)
+
+    # --- Exercises -------------------------------------------------------
+    def _add_exercise(self, lesson_item: QTreeWidgetItem):
+        lesson: Lesson = lesson_item.data(0, Qt.UserRole)
+        if not lesson:
+            return
+
+        item_type_name, ok = QInputDialog.getItem(
+            self,
+            "New Exercise",
+            "Select Exercise Type:",
+            CREATABLE_EXERCISE_TYPES,
+            0,
+            False,
+        )
+
+        if ok and item_type_name:
+            exercise_id_suffix = str(uuid.uuid4().hex[:8])
+            new_exercise = Exercise(
+                exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
+            )
+            lesson.exercises.append(new_exercise)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_exercise)
+
+    def _delete_exercise(self, item: QTreeWidgetItem):
+        exercise_to_delete: Exercise = item.data(0, Qt.UserRole)
+        if not exercise_to_delete:
+            return
+        reply = QMessageBox.question(
+            self,
+            "Delete Exercise",
+            "Are you sure you want to delete this exercise?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            parent_lesson_item = item.parent()
+            parent_lesson: Lesson = (
+                parent_lesson_item.data(0, Qt.UserRole) if parent_lesson_item else None
+            )
+            if parent_lesson:
+                parent_lesson.exercises = [
+                    e
+                    for e in parent_lesson.exercises
+                    if e.exercise_id != exercise_to_delete.exercise_id
+                ]
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._clear_editor_pane()
+                self.item_actions_widget.setVisible(False)

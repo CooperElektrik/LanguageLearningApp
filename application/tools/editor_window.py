@@ -1,46 +1,50 @@
+import logging
 import os
 import uuid
-import logging
-import sys
-import copy
-from typing import Any, Optional, List
+from typing import Any
+
 import yaml
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QAction, QActionGroup, QFont
 from PySide6.QtWidgets import (
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTreeWidgetItem,
-    QStackedWidget,
-    QPushButton,
-    QFileDialog,
-    QMessageBox,
-    QLabel,
-    QInputDialog,
-    QSplitter,
-    QComboBox,
-    QMenu,
-    QTextEdit,
-    QDialog,
-    QFrame,
-    QLineEdit,
-    QTreeWidgetItemIterator,
-    QStyle,
-    QToolBar,
     QApplication,
+    QComboBox,
+    QDialog,
+    QFileDialog,
     QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QStackedWidget,
+    QStyle,
+    QTextEdit,
+    QToolBar,
+    QTreeWidgetItem,
+    QTreeWidgetItemIterator,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QAction, QFont, QActionGroup
 
 try:
-    from application.core.models import Course, Unit, Lesson, Exercise, ExerciseOption
+    from application.core import yaml_serializer
+    from application.core.course_loader import (
+        create_new_course,
+        load_manifest,
+    )
     from application.core.course_loader import (
         load_course_content as load_course_content_from_yaml,
     )
+    from application.core.exercise_types import ALL_EXERCISE_TYPES
+    from application.core.models import Course, Exercise, ExerciseOption, Lesson, Unit
+    from application.tools.widgets.glossary_editor_widget import GlossaryEditorWidget
+
     from .dialogs.exercise_preview_dialog import ExercisePreviewDialog
     from .widgets.course_tree_widget import CourseTreeWidget
-    from application.tools.widgets.glossary_editor_widget import GlossaryEditorWidget
 except ImportError as e:
     logging.error(
         f"Failed to import core or UI widgets for preview dialog. Ensure 'application' directory is on sys.path. Error: {e}"
@@ -62,28 +66,27 @@ except ImportError as e:
         pass
 
 
-from .yaml_manager import load_manifest, save_manifest, create_new_course
-from .widgets.manifest_editor_widget import ManifestEditorWidget
-from .widgets.exercise_editor_widgets import (
-    TranslationExerciseEditorWidget,
-    MultipleChoiceExerciseEditorWidget,
-    FillInTheBlankExerciseEditorWidget,
-    BaseExerciseEditorWidget,
-    DictationExerciseEditorWidget,
-    ImageAssociationExerciseEditorWidget,
-    ListenAndSelectExerciseEditorWidget,
-    SentenceJumbleExerciseEditorWidget,
-    ContextBlockExerciseEditorWidget,
-)
-from .dialogs.csv_import_dialog import CsvImportDialog
-from .dialogs.package_creation_dialog import PackageCreationDialog
+from .course_packager import create_package_for_gui
 from .course_validator import (
-    perform_manifest_validation,
     perform_course_content_validation,
+    perform_manifest_validation,
 )
 from .csv_importer import import_csv_data, load_existing_course_data, save_course_data
-from .course_packager import create_package_for_gui
-
+from .dialogs.csv_import_dialog import CsvImportDialog
+from .dialogs.package_creation_dialog import PackageCreationDialog
+from .editor.item_commands import ItemCommandsMixin
+from .widgets.exercise_editor_widgets import (
+    BaseExerciseEditorWidget,
+    ContextBlockExerciseEditorWidget,
+    DictationExerciseEditorWidget,
+    FillInTheBlankExerciseEditorWidget,
+    ImageAssociationExerciseEditorWidget,
+    ListenAndSelectExerciseEditorWidget,
+    MultipleChoiceExerciseEditorWidget,
+    SentenceJumbleExerciseEditorWidget,
+    TranslationExerciseEditorWidget,
+)
+from .widgets.manifest_editor_widget import ManifestEditorWidget
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +95,7 @@ _dark_theme_qss_path = os.path.join(_current_script_dir, "styles", "dark_theme.q
 _light_theme_qss_path = os.path.join(_current_script_dir, "styles", "light_theme.qss")
 
 
-class EditorWindow(QMainWindow):
+class EditorWindow(ItemCommandsMixin, QMainWindow):
     course_changed = Signal()
 
     def __init__(self, parent=None):
@@ -295,20 +298,7 @@ class EditorWindow(QMainWindow):
         type_filter_layout = QHBoxLayout()
         type_filter_layout.addWidget(QLabel("Type:"))
         self.type_filter_combo = QComboBox()
-        self.type_filter_combo.addItems(
-            [
-                "All Types",
-                "translate_to_target",
-                "translate_to_source",
-                "multiple_choice_translation",
-                "fill_in_the_blank",
-                "dictation",
-                "image_association",
-                "listen_and_select",
-                "sentence_jumble",
-                "context_block",
-            ]
-        )
+        self.type_filter_combo.addItems(["All Types"] + ALL_EXERCISE_TYPES)
         self.type_filter_combo.currentIndexChanged.connect(
             lambda: self._filter_tree_view(self.search_bar.text())
         )
@@ -586,21 +576,20 @@ class EditorWindow(QMainWindow):
                     has_audio = bool(exercise.audio_file)
                     has_image = bool(exercise.image_file)
 
-                    if selected_asset_filter == "Has Audio" and not has_audio:
-                        is_item_visible_by_filters = False
-                    elif selected_asset_filter == "No Audio" and has_audio:
-                        is_item_visible_by_filters = False
-                    elif selected_asset_filter == "Has Image" and not has_image:
-                        is_item_visible_by_filters = False
-                    elif selected_asset_filter == "No Image" and has_image:
-                        is_item_visible_by_filters = False
-                    elif selected_asset_filter == "Has Both Audio & Image" and not (
-                        has_audio and has_image
+                    if (
+                        selected_asset_filter == "Has Audio"
+                        and not has_audio
+                        or selected_asset_filter == "No Audio"
+                        and has_audio
+                        or selected_asset_filter == "Has Image"
+                        and not has_image
+                        or selected_asset_filter == "No Image"
+                        and has_image
+                        or selected_asset_filter == "Has Both Audio & Image"
+                        and not (has_audio and has_image)
+                        or selected_asset_filter == "Missing Any Asset"
+                        and (has_audio or has_image)
                     ):
-                        is_item_visible_by_filters = False
-                    elif selected_asset_filter == "Missing Any Asset" and (
-                        has_audio or has_image
-                    ):  # If either is present, it's not "missing any"
                         is_item_visible_by_filters = False
 
                 item.setHidden(not is_item_visible_by_filters)
@@ -617,7 +606,7 @@ class EditorWindow(QMainWindow):
                 # Only expand parents if they were previously expanded or if they need to reveal a matching child
                 # This prevents over-expanding the whole tree when filters are applied.
                 parent_data_id = id(parent.data(0, Qt.UserRole))
-                if parent_data_id in expanded_state and expanded_state[parent_data_id]:
+                if expanded_state.get(parent_data_id):
                     parent.setExpanded(True)
                 elif (
                     item.isExpanded() or not item.isHidden()
@@ -650,6 +639,9 @@ class EditorWindow(QMainWindow):
             self.manifest_editor.load_data(
                 item_data.get("manifest_data", {}),
                 item_data.get("course_obj", self.course_data),
+                os.path.dirname(self.current_manifest_path)
+                if self.current_manifest_path
+                else None,
             )
             self.detail_editor_stacked_widget.setCurrentWidget(self.manifest_editor)
         elif isinstance(item_data, dict) and item_data.get("type") == "glossary":
@@ -834,7 +826,9 @@ class EditorWindow(QMainWindow):
             )
         elif exercise.type == "sentence_jumble":
             widget = SentenceJumbleExerciseEditorWidget(
-                exercise, target_lang, source_lang  # No course_root_dir typically
+                exercise,
+                target_lang,
+                source_lang,  # No course_root_dir typically
             )
         elif exercise.type == "context_block":
             widget = ContextBlockExerciseEditorWidget(
@@ -875,7 +869,7 @@ class EditorWindow(QMainWindow):
 
     def _get_item_list_and_index(
         self, item_data_obj: Any
-    ) -> tuple[Optional[List], Optional[int]]:
+    ) -> tuple[list | None, int | None]:
         """Helper to get the list and index of an item for reordering."""
         if isinstance(item_data_obj, Unit):
             try:
@@ -1037,225 +1031,6 @@ class EditorWindow(QMainWindow):
         )
         dialog.exec()
 
-    def _generate_new_ids_for_exercise(self, exercise: Exercise):
-        exercise.exercise_id = f"ex_{uuid.uuid4().hex[:8]}"
-
-    def _generate_new_ids_for_lesson(self, lesson: Lesson):
-        lesson.lesson_id = f"lesson_{uuid.uuid4().hex[:8]}"
-        for ex in lesson.exercises:
-            self._generate_new_ids_for_exercise(ex)
-
-    def _generate_new_ids_for_unit(self, unit: Unit):
-        unit.unit_id = f"unit_{uuid.uuid4().hex[:8]}"
-        for l in unit.lessons:
-            l.unit_id = unit.unit_id
-            self._generate_new_ids_for_lesson(l)
-
-    def _duplicate_unit(self, original_unit_item: QTreeWidgetItem):
-        original_unit: Unit = original_unit_item.data(0, Qt.UserRole)
-        if not original_unit or not self.course_data:
-            return
-
-        new_unit = copy.deepcopy(original_unit)
-        self._generate_new_ids_for_unit(new_unit)
-        new_unit.title = f"{original_unit.title}_copy"
-
-        original_index = self.course_data.units.index(original_unit)
-        self.course_data.units.insert(original_index + 1, new_unit)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_unit)
-
-    def _duplicate_lesson(self, original_lesson_item: QTreeWidgetItem):
-        original_lesson: Lesson = original_lesson_item.data(0, Qt.UserRole)
-        parent_unit_item = original_lesson_item.parent()
-        parent_unit: Unit = (
-            parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
-        )
-
-        if not original_lesson or not parent_unit:
-            return
-
-        new_lesson = copy.deepcopy(original_lesson)
-        new_lesson.unit_id = parent_unit.unit_id
-        self._generate_new_ids_for_lesson(new_lesson)
-        new_lesson.title = f"{original_lesson.title}_copy"
-
-        original_index = parent_unit.lessons.index(original_lesson)
-        parent_unit.lessons.insert(original_index + 1, new_lesson)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_lesson)
-
-    def _duplicate_exercise(self, original_exercise_item: QTreeWidgetItem):
-        original_exercise: Exercise = original_exercise_item.data(0, Qt.UserRole)
-        parent_lesson_item = original_exercise_item.parent()
-        parent_lesson: Lesson = (
-            parent_lesson_item.data(0, Qt.UserRole) if parent_lesson_item else None
-        )
-
-        if not original_exercise or not parent_lesson:
-            return
-
-        new_exercise = copy.deepcopy(original_exercise)
-        self._generate_new_ids_for_exercise(new_exercise)
-        if new_exercise.prompt:
-            new_exercise.prompt += "_copy"
-        elif new_exercise.source_word:
-            new_exercise.source_word += "_copy"
-
-        original_index = parent_lesson.exercises.index(original_exercise)
-        parent_lesson.exercises.insert(original_index + 1, new_exercise)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_exercise)
-
-    def _add_unit(self):
-        if not self.course_data:
-            return
-        unit_id_suffix = str(uuid.uuid4().hex[:8])
-        default_title = f"New Unit {len(self.course_data.units) + 1}"
-        unit_title, ok = QInputDialog.getText(
-            self, "New Unit", "Enter Unit Title:", text=default_title
-        )
-        if ok and unit_title and unit_title.strip():
-            new_unit = Unit(
-                unit_id=f"unit_{unit_id_suffix}", title=unit_title.strip(), lessons=[]
-            )
-            self.course_data.units.append(new_unit)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_unit)
-        elif ok:
-            QMessageBox.warning(self, "Invalid Input", "Unit title cannot be empty.")
-
-    def _delete_unit(self, item: QTreeWidgetItem):
-        unit_to_delete: Unit = item.data(0, Qt.UserRole)
-        if not unit_to_delete:
-            return
-        reply = QMessageBox.question(
-            self,
-            "Delete Unit",
-            f"Are you sure you want to delete unit '{unit_to_delete.title}' and all its contents?",
-            QMessageBox.Yes | QMessageBox.No,
-        )
-        if reply == QMessageBox.Yes:
-            self.course_data.units = [
-                u for u in self.course_data.units if u.unit_id != unit_to_delete.unit_id
-            ]
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._clear_editor_pane()
-            self.item_actions_widget.setVisible(False)
-
-    def _add_lesson(self, unit_item: QTreeWidgetItem):
-        unit: Unit = unit_item.data(0, Qt.UserRole)
-        if not unit:
-            return
-        lesson_id_suffix = str(uuid.uuid4().hex[:8])
-        default_title = f"New Lesson {len(unit.lessons) + 1}"
-        lesson_title, ok = QInputDialog.getText(
-            self, "New Lesson", "Enter Lesson Title:", text=default_title
-        )
-        if ok and lesson_title and lesson_title.strip():
-            new_lesson = Lesson(
-                lesson_id=f"lesson_{lesson_id_suffix}",
-                title=lesson_title.strip(),
-                exercises=[],
-                unit_id=unit.unit_id,
-            )
-            unit.lessons.append(new_lesson)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_lesson)
-        elif ok:
-            QMessageBox.warning(self, "Invalid Input", "Lesson title cannot be empty.")
-
-    def _delete_lesson(self, item: QTreeWidgetItem):
-        lesson_to_delete: Lesson = item.data(0, Qt.UserRole)
-        if not lesson_to_delete:
-            return
-        reply = QMessageBox.question(
-            self,
-            "Delete Lesson",
-            f"Are you sure you want to delete lesson '{lesson_to_delete.title}' and all its exercises?",
-            QMessageBox.Yes | QMessageBox.No,
-        )
-        if reply == QMessageBox.Yes:
-            parent_unit_item = item.parent()
-            parent_unit: Unit = (
-                parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
-            )
-            if parent_unit:
-                parent_unit.lessons = [
-                    l
-                    for l in parent_unit.lessons
-                    if l.lesson_id != lesson_to_delete.lesson_id
-                ]
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._clear_editor_pane()
-                self.item_actions_widget.setVisible(False)
-
-    def _add_exercise(self, lesson_item: QTreeWidgetItem):
-        lesson: Lesson = lesson_item.data(0, Qt.UserRole)
-        if not lesson:
-            return
-
-        ex_types = [
-            "translate_to_target",
-            "translate_to_source",
-            "multiple_choice_translation",
-            "fill_in_the_blank",
-            "dictation",
-            "image_association",
-            "listen_and_select",
-            "sentence_jumble",
-            "context_block",
-        ]
-        item_type_name, ok = QInputDialog.getItem(
-            self, "New Exercise", "Select Exercise Type:", ex_types, 0, False
-        )
-
-        if ok and item_type_name:
-            exercise_id_suffix = str(uuid.uuid4().hex[:8])
-            new_exercise = Exercise(
-                exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
-            )
-            lesson.exercises.append(new_exercise)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_exercise)
-
-    def _delete_exercise(self, item: QTreeWidgetItem):
-        exercise_to_delete: Exercise = item.data(0, Qt.UserRole)
-        if not exercise_to_delete:
-            return
-        reply = QMessageBox.question(
-            self,
-            "Delete Exercise",
-            f"Are you sure you want to delete this exercise?",
-            QMessageBox.Yes | QMessageBox.No,
-        )
-        if reply == QMessageBox.Yes:
-            parent_lesson_item = item.parent()
-            parent_lesson: Lesson = (
-                parent_lesson_item.data(0, Qt.UserRole) if parent_lesson_item else None
-            )
-            if parent_lesson:
-                parent_lesson.exercises = [
-                    e
-                    for e in parent_lesson.exercises
-                    if e.exercise_id != exercise_to_delete.exercise_id
-                ]
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._clear_editor_pane()
-                self.item_actions_widget.setVisible(False)
-
     def _expand_and_select_item(self, item_data_obj: Any):
         def find_and_select(parent_item, target_data_obj):
             for i in range(parent_item.childCount()):
@@ -1290,6 +1065,7 @@ class EditorWindow(QMainWindow):
                 expanded_items_data[id(item_data)] = item.isExpanded()
             iterator += 1
 
+        self.tree_widget.set_course_data(self.course_data)
         self.tree_widget.clear()
         if not self.course_data:
             return
@@ -1545,7 +1321,7 @@ class EditorWindow(QMainWindow):
                 )
                 return False
 
-        if not save_manifest(self.manifest_data, manifest_file):
+        if not yaml_serializer.save_manifest_to_yaml(self.manifest_data, manifest_file):
             QMessageBox.critical(self, "Save Error", "Failed to save manifest file.")
             return False
 

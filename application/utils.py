@@ -1,18 +1,17 @@
-import sys
-import os
 import logging
-from typing import Optional
+import os
+import sys
 
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtCore import QUrl, QSettings, QLocale, QTranslator, QCoreApplication
 import settings
+from PySide6.QtCore import QCoreApplication, QLocale, QSettings, QTranslator, QUrl
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 
 logger = logging.getLogger(__name__)
 
 # This global variable will store the application's root directory.
 _APP_ROOT_DIR = None
 _sound_player = None
-_DEVELOPER_MODE_CACHE: Optional[bool] = None
+_DEVELOPER_MODE_CACHE: bool | None = None
 _audio_output = None
 
 
@@ -30,6 +29,7 @@ def get_stt_model_path(engine: str, model_name: str) -> str:
         return get_resource_path("models")
     else:
         return ""
+
 
 def _init_sound_player():
     """Initializes the shared QMediaPlayer instance for sound effects."""
@@ -127,6 +127,7 @@ def get_app_root_dir() -> str:
             # Try to get the directory of the main application script.
             # This is more robust than __main__.__file__ for certain execution contexts.
             import application.main
+
             fallback_root = os.path.dirname(os.path.abspath(application.main.__file__))
             logger.info(
                 f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from application.main.__file__)"
@@ -242,7 +243,7 @@ def get_available_locales() -> dict[str, str]:
     return locales
 
 
-def setup_initial_translation(app: QCoreApplication) -> Optional[QTranslator]:
+def setup_initial_translation(app: QCoreApplication) -> QTranslator | None:
     """
     Sets up application translations based on saved preference or system default.
     Returns the loaded translator instance or None.

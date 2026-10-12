@@ -1,29 +1,27 @@
-import os
 import logging
+import os
+from typing import Any
+
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QMessageBox,
-    QFrame,
-    QDialog,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont
 
-from application.core.models import GlossaryEntry
-from application.core.glossary_loader import load_glossary
 from application.core import yaml_serializer
-
+from application.core.glossary_loader import load_glossary
+from application.core.models import GlossaryEntry
 from application.tools.dialogs.glossary_entry_editor_dialog import (
     GlossaryEntryEditorDialog,
 )
-
-from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ class GlossaryEditorWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.glossary_entries: List[GlossaryEntry] = []
+        self.glossary_entries: list[GlossaryEntry] = []
         self.current_glossary_filepath: str = None
         self.current_manifest_path: str = (
             None  # Needed to get course root dir for asset dialog
@@ -75,7 +73,7 @@ class GlossaryEditorWidget(QWidget):
         separator.setFrameShadow(QFrame.Sunken)
         return separator
 
-    def load_glossary_data(self, manifest_data: Dict[str, Any], manifest_path: str):
+    def load_glossary_data(self, manifest_data: dict[str, Any], manifest_path: str):
         """
         Loads glossary entries based on manifest data.
         """
@@ -86,7 +84,10 @@ class GlossaryEditorWidget(QWidget):
             self.current_glossary_filepath = os.path.join(
                 manifest_dir_abs, glossary_filename
             )
-            self.glossary_entries = load_glossary(self.current_glossary_filepath)
+            pool_base_dir = os.path.join(os.path.dirname(manifest_dir_abs), "pool")
+            self.glossary_entries = load_glossary(
+                self.current_glossary_filepath, manifest_dir_abs, pool_base_dir
+            )
         else:
             self.current_glossary_filepath = None
             self.glossary_entries = []
@@ -101,7 +102,7 @@ class GlossaryEditorWidget(QWidget):
         self._populate_list_widget()
 
     def save_glossary_data(
-        self, manifest_data: Dict[str, Any], manifest_path: str
+        self, manifest_data: dict[str, Any], manifest_path: str
     ) -> bool:
         """
         Saves the current glossary entries to the YAML file.
@@ -111,13 +112,13 @@ class GlossaryEditorWidget(QWidget):
             # If no glossary file was loaded or specified in manifest, prompt to save as new
             manifest_dir_abs = os.path.dirname(os.path.abspath(manifest_path))
             default_glossary_filename = "glossary.yaml"
-            new_filepath, _ = QMessageBox.information(
+            reply = QMessageBox.question(
                 self,
                 "Save Glossary",
                 "No glossary file is specified in the manifest. Would you like to create a new one?",
                 QMessageBox.Yes | QMessageBox.No,
             )
-            if new_filepath == QMessageBox.No:
+            if reply != QMessageBox.Yes:
                 logger.info("User chose not to create a new glossary file.")
                 return False
 

@@ -1,29 +1,27 @@
-import os
 import logging
+import os
 import re
-import markdown
 import urllib.parse
+
+import markdown
+from core.course_manager import CourseManager
+from core.models import GlossaryEntry
+from PySide6.QtCore import QEvent, Qt, QUrl
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
-    QTextBrowser,
-    QFormLayout,
-    QDialogButtonBox,
     QMessageBox,
-    QFrame,
+    QPushButton,
     QScrollArea,
+    QTextBrowser,
+    QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt, QUrl, QEvent
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-
-from core.models import GlossaryEntry
-from core.course_manager import CourseManager
-
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ class GlossaryDetailDialog(QDialog):
         self,
         entry: GlossaryEntry,
         course_manager: CourseManager,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Glossary Entry: {0}").format(entry.word))
@@ -43,8 +41,8 @@ class GlossaryDetailDialog(QDialog):
         self.course_manager = course_manager
 
         # Media player for audio
-        self._media_player: Optional[QMediaPlayer] = None
-        self._audio_output: Optional[QAudioOutput] = None
+        self._media_player: QMediaPlayer | None = None
+        self._audio_output: QAudioOutput | None = None
 
         self._setup_ui()
         self._load_entry_data()
@@ -305,7 +303,9 @@ class GlossaryDetailDialog(QDialog):
         # Determine the course's base directory (where its manifest is)
         course_base_dir = self.course_manager.get_course_manifest_directory()
         if not course_base_dir:
-            logger.error("Could not determine course base directory for audio playback.")
+            logger.error(
+                "Could not determine course base directory for audio playback."
+            )
             QMessageBox.warning(
                 self,
                 self.tr("Audio Error"),
@@ -322,7 +322,9 @@ class GlossaryDetailDialog(QDialog):
             if assets_base_dir:
                 full_audio_path = os.path.join(assets_base_dir, self.entry.audio_file)
             else:
-                logger.warning("Shared asset directory not found or configured, falling back to course base directory.")
+                logger.warning(
+                    "Shared asset directory not found or configured, falling back to course base directory."
+                )
                 # If get_asset_directory also fails, we stick with the course_base_dir path
                 # which was already constructed.
 

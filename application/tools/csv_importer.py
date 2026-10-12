@@ -1,11 +1,11 @@
-import sys
-import os
 import argparse
-import logging
 import csv
+import logging
+import os
+import sys
+from typing import Any
+
 import yaml
-import uuid
-from typing import List, Dict, Any, Optional, Tuple
 
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 application_root_dir = os.path.abspath(os.path.join(current_script_dir, ".."))
@@ -13,11 +13,13 @@ application_root_dir = os.path.abspath(os.path.join(current_script_dir, ".."))
 if application_root_dir not in sys.path:
     sys.path.insert(0, application_root_dir)
 
+from core.exercise_types import CSV_IMPORTABLE_TYPES
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def load_existing_course_data(yaml_filepath: str) -> Dict[str, Any]:
+def load_existing_course_data(yaml_filepath: str) -> dict[str, Any]:
     """Loads existing course data from a YAML file into a dictionary format."""
     if os.path.exists(yaml_filepath):
         try:
@@ -43,7 +45,7 @@ def load_existing_course_data(yaml_filepath: str) -> Dict[str, Any]:
     return {"units": []}
 
 
-def save_course_data(course_data: Dict[str, Any], yaml_filepath: str):
+def save_course_data(course_data: dict[str, Any], yaml_filepath: str):
     """Saves the course data (dictionary format) to a YAML file."""
     try:
         with open(yaml_filepath, "w", encoding="utf-8") as f:
@@ -56,11 +58,11 @@ def save_course_data(course_data: Dict[str, Any], yaml_filepath: str):
 
 
 def find_or_create_unit(
-    course_data: Dict[str, Any],
+    course_data: dict[str, Any],
     unit_id: str,
-    unit_title: Optional[str],
-    messages: List[str],
-) -> Optional[Dict[str, Any]]:
+    unit_title: str | None,
+    messages: list[str],
+) -> dict[str, Any] | None:
     """Finds an existing unit by ID or creates a new one if title is provided."""
     for unit in course_data["units"]:
         if unit.get("unit_id") == unit_id:
@@ -82,11 +84,11 @@ def find_or_create_unit(
 
 
 def find_or_create_lesson(
-    unit_data: Dict[str, Any],
+    unit_data: dict[str, Any],
     lesson_id: str,
-    lesson_title: Optional[str],
-    messages: List[str],
-) -> Optional[Dict[str, Any]]:
+    lesson_title: str | None,
+    messages: list[str],
+) -> dict[str, Any] | None:
     """Finds an existing lesson by ID within a unit or creates a new one if title is provided."""
     for lesson in unit_data.get("lessons", []):
         if lesson.get("lesson_id") == lesson_id:
@@ -117,12 +119,12 @@ def find_or_create_lesson(
 
 def _process_translation_csv_internal(
     csv_reader_instance,
-    target_lesson_dict: Dict[str, Any],
+    target_lesson_dict: dict[str, Any],
     exercise_type: str,
     prompt_col: str,
     answer_col: str,
-    messages: List[str],
-    audio_file_col: str = None,
+    messages: list[str],
+    audio_file_col: str | None = None,
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
@@ -152,11 +154,11 @@ def _process_translation_csv_internal(
 
 def _process_mcq_csv_internal(
     csv_reader_instance,
-    target_lesson_dict: Dict[str, Any],
+    target_lesson_dict: dict[str, Any],
     source_word_col: str,
     correct_option_col: str,
-    incorrect_options_cols: List[str],
-    messages: List[str],
+    incorrect_options_cols: list[str],
+    messages: list[str],
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
@@ -197,15 +199,66 @@ def _process_mcq_csv_internal(
     return count
 
 
+def _process_fib_csv_internal(
+    csv_reader_instance,
+    target_lesson_dict: dict[str, Any],
+    sentence_template_col: str,
+    correct_option_col: str,
+    incorrect_options_cols: list[str],
+    messages: list[str],
+    translation_hint_col: str | None = None,
+) -> int:
+    """Builds fill_in_the_blank exercises from CSV rows.
+
+    The blank choices are written as a plain list of strings (matching the
+    on-disk format produced by ``Exercise.to_content_dict``); ``correct_option``
+    selects the right one and ``__BLANK__`` marks the gap in the template.
+    """
+    count = 0
+    for row_num, row in enumerate(csv_reader_instance):
+        sentence_template = row.get(sentence_template_col)
+        correct_option_text = row.get(correct_option_col)
+
+        if not sentence_template or not correct_option_text:
+            messages.append(
+                f"Warning: Skipping CSV row {row_num + 1}: Missing "
+                f"'{sentence_template_col}' or '{correct_option_col}'."
+            )
+            continue
+
+        options = [correct_option_text]
+        options.extend(row.get(col) for col in incorrect_options_cols if row.get(col))
+
+        exercise_data = {
+            "type": "fill_in_the_blank",
+            "sentence_template": sentence_template,
+            "correct_option": correct_option_text,
+            "options": options,
+        }
+        translation_hint = (
+            row.get(translation_hint_col) if translation_hint_col else None
+        )
+        if translation_hint:
+            exercise_data["translation_hint"] = translation_hint
+
+        target_lesson_dict["exercises"].append(exercise_data)
+        count += 1
+    messages.append(
+        f"Info: Added {count} 'fill_in_the_blank' exercises to Lesson "
+        f"'{target_lesson_dict.get('lesson_id')}'."
+    )
+    return count
+
+
 def _process_association_csv_internal(
     csv_reader_instance,
-    target_lesson_dict: Dict[str, Any],
+    target_lesson_dict: dict[str, Any],
     exercise_type: str,
     prompt_col: str,
     asset_col: str,  # 'image_file' or 'audio_file'
     correct_option_col: str,
-    incorrect_options_cols: List[str],
-    messages: List[str],
+    incorrect_options_cols: list[str],
+    messages: list[str],
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
@@ -223,9 +276,7 @@ def _process_association_csv_internal(
 
         options = [{"text": correct_option_text, "correct": True}]
         incorrects = [row.get(col) for col in incorrect_options_cols if row.get(col)]
-        if (
-            not incorrects
-        ):  # Allow association with only one correct option if no incorrects are provided
+        if not incorrects:  # Allow association with only one correct option if no incorrects are provided
             messages.append(
                 f"Info: Row {row_num + 1} for '{prompt}' has no incorrect options from columns: {incorrect_options_cols}."
             )
@@ -247,11 +298,11 @@ def _process_association_csv_internal(
 
 def _process_jumble_csv_internal(
     csv_reader_instance,
-    target_lesson_dict: Dict[str, Any],
+    target_lesson_dict: dict[str, Any],
     prompt_col: str,
     words_col: str,
     answer_col: str,
-    messages: List[str],
+    messages: list[str],
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
@@ -280,10 +331,10 @@ def _process_jumble_csv_internal(
 
 def _process_context_csv_internal(
     csv_reader_instance,
-    target_lesson_dict: Dict[str, Any],
+    target_lesson_dict: dict[str, Any],
     title_col: str,
     prompt_col: str,
-    messages: List[str],
+    messages: list[str],
 ) -> int:
     count = 0
     for row_num, row in enumerate(csv_reader_instance):
@@ -305,12 +356,12 @@ def _process_context_csv_internal(
 
 def import_csv_data(
     csv_filepath: str,
-    existing_course_data: Dict[str, Any],
+    existing_course_data: dict[str, Any],
     exercise_type: str,
     unit_id: str,
-    unit_title: Optional[str],
+    unit_title: str | None,
     lesson_id: str,
-    lesson_title: Optional[str],
+    lesson_title: str | None,
     prompt_col: str = "prompt",
     answer_col: str = "answer",
     source_word_col: str = "source_word",
@@ -319,9 +370,11 @@ def import_csv_data(
     image_file_col: str = "image_file",  # Added for image_association
     words_col: str = "words",  # Added for sentence_jumble
     title_col: str = "title",  # Added for context_block
-    incorrect_options_cols: Optional[List[str]] = None,
+    sentence_template_col: str = "sentence_template",  # Added for fill_in_the_blank
+    translation_hint_col: str = "translation_hint",  # Added for fill_in_the_blank
+    incorrect_options_cols: list[str] | None = None,
     incorrect_options_prefix: str = "incorrect_option_",
-) -> Tuple[bool, List[str]]:
+) -> tuple[bool, list[str]]:
     messages = []
     success = True
 
@@ -415,6 +468,33 @@ def import_csv_data(
                     correct_option_col,
                     actual_incorrect_cols,
                     messages,
+                )
+            elif exercise_type == "fill_in_the_blank":
+                if (
+                    sentence_template_col not in fieldnames
+                    or correct_option_col not in fieldnames
+                ):
+                    messages.append(
+                        f"Error: CSV missing required columns for fill_in_the_blank: "
+                        f"'{sentence_template_col}', '{correct_option_col}'. Found: {list(fieldnames)}"
+                    )
+                    return False, messages
+                fib_incorrect_cols = incorrect_options_cols or [
+                    fn
+                    for fn in fieldnames
+                    if fn.startswith(incorrect_options_prefix)
+                    and fn != incorrect_options_prefix
+                ]
+                _process_fib_csv_internal(
+                    reader,
+                    target_lesson,
+                    sentence_template_col,
+                    correct_option_col,
+                    fib_incorrect_cols,
+                    messages,
+                    translation_hint_col
+                    if translation_hint_col in fieldnames
+                    else None,
                 )
             elif exercise_type == "image_association":
                 required_cols = [prompt_col, image_file_col, correct_option_col]
@@ -520,16 +600,7 @@ def main():
     parser.add_argument(
         "--exercise_type",
         required=True,
-        choices=[
-            "translate_to_target",
-            "translate_to_source",
-            "dictation",
-            "multiple_choice_translation",
-            "image_association",
-            "listen_and_select",
-            "sentence_jumble",
-            "context_block",
-        ],
+        choices=CSV_IMPORTABLE_TYPES,
         help="Type of exercises to generate.",
     )
 
@@ -603,6 +674,16 @@ def main():
         default="title",
         help="CSV column name for the title (for context_block). Default: 'title'",
     )
+    parser.add_argument(
+        "--sentence_template_col",
+        default="sentence_template",
+        help="CSV column name for the sentence template (for fill_in_the_blank). Default: 'sentence_template'",
+    )
+    parser.add_argument(
+        "--translation_hint_col",
+        default="translation_hint",
+        help="CSV column name for the translation hint (for fill_in_the_blank). Default: 'translation_hint'",
+    )
 
     args = parser.parse_args()
 
@@ -626,6 +707,8 @@ def main():
         image_file_col=args.image_file_col,
         words_col=args.words_col,
         title_col=args.title_col,
+        sentence_template_col=args.sentence_template_col,
+        translation_hint_col=args.translation_hint_col,
         incorrect_options_cols=args.incorrect_options_cols,
         incorrect_options_prefix=args.incorrect_options_prefix,
     )

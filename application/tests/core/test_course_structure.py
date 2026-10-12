@@ -1,4 +1,5 @@
 import os
+
 import yaml
 from core import course_loader, glossary_loader, yaml_serializer
 from core.models import Course, GlossaryEntry
@@ -49,7 +50,11 @@ def test_load_glossary_success(temp_course_files):
         os.path.dirname(temp_course_files), manifest_data["glossary_file"]
     )
 
-    glossary = glossary_loader.load_glossary(glossary_path)
+    glossary = glossary_loader.load_glossary(
+        glossary_path,
+        os.path.dirname(glossary_path),
+        os.path.join(os.path.dirname(os.path.dirname(glossary_path)), "pool"),
+    )
     assert len(glossary) == 2
     assert isinstance(glossary[0], GlossaryEntry)
     assert glossary[0].word == "Xin chào"

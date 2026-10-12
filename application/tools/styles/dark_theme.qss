@@ -17,7 +17,7 @@ QMainWindow#EditorWindow {
     The path is relative to the QSS file itself.
     Assuming image is in 'application/tools/images/' and QSS is in 'application/tools/styles/'
     */
-    border-image: url("D:/dev-new/py-bsc-2/application/tools/images/editor_background_night.jpg") 0 0 0 0 stretch;
+    border-image: url("../images/editor_background_night.jpg") 0 0 0 0 stretch;
     background-color: #2b2b2b; /* Fallback color if image fails to load or for areas not covered */
 }
 

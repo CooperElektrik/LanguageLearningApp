@@ -1,8 +1,9 @@
-import pytest
 import os
+
+import pytest
 import yaml
-from core.models import Course, Unit, Lesson, Exercise, ExerciseOption, GlossaryEntry
 from core.course_manager import CourseManager
+from core.models import Course, Exercise, ExerciseOption, Lesson, Unit
 from core.progress_manager import ProgressManager
 
 
@@ -58,6 +59,7 @@ def temp_course_files(tmp_path, sample_course_data):
         "course_title": sample_course_data.title,
         "version": sample_course_data.version,
         "target_language": sample_course_data.target_language,
+        "target_language_code": "vi",
         "source_language": sample_course_data.source_language,
         "content_file": "content.yaml",
         "glossary_file": "glossary.yaml",
@@ -87,7 +89,7 @@ def temp_course_files(tmp_path, sample_course_data):
 @pytest.fixture
 def course_manager(temp_course_files):
     """Provides an initialized CourseManager instance."""
-    return CourseManager(manifest_path=temp_course_files)
+    return CourseManager(manifest_path=temp_course_files, parent=None)
 
 
 @pytest.fixture

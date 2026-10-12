@@ -1,17 +1,19 @@
-import yaml
-import os
 import logging
+import os
 import random
-from typing import Dict, Any, Optional, List
+import uuid
+from typing import Any
 
-from .models import Course, Unit, Lesson, Exercise, ExerciseOption
+import yaml
+
+from .models import Course, Exercise, ExerciseOption, Lesson, Unit
 
 logger = logging.getLogger(__name__)
 
 
 def _validate_asset_path(
-    asset_path: Optional[str], course_base_dir: str, pool_base_dir: str
-) -> Optional[str]:
+    asset_path: str | None, course_base_dir: str, pool_base_dir: str
+) -> str | None:
     """
     Checks if an asset exists in the course or shared pool directories and returns the valid path.
     """
@@ -27,13 +29,45 @@ def _validate_asset_path(
     if os.path.exists(pool_asset_path):
         return pool_asset_path
 
-    logger.warning(
-        f"Asset not found: '{asset_path}'."
-    )
+    logger.warning(f"Asset not found: '{asset_path}'.")
     return None
 
 
-def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
+def create_new_course() -> tuple[dict[str, Any], Course]:
+    """Creates a blank course manifest dictionary and matching Course object.
+
+    Used by the course editor's "New Course" action.  Living here keeps the
+    editor from depending on a second, divergent YAML layer.
+    """
+    new_course_id = str(uuid.uuid4())
+    new_content_filename = f"course_{new_course_id[:8]}.yaml"
+
+    manifest = {
+        "course_id": new_course_id,
+        "course_title": "New LL Course",
+        "target_language": "Target Language",
+        "source_language": "Source Language",
+        "content_file": new_content_filename,
+        "version": "1.0.0",
+        "author": "New Author",
+        "description": "A newly created language course.",
+    }
+
+    course_obj = Course(
+        course_id=new_course_id,
+        title="New LL Course",
+        target_language="Target Language",
+        source_language="Source Language",
+        version="1.0.0",
+        author="New Author",
+        description="A newly created language course.",
+        content_file=new_content_filename,
+        units=[],
+    )
+    return manifest, course_obj
+
+
+def load_manifest(manifest_path: str) -> dict[str, Any] | None:
     """Loads the course manifest YAML file."""
     logger.debug(f"Attempting to load manifest from: {manifest_path}")
     if not os.path.exists(manifest_path):
@@ -55,10 +89,10 @@ def load_manifest(manifest_path: str) -> Optional[Dict[str, Any]]:
 
 def _parse_exercise_options(
     options_data: Any,
-    correct_option_text: Optional[str],
+    correct_option_text: str | None,
     course_base_dir: str,
     pool_base_dir: str,
-) -> List[ExerciseOption]:
+) -> list[ExerciseOption]:
     """Helper to parse options data into a list of ExerciseOption objects."""
     logger.debug(
         f"Parsing exercise options: {options_data}, correct_option_text: {correct_option_text}"
@@ -100,14 +134,14 @@ def _parse_exercise_options(
 
 
 def _parse_exercise(
-    exercise_data: Dict[str, Any],
+    exercise_data: dict[str, Any],
     lesson_id: str,
     index: int,
     target_language: str,
     source_language: str,
     course_base_dir: str,
     pool_base_dir: str,
-) -> Optional[Exercise]:
+) -> Exercise | None:
     """Parses a single exercise entry from YAML data into an Exercise object."""
     ex_id = f"{lesson_id}_ex{index}"
     ex_type = exercise_data.get("type")
@@ -138,7 +172,7 @@ def _parse_exercise(
         image_file, course_base_dir, pool_base_dir
     )
 
-    options: List[ExerciseOption] = []
+    options: list[ExerciseOption] = []
     if ex_type in [
         "multiple_choice_translation",
         "fill_in_the_blank",
@@ -222,12 +256,12 @@ def load_course_content(
     target_lang: str,
     source_lang: str,
     version: str,
-    author: Optional[str] = None,
-    description: Optional[str] = None,
-    image_file: Optional[str] = None,
-    course_base_dir: Optional[str] = None,
-    pool_base_dir: Optional[str] = None,
-) -> Optional[Course]:
+    author: str | None = None,
+    description: str | None = None,
+    image_file: str | None = None,
+    course_base_dir: str | None = None,
+    pool_base_dir: str | None = None,
+) -> Course | None:
     """Loads and parses the course content YAML file into a Course object."""
     logger.debug(f"Attempting to load course content from: {content_filepath}")
     if not os.path.exists(content_filepath):
@@ -324,4 +358,3 @@ def load_course_content(
         f"Course '{course_title}' loaded successfully with {len(course.units)} units and {sum(len(u.lessons) for u in course.units)} lessons."
     )
     return course
-

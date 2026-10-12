@@ -1,30 +1,31 @@
 import logging
+
+from PySide6.QtCore import QEvent, QSettings, Qt, Signal
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
     QComboBox,
-    QDialogButtonBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
     QMessageBox,
     QPushButton,
-    QHBoxLayout,
-    QSlider,
-    QFormLayout,
-    QStackedWidget,
-    QListWidget,
-    QWidget,
-    QSpacerItem,
     QSizePolicy,
+    QSlider,
+    QSpacerItem,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtMultimedia import QMediaDevices
-from PySide6.QtCore import QSettings, Qt, Signal, QEvent
-from PySide6.QtGui import QFontMetrics
 
 try:
     from application import settings, utils
+    from application.ui.dialogs import settings_widgets
 except ImportError:
     import settings
     import utils
+    from ui.dialogs import settings_widgets
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,11 @@ class UnifiedSetupDialog(QDialog):
 
         button_layout.addWidget(self.back_button)
         button_layout.addWidget(self.next_button)
-        button_layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        button_layout.addSpacerItem(
+            QSpacerItem(
+                40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+            )
+        )
         button_layout.addWidget(self.ok_button)
 
         # Add layouts to a main vertical layout
@@ -107,12 +112,14 @@ class UnifiedSetupDialog(QDialog):
     def create_welcome_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        label = QLabel(self.tr(
-            "Welcome!\n\n"
-            "Since this is your first time running the application, "
-            "let's configure some basic settings. You can change these "
-            "at any time from the main settings menu."
-        ))
+        label = QLabel(
+            self.tr(
+                "Welcome!\n\n"
+                "Since this is your first time running the application, "
+                "let's configure some basic settings. You can change these "
+                "at any time from the main settings menu."
+            )
+        )
         label.setWordWrap(True)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
@@ -123,7 +130,7 @@ class UnifiedSetupDialog(QDialog):
         page = QWidget()
         layout = QFormLayout(page)
         layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        
+
         # Theme
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
@@ -155,7 +162,9 @@ class UnifiedSetupDialog(QDialog):
         self.nav_list.addItem(self.tr("User Interface"))
 
     def on_theme_selected(self, theme_name):
-        description = settings.AVAILABLE_THEMES.get(theme_name, {}).get("description", "")
+        description = settings.AVAILABLE_THEMES.get(theme_name, {}).get(
+            "description", ""
+        )
         self.theme_description_label.setText(self.tr(description))
         self.theme_changed.emit(theme_name)
 
@@ -163,22 +172,30 @@ class UnifiedSetupDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        stt_info_label = QLabel(self.tr(
-            "Speech-to-Text (STT) is used for pronunciation exercises.\n\n"
-            "• VOSK: Lightweight, offline, and fast. Good for general use.\n"
-            "• Whisper: More accurate, but requires more resources (GPU recommended)."
-        ))
+        stt_info_label = QLabel(
+            self.tr(
+                "Speech-to-Text (STT) is used for pronunciation exercises.\n\n"
+                "• VOSK: Lightweight, offline, and fast. Good for general use.\n"
+                "• Whisper: More accurate, but requires more resources (GPU recommended)."
+            )
+        )
         stt_info_label.setWordWrap(True)
         layout.addWidget(stt_info_label)
 
         form_layout = QFormLayout()
         form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        
+
         # Calculate max label width
-        labels_text = [self.tr("Microphone:"), self.tr("STT Engine:"), self.tr("Whisper Model:"), self.tr("VOSK Model:"), self.tr("CUDA:")]
+        labels_text = [
+            self.tr("Microphone:"),
+            self.tr("STT Engine:"),
+            self.tr("Whisper Model:"),
+            self.tr("VOSK Model:"),
+            self.tr("CUDA:"),
+        ]
         font_metrics = QFontMetrics(self.font())
         max_width = max(font_metrics.horizontalAdvance(text) for text in labels_text)
-        label_width = max_width + 10 # Add some padding
+        label_width = max_width + 10  # Add some padding
 
         # Microphone selection
         mic_label = QLabel(self.tr("Microphone:"))
@@ -226,13 +243,9 @@ class UnifiedSetupDialog(QDialog):
 
     def _populate_locale_combo(self):
         self.available_locales = utils.get_available_locales()
-        sorted_display_names = sorted(
-            self.available_locales.keys(),
-            key=lambda x: (x != settings.DEFAULT_LOCALE, x),
+        settings_widgets.populate_locale_combo(
+            self.locale_combo, self.available_locales
         )
-        for display_name in sorted_display_names:
-            locale_code = self.available_locales[display_name]
-            self.locale_combo.addItem(display_name, userData=locale_code)
 
     def _on_locale_changed(self, text):
         locale_code = self.locale_combo.currentData()
@@ -244,43 +257,15 @@ class UnifiedSetupDialog(QDialog):
         self.font_size_changed.emit(value)
 
     def _populate_audio_input_devices(self):
-        default_device = QMediaDevices.defaultAudioInput()
-        for device in QMediaDevices.audioInputs():
-            self.mic_combo.addItem(
-                device.description(), userData=device.id().toStdString()
-            )
-        if not default_device.isNull():
-            index = self.mic_combo.findData(default_device.id().toStdString())
-            if index != -1:
-                self.mic_combo.setCurrentIndex(index)
+        settings_widgets.populate_audio_input_devices(self.mic_combo)
 
     def _populate_whisper_models(self):
-        self.whisper_combo.addItem("None", userData="None")
-        from core.whisper_engine import check_whisper_model_downloaded
-        for model_name, info in settings.WHISPER_MODEL_INFO.items():
-            display_name = model_name
-            if check_whisper_model_downloaded(model_name):
-                display_name += self.tr(" (Downloaded)")
-            else:
-                display_name += self.tr(" (Not Downloaded)")
-            self.whisper_combo.addItem(display_name, userData=model_name)
-            tooltip_text = self.tr(
-                "Model: {model_name}\nSize: {size}\nParameters: {params}\nRecommended Device: {device_rec}"
-            ).format(**info, model_name=model_name)
-            self.whisper_combo.setItemData(
-                self.whisper_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole
-            )
+        settings_widgets.populate_whisper_model_combo(
+            self.whisper_combo, self.tr, include_processing_time=False
+        )
 
     def _populate_vosk_models(self):
-        self.vosk_combo.addItem("None", userData="None")
-        for model_name, info in settings.VOSK_MODEL_INFO.items():
-            self.vosk_combo.addItem(model_name, userData=model_name)
-            tooltip_text = self.tr(
-                "Model: {model_name}\nSize: {size}\nLanguage: {lang}\nDescription: {description}"
-            ).format(**info, model_name=model_name)
-            self.vosk_combo.setItemData(
-                self.vosk_combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole
-            )
+        settings_widgets.populate_vosk_model_combo(self.vosk_combo, self.tr)
 
     def _on_stt_engine_changed(self, engine_name: str):
         is_whisper = engine_name == settings.STT_ENGINE_WHISPER
@@ -298,7 +283,7 @@ class UnifiedSetupDialog(QDialog):
     def load_settings(self):
         # UI Settings
         current_theme_name = self.q_settings.value(
-            settings.QSETTINGS_KEY_UI_THEME, "Nao Tomori", type=str
+            settings.QSETTINGS_KEY_UI_THEME, settings.DEFAULT_THEME, type=str
         )
         self.theme_combo.setCurrentText(current_theme_name)
         self.on_theme_selected(current_theme_name)
@@ -358,9 +343,7 @@ class UnifiedSetupDialog(QDialog):
             settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_mic_id
         )
         selected_engine = self.stt_engine_combo.currentText()
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_STT_ENGINE, selected_engine
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_STT_ENGINE, selected_engine)
         if selected_engine == settings.STT_ENGINE_WHISPER:
             selected_model = self.whisper_combo.currentData()
             self.q_settings.setValue(
@@ -390,33 +373,23 @@ class UnifiedSetupDialog(QDialog):
                         "The selected VOSK model will be extracted the first time you start a pronunciation exercise. Subsequent loads will be faster."
                     ),
                 )
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, True
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE, True)
 
         logger.info("Initial setup completed and settings saved.")
         self.accept()
 
     def check_cuda_availability(self):
         self.cuda_status_label.setText(self.tr("Checking..."))
-        try:
-            from core.whisper_engine import _TORCH_AVAILABLE
-            if _TORCH_AVAILABLE:
-                import torch # type: ignore
-                if torch.cuda.is_available():
-                    self.cuda_status_label.setText(self.tr("CUDA Status: Available"))
-                else:
-                    self.cuda_status_label.setText(
-                        self.tr("CUDA Status: Not Available (PyTorch installed)")
-                    )
-            else:
-                self.cuda_status_label.setText(
-                    self.tr("CUDA Status: Not Available (PyTorch not installed)")
-                )
-        except Exception:
-            self.cuda_status_label.setText(
-                self.tr("CUDA Status: Not Available (Error checking PyTorch)")
-            )
+        status = settings_widgets.detect_cuda_status()
+        if status == settings_widgets.CUDA_AVAILABLE:
+            text = self.tr("CUDA Status: Available")
+        elif status == settings_widgets.CUDA_NOT_AVAILABLE:
+            text = self.tr("CUDA Status: Not Available (PyTorch installed)")
+        elif status == settings_widgets.CUDA_TORCH_MISSING:
+            text = self.tr("CUDA Status: Not Available (PyTorch not installed)")
+        else:
+            text = self.tr("CUDA Status: Not Available (Error checking PyTorch)")
+        self.cuda_status_label.setText(text)
 
     def changeEvent(self, event: QEvent):
         if event.type() == QEvent.Type.LanguageChange:
@@ -430,13 +403,15 @@ class UnifiedSetupDialog(QDialog):
         welcome_page = self.stack.widget(0)
         welcome_label = welcome_page.findChild(QLabel)
         if welcome_label:
-            welcome_label.setText(self.tr(
-                "Welcome!\n\n"
-                "Since this is your first time running the application, "
-                "let's configure some basic settings. You can change these "
-                "at any time from the main settings menu."
-            ))
-        
+            welcome_label.setText(
+                self.tr(
+                    "Welcome!\n\n"
+                    "Since this is your first time running the application, "
+                    "let's configure some basic settings. You can change these "
+                    "at any time from the main settings menu."
+                )
+            )
+
         # UI page
         self.nav_list.item(1).setText(self.tr("User Interface"))
         ui_page = self.stack.widget(1)
@@ -444,24 +419,30 @@ class UnifiedSetupDialog(QDialog):
         form_layout.labelForField(self.theme_combo).setText(self.tr("Theme:"))
         self.on_theme_selected(self.theme_combo.currentText())
         form_layout.labelForField(self.locale_combo).setText(self.tr("Language:"))
-        form_layout.labelForField(self.font_size_slider.parent()).setText(self.tr("Font Size:"))
+        form_layout.labelForField(self.font_size_slider.parent()).setText(
+            self.tr("Font Size:")
+        )
 
         # Audio page
         self.nav_list.item(2).setText(self.tr("Audio"))
         audio_page = self.stack.widget(2)
         stt_info_label = audio_page.findChild(QLabel)
         if stt_info_label:
-            stt_info_label.setText(self.tr(
-                "Speech-to-Text (STT) is used for pronunciation exercises.\n\n"
-                "• VOSK: Lightweight, offline, and fast. Good for general use.\n"
-                "• Whisper: More accurate, but requires more resources (GPU recommended)."
-            ))
+            stt_info_label.setText(
+                self.tr(
+                    "Speech-to-Text (STT) is used for pronunciation exercises.\n\n"
+                    "• VOSK: Lightweight, offline, and fast. Good for general use.\n"
+                    "• Whisper: More accurate, but requires more resources (GPU recommended)."
+                )
+            )
         form_layout = audio_page.findChild(QFormLayout)
         if form_layout:
             form_layout.labelForField(self.mic_combo).setText(self.tr("Microphone:"))
-            form_layout.labelForField(self.stt_engine_combo).setText(self.tr("STT Engine:"))
+            form_layout.labelForField(self.stt_engine_combo).setText(
+                self.tr("STT Engine:")
+            )
             self.whisper_label.setText(self.tr("Whisper Model:"))
             self.vosk_label.setText(self.tr("VOSK Model:"))
             self.check_cuda_button.setText(self.tr("Check Now"))
-        
+
         logger.debug("UnifiedSetupDialog retranslated.")

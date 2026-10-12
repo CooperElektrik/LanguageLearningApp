@@ -1,5 +1,5 @@
-import os
 import logging  # For LOG_LEVEL constants
+import os
 
 # --- General Application Settings ---
 APP_NAME = "LanguageLearningApp"
@@ -15,17 +15,12 @@ IMAGES_DIR = os.path.join(
 SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")  # Sub-directory for sound effects
 LOCALIZATION_DIR = "localization"  # Directory containing .qm files
 THEME_DIR = "ui/styles"  # Directory containing .qss files
-LIGHT_THEME_FILE = "light_theme.qss"  # Specific light theme
-DARK_THEME_FILE = "dark_theme.qss"  # Specific dark theme
-FANCY_LIGHT_THEME_FILE = "fancy_light_theme.qss"  # Fancy theme
-NAO_TOMORI_THEME_FILE = "nao_tomori_theme.qss"  # Waifu
-FANCY_DARK_THEME_FILE = "fancy_dark_theme.qss"  # Fancy theme (Dark)
-FANCY_MIDNIGHT_THEME_FILE = "fancy_midnight_theme.qss"  # Fancy midnight theme (Dark)
-WINDOWS_95_FILE = "win95_theme.qss"  # Windows 95'ish theme
-FANCY_WINDOWS_95_FILE = "fancy_win95_theme.qss"  # Windows 95'ish theme
-TEMPLE_OS_FILE = "temple_os_theme.qss"  # Terry A. Davis
-SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")  # Original splash screen image
-SPLASH_IMAGE_OPTIMIZED_FILE = os.path.join(IMAGES_DIR, "splash_optimized.jpg") # Optimized splash screen image
+LIGHT_THEME_FILE = "light_theme.qss"  # Light theme
+DARK_THEME_FILE = "dark_theme.qss"  # Dark theme
+
+# The default theme shown to new users
+DEFAULT_THEME = "Dark"
+
 AVAILABLE_THEMES = {
     "System": {
         "file": "system_default",
@@ -37,47 +32,15 @@ AVAILABLE_THEMES = {
         "description": "A clean and simple light theme.",
         "is_dark": False,
     },
-    "Fancy Light": {
-        "file": FANCY_LIGHT_THEME_FILE,
-        "description": "A more visually rich light theme.",
-        "is_dark": False,
-    },
-    "Nao Tomori": {
-        "file": NAO_TOMORI_THEME_FILE,
-        "description": "A theme inspired by the character Nao Tomori from the anime 'Charlotte'.",
-        "is_dark": False,
-    },
     "Dark": {
         "file": DARK_THEME_FILE,
         "description": "A clean and simple dark theme.",
         "is_dark": True,
     },
-    "Fancy Dark": {
-        "file": FANCY_DARK_THEME_FILE,
-        "description": "A more visually rich dark theme.",
-        "is_dark": True,
-    },
-    "Midnight": {
-        "file": FANCY_MIDNIGHT_THEME_FILE,
-        "description": "A dark theme with a blueish tint.",
-        "is_dark": True,
-    },
-    "Windows 95": {
-        "file": WINDOWS_95_FILE,
-        "description": "A retro theme that mimics the look of Windows 95.",
-        "is_dark": False,
-    },
-    "Fancy Windows 95": {
-        "file": FANCY_WINDOWS_95_FILE,
-        "description": "A more visually rich retro theme that mimics the look of Windows 95.",
-        "is_dark": False,
-    },
-    "Temple OS": {
-        "file": TEMPLE_OS_FILE,
-        "description": "A retro theme that mimics the look of the TempleOS operating system.",
-        "is_dark": True,
-    },
 }  # Name to filename mapping
+
+# Splash screen image
+SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")
 
 # --- Sound Settings ---
 SOUND_EFFECTS_ENABLED_DEFAULT = True
@@ -100,6 +63,11 @@ QSETTINGS_KEY_LOCALE = "ui/locale"
 QSETTINGS_KEY_AUDIO_INPUT_DEVICE = "audio/input_device"
 QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE = "onboarding/initial_audio_setup_v1"
 QSETTINGS_KEY_INITIAL_UI_SETUP_DONE = "onboarding/initial_ui_setup_v1"
+# --- Speech-to-text tuning ---
+AUDIO_SAMPLE_RATE = 16000  # Whisper expects 16 kHz mono input
+WHISPER_BEAM_SIZE = 5
+WHISPER_TEMPERATURE = 0.7
+
 # These are for Whisper Transcription
 QSETTINGS_KEY_WHISPER_MODEL = "audio/whisper_model_selection"
 WHISPER_MODELS_AVAILABLE = [
@@ -182,7 +150,7 @@ STT_ENGINE_DEFAULT = STT_ENGINE_VOSK
 QSETTINGS_KEY_VOSK_MODEL = "audio/vosk_model_selection"
 VOSK_MODELS_AVAILABLE = [
     "vosk-model-vn-0.4",
-] # Example VOSK models, user might need to download them
+]  # Example VOSK models, user might need to download them
 VOSK_MODEL_INFO = {
     "vosk-model-vn-0.4": {
         "size": "~40MB",
@@ -190,7 +158,7 @@ VOSK_MODEL_INFO = {
         "description": "Vietnamese model.",
     }
 }
-VOSK_MODEL_DEFAULT = "vosk-model-vn-0.4" # A good default for initial setup
+VOSK_MODEL_DEFAULT = "vosk-model-vn-0.4"  # A good default for initial setup
 
 
 # --- UI Font Settings ---
@@ -235,5 +203,9 @@ PROGRESS_DATA_SUBDIR = "Progress"
 
 # --- UI Defaults (examples, can be expanded) ---
 DEFAULT_FONT_FAMILY = "Arial"
-DEFAULT_FONT_SIZE_NORMAL = 10
-DEFAULT_FONT_SIZE_LARGE = 12
+
+# --- Answer checking tolerances (Levenshtein edit distance) ---
+# How many character edits are accepted before an answer is marked wrong.
+LEVENSHTEIN_TOLERANCE_DEFAULT = 1  # Most text-based inputs
+LEVENSHTEIN_TOLERANCE_PRONUNCIATION = 5  # More lenient for transcriptions
+LEVENSHTEIN_TOLERANCE_DICTATION = 2

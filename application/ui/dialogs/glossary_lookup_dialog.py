@@ -1,16 +1,15 @@
 import logging
+
+from core.models import GlossaryEntry
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QDialogButtonBox,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt, QEvent
-from typing import List, Optional
-
-from core.models import GlossaryEntry
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +17,13 @@ logger = logging.getLogger(__name__)
 class GlossaryLookupDialog(QDialog):
     """A dialog for searching and selecting a glossary entry with autocomplete."""
 
-    def __init__(self, all_entries: List[GlossaryEntry], parent=None):
+    def __init__(self, all_entries: list[GlossaryEntry], parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Glossary Lookup"))
         self.setMinimumSize(350, 400)
 
         self.all_entries = sorted(all_entries, key=lambda e: e.word.lower())
-        self.selected_entry: Optional[GlossaryEntry] = None
+        self.selected_entry: GlossaryEntry | None = None
 
         main_layout = QVBoxLayout(self)
 
@@ -81,7 +80,7 @@ class GlossaryLookupDialog(QDialog):
         self.selected_entry = item.data(Qt.ItemDataRole.UserRole)
         self.accept()
 
-    def get_selected_entry(self) -> Optional[GlossaryEntry]:
+    def get_selected_entry(self) -> GlossaryEntry | None:
         """Returns the entry that was selected by the user."""
         return self.selected_entry
 

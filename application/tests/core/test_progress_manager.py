@@ -1,5 +1,4 @@
 from freezegun import freeze_time
-from datetime import timedelta
 
 
 def test_progress_save_and_load(progress_manager):

@@ -1,22 +1,21 @@
 import logging
+
+from core.course_manager import CourseManager
+from core.models import GlossaryEntry
+from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QFrame,
+    QPushButton,
     QStyle,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QEvent
 
-from typing import List
-
-from core.models import GlossaryEntry
-from core.course_manager import CourseManager
 from ..dialogs.glossary_detail_dialog import GlossaryDetailDialog
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ class GlossaryView(QWidget):
     def __init__(self, course_manager: CourseManager, parent=None):
         super().__init__(parent)
         self.course_manager = course_manager
-        self.all_glossary_entries: List[GlossaryEntry] = []
+        self.all_glossary_entries: list[GlossaryEntry] = []
 
         self._setup_ui()
         self.refresh_view()
@@ -92,7 +91,7 @@ class GlossaryView(QWidget):
             f"Glossary view refreshed with {len(self.all_glossary_entries)} total entries."
         )
 
-    def _populate_list_widget(self, entries_to_display: List[GlossaryEntry]):
+    def _populate_list_widget(self, entries_to_display: list[GlossaryEntry]):
         self.glossary_list_widget.clear()
         if not entries_to_display:
             no_results_item = QListWidgetItem(

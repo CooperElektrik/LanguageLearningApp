@@ -1,22 +1,20 @@
-import os
-import yaml
 import logging
+import os
+
+import settings
+import utils
+import yaml
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QFrame,
-    QWidget
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Signal, Qt, QEvent, QSize
-
-import settings
-import utils
 
 logger = logging.getLogger(__name__)
 
@@ -45,25 +43,28 @@ class CourseButton(QPushButton):
         if image_path:
             pixmap = QPixmap(image_path)
             image_label = QLabel()
-            
+
             # Define a minimum width for the image
             MIN_IMAGE_WIDTH = 150
-            
+
             # Scale the pixmap while maintaining aspect ratio
             scaled_pixmap = pixmap.scaled(
-                QSize(MIN_IMAGE_WIDTH, 150), # Use MIN_IMAGE_WIDTH as base for scaling
+                QSize(MIN_IMAGE_WIDTH, 150),  # Use MIN_IMAGE_WIDTH as base for scaling
                 Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
+                Qt.TransformationMode.SmoothTransformation,
             )
-            
+
             # Ensure the scaled pixmap's width is at least MIN_IMAGE_WIDTH
             if scaled_pixmap.width() < MIN_IMAGE_WIDTH:
                 scaled_pixmap = pixmap.scaled(
-                    QSize(MIN_IMAGE_WIDTH, int(pixmap.height() * (MIN_IMAGE_WIDTH / pixmap.width()))),
+                    QSize(
+                        MIN_IMAGE_WIDTH,
+                        int(pixmap.height() * (MIN_IMAGE_WIDTH / pixmap.width())),
+                    ),
                     Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
+                    Qt.TransformationMode.SmoothTransformation,
                 )
-            
+
             image_label.setPixmap(scaled_pixmap)
             main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignVCenter)
 
@@ -88,8 +89,12 @@ class CourseButton(QPushButton):
         # Right panel to hold the separator and metadata text, ensuring fixed width for alignment
         right_panel_widget = QWidget()
         right_panel_layout = QHBoxLayout(right_panel_widget)
-        right_panel_layout.setContentsMargins(0, 0, 0, 0)  # No internal margins for the panel itself
-        right_panel_layout.setSpacing(10)  # Space between separator and metadata text block
+        right_panel_layout.setContentsMargins(
+            0, 0, 0, 0
+        )  # No internal margins for the panel itself
+        right_panel_layout.setSpacing(
+            10
+        )  # Space between separator and metadata text block
 
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.VLine)
@@ -100,7 +105,9 @@ class CourseButton(QPushButton):
         metadata_text_layout = QVBoxLayout()
         metadata_text_layout.setSpacing(5)
         # Align items within this layout to the top-left (VCenter for vertical, AlignLeft for horizontal)
-        metadata_text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        metadata_text_layout.setAlignment(
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
+        )
 
         if author:
             author_label = QLabel(f"<b>{self.tr('Author')}:</b> {author}")
@@ -113,15 +120,21 @@ class CourseButton(QPushButton):
             metadata_text_layout.addWidget(version_label)
 
         if source_language and target_language:
-            language_label = QLabel(f"<b>{self.tr('Language')}:</b> {source_language} → {target_language}")
+            language_label = QLabel(
+                f"<b>{self.tr('Language')}:</b> {source_language} → {target_language}"
+            )
             language_label.setObjectName("course_button_metadata_label")
             metadata_text_layout.addWidget(language_label)
 
-        right_panel_layout.addLayout(metadata_text_layout) # Add labels layout to the right panel
+        right_panel_layout.addLayout(
+            metadata_text_layout
+        )  # Add labels layout to the right panel
         # Set a fixed width for the entire right panel to ensure consistent alignment across buttons.
         # This value may need adjustment based on font, language, and content length.
         right_panel_widget.setFixedWidth(260)
-        main_layout.addWidget(right_panel_widget, 0)  # Add panel to main layout, no stretch factor
+        main_layout.addWidget(
+            right_panel_widget, 0
+        )  # Add panel to main layout, no stretch factor
 
         self.setLayout(main_layout)
 
@@ -157,15 +170,6 @@ class CourseSelectionView(QWidget):
         self.courses_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll_area.setWidget(self.scroll_content)
 
-    def refresh_courses(self):
-        """Clears and re-scans for courses."""
-        # Clear existing course buttons
-        for i in reversed(range(self.courses_layout.count())):
-            widget = self.courses_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.deleteLater()
-        self._find_and_display_courses()
-
     def _find_and_display_courses(self):
         courses_dir_abs = utils.get_resource_path(settings.COURSES_DIR)
         if not os.path.isdir(courses_dir_abs):
@@ -193,15 +197,19 @@ class CourseSelectionView(QWidget):
                         source_language = manifest_data.get("source_language", "")
                         target_language = manifest_data.get("target_language", "")
                         image_file = manifest_data.get("image_file")
-                        
+
                         image_path = None
-                        potential_path = ''
+                        potential_path = ""
                         if image_file:
-                            potential_path = os.path.join(course_path, "images", image_file)
+                            potential_path = os.path.join(
+                                course_path, "images", image_file
+                            )
                         if os.path.exists(potential_path):
                             image_path = potential_path
                         else:
-                            image_path = utils.get_resource_path(os.path.join("assets/images/default_preview.jpg"))
+                            image_path = utils.get_resource_path(
+                                os.path.join("assets/images/default_preview.jpg")
+                            )
 
                         button = CourseButton(
                             course_title,
@@ -214,8 +222,8 @@ class CourseSelectionView(QWidget):
                             manifest_path,
                         )
                         button.clicked.connect(
-                            lambda checked=False, p=manifest_path: self.course_selected.emit(
-                                p
+                            lambda checked=False, p=manifest_path: (
+                                self.course_selected.emit(p)
                             )
                         )
                         self.courses_layout.addWidget(button)

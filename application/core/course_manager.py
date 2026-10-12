@@ -1,56 +1,42 @@
-import os
 import logging
-import Levenshtein
-import shutil
-from typing import Optional, List, Tuple, Any, Dict, Callable
+import os
+from collections.abc import Callable
+from typing import Any
 
-from .models import Course, Unit, Lesson, Exercise, GlossaryEntry
-from . import course_loader
-from . import glossary_loader
+import Levenshtein
+
+from . import course_loader, glossary_loader
+from .models import Course, Exercise, GlossaryEntry, Lesson, Unit
 from .whisper_engine import _FASTER_WHISPER_AVAILABLE
 
 try:
     from application import utils  # For developer mode check
 except ImportError:
     import utils
+
+import settings as app_settings
 from PySide6.QtCore import QObject
 
 logger = logging.getLogger(__name__)
-
-# Constants for prompt template keys, used for i18n
-PROMPT_KEY_TRANSLATE_TO_TARGET = "prompt_translate_to_target"
-PROMPT_KEY_TRANSLATE_TO_SOURCE = "prompt_translate_to_source"
-PROMPT_KEY_MCQ_TRANSLATION = "prompt_mcq_translation"
-PROMPT_KEY_FIB = "prompt_fib"
-PROMPT_KEY_DEFAULT = "prompt_default_exercise_text"
-PROMPT_KEY_IMAGE_ASSOCIATION = "prompt_image_association"
-PROMPT_KEY_LISTEN_SELECT = "prompt_listen_select"
-PROMPT_KEY_SENTENCE_JUMBLE = "prompt_sentence_jumble"
-PROMPT_KEY_CONTEXT_BLOCK = "prompt_context_block"
-PROMPT_KEY_DICTATION = "prompt_dictation"
-
-DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE = 1  # For most text-based inputs
-PRONUNCIATION_LEVENSHTEIN_TOLERANCE = 5  # More lenient for transcriptions
-DICTATION_LEVENSHTEIN_TOLERANCE = 2
 
 
 class CourseManager(QObject):
     def __init__(self, manifest_path: str, parent):
         super().__init__(parent=parent)  # Call QObject's constructor
         # All existing attributes become instance attributes
-        self.course: Optional[Course] = None
-        self.manifest_data: Optional[dict] = None
+        self.course: Course | None = None
+        self.manifest_data: dict | None = None
         self.target_language: str = "Unknown"
         self.source_language: str = "Unknown"
-        self.target_language_code: Optional[str] = None
-        self.glossary: List[GlossaryEntry] = []
+        self.target_language_code: str | None = None
+        self.glossary: list[GlossaryEntry] = []
         self.use_shared_pool: bool = False
 
         self.manifest_path = manifest_path
 
         # Initialize answer checker dispatch map
-        self._answer_checkers: Dict[
-            str, Callable[[Exercise, str], Tuple[bool, str]]
+        self._answer_checkers: dict[
+            str, Callable[[Exercise, str], tuple[bool, str]]
         ] = {
             "translate_to_target": self._check_translation_answer,
             "translate_to_source": self._check_translation_answer,
@@ -66,91 +52,6 @@ class CourseManager(QObject):
         logger.debug(f"CourseManager initialized for manifest: {manifest_path}")
         if os.path.exists(manifest_path):
             self._load_course_from_manifest()
-
-    def pull_course_from_git(self, git_url: str, progress_callback: Optional[Callable] = None):
-        """
-        Pulls a course from a git repository.
-        """
-        import git
-        import tempfile
-        from PySide6.QtWidgets import QMessageBox
-
-        class Progress(git.remote.RemoteProgress):
-            def update(self, op_code, cur_count, max_count=None, message=''):
-                if progress_callback:
-                    progress = cur_count / (max_count or 100.0) * 100
-                    
-                    stage_message = ""
-                    if op_code & git.remote.RemoteProgress.COUNTING:
-                        stage_message = "Counting objects..."
-                    elif op_code & git.remote.RemoteProgress.COMPRESSING:
-                        stage_message = "Compressing objects..."
-                    elif op_code & git.remote.RemoteProgress.WRITING:
-                        stage_message = "Writing objects..."
-                    elif op_code & git.remote.RemoteProgress.RECEIVING:
-                        stage_message = "Receiving objects..."
-                    elif op_code & git.remote.RemoteProgress.RESOLVING:
-                        stage_message = "Resolving deltas..."
-                    elif op_code & git.remote.RemoteProgress.CHECKING_OUT:
-                        stage_message = "Checking out files..."
-                    
-                    if stage_message:
-                        progress_callback(progress, stage_message)
-
-        try:
-            # Create a temporary directory to clone the repository
-            with tempfile.TemporaryDirectory() as temp_dir:
-                if progress_callback:
-                    progress_callback(0, "Cloning repository...")
-                # Clone the repository into the temporary directory
-                repo = git.Repo.clone_from(git_url, temp_dir, progress=Progress())
-
-                if progress_callback:
-                    progress_callback(50, "Copying files...")
-
-                # Get the course ID from the manifest file
-                manifest_path = os.path.join(temp_dir, "manifest.yaml")
-                if not os.path.exists(manifest_path):
-                    raise FileNotFoundError("manifest.yaml not found in the repository root.")
-
-                manifest_data = course_loader.load_manifest(manifest_path)
-                if not manifest_data:
-                    raise ValueError("Failed to load manifest data.")
-
-                course_id = manifest_data.get("course_id")
-                if not course_id:
-                    raise ValueError("course_id not found in manifest.yaml.")
-
-                # Create the course directory if it doesn't exist
-                course_dir = os.path.join(utils.get_app_root_dir(), "courses", course_id)
-                if not os.path.exists(course_dir):
-                    os.makedirs(course_dir)
-
-                # Copy the course files from the temporary directory to the course directory
-                for item in os.listdir(temp_dir):
-                    s = os.path.join(temp_dir, item)
-                    d = os.path.join(course_dir, item)
-                    if os.path.isdir(s):
-                        shutil.copytree(s, d, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(s, d)
-
-                if progress_callback:
-                    progress_callback(100, "Download complete. Installing...")
-
-                # Load the course from the new location
-                self.manifest_path = os.path.join(course_dir, "manifest.yaml")
-                self._load_course_from_manifest()
-
-                if progress_callback:
-                    progress_callback(100, "Course installed successfully.")
-
-        except git.exc.GitCommandError as e:
-            logger.error(f"Git command error: {e}")
-            QMessageBox.critical(None, "Git Error", f"Failed to pull course from Git: {e}")
-        except Exception as e:
-            logger.error(f"Error pulling course from git: {e}")
-            QMessageBox.critical(None, "Error", f"An unexpected error occurred: {e}")
 
     def _load_course_from_manifest(self):
         """
@@ -175,7 +76,9 @@ class CourseManager(QObject):
             "source_language", "Unknown Source"
         )
         self.target_language_code = self.manifest_data.get("target_language_code")
-        logger.debug(f"Target Language: {self.target_language}, Source Language: {self.source_language}")
+        logger.debug(
+            f"Target Language: {self.target_language}, Source Language: {self.source_language}"
+        )
 
         # Handle asset pool
         self.use_shared_pool = self.manifest_data.get("use_shared_pool", False)
@@ -202,26 +105,36 @@ class CourseManager(QObject):
             self.manifest_data.get("author"),
             self.manifest_data.get("description"),
             self.manifest_data.get("image_file"),
-            manifest_dir_abs, # course_base_dir
-            os.path.join(os.path.dirname(manifest_dir_abs), "pool") # pool_base_dir
+            manifest_dir_abs,  # course_base_dir
+            os.path.join(os.path.dirname(manifest_dir_abs), "pool"),  # pool_base_dir
         )
         if self.course:
             logger.info(
                 f"Course '{self.course.title}' content loaded successfully from {content_filepath}."
             )
         else:
-            logger.error(f"Failed to load course content from {content_filepath}. Course object is None.")
+            logger.error(
+                f"Failed to load course content from {content_filepath}. Course object is None."
+            )
 
         glossary_filename = self.manifest_data.get("glossary_file")
         if glossary_filename:
             glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
             logger.debug(f"Attempting to load glossary from: {glossary_filepath}")
-            self.glossary = glossary_loader.load_glossary(glossary_filepath, manifest_dir_abs, os.path.join(os.path.dirname(manifest_dir_abs), "pool"))
+            self.glossary = glossary_loader.load_glossary(
+                glossary_filepath,
+                manifest_dir_abs,
+                os.path.join(os.path.dirname(manifest_dir_abs), "pool"),
+            )
             if self.glossary:
                 self._build_glossary_map()
-                logger.info(f"Glossary loaded successfully with {len(self.glossary)} entries.")
+                logger.info(
+                    f"Glossary loaded successfully with {len(self.glossary)} entries."
+                )
             else:
-                logger.warning(f"Failed to load glossary from {glossary_filepath}. Glossary will be empty.")
+                logger.warning(
+                    f"Failed to load glossary from {glossary_filepath}. Glossary will be empty."
+                )
         else:
             logger.info(
                 "Manifest does not specify a 'glossary_file'. Skipping glossary loading."
@@ -232,18 +145,11 @@ class CourseManager(QObject):
         self.glossary_map = {entry.word.lower(): entry for entry in self.glossary}
         logger.info(f"Built glossary map with {len(self.glossary_map)} unique entries.")
 
-    def get_glossary_entry_by_word(self, word: str) -> Optional[GlossaryEntry]:
-        """
-        Efficiently retrieves a glossary entry by word (case-insensitive).
-        Returns None if the word is not found in the glossary.
-        """
-        return self.glossary_map.get(word.lower())
-
-    def get_glossary_entries(self) -> List[GlossaryEntry]:
+    def get_glossary_entries(self) -> list[GlossaryEntry]:
         """Returns the loaded glossary entries."""
         return self.glossary
 
-    def get_glossary_entry_by_word(self, word: str) -> Optional[GlossaryEntry]:
+    def get_glossary_entry_by_word(self, word: str) -> GlossaryEntry | None:
         """
         Finds a glossary entry by its 'word' field, case-insensitively.
         Returns the first match or None.
@@ -254,7 +160,7 @@ class CourseManager(QObject):
                 return entry
         return None
 
-    def get_course_content_directory(self) -> Optional[str]:
+    def get_course_content_directory(self) -> str | None:
         """Returns the directory where the current course's content file is located."""
         if self.manifest_data and self.manifest_data.get("content_file"):
             manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
@@ -266,13 +172,13 @@ class CourseManager(QObject):
             return os.path.dirname(os.path.abspath(self.manifest_path))
         return None
 
-    def get_course_manifest_directory(self) -> Optional[str]:
+    def get_course_manifest_directory(self) -> str | None:
         """Returns the directory where the current course's manifest file is located."""
         if self.manifest_path and os.path.exists(self.manifest_path):
             return os.path.dirname(os.path.abspath(self.manifest_path))
         return None
 
-    def get_asset_directory(self) -> Optional[str]:
+    def get_asset_directory(self) -> str | None:
         """Returns the primary directory for course assets (shared pool or manifest dir)."""
         if self.use_shared_pool:
             # Construct path to application/courses/pool from the manifest path
@@ -286,25 +192,27 @@ class CourseManager(QObject):
                 if os.path.isdir(pool_path):
                     return pool_path
                 else:
-                    logger.warning(f"Shared asset pool enabled, but directory not found at: {pool_path}")
+                    logger.warning(
+                        f"Shared asset pool enabled, but directory not found at: {pool_path}"
+                    )
         return self.get_course_manifest_directory()
 
-    def get_course_title(self) -> Optional[str]:
+    def get_course_title(self) -> str | None:
         return self.course.title if self.course else None
 
     def get_target_language(self) -> str:
         return self.target_language
 
-    def get_target_language_code(self) -> Optional[str]:
+    def get_target_language_code(self) -> str | None:
         return self.target_language_code
 
     def get_source_language(self) -> str:
         return self.source_language
 
-    def get_units(self) -> List[Unit]:
+    def get_units(self) -> list[Unit]:
         return self.course.units if self.course else []
 
-    def get_lesson(self, lesson_id: str) -> Optional[Lesson]:
+    def get_lesson(self, lesson_id: str) -> Lesson | None:
         if not self.course:
             return None
         for unit in self.course.units:
@@ -313,11 +221,11 @@ class CourseManager(QObject):
                     return lesson
         return None
 
-    def get_exercises(self, lesson_id: str) -> List[Exercise]:
+    def get_exercises(self, lesson_id: str) -> list[Exercise]:
         lesson = self.get_lesson(lesson_id)
         return lesson.exercises if lesson else []
 
-    def get_all_exercises(self) -> List[Exercise]:
+    def get_all_exercises(self) -> list[Exercise]:
         """Returns a flat list of all Exercise objects across all units and lessons."""
         all_exercises = []
         if self.course:
@@ -325,9 +233,6 @@ class CourseManager(QObject):
                 for lesson in unit.lessons:
                     all_exercises.extend(lesson.exercises)
         return all_exercises
-
-    def get_lesson_exercise_count(self, lesson_id: str) -> int:
-        return len(self.get_exercises(lesson_id))
 
     def _normalize_answer_for_comparison(
         self, text: str, for_pronunciation: bool = False
@@ -349,15 +254,15 @@ class CourseManager(QObject):
         if exercise.allowed_levenshtein_distance is not None:
             return exercise.allowed_levenshtein_distance
         if exercise.type == "pronunciation_practice":
-            return PRONUNCIATION_LEVENSHTEIN_TOLERANCE
+            return app_settings.LEVENSHTEIN_TOLERANCE_PRONUNCIATION
         if exercise.type == "dictation":
-            return DICTATION_LEVENSHTEIN_TOLERANCE
+            return app_settings.LEVENSHTEIN_TOLERANCE_DICTATION
         # Add other type-specific defaults here if needed
-        return DEFAULT_GLOBAL_LEVENSHTEIN_TOLERANCE
+        return app_settings.LEVENSHTEIN_TOLERANCE_DEFAULT
 
     def _check_translation_answer(
         self, exercise: Exercise, user_answer: str
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
 
@@ -386,7 +291,7 @@ class CourseManager(QObject):
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Checks answer for multiple choice exercise types."""
         try:
             selected_index = int(user_answer)
@@ -406,7 +311,7 @@ class CourseManager(QObject):
             return False, self.tr(
                 "Error: Exercise configuration issue (no correct answer)."
             )
-        
+
         correct_answer_display = correct_option.text or correct_option.image_file
 
         is_correct = selected_option.correct
@@ -418,7 +323,7 @@ class CourseManager(QObject):
 
     def _check_fill_in_the_blank_answer(
         self, exercise: Exercise, user_answer: str
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Checks answer for fill_in_the_blank exercise type."""
         try:
             selected_index = int(user_answer)
@@ -430,7 +335,7 @@ class CourseManager(QObject):
 
         selected_option_text = exercise.options[selected_index].text
         correct_answer_display = exercise.correct_option
-        
+
         if not correct_answer_display:
             logger.error(
                 f"No correct option defined for FIB exercise {exercise.exercise_id}."
@@ -460,7 +365,7 @@ class CourseManager(QObject):
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Checks answer for sentence_jumble exercise type."""
         correct_answer_display = exercise.answer
         # For jumble, user_answer is already space-joined. We compare normalized strings.
@@ -487,17 +392,44 @@ class CourseManager(QObject):
 
     def _check_completion_answer(
         self, exercise: Exercise, user_answer: str
-    ) -> Tuple[bool, str]:
-        """Checks answers for exercises that are completed via a single action."""
-        is_correct = user_answer.lower() == "completed"
-        return is_correct, "Continue" if is_correct else "Activity not completed."
+    ) -> tuple[bool, str]:
+        """Context block exercises are completed by a single action and are always correct."""
+        return True, "Continue"
+
+    def _is_selected_stt_engine_available(self) -> bool:
+        """Returns whether the currently selected STT engine backend is importable.
+
+        The default engine is VOSK, so gating pronunciation on faster_whisper
+        availability alone (as was previously done) rejected every valid answer
+        for users running the default configuration.
+        """
+        try:
+            import settings as app_settings
+            from PySide6.QtCore import QSettings
+
+            engine = QSettings().value(
+                app_settings.QSETTINGS_KEY_STT_ENGINE,
+                app_settings.STT_ENGINE_DEFAULT,
+                type=str,
+            )
+            if engine == app_settings.STT_ENGINE_VOSK:
+                from .vosk_manager import _VOSK_AVAILABLE
+
+                return _VOSK_AVAILABLE
+            if engine == app_settings.STT_ENGINE_WHISPER:
+                return _FASTER_WHISPER_AVAILABLE
+        except Exception as e:  # pragma: no cover - defensive
+            logger.warning(f"Could not determine STT engine availability: {e}")
+        return False
 
     def _check_pronunciation_answer(
         self, exercise: Exercise, user_transcription: str
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Checks answer for pronunciation exercises by comparing transcription."""
-        if not _FASTER_WHISPER_AVAILABLE:
-            return False, self.tr("Pronunciation exercises require faster_whisper, which is not installed.")
+        if not self._is_selected_stt_engine_available():
+            return False, self.tr(
+                "Pronunciation exercises require the selected speech-to-text engine, which is not installed."
+            )
 
         target_text_display = exercise.target_pronunciation_text
 
@@ -513,8 +445,6 @@ class CourseManager(QObject):
         is_correct_exact = user_transcription_norm == target_text_norm
         is_correct_fuzzy = distance <= tolerance
 
-        base_feedback = f"Target: {target_text_display}\nYou said: {user_transcription}"
-
         if is_correct_exact:
             return True, self.tr("Excellent match!")
         elif is_correct_fuzzy:
@@ -522,7 +452,7 @@ class CourseManager(QObject):
         else:
             return False, self.tr("Needs improvement. See comparison below.")
 
-    def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def check_answer(self, exercise: Exercise, user_answer: str) -> tuple[bool, str]:
         """
         Dispatches to the correct answer checking method based on exercise type.
         """
@@ -537,8 +467,8 @@ class CourseManager(QObject):
             )
             return False, self.tr("Cannot check this exercise type.")
 
-    def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
+    def get_formatted_prompt_data(self, exercise: Exercise) -> dict[str, Any]:
         """
-        Returns a dictionary with a template_key and arguments for formatting the prompt.
+        Returns a dictionary with the formatted prompt text ready for display.
         """
-        return {"template_key": PROMPT_KEY_DEFAULT, "args": [exercise.prompt or exercise.sentence_template or ""]}
+        return {"args": [exercise.prompt or exercise.sentence_template or ""]}

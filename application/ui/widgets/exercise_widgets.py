@@ -1,102 +1,79 @@
+import difflib
 import logging
 import os
-import sys
 import random
 import re
-import markdown
-import urllib.parse
 import tempfile
-import difflib
-import time
-from typing import Any, Dict, Optional, Type, List
-import soundfile as sf
-import numpy as np
+import urllib.parse
+from typing import Any
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QLineEdit,
-    QRadioButton,
-    QButtonGroup,
-    QPushButton,
-    QMessageBox,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame,
-    QTextBrowser,
-    QGroupBox,
-    QProgressBar,
-    QSizePolicy,
-)
+import markdown
+import numpy as np
+import soundfile as sf
 from PySide6.QtCore import (
-    Signal,
-    QUrl,
-    Qt,
-    QTimer,
-    QSettings,
-    QThread,
+    QBuffer,
     QByteArray,
     QIODevice,
-    QBuffer,
+    QSettings,
     QSize,
+    Qt,
+    QUrl,
+    Signal,
 )
-from PySide6.QtGui import QFont, QPixmap, QKeyEvent, QPainter, QPainterPath  # Added QKeyEvent
+from PySide6.QtGui import QKeyEvent, QPainter, QPainterPath, QPixmap  # Added QKeyEvent
 from PySide6.QtMultimedia import (
-    QMediaPlayer,
+    QAudioDevice,
+    QAudioFormat,
     QAudioOutput,
     QAudioSource,
-    QAudioFormat,
     QMediaDevices,
-    QAudioDevice,
+    QMediaPlayer,
 )  # Import QAudioDevice
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QRadioButton,
+    QSizePolicy,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
+)
 
 try:
-    from application.core.models import Exercise
+    from application import settings as app_settings  # For reading autoplay setting
     from application.core.course_manager import (
         CourseManager,  # Import full class for type hinting
-        PROMPT_KEY_DEFAULT,
-        PROMPT_KEY_FIB,
-        PROMPT_KEY_MCQ_TRANSLATION,
-        PROMPT_KEY_TRANSLATE_TO_SOURCE,
-        PROMPT_KEY_TRANSLATE_TO_TARGET,
-        PROMPT_KEY_IMAGE_ASSOCIATION,
-        PROMPT_KEY_LISTEN_SELECT,
-        PROMPT_KEY_SENTENCE_JUMBLE,
-        PROMPT_KEY_CONTEXT_BLOCK,
-        PROMPT_KEY_DICTATION,
     )
+    from application.core.models import Exercise
+    from application.core.stt_common import TranscriptionResult
     from application.core.stt_manager import STTManager
-    from application.core.whisper_engine import _TORCH_AVAILABLE, WhisperTranscriptionTask # For CUDA check and Whisper-specific task
-    from application import settings as app_settings  # For reading autoplay setting
     from application.ui.dialogs.glossary_detail_dialog import (
         GlossaryDetailDialog,
     )  # Import for context block
 except ImportError:  # This makes Nuitka happy
-    from core.models import Exercise
-    from core.course_manager import (
-        CourseManager,
-        PROMPT_KEY_DEFAULT,
-        PROMPT_KEY_FIB,
-        PROMPT_KEY_MCQ_TRANSLATION,
-        PROMPT_KEY_TRANSLATE_TO_SOURCE,
-        PROMPT_KEY_TRANSLATE_TO_TARGET,
-        PROMPT_KEY_IMAGE_ASSOCIATION,
-        PROMPT_KEY_LISTEN_SELECT,
-        PROMPT_KEY_SENTENCE_JUMBLE,
-        PROMPT_KEY_CONTEXT_BLOCK,
-        PROMPT_KEY_DICTATION,
-    )
-    from core.stt_manager import STTManager
-    from core.whisper_engine import _TORCH_AVAILABLE, WhisperTranscriptionTask # For CUDA check and Whisper-specific task
     import settings as app_settings  # Fallback for Nuitka
+    from core.course_manager import CourseManager
+    from core.models import Exercise
+    from core.stt_common import TranscriptionResult
+    from core.stt_manager import STTManager
     from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
 
 logger = logging.getLogger(__name__)
 
 ICON_SIZE = QSize(256, 144)
 
-def create_rounded_pixmap(original_pixmap: QPixmap, target_size: QSize, corner_radius: int = 15) -> QPixmap:
+
+def create_rounded_pixmap(
+    original_pixmap: QPixmap, target_size: QSize, corner_radius: int = 15
+) -> QPixmap:
     """
     Scales, crops to a 16:9 ratio, and rounds the corners of a QPixmap.
     """
@@ -109,7 +86,11 @@ def create_rounded_pixmap(original_pixmap: QPixmap, target_size: QSize, corner_r
     final_size = QSize(target_width, target_height)
 
     # Scale the pixmap to fill the new target size while maintaining aspect ratio
-    scaled_pixmap = original_pixmap.scaled(final_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+    scaled_pixmap = original_pixmap.scaled(
+        final_size,
+        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+        Qt.TransformationMode.SmoothTransformation,
+    )
 
     # Center-crop the scaled pixmap
     x = (scaled_pixmap.width() - final_size.width()) / 2
@@ -125,13 +106,16 @@ def create_rounded_pixmap(original_pixmap: QPixmap, target_size: QSize, corner_r
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
     path = QPainterPath()
-    path.addRoundedRect(0, 0, final_size.width(), final_size.height(), corner_radius, corner_radius)
+    path.addRoundedRect(
+        0, 0, final_size.width(), final_size.height(), corner_radius, corner_radius
+    )
 
     painter.setClipPath(path)
     painter.drawPixmap(0, 0, cropped_pixmap)
     painter.end()
 
     return rounded_pixmap
+
 
 class BaseExerciseWidget(QWidget):
     answer_submitted = Signal(str)
@@ -161,8 +145,8 @@ class BaseExerciseWidget(QWidget):
         self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
         self.image_label.setVisible(True)
 
-        self._media_player: Optional[QMediaPlayer] = None
-        self._audio_output: Optional[QAudioOutput] = None
+        self._media_player: QMediaPlayer | None = None
+        self._audio_output: QAudioOutput | None = None
 
     def _setup_image(self):
         if self.exercise.image_file and self.assets_base_dir:
@@ -207,7 +191,9 @@ class BaseExerciseWidget(QWidget):
         # Determine the course's base directory (where its manifest is)
         course_base_dir = self.course_manager.get_course_manifest_directory()
         if not course_base_dir:
-            logger.error("Could not determine course base directory for audio playback.")
+            logger.error(
+                "Could not determine course base directory for audio playback."
+            )
             QMessageBox.warning(
                 self,
                 self.tr("Audio Error"),
@@ -224,7 +210,9 @@ class BaseExerciseWidget(QWidget):
             if assets_base_dir:
                 full_audio_path = os.path.join(assets_base_dir, relative_audio_path)
             else:
-                logger.warning("Shared asset directory not found or configured, falling back to course base directory.")
+                logger.warning(
+                    "Shared asset directory not found or configured, falling back to course base directory."
+                )
                 # If get_asset_directory also fails, we stick with the course_base_dir path
                 # which was already constructed.
 
@@ -255,7 +243,7 @@ class BaseExerciseWidget(QWidget):
                 self.tr("Audio file not found: {0}").format(relative_audio_path),
             )
 
-    def _format_prompt_from_data(self, prompt_data: Dict[str, Any]) -> str:
+    def _format_prompt_from_data(self, prompt_data: dict[str, Any]) -> str:
         """Helper to format the prompt using tr() and arguments from prompt_data."""
         return prompt_data.get("args", [""])[0]
 
@@ -349,14 +337,18 @@ class ButtonOptionExerciseWidget(BaseExerciseWidget):
             logger.warning(
                 f"No options found for option-based exercise: {self.exercise.exercise_id}"
             )
-            no_options_label = QLabel(self.tr("No options available for this exercise."))
+            no_options_label = QLabel(
+                self.tr("No options available for this exercise.")
+            )
             self.options_layout.addWidget(no_options_label)
         else:
             for i, option_obj in enumerate(options_to_display):
                 button = QPushButton()
                 button.setObjectName(f"option_button_{i}")
                 button.setCheckable(True)
-                button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                button.setSizePolicy(
+                    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+                )
                 button.setFixedHeight(160)
 
                 button_layout = QHBoxLayout(button)
@@ -367,7 +359,9 @@ class ButtonOptionExerciseWidget(BaseExerciseWidget):
                 text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
                 if option_obj.image_file and self.assets_base_dir:
-                    full_image_path = os.path.join(self.assets_base_dir, option_obj.image_file)
+                    full_image_path = os.path.join(
+                        self.assets_base_dir, option_obj.image_file
+                    )
                     if os.path.exists(full_image_path):
                         pixmap = QPixmap(full_image_path)
                         if not pixmap.isNull():
@@ -413,9 +407,15 @@ class ButtonOptionExerciseWidget(BaseExerciseWidget):
         """Handles number key presses for selecting options."""
         key = event.key()
         key_to_index_map = {
-            Qt.Key_1: 0, Qt.Key_2: 1, Qt.Key_3: 2,
-            Qt.Key_4: 3, Qt.Key_5: 4, Qt.Key_6: 5,
-            Qt.Key_7: 6, Qt.Key_8: 7, Qt.Key_9: 8,
+            Qt.Key_1: 0,
+            Qt.Key_2: 1,
+            Qt.Key_3: 2,
+            Qt.Key_4: 3,
+            Qt.Key_5: 4,
+            Qt.Key_6: 5,
+            Qt.Key_7: 6,
+            Qt.Key_8: 7,
+            Qt.Key_9: 8,
         }
 
         if key in key_to_index_map:
@@ -538,7 +538,9 @@ class FillInTheBlankExerciseWidget(ButtonOptionExerciseWidget):
     def __init__(self, exercise: Exercise, course_manager, parent=None):
         super().__init__(exercise, course_manager, parent)
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
-        self.prompt_label.setText(self.tr("Fill in the blank: {0}").format(prompt_data.get("args", [""])[0]))
+        self.prompt_label.setText(
+            self.tr("Fill in the blank: {0}").format(prompt_data.get("args", [""])[0])
+        )
 
 
 class SentenceJumbleExerciseWidget(BaseExerciseWidget):
@@ -547,16 +549,20 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         prompt_data = self.course_manager.get_formatted_prompt_data(self.exercise)
         self.prompt_label.setText(self._format_prompt_from_data(prompt_data))
 
-        self.current_sentence_words: List[str] = []
-        self.word_bank_buttons: List[QPushButton] = []
-        self.sentence_word_buttons: List[QPushButton] = [] # New list to hold buttons in the sentence display
+        self.current_sentence_words: list[str] = []
+        self.word_bank_buttons: list[QPushButton] = []
+        self.sentence_word_buttons: list[
+            QPushButton
+        ] = []  # New list to hold buttons in the sentence display
 
         self.sentence_display_layout = QHBoxLayout()
         self.sentence_display_layout.setSpacing(5)
         self.sentence_display_layout.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(self.sentence_display_layout)
 
-        self.sentence_placeholder_label = QLabel(self.tr("Click words below to build your sentence."))
+        self.sentence_placeholder_label = QLabel(
+            self.tr("Click words below to build your sentence.")
+        )
         self.sentence_placeholder_label.setObjectName("sentence_jumble_placeholder")
         self.sentence_placeholder_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.sentence_placeholder_label)
@@ -591,11 +597,13 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
     def _add_word_to_sentence(self, word: str, button: QPushButton):
         self.current_sentence_words.append(word)
         button.setEnabled(False)
-        
+
         # Create a new button for the sentence display
         sentence_button = QPushButton(word)
         sentence_button.setObjectName("sentence_word_button")
-        sentence_button.clicked.connect(lambda: self._remove_word_from_sentence(word, sentence_button))
+        sentence_button.clicked.connect(
+            lambda: self._remove_word_from_sentence(word, sentence_button)
+        )
         self.sentence_word_buttons.append(sentence_button)
         self.sentence_display_layout.addWidget(sentence_button)
 
@@ -606,7 +614,9 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         try:
             self.current_sentence_words.remove(word)
         except ValueError:
-            logger.warning(f"Attempted to remove word '{word}' not found in current sentence.")
+            logger.warning(
+                f"Attempted to remove word '{word}' not found in current sentence."
+            )
             return
 
         # Remove the button from the layout and delete it
@@ -631,11 +641,11 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         self.current_sentence_words = []
         for btn in self.word_bank_buttons:
             btn.setEnabled(True)
-        
+
         # Remove all word buttons from the sentence display layout
         for btn in self.sentence_word_buttons:
             self.sentence_display_layout.removeWidget(btn)
-            btn.deleteLater() # Properly delete the widget
+            btn.deleteLater()  # Properly delete the widget
         self.sentence_word_buttons.clear()
 
         self._update_display()
@@ -755,7 +765,6 @@ class ContextBlockWidget(BaseExerciseWidget):
 
 
 class PronunciationExerciseWidget(BaseExerciseWidget):
-    transcription_started = Signal()
     transcription_ready = Signal(str)
     transcription_error = Signal(str)
 
@@ -768,15 +777,15 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
     ):
         super().__init__(exercise, course_manager, parent)
         self.stt_manager = stt_manager
-        self._audio_recorder: Optional[QAudioSource] = None
-        self._audio_buffer: Optional[QByteArray] = None
-        self._qbuffer: Optional[QBuffer] = None
-        self._temp_audio_file: Optional[tempfile.NamedTemporaryFile] = None
+        self._audio_recorder: QAudioSource | None = None
+        self._audio_buffer: QByteArray | None = None
+        self._qbuffer: QBuffer | None = None
+        self._temp_audio_file: tempfile.NamedTemporaryFile | None = None
         self._is_recording = False
         self._last_transcription_text = ""
 
         # --- UI Setup ---
-        self.prompt_label.setVisible(False) # We don't use the base prompt label
+        self.prompt_label.setVisible(False)  # We don't use the base prompt label
 
         # Main layout is now a grid
         grid_layout = QGridLayout(self)
@@ -788,7 +797,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
         self.target_text_label.setAlignment(Qt.AlignCenter)
-        grid_layout.addWidget(self.target_text_label, 0, 0, 1, 4) # Span across 4 columns
+        grid_layout.addWidget(
+            self.target_text_label, 0, 0, 1, 4
+        )  # Span across 4 columns
 
         # 2. Play Reference Button
         if self.exercise.audio_file:
@@ -798,7 +809,6 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 lambda: self._play_audio_file(self.exercise.audio_file)
             )
             grid_layout.addWidget(self.play_ref_button, 1, 0, 1, 4, Qt.AlignCenter)
-
 
         # 3. Record Button (Large, central)
         self.record_button = QPushButton("🎤")
@@ -825,7 +835,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.feedback_group = QGroupBox(self.tr("Your Results"))
         self.feedback_group.setObjectName("pronunciation_feedback_group")
         feedback_layout = QVBoxLayout(self.feedback_group)
-        
+
         self.feedback_browser = QTextBrowser()
         self.feedback_browser.setOpenExternalLinks(False)
         feedback_layout.addWidget(self.feedback_browser)
@@ -835,7 +845,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
         self.try_again_button.setObjectName("try_again_button")
         self.try_again_button.clicked.connect(self.clear_input)
-        
+
         self.submit_feedback_button = QPushButton(self.tr("Submit and Continue"))
         self.submit_feedback_button.setObjectName("submit_button")
         self.submit_feedback_button.clicked.connect(self._handle_submit_click)
@@ -845,7 +855,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         feedback_action_layout.addWidget(self.submit_feedback_button)
         feedback_action_layout.addStretch(1)
         feedback_layout.addLayout(feedback_action_layout)
-        
+
         grid_layout.addWidget(self.feedback_group, 5, 0, 1, 4)
 
         # --- Signal Connections & Initial State ---
@@ -858,8 +868,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
         # Automatically load model if needed
         if not self.stt_manager.get_loaded_model_name():
-             self._handle_load_model_click()
-
+            self._handle_load_model_click()
 
     def _update_ui_for_model_state(self):
         selected_engine = self.stt_manager.get_selected_stt_engine()
@@ -870,12 +879,16 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
         self.feedback_group.setVisible(False)
 
-        logger.debug(f"STT UI Update: engine={selected_engine}, target='{target_model_name}', loaded='{loaded_model_name}', loading={is_loading}")
+        logger.debug(
+            f"STT UI Update: engine={selected_engine}, target='{target_model_name}', loaded='{loaded_model_name}', loading={is_loading}"
+        )
 
         if not target_model_name or target_model_name.lower() == "none":
             self.record_button.setVisible(False)
             self.status_label.setText(
-                self.tr("Please select a Whisper model in Settings to enable pronunciation practice.")
+                self.tr(
+                    "Please select a Whisper model in Settings to enable pronunciation practice."
+                )
             )
         elif is_loading:
             self._on_model_loading_started(target_model_name)
@@ -883,10 +896,10 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.record_button.setVisible(True)
             self.record_button.setEnabled(True)
             self.status_label.setText(self.tr("Tap the microphone to start recording."))
-        else: # Model selected but not loaded
+        else:  # Model selected but not loaded
             self.record_button.setVisible(False)
             self.status_label.setText(self.tr("Initializing speech model..."))
-            self._handle_load_model_click() # Trigger load automatically
+            self._handle_load_model_click()  # Trigger load automatically
 
     def _init_audio_recorder(self):
         if self._audio_recorder:
@@ -897,7 +910,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             "",
             type=str,
         )
-        selected_device_info: Optional[QAudioDevice] = None
+        selected_device_info: QAudioDevice | None = None
         if preferred_device_id_str:
             for device in QMediaDevices.audioInputs():
                 if device.id().toStdString() == preferred_device_id_str:
@@ -969,7 +982,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             # Clean up previous temp file if it exists
             self._cleanup_temp_file()
 
-            self._temp_audio_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            self._temp_audio_file = tempfile.NamedTemporaryFile(
+                suffix=".wav", delete=False
+            )
             self._temp_audio_file.close()
             logger.debug(f"Created temp audio file: {self._temp_audio_file.name}")
 
@@ -1006,10 +1021,12 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 self._temp_audio_file.name,
                 np.frombuffer(self._audio_buffer.data(), dtype=np.int16),
                 recorded_samplerate,
-                format='WAV',
-                subtype='PCM_16'
+                format="WAV",
+                subtype="PCM_16",
             )
-            logger.info(f"WAV audio saved to {self._temp_audio_file.name} at {recorded_samplerate} Hz")
+            logger.info(
+                f"WAV audio saved to {self._temp_audio_file.name} at {recorded_samplerate} Hz"
+            )
             self._start_transcription(
                 self._temp_audio_file.name,
                 recorded_samplerate,
@@ -1024,7 +1041,10 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self._qbuffer = None
 
     def _start_transcription(
-        self, audio_file_path: str, recorded_samplerate: int, language_code: str | None = None
+        self,
+        audio_file_path: str,
+        recorded_samplerate: int,
+        language_code: str | None = None,
     ):
         if not audio_file_path or not os.path.exists(audio_file_path):
             self.status_label.setText(
@@ -1033,7 +1053,10 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.record_button.setEnabled(True)
             return
         task = self.stt_manager.transcribe_audio(
-            audio_file_path, recorded_samplerate, self.exercise.exercise_id, language_code
+            audio_file_path,
+            recorded_samplerate,
+            self.exercise.exercise_id,
+            language_code,
         )
         if task:
             task.signals.finished.connect(self._on_transcription_finished)
@@ -1044,39 +1067,32 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             )
             self.record_button.setEnabled(True)
 
-    def _on_transcription_finished(self, exercise_id: str, result):
+    def _on_transcription_finished(self, exercise_id: str, result: TranscriptionResult):
         logger.debug("Transcription finished.")
         if exercise_id != self.exercise.exercise_id:
             return
 
-        full_text = ""
-        confidence_html = ""
+        full_text = (result.text or "").strip()
+        if result.engine == app_settings.STT_ENGINE_VOSK:
+            confidence_html = self.tr(
+                "<i>VOSK does not provide word-level confidence.</i><br><b>Transcribed:</b> {0}"
+            ).format(full_text)
+        else:
+            confidence_html = self._generate_confidence_html(result.words)
 
-        if isinstance(result, str):  # VOSK result
-            full_text = result.strip()
-            confidence_html = self.tr("<i>VOSK does not provide word-level confidence.</i><br><b>Transcribed:</b> {0}").format(full_text)
-        else:  # Whisper result
-            segments = result
-            all_words = []
-            segment_list = list(segments)
-            for segment in segment_list:
-                full_text += segment.text
-                if hasattr(segment, 'words') and segment.words:
-                    all_words.extend(segment.words)
-            full_text = full_text.strip()
-            confidence_html = self._generate_confidence_html(all_words)
+        self.status_label.setText(
+            self.tr("Transcription complete. Review your feedback below.")
+        )
 
-        self.status_label.setText(self.tr("Transcription complete. Review your feedback below."))
-        
         target_text = self.exercise.target_pronunciation_text
         diff_html = self._generate_diff_html(target_text, full_text)
 
         # Combine all feedback into one browser
         combined_html = f"""
-        <h3>{self.tr('Your Speech (colored by confidence)')}</h3>
+        <h3>{self.tr("Your Speech (colored by confidence)")}</h3>
         <p>{confidence_html}</p>
         <hr>
-        <h3>{self.tr('Comparison with Target Text')}</h3>
+        <h3>{self.tr("Comparison with Target Text")}</h3>
         <p>{diff_html}</p>
         """
         self.feedback_browser.setHtml(combined_html)
@@ -1094,7 +1110,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
     def _generate_confidence_html(self, words: list) -> str:
         if not words:
             return f"<p><i>{self.tr('No speech detected or words could not be recognized.')}</i></p>"
-        
+
         html_parts = []
         for word in words:
             prob = word.probability
@@ -1107,9 +1123,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 color = "#fd7e14"  # Orange
             else:
                 color = "#dc3545"  # Red
-            
-            html_parts.append(f'<span style="background-color: {color}; color: white; padding: 2px 4px; border-radius: 3px; margin: 1px;">{word.word}</span>')
-        
+
+            html_parts.append(
+                f'<span style="background-color: {color}; color: white; padding: 2px 4px; border-radius: 3px; margin: 1px;">{word.word}</span>'
+            )
+
         return " ".join(html_parts)
 
     def _generate_diff_html(self, target_str: str, user_str: str) -> str:
@@ -1119,22 +1137,28 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         user_str_norm = self.course_manager._normalize_answer_for_comparison(
             user_str, for_pronunciation=True
         )
-        
-        matcher = difflib.SequenceMatcher(None, target_str_norm.split(), user_str_norm.split())
+
+        matcher = difflib.SequenceMatcher(
+            None, target_str_norm.split(), user_str_norm.split()
+        )
         html_parts = []
-        
+
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
                 html_parts.append(" ".join(matcher.a[i1:i2]))
             else:
                 if tag in ("delete", "replace"):
                     deleted_text = " ".join(matcher.a[i1:i2])
-                    html_parts.append(f'<span style="background-color: #ffebee; color: #c62828; text-decoration: line-through; padding: 2px 4px; border-radius: 3px;">{deleted_text}</span>')
+                    html_parts.append(
+                        f'<span style="background-color: #ffebee; color: #c62828; text-decoration: line-through; padding: 2px 4px; border-radius: 3px;">{deleted_text}</span>'
+                    )
                 if tag in ("insert", "replace"):
                     inserted_text = " ".join(matcher.b[j1:j2])
-                    html_parts.append(f'<span style="background-color: #e8f5e9; color: #2e7d32; font-weight: bold; padding: 2px 4px; border-radius: 3px;">{inserted_text}</span>')
-                    
-        return " ".join(html_parts).replace('\n', '<br>')
+                    html_parts.append(
+                        f'<span style="background-color: #e8f5e9; color: #2e7d32; font-weight: bold; padding: 2px 4px; border-radius: 3px;">{inserted_text}</span>'
+                    )
+
+        return " ".join(html_parts).replace("\n", "<br>")
 
     def _on_transcription_error(self, exercise_id: str, error_message: str):
         if exercise_id != self.exercise.exercise_id:
@@ -1161,9 +1185,13 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             try:
                 if os.path.exists(self._temp_audio_file.name):
                     os.unlink(self._temp_audio_file.name)
-                    logger.debug(f"Deleted temp audio file: {self._temp_audio_file.name}")
+                    logger.debug(
+                        f"Deleted temp audio file: {self._temp_audio_file.name}"
+                    )
             except Exception as e:
-                logger.warning(f"Could not delete temp audio file '{self._temp_audio_file.name}': {e}")
+                logger.warning(
+                    f"Could not delete temp audio file '{self._temp_audio_file.name}': {e}"
+                )
             finally:
                 self._temp_audio_file = None
 
@@ -1188,7 +1216,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self._audio_buffer = None
 
 
-EXERCISE_WIDGET_MAP: Dict[str, Type[BaseExerciseWidget]] = {
+EXERCISE_WIDGET_MAP: dict[str, type[BaseExerciseWidget]] = {
     "translate_to_target": TranslationExerciseWidget,
     "translate_to_source": TranslationExerciseWidget,
     "multiple_choice_translation": MultipleChoiceExerciseWidget,

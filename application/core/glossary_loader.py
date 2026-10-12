@@ -1,15 +1,17 @@
-import yaml
 import logging
 import os
-from typing import List, Dict, Any, Optional
 
-from .models import GlossaryEntry
+import yaml
+
 from .course_loader import _validate_asset_path
+from .models import GlossaryEntry
 
 logger = logging.getLogger(__name__)
 
 
-def load_glossary(glossary_path: str, course_base_dir: str, pool_base_dir: str) -> List[GlossaryEntry]:
+def load_glossary(
+    glossary_path: str, course_base_dir: str, pool_base_dir: str
+) -> list[GlossaryEntry]:
     """
     Loads and parses the glossary YAML file into a list of GlossaryEntry objects.
     Returns an empty list if the file is not found or parsing fails.
@@ -25,9 +27,7 @@ def load_glossary(glossary_path: str, course_base_dir: str, pool_base_dir: str) 
         with open(glossary_path, "r", encoding="utf-8") as f:
             raw_glossary_data = yaml.safe_load(f)
         logger.info(f"Successfully loaded raw glossary data from {glossary_path}")
-    except (
-        FileNotFoundError
-    ):  # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears
+    except FileNotFoundError:  # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears
         logger.error(f"Glossary file not found: {glossary_path}")
         return []
     except yaml.YAMLError as e:
@@ -45,7 +45,7 @@ def load_glossary(glossary_path: str, course_base_dir: str, pool_base_dir: str) 
         )
         return []
 
-    glossary_entries: List[GlossaryEntry] = []
+    glossary_entries: list[GlossaryEntry] = []
     for i, entry_data in enumerate(raw_glossary_data):
         if not isinstance(entry_data, dict):
             logger.warning(

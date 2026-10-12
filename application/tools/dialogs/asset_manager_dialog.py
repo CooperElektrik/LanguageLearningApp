@@ -1,25 +1,22 @@
 # application/tools/dialogs/asset_manager_dialog.py
 
-import os
 import logging
+import os
 import shutil
+
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
-    QFileDialog,
     QMessageBox,
-    QWidget,
-    QGridLayout,
-    QSizePolicy,
+    QPushButton,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal
-from PySide6.QtGui import QPixmap, QIcon
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +42,7 @@ class AssetManagerDialog(QDialog):
         self.asset_type = asset_type
         self.asset_subdir = os.path.join("assets", f"{self.asset_type}s")
         self.full_asset_dir = os.path.join(self.course_root_dir, self.asset_subdir)
-        self.selected_asset_path: Optional[str] = None  # Stores the relative path
+        self.selected_asset_path: str | None = None  # Stores the relative path
 
         self.setWindowTitle(f"Manage {asset_type.capitalize()} Assets")
         self.setMinimumSize(700, 500)

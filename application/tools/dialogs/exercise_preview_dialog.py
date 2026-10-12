@@ -1,44 +1,30 @@
-import os
 import logging
+from typing import Any
+
+from PySide6.QtCore import (
+    QObject,
+    Qt,
+)
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QFrame,
+    QVBoxLayout,
 )
-from PySide6.QtCore import (
-    Qt,
-    QObject,
-)
-from PySide6.QtGui import QFont
-from typing import Dict, Tuple, Any
 
 try:
     from application.core.models import Exercise
-
-    from application.core.course_manager import (
-        PROMPT_KEY_CONTEXT_BLOCK,
-        PROMPT_KEY_DEFAULT,
-        PROMPT_KEY_DICTATION,
-        PROMPT_KEY_FIB,
-        PROMPT_KEY_IMAGE_ASSOCIATION,
-        PROMPT_KEY_LISTEN_SELECT,
-        PROMPT_KEY_MCQ_TRANSLATION,
-        PROMPT_KEY_SENTENCE_JUMBLE,
-        PROMPT_KEY_TRANSLATE_TO_SOURCE,
-        PROMPT_KEY_TRANSLATE_TO_TARGET,
-    )
-
     from application.ui.widgets.exercise_widgets import (
-        TranslationExerciseWidget,
-        MultipleChoiceExerciseWidget,
-        FillInTheBlankExerciseWidget,
         BaseExerciseWidget,
-        ListenSelectExerciseWidget,
-        SentenceJumbleExerciseWidget,
         ContextBlockWidget,
+        FillInTheBlankExerciseWidget,
+        ListenSelectExerciseWidget,
+        MultipleChoiceExerciseWidget,
+        SentenceJumbleExerciseWidget,
+        TranslationExerciseWidget,
     )
 except ImportError as e:
     logging.error(
@@ -68,7 +54,7 @@ logger = logging.getLogger(__name__)
 class MockCourseManager(QObject):
     def __init__(
         self,
-        course_languages: Dict[str, str],
+        course_languages: dict[str, str],
         course_content_base_dir: str,
         parent=None,
     ):
@@ -89,73 +75,14 @@ class MockCourseManager(QObject):
     def get_course_manifest_directory(self) -> str:
         return self.course_content_base_dir
 
-    def get_formatted_prompt(self, exercise: Exercise) -> str:
-        """Mimics CourseManager's method for formatting prompts."""
-        if exercise.type == "translate_to_target":
-            return f"Translate to {self.target_language}: \"{exercise.prompt or ''}\""
-        elif exercise.type == "translate_to_source":
-            return f"Translate to {self.source_language}: \"{exercise.prompt or ''}\""
-        elif exercise.type == "multiple_choice_translation":
-            return f"Choose the {self.target_language} translation for: \"{exercise.source_word or ''}\" ({self.source_language})"
-        elif exercise.type == "fill_in_the_blank":
-            return f"{exercise.sentence_template or ''} (Hint: {exercise.translation_hint or ''})"
-        return (
-            exercise.prompt
-            or exercise.source_word
-            or exercise.sentence_template
-            or "Exercise Prompt (no text)"
-        )
-
-    def get_formatted_prompt_data(self, exercise: Exercise) -> Dict[str, Any]:
+    def get_formatted_prompt_data(self, exercise: Exercise) -> dict[str, Any]:
         """
-        Returns a dictionary with a template_key and arguments for formatting the prompt.
+        Returns a dictionary with the formatted prompt text for display,
+        matching CourseManager's simplified format.
         """
-        prompt_text = exercise.prompt or ""
+        return {"args": [exercise.prompt or exercise.sentence_template or ""]}
 
-        if exercise.type == "translate_to_target":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_TARGET,
-                "args": [self.target_language, prompt_text],
-            }
-        elif exercise.type == "translate_to_source":
-            return {
-                "template_key": PROMPT_KEY_TRANSLATE_TO_SOURCE,
-                "args": [self.source_language, prompt_text],
-            }
-        elif exercise.type == "dictation":
-            return {"template_key": PROMPT_KEY_DICTATION, "args": [prompt_text]}
-        elif exercise.type == "multiple_choice_translation":
-            return {
-                "template_key": PROMPT_KEY_MCQ_TRANSLATION,
-                "args": [
-                    self.target_language,
-                    exercise.source_word or "",
-                    self.source_language,
-                ],
-            }
-        elif exercise.type == "fill_in_the_blank":
-            return {
-                "template_key": PROMPT_KEY_FIB,
-                "args": [
-                    exercise.sentence_template or "",
-                    exercise.translation_hint or "",
-                ],
-            }
-        elif exercise.type == "image_association":
-            return {"template_key": PROMPT_KEY_IMAGE_ASSOCIATION, "args": [prompt_text]}
-        elif exercise.type == "listen_and_select":
-            return {"template_key": PROMPT_KEY_LISTEN_SELECT, "args": [prompt_text]}
-        elif exercise.type == "sentence_jumble":
-            return {"template_key": PROMPT_KEY_SENTENCE_JUMBLE, "args": [prompt_text]}
-        elif exercise.type == "context_block":
-            return {
-                "template_key": PROMPT_KEY_CONTEXT_BLOCK,
-                "args": [exercise.title or ""],
-            }
-
-        return {"template_key": PROMPT_KEY_DEFAULT, "args": [prompt_text]}
-
-    def check_answer(self, exercise: Exercise, user_answer: str) -> Tuple[bool, str]:
+    def check_answer(self, exercise: Exercise, user_answer: str) -> tuple[bool, str]:
         """Minimal mock check_answer for preview. Just provides the correct answer."""
         correct_answer_display = "N/A"
         if exercise.type in ["translate_to_target", "translate_to_source"]:
@@ -180,7 +107,7 @@ class ExercisePreviewDialog(QDialog):
     def __init__(
         self,
         exercise: Exercise,
-        course_languages: Dict[str, str],
+        course_languages: dict[str, str],
         course_content_base_dir: str,
         parent=None,
     ):

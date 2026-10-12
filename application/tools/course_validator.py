@@ -1,9 +1,8 @@
-import sys
-import os
 import argparse
 import logging
-import yaml
-from typing import List, Dict, Any, Optional
+import os
+import sys
+from typing import Any
 
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 application_root_dir = os.path.abspath(os.path.join(current_script_dir, ".."))
@@ -12,9 +11,10 @@ if application_root_dir not in sys.path:
     sys.path.insert(0, application_root_dir)
 
 try:
-    from core.models import Course, Unit, Lesson, Exercise, ExerciseOption
-    from core.course_loader import load_manifest as app_load_manifest
     from core.course_loader import load_course_content as app_load_course_content
+    from core.course_loader import load_manifest as app_load_manifest
+    from core.exercise_types import VALID_EXERCISE_TYPES
+    from core.models import Course, Exercise, Lesson, Unit
 except ImportError as e:
     print(f"CRITICAL: course_validator.py - Cannot import core modules: {e}")
     sys.exit(1)
@@ -23,14 +23,14 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def _collect_error(errors_list: List[str], message: str, path_prefix: str = ""):
+def _collect_error(errors_list: list[str], message: str, path_prefix: str = ""):
     """Collects an error message with a path prefix."""
     full_message = f"{path_prefix}{message}" if path_prefix else message
     errors_list.append(full_message)
 
 
 def _validate_exercise_translation_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     if (
         not exercise.prompt
@@ -51,7 +51,7 @@ def _validate_exercise_translation_internal(
 
 
 def _validate_exercise_mcq_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     if (
         not exercise.source_word
@@ -76,7 +76,7 @@ def _validate_exercise_mcq_internal(
 
     correct_count = 0
     for i, option in enumerate(exercise.options):
-        option_path = f"{path_prefix}Option #{i+1} ('{option.text[:20] if hasattr(option, 'text') else 'N/A'}...'): "
+        option_path = f"{path_prefix}Option #{i + 1} ('{option.text[:20] if hasattr(option, 'text') else 'N/A'}...'): "
         if (
             not hasattr(option, "text")
             or not isinstance(option.text, str)
@@ -105,7 +105,7 @@ def _validate_exercise_mcq_internal(
 
 
 def _validate_exercise_fib_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     if (
         not exercise.sentence_template
@@ -176,7 +176,7 @@ def _validate_exercise_fib_internal(
 
 
 def _validate_exercise_jumble_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     if (
         not exercise.words
@@ -198,7 +198,7 @@ def _validate_exercise_jumble_internal(
 
 
 def _validate_exercise_association_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     # This is essentially an MCQ, but we can add specific checks
     _validate_exercise_mcq_internal(exercise, path_prefix, errors_list)
@@ -218,7 +218,7 @@ def _validate_exercise_association_internal(
 
 
 def _validate_exercise_context_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     if (
         not exercise.prompt
@@ -233,7 +233,7 @@ def _validate_exercise_context_internal(
 
 
 def _validate_exercise_dictation_internal(
-    exercise: Exercise, path_prefix: str, errors_list: List[str]
+    exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
     # Same as translation, but check for audio file
     _validate_exercise_translation_internal(exercise, path_prefix, errors_list)
@@ -249,11 +249,11 @@ def _validate_exercise_internal(
     exercise: Exercise,
     index: int,
     lesson_path_prefix: str,
-    errors_list: List[str],
+    errors_list: list[str],
     course_manifest_base_dir: str,
 ):
     """Validates a single exercise."""
-    path_prefix = f"{lesson_path_prefix}Exercise #{index+1} (Type: {exercise.type if hasattr(exercise, 'type') else 'N/A'}): "
+    path_prefix = f"{lesson_path_prefix}Exercise #{index + 1} (Type: {exercise.type if hasattr(exercise, 'type') else 'N/A'}): "
 
     if (
         not hasattr(exercise, "type")
@@ -295,17 +295,7 @@ def _validate_exercise_internal(
                     path_prefix,
                 )
 
-    valid_types = [
-        "translate_to_target",
-        "translate_to_source",
-        "multiple_choice_translation",
-        "fill_in_the_blank",
-        "dictation",
-        "image_association",
-        "listen_and_select",
-        "sentence_jumble",
-        "context_block",
-    ]
+    valid_types = VALID_EXERCISE_TYPES
     if exercise.type not in valid_types:
         _collect_error(
             errors_list,
@@ -328,12 +318,19 @@ def _validate_exercise_internal(
         _validate_exercise_jumble_internal(exercise, path_prefix, errors_list)
     elif exercise.type == "context_block":
         _validate_exercise_context_internal(exercise, path_prefix, errors_list)
+    elif exercise.type == "pronunciation_practice":
+        if not exercise.target_pronunciation_text:
+            _collect_error(
+                errors_list,
+                "Missing 'target_pronunciation_text'.",
+                path_prefix,
+            )
 
 
 def _validate_lesson_internal(
     lesson: Lesson,
     unit_path_prefix: str,
-    errors_list: List[str],
+    errors_list: list[str],
     course_manifest_base_dir: str,
 ):
     """Validates a single lesson."""
@@ -367,7 +364,7 @@ def _validate_lesson_internal(
 def _validate_unit_internal(
     unit: Unit,
     course_path_prefix: str,
-    errors_list: List[str],
+    errors_list: list[str],
     course_manifest_base_dir: str,
 ):
     """Validates a single unit."""
@@ -413,8 +410,8 @@ def _validate_unit_internal(
 
 
 def perform_manifest_validation(
-    manifest_data: Dict[str, Any], manifest_path: str
-) -> List[str]:
+    manifest_data: dict[str, Any], manifest_path: str
+) -> list[str]:
     """Validates the loaded manifest data, returning a list of errors."""
     errors = []
     required_fields = [
@@ -437,7 +434,7 @@ def perform_manifest_validation(
                 errors, f"Manifest missing or empty required field: '{field}'"
             )
 
-    if "content_file" in manifest_data and manifest_data["content_file"]:
+    if manifest_data.get("content_file"):
         content_filepath = os.path.join(
             os.path.dirname(manifest_path), manifest_data["content_file"]
         )
@@ -452,7 +449,7 @@ def perform_manifest_validation(
 
 def perform_course_content_validation(
     course: Course, course_manifest_base_dir: str
-) -> List[str]:
+) -> list[str]:
     """Validates the main course content object, returning a list of errors."""
     errors = []
     path_prefix = f"Course '{course.title}': "
@@ -495,7 +492,7 @@ def main():
     )
     args = parser.parse_args()
 
-    current_errors: List[str] = []
+    current_errors: list[str] = []
 
     logger.info(f"Starting validation for manifest: {args.manifest_file}")
 
@@ -516,7 +513,7 @@ def main():
         )
         current_errors.extend(manifest_validation_errors)
 
-    course_obj: Optional[Course] = None
+    course_obj: Course | None = None
     course_content_actual_base_dir = None
 
     if (
@@ -525,7 +522,6 @@ def main():
         and manifest_data["content_file"]
     ):
         manifest_dir = os.path.dirname(os.path.abspath(args.manifest_file))
-        content_filename = manifest_data["content_file"]
         content_filepath = os.path.join(manifest_dir, manifest_data["content_file"])
         course_content_actual_base_dir = os.path.dirname(content_filepath)
 
@@ -540,18 +536,13 @@ def main():
                 author=manifest_data.get("author"),
                 description=manifest_data.get("description"),
             )
-            if course_obj and course_content_actual_base_dir:
-                content_validation_errors = perform_course_content_validation(
-                    course_obj, course_content_actual_base_dir
-                )
-                current_errors.extend(content_validation_errors)
             if not course_obj:
                 _collect_error(
                     current_errors,
                     f"Failed to load or parse course content file: {content_filepath}. See previous logs.",
                     "",
                 )
-            else:
+            elif course_content_actual_base_dir:
                 content_validation_errors = perform_course_content_validation(
                     course_obj, course_content_actual_base_dir
                 )
@@ -574,7 +565,7 @@ def main():
         logger.info("---------------------------------------------")
         logger.error(f"Validation FAILED. Found {len(current_errors)} error(s):")
         for i, err in enumerate(current_errors):
-            logger.error(f"  {i+1}. {err}")
+            logger.error(f"  {i + 1}. {err}")
         logger.info("---------------------------------------------")
         sys.exit(1)
 

@@ -1,20 +1,22 @@
 import logging
+
+from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
     QDialogButtonBox,
-    QWidget,
-    QPushButton,
+    QFrame,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QScrollArea,
-    QFrame,
-    QStyle
+    QStyle,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import QEvent
 
 logger = logging.getLogger(__name__)
+
 
 # --- Custom Widget for a single FAQ item (Accordion style) ---
 # (This class remains unchanged, it's already excellent)
@@ -23,6 +25,7 @@ class FaqItemWidget(QWidget):
     A custom widget representing a single collapsible FAQ item.
     It consists of a question button and an answer label.
     """
+
     def __init__(self, question: str, answer: str, parent=None):
         super().__init__(parent)
         self.question_text = question
@@ -49,7 +52,9 @@ class FaqItemWidget(QWidget):
         self.answer_label = QLabel(self.answer_text)
         self.answer_label.setWordWrap(True)
         self.answer_label.setVisible(False)
-        self.answer_label.setStyleSheet("padding: 2px 8px 8px 25px; color: #333;") # Indent answer
+        self.answer_label.setStyleSheet(
+            "padding: 2px 8px 8px 25px; color: #333;"
+        )  # Indent answer
 
         # --- Layout ---
         layout = QVBoxLayout(self)
@@ -76,7 +81,7 @@ class FaqItemWidget(QWidget):
     def collapse(self):
         """Public method to collapse the item."""
         self.toggle_button.setChecked(False)
-        
+
     def matches_filter(self, text: str) -> bool:
         """Check if the question or answer contains the filter text."""
         if not text:
@@ -86,13 +91,14 @@ class FaqItemWidget(QWidget):
 
 # --- Reworked Help Dialog ---
 
+
 class HelpDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Help - FAQ"))
         self.setMinimumSize(700, 500)
-        
-        self._faq_widgets = [] 
+
+        self._faq_widgets = []
 
         self._init_ui()
         self._populate_faq_content()
@@ -103,14 +109,18 @@ class HelpDialog(QDialog):
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(10, 10, 10, 10)
-        
+
         # --- Top Bar (Search and Controls) ---
         top_bar_layout = QHBoxLayout()
-        
+
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(self.tr("Search for a question..."))
-        search_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView)
-        self.search_input.addAction(search_icon, QLineEdit.ActionPosition.LeadingPosition)
+        search_icon = self.style().standardIcon(
+            QStyle.StandardPixmap.SP_FileDialogDetailedView
+        )
+        self.search_input.addAction(
+            search_icon, QLineEdit.ActionPosition.LeadingPosition
+        )
         self.search_input.textChanged.connect(self._on_search_changed)
         top_bar_layout.addWidget(self.search_input)
 
@@ -120,25 +130,25 @@ class HelpDialog(QDialog):
         self.collapse_all_btn.clicked.connect(self._collapse_all)
         top_bar_layout.addWidget(self.expand_all_btn)
         top_bar_layout.addWidget(self.collapse_all_btn)
-        
+
         main_layout.addLayout(top_bar_layout)
-        
+
         # --- Scroll Area for Content ---
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        
+
         # THIS IS THE KEY CHANGE: Give the inner widget an object name for styling
         self.scroll_content_widget = QWidget()
         self.scroll_content_widget.setObjectName("scrollAreaWidgetContents")
-        
+
         self.faq_layout = QVBoxLayout(self.scroll_content_widget)
         self.faq_layout.setContentsMargins(10, 10, 10, 10)
         self.faq_layout.setSpacing(5)
-        
+
         self.scroll_area.setWidget(self.scroll_content_widget)
         main_layout.addWidget(self.scroll_area)
-        
+
         # --- Bottom Button Box ---
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.reject)
@@ -161,7 +171,7 @@ class HelpDialog(QDialog):
         self._faq_widgets = []
 
         help_data = self._get_help_data()
-        
+
         # Build content from top to bottom
         for category_name, questions in help_data.items():
             # Add Category Header
@@ -177,7 +187,7 @@ class HelpDialog(QDialog):
                 faq_item = FaqItemWidget(q_data["question"], q_data["answer"])
                 self.faq_layout.addWidget(faq_item)
                 category_items.append(faq_item)
-            
+
             # Add separator
             line = QFrame()
             line.setFrameShape(QFrame.Shape.HLine)
@@ -185,13 +195,15 @@ class HelpDialog(QDialog):
             self.faq_layout.addWidget(line)
 
             # Store widgets for filtering
-            self._faq_widgets.append({
-                "category_header": category_label,
-                "separator": line,
-                "items": category_items
-            })
-        
-        self.faq_layout.addStretch() # Pushes all content to the top
+            self._faq_widgets.append(
+                {
+                    "category_header": category_label,
+                    "separator": line,
+                    "items": category_items,
+                }
+            )
+
+        self.faq_layout.addStretch()  # Pushes all content to the top
 
     def _apply_stylesheet(self):
         """Apply a global stylesheet for a better look."""
@@ -245,7 +257,7 @@ class HelpDialog(QDialog):
         self.search_input.setPlaceholderText(self.tr("Search for a question..."))
         self.expand_all_btn.setText(self.tr("Expand All"))
         self.collapse_all_btn.setText(self.tr("Collapse All"))
-        
+
         self._populate_faq_content()
         logger.debug("HelpDialog retranslated.")
 
@@ -255,49 +267,65 @@ class HelpDialog(QDialog):
             self.tr("Navigation"): {
                 "1": {
                     "question": self.tr("How do I start a lesson?"),
-                    "answer": self.tr("From the 'Course Navigation' panel on the left, simply click on the lesson you wish to begin.")
+                    "answer": self.tr(
+                        "From the 'Course Navigation' panel on the left, simply click on the lesson you wish to begin."
+                    ),
                 },
                 "2": {
-                    "question": self.tr("How do I return to the course selection screen?"),
-                    "answer": self.tr("Use the 'File' menu and select 'Return to Course Selection'.")
-                }
+                    "question": self.tr(
+                        "How do I return to the course selection screen?"
+                    ),
+                    "answer": self.tr(
+                        "Use the 'File' menu and select 'Return to Course Selection'."
+                    ),
+                },
             },
             self.tr("Whisper Model"): {
                 "3": {
                     "question": self.tr("What is the Whisper model used for?"),
-                    "answer": self.tr("The Whisper model is used for speech-to-text transcription. It analyzes your pronunciation exercises and provides feedback.")
+                    "answer": self.tr(
+                        "The Whisper model is used for speech-to-text transcription. It analyzes your pronunciation exercises and provides feedback."
+                    ),
                 },
                 "4": {
                     "question": self.tr("How can I change the Whisper model?"),
-                    "answer": self.tr("You can select a different Whisper model from the 'Settings' dialog. Larger models are more accurate but require more resources.")
-                }
+                    "answer": self.tr(
+                        "You can select a different Whisper model from the 'Settings' dialog. Larger models are more accurate but require more resources."
+                    ),
+                },
             },
             self.tr("VOSK Model"): {
                 "5": {
                     "question": self.tr("What is the VOSK model used for?"),
-                    "answer": self.tr("The VOSK model is an alternative speech-to-text transcription engine. It is generally smaller and faster than Whisper models, making it suitable for devices with limited resources or for real-time transcription where absolute accuracy is not the primary concern.")
+                    "answer": self.tr(
+                        "The VOSK model is an alternative speech-to-text transcription engine. It is generally smaller and faster than Whisper models, making it suitable for devices with limited resources or for real-time transcription where absolute accuracy is not the primary concern."
+                    ),
                 },
                 "6": {
                     "question": self.tr("How can I change the VOSK model?"),
-                    "answer": self.tr("You can select a different VOSK model from the 'Settings' dialog. VOSK models are typically language-specific and need to be downloaded separately.")
-                }
+                    "answer": self.tr(
+                        "You can select a different VOSK model from the 'Settings' dialog. VOSK models are typically language-specific and need to be downloaded separately."
+                    ),
+                },
             },
             self.tr("Whisper vs. VOSK"): {
                 "7": {
-                    "question": self.tr("What are the main differences between Whisper and VOSK?"),
+                    "question": self.tr(
+                        "What are the main differences between Whisper and VOSK?"
+                    ),
                     "answer": self.tr(
                         "Whisper models are generally more accurate and support a wider range of languages, but they are larger and require more computational resources (especially for larger models). "
                         "VOSK models are typically smaller, faster, and can run efficiently on less powerful hardware, but they are language-specific and may not be as accurate as Whisper for all use cases. "
                         "Choose Whisper for higher accuracy and broader language support if you have the resources, and VOSK for speed and efficiency on more constrained systems."
-                    )
+                    ),
                 }
-            }
+            },
         }
-        
+
     def _on_search_changed(self, text: str):
         """Filter the visible FAQ items based on the search query."""
         query = text.lower().strip()
-        
+
         # When searching, collapse everything to avoid confusion from expanded, non-matching answers
         if query:
             self._collapse_all()
@@ -309,7 +337,7 @@ class HelpDialog(QDialog):
                 item_widget.setVisible(is_match)
                 if is_match:
                     any_item_visible_in_category = True
-            
+
             category_group["category_header"].setVisible(any_item_visible_in_category)
             category_group["separator"].setVisible(any_item_visible_in_category)
 

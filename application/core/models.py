@@ -1,15 +1,14 @@
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 
 @dataclass
 class ExerciseOption:
-    text: Optional[str] = None
-    image_file: Optional[str] = None
+    text: str | None = None
+    image_file: str | None = None
     correct: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the ExerciseOption object to a dictionary."""
         data = {}
         if self.text:
@@ -26,71 +25,39 @@ class Exercise:
     exercise_id: str
     type: str
 
-    title: Optional[str] = None  # For context_block or any other exercise
-    prompt: Optional[str] = None
-    answer: Optional[str] = None
+    title: str | None = None  # For context_block or any other exercise
+    prompt: str | None = None
+    answer: str | None = None
 
-    source_word: Optional[str] = None
-    options: List[ExerciseOption] = field(default_factory=list)
+    source_word: str | None = None
+    options: list[ExerciseOption] = field(default_factory=list)
 
-    sentence_template: Optional[str] = None
-    correct_option: Optional[str] = None
-    translation_hint: Optional[str] = None
+    sentence_template: str | None = None
+    correct_option: str | None = None
+    translation_hint: str | None = None
 
-    audio_file: Optional[str] = None
-    image_file: Optional[str] = None
+    audio_file: str | None = None
+    image_file: str | None = None
 
-    explanation: Optional[str] = None
+    explanation: str | None = None
 
-    target_pronunciation_text: Optional[str] = None
+    target_pronunciation_text: str | None = None
 
-    allowed_levenshtein_distance: Optional[int] = None
+    allowed_levenshtein_distance: int | None = None
 
-    words: Optional[List[str]] = None
+    words: list[str] | None = None
 
-    last_reviewed: Optional[datetime] = field(default=None, repr=False)
-    next_review_due: Optional[datetime] = field(default=None, repr=False)
-    interval_days: int = field(default=0)
-    ease_factor: float = field(default=2.5)
-    repetitions: int = field(default=0)
-    correct_in_a_row: int = field(default=0)
+    raw_data: dict[str, Any] = field(default_factory=dict, repr=False)
 
-    raw_data: Dict[str, Any] = field(default_factory=dict, repr=False)
+    # NOTE: Spaced-repetition state (ease factor, intervals, due dates, ...) is
+    # intentionally NOT stored on this model.  Exercises are immutable course
+    # content; all SRS state lives in ProgressManager, keyed by exercise_id.
 
     def has_hint(self) -> bool:
         """Checks if the exercise has a non-empty translation hint."""
         return bool(self.translation_hint and self.translation_hint.strip())
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Exercise object to a dictionary for progress saving.
-        """
-        data = asdict(self)
-
-        if data.get("last_reviewed") is not None and isinstance(
-            data["last_reviewed"], datetime
-        ):
-            data["last_reviewed"] = data["last_reviewed"].isoformat()
-        if data.get("next_review_due") is not None and isinstance(
-            data["next_review_due"], datetime
-        ):
-            data["next_review_due"] = data["next_review_due"].isoformat()
-
-        if "options" in data and data["options"]:
-            data["options"] = [opt.to_dict() for opt in self.options]
-
-        data.pop("raw_data", None)
-        data.pop("exercise_id", None)
-
-        cleaned_data = {
-            k: v
-            for k, v in data.items()
-            if v is not None and not (isinstance(v, list) and not v)
-        }
-
-        return cleaned_data
-
-    def to_content_dict(self) -> Dict[str, Any]:
+    def to_content_dict(self) -> dict[str, Any]:
         """
         Converts the Exercise object to a dictionary suitable for saving to the
         course content YAML file.
@@ -135,10 +102,7 @@ class Exercise:
                 data["words"] = self.words
             if self.answer is not None:
                 data["answer"] = self.answer
-        elif self.type == "context_block":
-            if self.prompt is not None:
-                data["prompt"] = self.prompt
-        elif self.type == "pronunciation_practice":
+        elif self.type == "context_block" or self.type == "pronunciation_practice":
             if self.prompt is not None:
                 data["prompt"] = self.prompt
         if self.audio_file is not None:
@@ -157,10 +121,10 @@ class Exercise:
 class Lesson:
     lesson_id: str
     title: str
-    exercises: List[Exercise] = field(default_factory=list)
-    unit_id: Optional[str] = None
+    exercises: list[Exercise] = field(default_factory=list)
+    unit_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the Lesson object to a dictionary for content saving."""
         data = {
             "lesson_id": self.lesson_id,
@@ -174,9 +138,9 @@ class Lesson:
 class Unit:
     unit_id: str
     title: str
-    lessons: List[Lesson] = field(default_factory=list)
+    lessons: list[Lesson] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the Unit object to a dictionary for content saving."""
         data = {
             "unit_id": self.unit_id,
@@ -193,13 +157,13 @@ class Course:
     target_language: str
     source_language: str
     version: str
-    author: Optional[str] = None
-    description: Optional[str] = None
-    image_file: Optional[str] = None
-    units: List[Unit] = field(default_factory=list)
-    content_file: Optional[str] = None
+    author: str | None = None
+    description: str | None = None
+    image_file: str | None = None
+    units: list[Unit] = field(default_factory=list)
+    content_file: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the Course object to a dictionary for content saving (its 'units' part)."""
         return {"units": [unit.to_dict() for unit in self.units]}
 
@@ -208,11 +172,11 @@ class Course:
 class GlossaryEntry:
     word: str
     translation: str
-    part_of_speech: Optional[str] = None
-    example_sentence: Optional[str] = None
-    notes: Optional[str] = None
-    audio_file: Optional[str] = None
+    part_of_speech: str | None = None
+    example_sentence: str | None = None
+    notes: str | None = None
+    audio_file: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the GlossaryEntry object to a dictionary, excluding None values."""
         return {k: v for k, v in asdict(self).items() if v is not None}

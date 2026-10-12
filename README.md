@@ -23,8 +23,8 @@ LL offers a rich set of features to enhance your language learning journey:
 
 *   **Interactive Lessons & Review:** Engage with diverse exercise types, including translation, multiple-choice, fill-in-the-blank, and sentence jumble.
 *   **Spaced Repetition System (SRS):** Exercises are intelligently scheduled for review to maximize retention based on your performance.
-*   **Pronunciation Practice (Whisper):**
-    *   Record yourself speaking and get instant transcription.
+*   **Pronunciation Practice (Speech-to-Text):**
+    *   Record yourself speaking and get instant transcription using either **Whisper** (higher accuracy, more resources) or **VOSK** (lightweight, offline).
     *   Select your preferred **microphone input device**.
     *   Choose between **Whisper Base, Small, or Medium models** for transcription accuracy (models are downloaded on first use).
     *   **Load/unload** speech-to-text models from memory on demand via a dedicated button or through settings.
@@ -32,9 +32,12 @@ LL offers a rich set of features to enhance your language learning journey:
 *   **Detailed Mistake Explanations:** Receive specific feedback on incorrect answers to understand *why* you made a mistake and improve faster.
 *   **Keyboard Shortcuts:** Navigate exercises and submit answers efficiently using intuitive keyboard commands (e.g., number keys for options, Ctrl+H for hints, Ctrl+N for notes).
 *   **Personalized Progress Tracking:** Monitor your total XP, study streaks, and unlock achievements as you progress.
-*   **Customizable Settings:** Adjust audio (volume, sound effects, autoplay), UI theme, font size, and developer options.
+*   **Customizable Settings:** Adjust audio (volume, sound effects, autoplay), UI theme (System, Light, or Dark), font size, and developer options.
 *   **User Onboarding:** A helpful welcome guide appears for new users, explaining core features and initial setup.
-*   **Course Content Editor:** A built-in editor allows for creating and modifying course units, lessons, and exercises (currently basic, with plans for more advanced features).
+*   **Course Content Editor:** A dedicated standalone Course Editor allows for creating and modifying course units, lessons, and exercises. Launch it directly with:
+    ```bash
+    python -m application.tools.main_editor
+    ```
 
 ## Setup
 
@@ -67,23 +70,31 @@ To set up and run the LanguageLearningApp project, follow these steps:
 
 ## How to Run
 
-The easiest and canonical way to run the different components of the LL project is by using the provided `run_menu.bat` script.
+### Main Application (Learning Mode)
 
-1.  **Open Command Prompt/Terminal:** Navigate to the `PROJECT_ROOT` directory where `run_menu.bat` is located.
-2.  **Run the Menu Script:**
-    ```bash
-    run_menu.bat
-    ```
-3.  **Follow the Menu:** A command-line menu will appear, allowing you to choose from a list of what to run.
+From the `PROJECT_ROOT` directory:
 
-    When prompted for file paths, you can provide paths relative to `PROJECT_ROOT` (e.g., `application\manifest.yaml`) or full absolute paths.
+```bash
+python -m application.main
+```
+
+### Course Editor
+
+Launch the dedicated standalone Course Editor from the `PROJECT_ROOT` directory:
+
+```bash
+python -m application.tools.main_editor
+```
+
+The editor provides full-featured course authoring: manifest editing, a searchable course tree with filtering, glossary management, CSV import, exercise preview, course packaging, and validation.
 
 ## Compilation to Executable
 
-The `run_menu.bat` script provides options to compile the application into standalone Windows executables using Nuitka and PyInstaller.
+This project can be compiled into a standalone executable using **Nuitka** or **PyInstaller** (both listed in `requirements.txt`).
 
 >[!IMPORTANT]
 >Due to the massive size of PyTorch and `faster-whisper`'s dependencies, Nuitka will take upwards of 30 minutes to compile the application. Use PyInstaller instead if you don't have the time for that.
 
 -   Compiled applications will be placed in the `application/dist/` directory.
--   Nuitka: Ensure Nuitka and a compatible C/C++ compiler are installed before attempting compilation.
+-   **Nuitka:** Ensure Nuitka and a compatible C/C++ compiler are installed before attempting compilation.
+-   **PyInstaller:** Refer to [PyInstaller's documentation](https://pyinstaller.org/en/stable/) for bundle configuration.

@@ -1,13 +1,14 @@
 # application/tools/widgets/course_tree_widget.py
 
-import logging
 import json
+import logging
 import uuid
-from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem, QMessageBox
-from PySide6.QtCore import Qt, QMimeData, QByteArray, Signal
-from typing import Any, List, Optional
-from application.core.models import Course, Unit, Lesson, Exercise
+from typing import Any
 
+from PySide6.QtCore import QByteArray, QMimeData, Qt, Signal
+from PySide6.QtWidgets import QMessageBox, QTreeWidget, QTreeWidgetItem
+
+from application.core.models import Course, Exercise, Lesson, Unit
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +33,24 @@ class CourseTreeWidget(QTreeWidget):
             QTreeWidget.SingleSelection
         )  # Ensure only one item dragged at a time
 
+    def set_course_data(self, course_data: Any):
+        """Updates the reference to the top-level Course object.
+
+        The widget is constructed before a course is loaded (``course_data`` is
+        ``None`` then), so the reference must be refreshed whenever the editor
+        loads or switches courses; otherwise drag-and-drop can never resolve the
+        dragged object.
+        """
+        self.course_data = course_data
+
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.MoveAction  # We only support moving items
 
-    def mimeTypes(self) -> List[str]:
+    def mimeTypes(self) -> list[str]:
         """Declare the custom MIME types this widget can provide for drag operations."""
         return [_LL_ITEM_MIME_TYPE]
 
-    def mimeData(self, items: List[QTreeWidgetItem]) -> QMimeData:
+    def mimeData(self, items: list[QTreeWidgetItem]) -> QMimeData:
         """
         Creates a QMimeData object containing the data for the dragged items.
         We serialize the unique ID of the underlying Python object.
@@ -86,13 +97,13 @@ class CourseTreeWidget(QTreeWidget):
             json_data = data.data(_LL_ITEM_MIME_TYPE).data().decode("utf-8")
             item_data = json.loads(json_data)
             dragged_obj_id = item_data.get("id")
-            dragged_obj_type_str = item_data.get("type")
+            item_data.get("type")
         except (json.JSONDecodeError, AttributeError, TypeError) as e:
             logger.error(f"Failed to parse MIME data: {e}")
             return False
 
         # Find the actual Python object being dragged
-        dragged_obj, original_parent_obj, original_list, original_index = (
+        dragged_obj, _original_parent_obj, original_list, original_index = (
             self._find_obj_and_context_by_id(dragged_obj_id, self.course_data)
         )
 
@@ -124,7 +135,7 @@ class CourseTreeWidget(QTreeWidget):
             return False
 
         # Determine the target list (where the object will be inserted)
-        target_list: Optional[List[Any]] = self._get_target_list(new_parent_obj)
+        target_list: list[Any] | None = self._get_target_list(new_parent_obj)
         if target_list is None:
             logger.error(
                 f"Could not determine target list for new parent {new_parent_obj}."
@@ -195,7 +206,7 @@ class CourseTreeWidget(QTreeWidget):
             return isinstance(new_parent_obj, Lesson)
         return False  # Unknown object type
 
-    def _get_target_list(self, new_parent_obj: Any) -> Optional[List[Any]]:
+    def _get_target_list(self, new_parent_obj: Any) -> list[Any] | None:
         """
         Returns the specific Python list where the dragged object should be inserted.
         """
@@ -216,8 +227,8 @@ class CourseTreeWidget(QTreeWidget):
         obj_id: int,
         current_obj: Any,
         parent_obj: Any = None,
-        current_list: Optional[List[Any]] = None,
-    ) -> tuple[Any, Any, Optional[List[Any]], int]:
+        current_list: list[Any] | None = None,
+    ) -> tuple[Any, Any, list[Any] | None, int]:
         """
         Recursively finds the Python object by its ID and returns its context (parent, list, index).
         Returns (found_obj, parent_of_found_obj, list_containing_found_obj, index_in_list).

@@ -1,29 +1,24 @@
-import os
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QTextEdit,
-    QFormLayout,
-    QDialogButtonBox,
-    QMessageBox,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 
 from application.core.models import GlossaryEntry
-from .asset_manager_dialog import AssetManagerDialog
 
-from typing import Optional
+from .asset_manager_dialog import AssetManagerDialog
 
 
 class GlossaryEntryEditorDialog(QDialog):
     def __init__(
         self,
-        entry: Optional[GlossaryEntry] = None,
+        entry: GlossaryEntry | None = None,
         course_root_dir: str = "",
         parent=None,
     ):
@@ -33,7 +28,7 @@ class GlossaryEntryEditorDialog(QDialog):
 
         self.original_entry = entry
         self.course_root_dir = course_root_dir
-        self.edited_entry: Optional[GlossaryEntry] = None  # To store the edited data
+        self.edited_entry: GlossaryEntry | None = None  # To store the edited data
 
         self._setup_ui()
         if entry:
@@ -128,5 +123,5 @@ class GlossaryEntryEditorDialog(QDialog):
         )
         super().accept()
 
-    def get_edited_entry(self) -> Optional[GlossaryEntry]:
+    def get_edited_entry(self) -> GlossaryEntry | None:
         return self.edited_entry
