@@ -31,10 +31,13 @@ else:
     _application_dir = os.path.dirname(os.path.abspath(__file__))
     _project_root = os.path.dirname(_application_dir)
 
-# Add the project root to `sys.path`. This allows for robust absolute imports
-# like `from application import settings`.
+# Add the project root and application directory to `sys.path`.
+# This allows for robust absolute imports like `from application import settings`
+# as well as internal imports like `import settings`, `from core...`, and `from ui...`.
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
+if _application_dir not in sys.path:
+    sys.path.insert(0, _application_dir)
 
 # With `sys.path` correctly set, we can now import our application modules.
 # We use a try-except to handle different ways the script might be run.
@@ -43,9 +46,15 @@ try:
 except (ImportError, ModuleNotFoundError):
     # This fallback is for scenarios like running `main.py` directly from inside
     # the `application` directory, where the `application` package itself isn't
-    # in the path. We add `_application_dir` to the path to make this work.
+    # in the path.
     import settings
     import utils
+
+# Ensure both bare names and package-qualified names point to the same module instance.
+sys.modules.setdefault("settings", settings)
+sys.modules.setdefault("utils", utils)
+sys.modules.setdefault("application.settings", settings)
+sys.modules.setdefault("application.utils", utils)
 
 # Now that `utils` is imported, we can configure its required path.
 utils.set_app_root_dir(
@@ -134,11 +143,11 @@ def main():
     # The MainWindow now handles the course selection and initialization internally.
     # With project root on sys.path, use absolute import for MainWindow
     try:
-        from application.core.stt_manager import STTManager
-        from application.ui.main_window import MainWindow
-    except ImportError:  # Nuitka will complain without this
         from core.stt_manager import STTManager
         from ui.main_window import MainWindow
+    except ImportError:  # Fallback for environments requiring package prefix
+        from application.core.stt_manager import STTManager
+        from application.ui.main_window import MainWindow
 
     if splash:
         splash.showMessage(

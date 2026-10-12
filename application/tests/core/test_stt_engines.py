@@ -106,6 +106,13 @@ def test_whisper_emits_transcription_result(monkeypatch):
 
 
 def test_vosk_emits_transcription_result(monkeypatch):
+    class _FakeAudio:
+        def tobytes(self):
+            return b"\x00" * 3200
+
+    import soundfile as sf
+
+    monkeypatch.setattr(sf, "read", lambda *a, **k: (_FakeAudio(), 16000))
     monkeypatch.setattr(vosk_manager, "_VOSK_AVAILABLE", True)
     monkeypatch.setattr(vosk_manager, "KaldiRecognizer", _FakeRecognizer)
     task = vosk_manager.TranscriptionTask(object(), "/tmp/a.wav", "ex2", 16000)
