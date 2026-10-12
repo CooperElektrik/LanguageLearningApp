@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QActionGroup, QFont
+from PySide6.QtGui import QAction, QActionGroup, QFont, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -139,6 +139,9 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.manifest_data: dict = None
         self.course_data: Course = None
 
+        self.undo_stack = QUndoStack(self)
+        self.undo_stack.cleanChanged.connect(lambda clean: self._set_dirty_state(not clean))
+
         self._create_actions()
         self._create_menu_bar()
         self._create_tool_bar()
@@ -215,6 +218,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         )
         self.package_action.triggered.connect(self.create_course_package)
 
+        self.undo_action = self.undo_stack.createUndoAction(self, "&Undo")
+        self.undo_action.setShortcut(Qt.CTRL | Qt.Key_Z)
+        self.undo_action.setIcon(self.style().standardIcon(QStyle.SP_ArrowBack))
+
+        self.redo_action = self.undo_stack.createRedoAction(self, "&Redo")
+        self.redo_action.setShortcut(Qt.CTRL | Qt.Key_Y)
+        self.redo_action.setIcon(self.style().standardIcon(QStyle.SP_ArrowForward))
+
         self.theme_group = QActionGroup(self)
         self.light_theme_action = QAction("Light Theme", self, checkable=True)
         self.light_theme_action.setStatusTip("Switch to light theme")
@@ -238,6 +249,10 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.exit_action)
 
+        edit_menu = menu_bar.addMenu("&Edit")
+        edit_menu.addAction(self.undo_action)
+        edit_menu.addAction(self.redo_action)
+
         tools_menu = menu_bar.addMenu("&Tools")
         tools_menu.addAction(self.validate_action)
         tools_menu.addAction(self.import_csv_action)
@@ -257,6 +272,9 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         tool_bar.addAction(self.new_action)
         tool_bar.addAction(self.open_action)
         tool_bar.addAction(self.save_action)
+        tool_bar.addSeparator()
+        tool_bar.addAction(self.undo_action)
+        tool_bar.addAction(self.redo_action)
         tool_bar.addSeparator()
         tool_bar.addAction(self.validate_action)
         tool_bar.addAction(self.import_csv_action)

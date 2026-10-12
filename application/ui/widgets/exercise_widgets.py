@@ -1214,6 +1214,25 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self._qbuffer.close()
         self._qbuffer = None
         self._audio_buffer = None
+        self._disconnect_stt_signals()
+
+    def _disconnect_stt_signals(self):
+        try:
+            self.stt_manager.modelLoadingStarted.disconnect(self._on_model_loading_started)
+        except (RuntimeError, TypeError):
+            pass
+        try:
+            self.stt_manager.modelLoadingFinished.disconnect(self._on_model_loading_finished)
+        except (RuntimeError, TypeError):
+            pass
+        try:
+            self.stt_manager.modelUnloaded.disconnect(self._on_model_unloaded)
+        except (RuntimeError, TypeError):
+            pass
+
+    def closeEvent(self, event):
+        self._disconnect_stt_signals()
+        super().closeEvent(event)
 
 
 EXERCISE_WIDGET_MAP: dict[str, type[BaseExerciseWidget]] = {

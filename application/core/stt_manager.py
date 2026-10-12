@@ -117,6 +117,10 @@ class STTManager(QObject):
             self.modelLoadingFinished.emit(model_to_load, True)
             return
 
+        if self._is_loading:
+            logger.warning("STT model loading is already in progress. Ignoring duplicate request.")
+            return
+
         logger.info(
             f"Attempting to load STT model for engine: {selected_engine}, model: {model_to_load}"
         )
@@ -272,20 +276,13 @@ class STTManager(QObject):
                 )
                 return None
 
-            # Resample audio to 16kHz for Whisper if necessary
-            target_sr = app_settings.AUDIO_SAMPLE_RATE
-            if recorded_samplerate != target_sr:
-                resampled_path = self._resample_audio(audio_path, target_sr, "whisper")
-                if resampled_path is None:
-                    # _resample_audio already logged the specific error
-                    return None
-                audio_path = resampled_path  # Use the new resampled file path
-
             task = WhisperTranscriptionTask(
                 self._active_whisper_model_instance,
                 audio_path,
                 exercise_id,
                 language_code=language_code,
+                target_samplerate=app_settings.AUDIO_SAMPLE_RATE,
+                recorded_samplerate=recorded_samplerate,
             )
             self.thread_pool.start(task)
             return task
@@ -297,22 +294,13 @@ class STTManager(QObject):
                 )
                 return None
 
-            # Resample audio for Vosk if necessary
-            if recorded_samplerate != self.vosk_samplerate:
-                resampled_path = self._resample_audio(
-                    audio_path, self.vosk_samplerate, "vosk"
-                )
-                if resampled_path is None:
-                    # _resample_audio already logged the specific error
-                    return None
-                audio_path = resampled_path  # Use the new resampled file path
-
             task = VoskTranscriptionTask(
                 self._active_vosk_model_instance,
                 audio_path,
                 exercise_id,
                 self.vosk_samplerate,
                 language_code=language_code,
+                recorded_samplerate=recorded_samplerate,
             )
             self.thread_pool.start(task)
             return task

@@ -140,13 +140,15 @@ class TranscriptionTask(BaseTranscriptionTask):
         audio_path: str,
         exercise_id: str,
         samplerate: int,
-        language_code: str
-        | None = None,  # VOSK model is language specific, so this might not be used directly
+        language_code: str | None = None,
+        cleanup_paths: list[str] | None = None,
+        recorded_samplerate: int | None = None,
     ):
-        super().__init__(exercise_id, language_code)
+        super().__init__(exercise_id, language_code, cleanup_paths=cleanup_paths)
         self._model = model
         self.audio_path = audio_path
         self.samplerate = samplerate
+        self.recorded_samplerate = recorded_samplerate
 
     def is_available(self) -> bool:
         return _VOSK_AVAILABLE
@@ -155,8 +157,21 @@ class TranscriptionTask(BaseTranscriptionTask):
         return "VOSK is not available."
 
     def _run_transcription(self) -> TranscriptionResult:
+        audio_file_to_use = self.audio_path
+        if (
+            self.recorded_samplerate
+            and self.recorded_samplerate != self.samplerate
+        ):
+            from .stt_manager import STTManager
+            resampled = STTManager._resample_audio(
+                None, self.audio_path, self.samplerate, "vosk"
+            )
+            if resampled:
+                audio_file_to_use = resampled
+                self.cleanup_paths.append(resampled)
+
         logger.info(
-            f"Background Task: Starting VOSK transcription for {self.audio_path}"
+            f"Background Task: Starting VOSK transcription for {audio_file_to_use}"
         )
 
         # VOSK requires a KaldiRecognizer for transcription
@@ -166,12 +181,12 @@ class TranscriptionTask(BaseTranscriptionTask):
         import soundfile as sf
 
         # Read audio file
-        data, samplerate = sf.read(self.audio_path, dtype="int16")
+        data, samplerate = sf.read(audio_file_to_use, dtype="int16")
 
         # Check if the samplerate of the audio file matches the model's samplerate
         if samplerate != self.samplerate:
             logger.warning(
-                f"Audio file samplerate ({samplerate}) does not match VOSK model samplerate ({self.samplerate}). Resampling might be needed or model might not perform well."
+                f"Audio file samplerate ({samplerate}) does not match VOSK model samplerate ({self.samplerate})."
             )
             # For now, we proceed, but in a real app, resampling might be necessary.
 

@@ -105,10 +105,15 @@ class WhisperTranscriptionTask(BaseTranscriptionTask):
         audio_path: str,
         exercise_id: str,
         language_code: str | None = None,
+        cleanup_paths: list[str] | None = None,
+        target_samplerate: int | None = None,
+        recorded_samplerate: int | None = None,
     ):
-        super().__init__(exercise_id, language_code)
+        super().__init__(exercise_id, language_code, cleanup_paths=cleanup_paths)
         self._model = model
         self.audio_path = audio_path
+        self.target_samplerate = target_samplerate
+        self.recorded_samplerate = recorded_samplerate
 
     def is_available(self) -> bool:
         return _FASTER_WHISPER_AVAILABLE
@@ -117,14 +122,29 @@ class WhisperTranscriptionTask(BaseTranscriptionTask):
         return "faster_whisper is not available."
 
     def _run_transcription(self) -> TranscriptionResult:
+        audio_file_to_use = self.audio_path
+        # If resampling is required, do it in background thread
+        if (
+            self.target_samplerate
+            and self.recorded_samplerate
+            and self.recorded_samplerate != self.target_samplerate
+        ):
+            from .stt_manager import STTManager
+            resampled = STTManager._resample_audio(
+                None, self.audio_path, self.target_samplerate, "whisper"
+            )
+            if resampled:
+                audio_file_to_use = resampled
+                self.cleanup_paths.append(resampled)
+
         lang_info = (
             f" with language '{self.language_code}'" if self.language_code else ""
         )
         logger.info(
-            f"Background Task: Starting transcription for {self.audio_path}{lang_info}"
+            f"Background Task: Starting transcription for {audio_file_to_use}{lang_info}"
         )
         segments, _info = self._model.transcribe(
-            self.audio_path,
+            audio_file_to_use,
             beam_size=app_settings.WHISPER_BEAM_SIZE,
             word_timestamps=True,
             temperature=app_settings.WHISPER_TEMPERATURE,

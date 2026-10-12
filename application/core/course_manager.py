@@ -30,6 +30,7 @@ class CourseManager(QObject):
         self.source_language: str = "Unknown"
         self.target_language_code: str | None = None
         self.glossary: list[GlossaryEntry] = []
+        self.glossary_map: dict[str, GlossaryEntry] = {}
         self.use_shared_pool: bool = False
 
         self.manifest_path = manifest_path
@@ -152,13 +153,11 @@ class CourseManager(QObject):
     def get_glossary_entry_by_word(self, word: str) -> GlossaryEntry | None:
         """
         Finds a glossary entry by its 'word' field, case-insensitively.
-        Returns the first match or None.
+        Returns the matching entry or None.
         """
-        word_lower = word.lower()
-        for entry in self.glossary:
-            if entry.word.lower() == word_lower:
-                return entry
-        return None
+        if not word:
+            return None
+        return self.glossary_map.get(word.lower())
 
     def get_course_content_directory(self) -> str | None:
         """Returns the directory where the current course's content file is located."""
@@ -369,11 +368,6 @@ class CourseManager(QObject):
         """Checks answer for sentence_jumble exercise type."""
         correct_answer_display = exercise.answer
         # For jumble, user_answer is already space-joined. We compare normalized strings.
-        user_answer_norm = self._normalize_answer_for_comparison(user_answer)
-        correct_answer_norm = self._normalize_answer_for_comparison(
-            correct_answer_display
-        )
-
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
         correct_answer_norm = self._normalize_answer_for_comparison(
             correct_answer_display

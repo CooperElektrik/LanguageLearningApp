@@ -1,8 +1,10 @@
 import logging
 import os
 import sys
-
-import settings
+try:
+    from application import settings
+except ImportError:
+    import settings
 from PySide6.QtCore import QCoreApplication, QLocale, QSettings, QTranslator, QUrl
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 
@@ -263,9 +265,8 @@ def setup_initial_translation(app: QCoreApplication) -> QTranslator | None:
     )
     qm_file_path_short = ""
     if not translator.load(qm_file_path):
-        lang_name = str(locale_name_to_load).split("_")[
-            0
-        ]  # Try short version (e.g., "en" from "en_US")
+        import re
+        lang_name = re.split(r"[-_]", str(locale_name_to_load))[0]
         qm_file_path_short = get_resource_path(
             os.path.join(settings.LOCALIZATION_DIR, f"app_{lang_name}.qm")
         )
@@ -344,3 +345,9 @@ def is_developer_mode_active() -> bool:
     # 3. Default
     _DEVELOPER_MODE_CACHE = bool(settings.DEVELOPER_MODE_DEFAULT)
     return _DEVELOPER_MODE_CACHE
+
+
+def invalidate_developer_mode_cache():
+    """Clears the cached developer mode value so it is re-read on next query."""
+    global _DEVELOPER_MODE_CACHE
+    _DEVELOPER_MODE_CACHE = None

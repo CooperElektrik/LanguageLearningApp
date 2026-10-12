@@ -106,6 +106,33 @@ def create_package_for_gui(
                 f"Info: Added '{os.path.basename(abs_content_filepath)}' to package as '{content_arcname}'."
             )
 
+            # Add glossary file if specified in manifest
+            glossary_rel = manifest_data.get("glossary_file")
+            if glossary_rel and isinstance(glossary_rel, str):
+                abs_glossary = os.path.normpath(os.path.join(manifest_dir, glossary_rel))
+                if os.path.commonpath([manifest_dir, abs_glossary]) == manifest_dir and os.path.exists(abs_glossary):
+                    zf.write(abs_glossary, arcname=glossary_rel)
+                    messages.append(
+                        f"Info: Added glossary '{glossary_rel}' to package."
+                    )
+                elif not os.path.exists(abs_glossary):
+                    messages.append(
+                        f"Warning: Glossary file '{glossary_rel}' not found at '{abs_glossary}'."
+                    )
+
+            # Add manifest cover/image file if specified
+            manifest_img = manifest_data.get("image_file")
+            if manifest_img and isinstance(manifest_img, str):
+                # May be in images/ or directly relative to manifest
+                candidate_img_1 = os.path.normpath(os.path.join(manifest_dir, manifest_img))
+                candidate_img_2 = os.path.normpath(os.path.join(manifest_dir, "images", manifest_img))
+                if os.path.exists(candidate_img_1):
+                    zf.write(candidate_img_1, arcname=manifest_img)
+                    messages.append(f"Info: Added course image '{manifest_img}' to package.")
+                elif os.path.exists(candidate_img_2):
+                    zf.write(candidate_img_2, arcname=os.path.join("images", manifest_img))
+                    messages.append(f"Info: Added course image '{os.path.join('images', manifest_img)}' to package.")
+
             assets_to_add = set()
             if course_content_data and "units" in course_content_data:
                 for unit in course_content_data.get("units", []):
@@ -118,9 +145,24 @@ def create_package_for_gui(
                                     assets_to_add.add(audio_path)
                                 if image_path and isinstance(image_path, str):
                                     assets_to_add.add(image_path)
+                                # Check option-level assets
+                                for opt in exercise.get("options", []):
+                                    if isinstance(opt, dict):
+                                        opt_audio = opt.get("audio_file")
+                                        opt_img = opt.get("image_file")
+                                        if opt_audio and isinstance(opt_audio, str):
+                                            assets_to_add.add(opt_audio)
+                                        if opt_img and isinstance(opt_img, str):
+                                            assets_to_add.add(opt_img)
 
             for asset_relative_path in assets_to_add:
-                abs_asset_path = os.path.join(manifest_dir, asset_relative_path)
+                abs_asset_path = os.path.normpath(os.path.join(manifest_dir, asset_relative_path))
+                # Prevent directory traversal outside manifest_dir
+                if os.path.commonpath([manifest_dir, abs_asset_path]) != manifest_dir:
+                    messages.append(
+                        f"Warning: Asset path '{asset_relative_path}' resolves outside course directory. Skipping."
+                    )
+                    continue
                 if os.path.exists(abs_asset_path):
                     zf.write(abs_asset_path, arcname=asset_relative_path)
                     messages.append(

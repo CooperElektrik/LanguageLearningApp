@@ -23,6 +23,19 @@ SM2_MIN_EASE_FACTOR = 1.3
 SM2_MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
 
 
+from dataclasses import dataclass
+
+
+@dataclass
+class Achievement:
+    """Represents a user achievement."""
+    id: str
+    title: str
+    description: str
+    icon: str
+    is_unlocked: bool = False
+
+
 def default_srs_record() -> dict[str, Any]:
     """Returns a fresh, unreviewed SRS record for an exercise."""
     return {
@@ -366,7 +379,9 @@ class ProgressManager:
             return self.current_streak_days
         if self.last_study_date == today - timedelta(days=1):
             return self.current_streak_days
-        self.current_streak_days = 0  # Streak broken
+        if self.current_streak_days != 0:
+            self.current_streak_days = 0  # Streak broken
+            self.save_progress()
         return 0
 
     def get_exercise_srs_data(self, exercise_id: str) -> dict[str, Any]:
@@ -392,10 +407,13 @@ class ProgressManager:
             ):
                 due_exercises.append(exercise)
 
+        # Priority:
+        # 1. Overdue reviewed exercises (sorted by earliest next_review_due)
+        # 2. Unreviewed exercises (repetitions == 0)
         due_exercises.sort(
             key=lambda ex: (
-                self.exercise_srs_data[ex.exercise_id]["next_review_due"]
-                or datetime.min,
+                0 if (self.exercise_srs_data[ex.exercise_id]["next_review_due"] and self.exercise_srs_data[ex.exercise_id]["next_review_due"] <= now) else 1,
+                self.exercise_srs_data[ex.exercise_id]["next_review_due"] or datetime.max,
                 self.exercise_srs_data[ex.exercise_id]["repetitions"],
             )
         )
@@ -542,3 +560,62 @@ class ProgressManager:
         """
         lesson_exercises = course_manager_ref.get_exercises(lesson_id)
         return self.get_lesson_completion_status(lesson_exercises)
+
+    def get_achievements(self, course_manager_ref: Any = None) -> list[Achievement]:
+        """
+        Returns the list of achievements and their unlocked status for the current course.
+        """
+        all_completed = False
+        if course_manager_ref and getattr(course_manager_ref, "course", None):
+            units = course_manager_ref.get_units()
+            all_lessons = [
+                lesson
+                for unit in units
+                for lesson in unit.lessons
+            ]
+            if all_lessons:
+                all_completed = all(
+                    self.is_lesson_completed(l.lesson_id, course_manager_ref)
+                    for l in all_lessons
+                )
+
+        total_xp = self.get_total_xp()
+        streak = self.get_current_streak()
+
+        return [
+            Achievement(
+                id="first_step",
+                title="First Step",
+                description="Complete your first lesson.",
+                icon="novice.png",
+                is_unlocked=(total_xp >= 10),
+            ),
+            Achievement(
+                id="xp_enthusiast",
+                title="XP Enthusiast",
+                description="Reach 1000 XP.",
+                icon="enthusiast.png",
+                is_unlocked=(total_xp >= 1000),
+            ),
+            Achievement(
+                id="7_day_streak",
+                title="7-Day Streak",
+                description="Study for 7 consecutive days.",
+                icon="7day.png",
+                is_unlocked=(streak >= 7),
+            ),
+            Achievement(
+                id="30_day_streak",
+                title="30-Day Streak",
+                description="Study for 30 consecutive days.",
+                icon="30day.png",
+                is_unlocked=(streak >= 30),
+            ),
+            Achievement(
+                id="all_lessons_completed",
+                title="Lesson Master",
+                description="Complete all lessons in the course.",
+                icon="master.png",
+                is_unlocked=all_completed,
+            ),
+        ]

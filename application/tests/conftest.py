@@ -93,8 +93,8 @@ def course_manager(temp_course_files):
 
 
 @pytest.fixture
-def progress_manager(course_manager, tmp_path):
+def progress_manager(course_manager, tmp_path, monkeypatch):
     """Provides an initialized ProgressManager instance in a temporary directory."""
     # Point QStandardPaths to our temp dir for this test
-    os.environ["XDG_DATA_HOME"] = str(tmp_path)
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     return ProgressManager(course_id=course_manager.course.course_id)

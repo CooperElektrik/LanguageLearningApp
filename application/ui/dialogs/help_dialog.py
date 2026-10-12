@@ -42,10 +42,9 @@ class FaqItemWidget(QWidget):
                 border: none;
                 font-weight: bold;
                 background-color: transparent;
-                color: #111; /* Color for question text */
             }
             QPushButton:hover {
-                background-color: #e6e6e6;
+                background-color: rgba(128, 128, 128, 0.15);
             }
         """)
 
@@ -53,7 +52,7 @@ class FaqItemWidget(QWidget):
         self.answer_label.setWordWrap(True)
         self.answer_label.setVisible(False)
         self.answer_label.setStyleSheet(
-            "padding: 2px 8px 8px 25px; color: #333;"
+            "padding: 2px 8px 8px 25px;"
         )  # Indent answer
 
         # --- Layout ---
@@ -209,22 +208,14 @@ class HelpDialog(QDialog):
         """Apply a global stylesheet for a better look."""
         # The return is removed, and the stylesheet is updated to target the named widget.
         self.setStyleSheet("""
-            HelpDialog {
-                background-color: #f5f5f5;
-            }
             /* Style the frame of the scroll area */
             QScrollArea {
-                border: 1px solid #dcdcdc;
+                border: 1px solid rgba(128, 128, 128, 0.3);
                 border-radius: 4px;
-            }
-            /* Style the WIDGET INSIDE the scroll area using its object name */
-            #scrollAreaWidgetContents {
-                background-color: white;
             }
             #categoryHeader {
                 font-size: 16pt;
                 font-weight: bold;
-                color: #333;
                 padding-top: 15px;
                 padding-bottom: 5px;
             }

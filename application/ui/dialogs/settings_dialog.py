@@ -498,6 +498,7 @@ class SettingsDialog(QDialog):
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_DEVELOPER_MODE, self.dev_mode_checkbox.isChecked()
         )
+        utils.invalidate_developer_mode_cache()
 
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_LESSON_RESUME_BEHAVIOR,

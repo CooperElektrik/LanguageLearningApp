@@ -95,66 +95,8 @@ class ProgressView(QWidget):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
         )
 
-        # Add achievements definitions
-        self._ACHIEVEMENTS = [
-            {
-                "id": "first_step",
-                "title": self.tr("First Step"),
-                "description": self.tr("Complete your first lesson."),
-                "check": lambda: self.progress_manager.get_total_xp() >= 10,
-                "icon": "novice.png",
-            },
-            {
-                "id": "xp_enthusiast",
-                "title": self.tr("XP Enthusiast"),
-                "description": self.tr("Reach 1000 XP."),
-                "check": lambda: self.progress_manager.get_total_xp() >= 1000,
-                "icon": "enthusiast.png",
-            },
-            {
-                "id": "7_day_streak",
-                "title": self.tr("7-Day Streak"),
-                "description": self.tr("Study for 7 consecutive days."),
-                "check": lambda: self.progress_manager.get_current_streak() >= 7,
-                "icon": "7day.png",
-            },
-            {
-                "id": "30_day_streak",
-                "title": self.tr("30-Day Streak"),
-                "description": self.tr("Study for 30 consecutive days."),
-                "check": lambda: self.progress_manager.get_current_streak() >= 30,
-                "icon": "30day.png",
-            },
-            {
-                "id": "all_lessons_completed",
-                "title": self.tr("Lesson Master"),
-                "description": self.tr("Complete all lessons in the course."),
-                "check": self._check_all_lessons_completed,
-                "icon": "master.png",
-            },
-        ]
-
         self.scroll_content_layout.addWidget(self.achievements_group)
         self.scroll_content_layout.addStretch(1)  # Pushes content to top
-
-    def _check_all_lessons_completed(self) -> bool:
-        """Checks if all lessons in the course are completed."""
-        if not self.course_manager.course:
-            return False
-        all_lessons = [
-            lesson
-            for unit in self.course_manager.get_units()
-            for lesson in unit.lessons
-        ]
-        if not all_lessons:
-            return False
-
-        for lesson in all_lessons:
-            if not self.progress_manager.is_lesson_completed(
-                lesson.lesson_id, self.course_manager
-            ):
-                return False
-        return True
 
     def _clear_grid_layout(self, layout: QGridLayout):
         """Helper to remove all widgets from a QGridLayout."""
@@ -256,13 +198,12 @@ class ProgressView(QWidget):
         # Clear existing achievements before re-adding
         self._clear_grid_layout(self.achievements_grid_layout)
 
-        # Re-add achievements based on current progress
-        for achievement_data in self._ACHIEVEMENTS:
-            check_fn = achievement_data.get("check")
-            is_unlocked = check_fn() if callable(check_fn) else False
+        # Re-add achievements based on current progress from ProgressManager
+        achievements = self.progress_manager.get_achievements(self.course_manager)
+        for ach in achievements:
             self._add_achievement(
-                achievement_data["title"],
-                achievement_data["description"],
-                is_unlocked,
-                achievement_data["icon"],
+                self.tr(ach.title),
+                self.tr(ach.description),
+                ach.is_unlocked,
+                ach.icon,
             )

@@ -21,8 +21,18 @@ from application.core.exercise_types import CREATABLE_EXERCISE_TYPES
 from application.core.models import Exercise, Lesson, Unit
 
 
+from .undo_commands import (
+    AddExerciseCommand,
+    AddLessonCommand,
+    AddUnitCommand,
+    DeleteExerciseCommand,
+    DeleteLessonCommand,
+    DeleteUnitCommand,
+)
+
+
 class ItemCommandsMixin:
-    """Add / duplicate / delete operations on the in-memory course model."""
+    """Add / duplicate / delete operations using QUndoStack."""
 
     # --- ID regeneration -------------------------------------------------
     def _generate_new_ids_for_exercise(self, exercise: Exercise):
@@ -50,11 +60,13 @@ class ItemCommandsMixin:
         new_unit.title = f"{original_unit.title}_copy"
 
         original_index = self.course_data.units.index(original_unit)
-        self.course_data.units.insert(original_index + 1, new_unit)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_unit)
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddUnitCommand(self, new_unit, original_index + 1))
+        else:
+            self.course_data.units.insert(original_index + 1, new_unit)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_unit)
 
     def _duplicate_lesson(self, original_lesson_item: QTreeWidgetItem):
         original_lesson: Lesson = original_lesson_item.data(0, Qt.UserRole)
@@ -72,11 +84,13 @@ class ItemCommandsMixin:
         new_lesson.title = f"{original_lesson.title}_copy"
 
         original_index = parent_unit.lessons.index(original_lesson)
-        parent_unit.lessons.insert(original_index + 1, new_lesson)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_lesson)
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddLessonCommand(self, parent_unit, new_lesson, original_index + 1))
+        else:
+            parent_unit.lessons.insert(original_index + 1, new_lesson)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_lesson)
 
     def _duplicate_exercise(self, original_exercise_item: QTreeWidgetItem):
         original_exercise: Exercise = original_exercise_item.data(0, Qt.UserRole)
@@ -96,11 +110,13 @@ class ItemCommandsMixin:
             new_exercise.source_word += "_copy"
 
         original_index = parent_lesson.exercises.index(original_exercise)
-        parent_lesson.exercises.insert(original_index + 1, new_exercise)
-
-        self.update_tree_view()
-        self._set_dirty_state(True)
-        self._expand_and_select_item(new_exercise)
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddExerciseCommand(self, parent_lesson, new_exercise, original_index + 1))
+        else:
+            parent_lesson.exercises.insert(original_index + 1, new_exercise)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_exercise)
 
     # --- Units -----------------------------------------------------------
     def _add_unit(self):
@@ -115,10 +131,13 @@ class ItemCommandsMixin:
             new_unit = Unit(
                 unit_id=f"unit_{unit_id_suffix}", title=unit_title.strip(), lessons=[]
             )
-            self.course_data.units.append(new_unit)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_unit)
+            if hasattr(self, "undo_stack"):
+                self.undo_stack.push(AddUnitCommand(self, new_unit))
+            else:
+                self.course_data.units.append(new_unit)
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._expand_and_select_item(new_unit)
         elif ok:
             QMessageBox.warning(self, "Invalid Input", "Unit title cannot be empty.")
 
@@ -133,13 +152,16 @@ class ItemCommandsMixin:
             QMessageBox.Yes | QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
-            self.course_data.units = [
-                u for u in self.course_data.units if u.unit_id != unit_to_delete.unit_id
-            ]
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._clear_editor_pane()
-            self.item_actions_widget.setVisible(False)
+            if hasattr(self, "undo_stack"):
+                self.undo_stack.push(DeleteUnitCommand(self, unit_to_delete))
+            else:
+                self.course_data.units = [
+                    u for u in self.course_data.units if u.unit_id != unit_to_delete.unit_id
+                ]
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._clear_editor_pane()
+                self.item_actions_widget.setVisible(False)
 
     # --- Lessons ---------------------------------------------------------
     def _add_lesson(self, unit_item: QTreeWidgetItem):
@@ -158,10 +180,13 @@ class ItemCommandsMixin:
                 exercises=[],
                 unit_id=unit.unit_id,
             )
-            unit.lessons.append(new_lesson)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_lesson)
+            if hasattr(self, "undo_stack"):
+                self.undo_stack.push(AddLessonCommand(self, unit, new_lesson))
+            else:
+                unit.lessons.append(new_lesson)
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._expand_and_select_item(new_lesson)
         elif ok:
             QMessageBox.warning(self, "Invalid Input", "Lesson title cannot be empty.")
 
@@ -181,15 +206,18 @@ class ItemCommandsMixin:
                 parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
             )
             if parent_unit:
-                parent_unit.lessons = [
-                    l
-                    for l in parent_unit.lessons
-                    if l.lesson_id != lesson_to_delete.lesson_id
-                ]
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._clear_editor_pane()
-                self.item_actions_widget.setVisible(False)
+                if hasattr(self, "undo_stack"):
+                    self.undo_stack.push(DeleteLessonCommand(self, parent_unit, lesson_to_delete))
+                else:
+                    parent_unit.lessons = [
+                        l
+                        for l in parent_unit.lessons
+                        if l.lesson_id != lesson_to_delete.lesson_id
+                    ]
+                    self.update_tree_view()
+                    self._set_dirty_state(True)
+                    self._clear_editor_pane()
+                    self.item_actions_widget.setVisible(False)
 
     # --- Exercises -------------------------------------------------------
     def _add_exercise(self, lesson_item: QTreeWidgetItem):
@@ -211,10 +239,13 @@ class ItemCommandsMixin:
             new_exercise = Exercise(
                 exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
             )
-            lesson.exercises.append(new_exercise)
-            self.update_tree_view()
-            self._set_dirty_state(True)
-            self._expand_and_select_item(new_exercise)
+            if hasattr(self, "undo_stack"):
+                self.undo_stack.push(AddExerciseCommand(self, lesson, new_exercise))
+            else:
+                lesson.exercises.append(new_exercise)
+                self.update_tree_view()
+                self._set_dirty_state(True)
+                self._expand_and_select_item(new_exercise)
 
     def _delete_exercise(self, item: QTreeWidgetItem):
         exercise_to_delete: Exercise = item.data(0, Qt.UserRole)
@@ -232,12 +263,15 @@ class ItemCommandsMixin:
                 parent_lesson_item.data(0, Qt.UserRole) if parent_lesson_item else None
             )
             if parent_lesson:
-                parent_lesson.exercises = [
-                    e
-                    for e in parent_lesson.exercises
-                    if e.exercise_id != exercise_to_delete.exercise_id
-                ]
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._clear_editor_pane()
-                self.item_actions_widget.setVisible(False)
+                if hasattr(self, "undo_stack"):
+                    self.undo_stack.push(DeleteExerciseCommand(self, parent_lesson, exercise_to_delete))
+                else:
+                    parent_lesson.exercises = [
+                        e
+                        for e in parent_lesson.exercises
+                        if e.exercise_id != exercise_to_delete.exercise_id
+                    ]
+                    self.update_tree_view()
+                    self._set_dirty_state(True)
+                    self._clear_editor_pane()
+                    self.item_actions_widget.setVisible(False)

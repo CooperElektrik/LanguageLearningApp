@@ -295,6 +295,28 @@ def _validate_exercise_internal(
                     path_prefix,
                 )
 
+    # Validate option-level assets
+    if hasattr(exercise, "options") and isinstance(exercise.options, list):
+        for opt_idx, opt in enumerate(exercise.options):
+            opt_audio = getattr(opt, "audio_file", None) if hasattr(opt, "audio_file") else (opt.get("audio_file") if isinstance(opt, dict) else None)
+            opt_img = getattr(opt, "image_file", None) if hasattr(opt, "image_file") else (opt.get("image_file") if isinstance(opt, dict) else None)
+            if opt_audio and isinstance(opt_audio, str):
+                full_opt_audio = os.path.join(course_manifest_base_dir, opt_audio)
+                if not os.path.exists(full_opt_audio):
+                    _collect_error(
+                        errors_list,
+                        f"Option #{opt_idx + 1} audio file '{opt_audio}' not found at '{full_opt_audio}'.",
+                        path_prefix,
+                    )
+            if opt_img and isinstance(opt_img, str):
+                full_opt_img = os.path.join(course_manifest_base_dir, opt_img)
+                if not os.path.exists(full_opt_img):
+                    _collect_error(
+                        errors_list,
+                        f"Option #{opt_idx + 1} image file '{opt_img}' not found at '{full_opt_img}'.",
+                        path_prefix,
+                    )
+
     valid_types = VALID_EXERCISE_TYPES
     if exercise.type not in valid_types:
         _collect_error(
@@ -444,6 +466,26 @@ def perform_manifest_validation(
                 f"Manifest 'content_file' points to a non-existent file: '{content_filepath}' (relative to manifest location)",
             )
 
+    if manifest_data.get("glossary_file"):
+        glossary_filepath = os.path.join(
+            os.path.dirname(manifest_path), manifest_data["glossary_file"]
+        )
+        if not os.path.exists(glossary_filepath):
+            _collect_error(
+                errors,
+                f"Manifest 'glossary_file' points to a non-existent file: '{glossary_filepath}' (relative to manifest location)",
+            )
+
+    if manifest_data.get("image_file"):
+        img_val = manifest_data["image_file"]
+        cand1 = os.path.join(os.path.dirname(manifest_path), img_val)
+        cand2 = os.path.join(os.path.dirname(manifest_path), "images", img_val)
+        if not os.path.exists(cand1) and not os.path.exists(cand2):
+            _collect_error(
+                errors,
+                f"Manifest 'image_file' '{img_val}' not found in course directory or images/ subfolder.",
+            )
+
     return errors
 
 
@@ -464,6 +506,9 @@ def perform_course_content_validation(
         _collect_error(errors, "Warning: Course contains no units.", path_prefix)
 
     unit_ids_in_course = set()
+    lesson_ids_in_course = set()
+    exercise_ids_in_course = set()
+
     for unit in course.units:
         if not hasattr(unit, "unit_id") or not isinstance(unit.unit_id, str):
             _collect_error(
@@ -478,6 +523,31 @@ def perform_course_content_validation(
                 path_prefix,
             )
         unit_ids_in_course.add(unit.unit_id)
+
+        # Check lessons and exercises globally
+        if hasattr(unit, "lessons") and isinstance(unit.lessons, list):
+            for lesson in unit.lessons:
+                lid = getattr(lesson, "lesson_id", None)
+                if lid and isinstance(lid, str):
+                    if lid in lesson_ids_in_course:
+                        _collect_error(
+                            errors,
+                            f"Course-wide duplicate lesson_id '{lid}' found.",
+                            path_prefix,
+                        )
+                    lesson_ids_in_course.add(lid)
+                if hasattr(lesson, "exercises") and isinstance(lesson.exercises, list):
+                    for ex in lesson.exercises:
+                        eid = getattr(ex, "exercise_id", None)
+                        if eid and isinstance(eid, str):
+                            if eid in exercise_ids_in_course:
+                                _collect_error(
+                                    errors,
+                                    f"Course-wide duplicate exercise_id '{eid}' found.",
+                                    path_prefix,
+                                )
+                            exercise_ids_in_course.add(eid)
+
         _validate_unit_internal(unit, path_prefix, errors, course_manifest_base_dir)
 
     return errors

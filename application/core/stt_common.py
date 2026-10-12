@@ -48,10 +48,16 @@ class BaseTranscriptionTask(QRunnable):
     missing, override :meth:`is_available`/:meth:`unavailable_message`.
     """
 
-    def __init__(self, exercise_id: str, language_code: str | None = None):
+    def __init__(
+        self,
+        exercise_id: str,
+        language_code: str | None = None,
+        cleanup_paths: list[str] | None = None,
+    ):
         super().__init__()
         self.exercise_id = exercise_id
         self.language_code = language_code
+        self.cleanup_paths = cleanup_paths or []
         self.signals = self.Signals()
 
     class Signals(QObject):
@@ -68,16 +74,26 @@ class BaseTranscriptionTask(QRunnable):
         raise NotImplementedError
 
     def run(self):
-        if not self.is_available():
-            self.signals.error.emit(self.exercise_id, self.unavailable_message())
-            return
         try:
-            result = self._run_transcription()
-            self.signals.finished.emit(self.exercise_id, result)
-        except Exception as e:
-            logger.error(
-                f"Background Task: Error during transcription for "
-                f"{self.exercise_id}: {e}",
-                exc_info=True,
-            )
-            self.signals.error.emit(self.exercise_id, str(e))
+            if not self.is_available():
+                self.signals.error.emit(self.exercise_id, self.unavailable_message())
+                return
+            try:
+                result = self._run_transcription()
+                self.signals.finished.emit(self.exercise_id, result)
+            except Exception as e:
+                logger.error(
+                    f"Background Task: Error during transcription for "
+                    f"{self.exercise_id}: {e}",
+                    exc_info=True,
+                )
+                self.signals.error.emit(self.exercise_id, str(e))
+        finally:
+            import os
+            for path in self.cleanup_paths:
+                try:
+                    if os.path.exists(path):
+                        os.unlink(path)
+                        logger.debug(f"Cleaned up resampled audio file: {path}")
+                except Exception as cleanup_err:
+                    logger.warning(f"Could not remove temp file '{path}': {cleanup_err}")

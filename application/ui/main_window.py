@@ -584,7 +584,8 @@ class MainWindow(QMainWindow):
 
         loaded_successfully = new_translator.load(qm_file_path)
         if not loaded_successfully:
-            short_locale_code = actual_locale_to_load.split("_")[0]
+            import re
+            short_locale_code = re.split(r"[-_]", actual_locale_to_load)[0]
             if short_locale_code != actual_locale_to_load:
                 qm_file_path = utils.get_resource_path(
                     os.path.join(
