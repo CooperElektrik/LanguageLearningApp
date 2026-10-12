@@ -261,7 +261,7 @@ class HelpDialog(QDialog):
         self._populate_faq_content()
         logger.debug("HelpDialog retranslated.")
 
-    def _get_help_data(self) -> dict[str, dict[str, str]]:
+    def _get_help_data(self) -> dict[str, dict[str, dict[str, str]]]:
         """Returns the help data."""
         return {
             self.tr("Navigation"): {

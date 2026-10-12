@@ -23,7 +23,11 @@ from PySide6.QtWidgets import (
 )
 from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
 from ui.dialogs.glossary_lookup_dialog import GlossaryLookupDialog
-from ui.widgets.exercise_widgets import EXERCISE_WIDGET_MAP, BaseExerciseWidget
+from ui.widgets.exercise_widgets import (
+    EXERCISE_WIDGET_MAP,
+    BaseExerciseWidget,
+    PronunciationExerciseWidget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,44 +152,46 @@ class BaseExercisePlayerView(QWidget):
         self.current_exercise_obj = exercise  # Set current exercise context
         self._toggle_hint_visibility(force_show=False)  # Ensure previous hint is hidden
 
-        widget_class = EXERCISE_WIDGET_MAP.get(exercise.type)
-        if widget_class:
-            if exercise.type == "pronunciation_practice":
-                self.current_exercise_widget = widget_class(
-                    exercise,
-                    self.course_manager,
-                    self.stt_manager,
-                    self.exercise_area_container,  # Parent to container
-                )
-            else:
-                self.current_exercise_widget = widget_class(
-                    exercise,
-                    self.course_manager,
-                    self.exercise_area_container,  # Parent to container
-                )
-            # Trigger autoplay after the widget is created and added to the layout
+        if exercise.type == "pronunciation_practice":
+            self.current_exercise_widget = PronunciationExerciseWidget(
+                exercise,
+                self.course_manager,
+                self.stt_manager,
+                self.exercise_area_container,  # Parent to container
+            )
             self.current_exercise_widget.trigger_autoplay_audio()
-
             self.exercise_area_layout.addWidget(self.current_exercise_widget)
 
-            # Subclasses will connect to self.current_exercise_widget.answer_submitted
-            # Example: self.current_exercise_widget.answer_submitted.connect(self._some_handler)
-
-            # Load notes for the new exercise
             note_text = self.progress_manager.get_exercise_note(exercise.exercise_id)
             self.notes_text_edit.blockSignals(True)
             self.notes_text_edit.setPlainText(note_text or "")
             self.notes_text_edit.blockSignals(False)
-            self._update_notes_button_indicator()  # Update based on newly loaded note
-
+            self._update_notes_button_indicator()
             return True
         else:
-            error_msg = self.tr("Unsupported exercise type: {0}").format(exercise.type)
-            logger.error(error_msg + f" (Exercise ID: {exercise.exercise_id})")
-            self.feedback_label.setText(error_msg)
-            self.feedback_label.setStyleSheet("color: red;")
-            self.current_exercise_obj = None  # Clear if widget fails to load
-            return False
+            widget_class = EXERCISE_WIDGET_MAP.get(exercise.type)
+            if widget_class:
+                self.current_exercise_widget = widget_class(
+                    exercise,
+                    self.course_manager,
+                    self.exercise_area_container,  # Parent to container
+                )
+                self.current_exercise_widget.trigger_autoplay_audio()
+                self.exercise_area_layout.addWidget(self.current_exercise_widget)
+
+                note_text = self.progress_manager.get_exercise_note(exercise.exercise_id)
+                self.notes_text_edit.blockSignals(True)
+                self.notes_text_edit.setPlainText(note_text or "")
+                self.notes_text_edit.blockSignals(False)
+                self._update_notes_button_indicator()
+                return True
+            else:
+                error_msg = self.tr("Unsupported exercise type: {0}").format(exercise.type)
+                logger.error(error_msg + f" (Exercise ID: {exercise.exercise_id})")
+                self.feedback_label.setText(error_msg)
+                self.feedback_label.setStyleSheet("color: red;")
+                self.current_exercise_obj = None  # Clear if widget fails to load
+                return False
 
     def _toggle_hint_visibility(self, force_show: bool | None = None):
         """

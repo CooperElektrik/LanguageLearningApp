@@ -258,7 +258,8 @@ class ProgressView(QWidget):
 
         # Re-add achievements based on current progress
         for achievement_data in self._ACHIEVEMENTS:
-            is_unlocked = achievement_data["check"]()  # Execute the lambda function
+            check_fn = achievement_data.get("check")
+            is_unlocked = check_fn() if callable(check_fn) else False
             self._add_achievement(
                 achievement_data["title"],
                 achievement_data["description"],

@@ -1,0 +1,17 @@
+{
+  "extraPaths": [
+    "application"
+  ],
+  "reportConstantRedefinition": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownParameterType": "none",
+  "reportUnknownLambdaType": "none",
+  "reportUnannotatedClassAttribute": "none",
+  "reportUnusedCallResult": "none",
+  "reportAny": "none",
+  "reportExplicitAny": "none",
+  "reportMissingParameterType": "none",
+  "reportImplicitOverride": "none"
+}

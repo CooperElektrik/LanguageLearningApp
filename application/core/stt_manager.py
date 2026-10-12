@@ -60,26 +60,32 @@ class STTManager(QObject):
         logger.info(f"Vosk configured with samplerate={self.vosk_samplerate}.")
 
     def get_selected_stt_engine(self) -> str:
-        return self.q_settings.value(
-            app_settings.QSETTINGS_KEY_STT_ENGINE,
-            app_settings.STT_ENGINE_DEFAULT,
-            type=str,
+        return str(
+            self.q_settings.value(
+                app_settings.QSETTINGS_KEY_STT_ENGINE,
+                app_settings.STT_ENGINE_DEFAULT,
+                type=str,
+            )
         )
 
     def get_selected_whisper_model_name(self) -> str:
-        return self.q_settings.value(
-            app_settings.QSETTINGS_KEY_WHISPER_MODEL,
-            app_settings.WHISPER_MODEL_DEFAULT,
-            type=str,
+        return str(
+            self.q_settings.value(
+                app_settings.QSETTINGS_KEY_WHISPER_MODEL,
+                app_settings.WHISPER_MODEL_DEFAULT,
+                type=str,
+            )
         )
 
     def get_selected_vosk_model_path(self) -> str:
         # This will need to be updated to reflect how VOSK models are selected/stored
         # For now, a placeholder.
-        return self.q_settings.value(
-            app_settings.QSETTINGS_KEY_VOSK_MODEL,
-            app_settings.VOSK_MODEL_DEFAULT,
-            type=str,
+        return str(
+            self.q_settings.value(
+                app_settings.QSETTINGS_KEY_VOSK_MODEL,
+                app_settings.VOSK_MODEL_DEFAULT,
+                type=str,
+            )
         )
 
     def get_stt_model_name(self, engine: str) -> str | None:

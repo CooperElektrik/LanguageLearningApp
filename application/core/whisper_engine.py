@@ -23,6 +23,9 @@ except ImportError:
         def transcribe(self, *args, **kwargs):
             raise NotImplementedError("faster_whisper is not installed.")
 
+    class LocalEntryNotFoundError(Exception):
+        pass
+
 
 try:
     import torch  # type: ignore
@@ -33,6 +36,7 @@ except ImportError:
         "PyTorch not found. Whisper will fall back to CPU or be unavailable."
     )
     _TORCH_AVAILABLE = False
+    torch = None  # type: ignore
 
 
 class WhisperModelLoader(BaseModelLoader):
@@ -175,7 +179,7 @@ def check_whisper_model_downloaded(model_name: str) -> bool:
 
 def get_best_whisper_device_config() -> tuple[str, str]:
     """Determines the best available device (cuda or cpu) and corresponding compute type for Whisper."""
-    if not _TORCH_AVAILABLE:
+    if not _TORCH_AVAILABLE or torch is None:
         logger.warning("PyTorch not available, falling back to CPU.")
         return "cpu", "int8"
     try:

@@ -124,31 +124,27 @@ def get_app_root_dir() -> str:
         # Attempt a fallback for non-frozen, non-set scenarios (e.g., running a utility script directly)
         logger.warning("_APP_ROOT_DIR not set explicitly. Attempting fallback.")
         try:
-            # Try to get the directory of the main application script.
-            # This is more robust than __main__.__file__ for certain execution contexts.
-            import application.main
-
-            fallback_root = os.path.dirname(os.path.abspath(application.main.__file__))
+            # Derive the root directory from this file's location (application/utils.py -> application)
+            fallback_root = os.path.dirname(os.path.abspath(__file__))
             logger.info(
-                f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from application.main.__file__)"
+                f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __file__)"
             )
             return fallback_root
-        except (AttributeError, KeyError, ImportError):
-            try:
-                # Fallback to __main__.__file__ if application.main is not available or doesn't have __file__
-                main_module_file = sys.modules["__main__"].__file__
+        except Exception:
+            main_module = sys.modules.get("__main__")
+            main_module_file = getattr(main_module, "__file__", None)
+            if main_module_file:
                 fallback_root = os.path.dirname(os.path.abspath(main_module_file))
                 logger.info(
                     f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __main__.__file__)"
                 )
                 return fallback_root
-            except (AttributeError, KeyError):
-                # If __main__.__file__ is not available (e.g., interactive interpreter), use current working directory.
-                fallback_root = os.getcwd()
-                logger.warning(
-                    f"Could not derive _APP_ROOT_DIR from application.main or __main__.__file__. Fallback to current working directory: {fallback_root}"
-                )
-                return fallback_root
+            # If __main__.__file__ is not available (e.g., interactive interpreter), use current working directory.
+            fallback_root = os.getcwd()
+            logger.warning(
+                f"Could not derive _APP_ROOT_DIR. Fallback to current working directory: {fallback_root}"
+            )
+            return fallback_root
     return _APP_ROOT_DIR
 
 
@@ -265,8 +261,9 @@ def setup_initial_translation(app: QCoreApplication) -> QTranslator | None:
     qm_file_path = get_resource_path(
         os.path.join(settings.LOCALIZATION_DIR, f"app_{locale_name_to_load}.qm")
     )
+    qm_file_path_short = ""
     if not translator.load(qm_file_path):
-        lang_name = locale_name_to_load.split("_")[
+        lang_name = str(locale_name_to_load).split("_")[
             0
         ]  # Try short version (e.g., "en" from "en_US")
         qm_file_path_short = get_resource_path(
@@ -334,14 +331,16 @@ def is_developer_mode_active() -> bool:
         app_settings = QSettings()
         if app_settings.contains(settings.QSETTINGS_KEY_DEVELOPER_MODE):
             # QSettings stores bools correctly, but convertFromString might be used by some.
-            val = app_settings.value(
-                settings.QSETTINGS_KEY_DEVELOPER_MODE,
-                settings.DEVELOPER_MODE_DEFAULT,
-                type=bool,
+            val = bool(
+                app_settings.value(
+                    settings.QSETTINGS_KEY_DEVELOPER_MODE,
+                    settings.DEVELOPER_MODE_DEFAULT,
+                    type=bool,
+                )
             )
             _DEVELOPER_MODE_CACHE = val
             return val
 
     # 3. Default
-    _DEVELOPER_MODE_CACHE = settings.DEVELOPER_MODE_DEFAULT
+    _DEVELOPER_MODE_CACHE = bool(settings.DEVELOPER_MODE_DEFAULT)
     return _DEVELOPER_MODE_CACHE

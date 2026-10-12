@@ -150,7 +150,7 @@ def _validate_exercise_fib_internal(
     option_texts = [
         opt.text
         for opt in exercise.options
-        if hasattr(opt, "text") and opt.text.strip()
+        if hasattr(opt, "text") and opt.text and opt.text.strip()
     ]
     if (
         exercise.correct_option

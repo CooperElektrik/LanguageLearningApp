@@ -47,7 +47,7 @@ def create_package_for_gui(
     course_id = manifest_data.get("course_id")
     version = manifest_data.get("version", "unknown")
     content_filename = manifest_data.get("content_file")
-    if not all([course_id, content_filename]):
+    if not course_id or not isinstance(content_filename, str) or not content_filename.strip():
         messages.append(
             "Error: Manifest missing critical fields (course_id or content_file)."
         )

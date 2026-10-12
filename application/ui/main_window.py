@@ -185,9 +185,8 @@ class MainWindow(QMainWindow):
             app_settings.QSETTINGS_KEY_UI_THEME, app_settings.DEFAULT_THEME, type=str
         )
 
-        is_dark_theme = app_settings.AVAILABLE_THEMES.get(theme_name, {}).get(
-            "is_dark", False
-        )
+        theme_info = app_settings.AVAILABLE_THEMES.get(str(theme_name))
+        is_dark_theme = bool(theme_info.get("is_dark", False)) if isinstance(theme_info, dict) else False
         icon_suffix = "_dark.png" if is_dark_theme else "_light.png"
 
         # Icon paths
@@ -233,23 +232,39 @@ class MainWindow(QMainWindow):
     def apply_theme(self, theme_name: str):
         logger.info(f"Attempting to apply theme: {theme_name}")
         self._update_toolbar_icons()
-        qss_filename = app_settings.AVAILABLE_THEMES.get(theme_name)["file"]
-
-        if theme_name == "System" or qss_filename == "system_default":
-            QApplication.instance().setStyleSheet("")
-            logger.info("Applied system default theme.")
-            return
-
-        if qss_filename:
-            theme_abs_path = utils.get_resource_path(
-                os.path.join(app_settings.THEME_DIR, qss_filename)
-            )
-            utils.apply_stylesheet(QApplication.instance(), theme_abs_path)
-        else:
+        theme_info = app_settings.AVAILABLE_THEMES.get(theme_name)
+        if not theme_info:
             logger.warning(
                 f"Theme '{theme_name}' not found in AVAILABLE_THEMES. Applying system default."
             )
-            QApplication.instance().setStyleSheet("")
+            app = QApplication.instance()
+            if app:
+                app.setStyleSheet("")
+            return
+
+        qss_filename = theme_info.get("file")
+
+        if theme_name == "System" or qss_filename == "system_default":
+            app = QApplication.instance()
+            if app:
+                app.setStyleSheet("")
+            logger.info("Applied system default theme.")
+            return
+
+        if isinstance(qss_filename, str) and qss_filename:
+            theme_abs_path = utils.get_resource_path(
+                os.path.join(app_settings.THEME_DIR, qss_filename)
+            )
+            app = QApplication.instance()
+            if app:
+                utils.apply_stylesheet(app, theme_abs_path)
+        else:
+            logger.warning(
+                f"Theme '{theme_name}' file not found. Applying system default."
+            )
+            app = QApplication.instance()
+            if app:
+                app.setStyleSheet("")
 
     def apply_font_size(self, new_size: int):
         font = QApplication.instance().font()

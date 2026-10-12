@@ -29,10 +29,18 @@ except ImportError:
     logging.warning("Could not import Exercise model in ExerciseEditorWidgets.")
 
     class Exercise:
-        pass
+        def __init__(self, *args, **kwargs):
+            pass
 
     class ExerciseOption:
-        pass
+        def __init__(self, *args, **kwargs):
+            self.text = ""
+            self.correct = False
+            self.image_file = None
+
+    class AssetManagerDialog:
+        def __init__(self, *args, **kwargs):
+            pass
 
 
 logger = logging.getLogger(__name__)

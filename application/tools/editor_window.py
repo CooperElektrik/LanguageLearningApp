@@ -65,6 +65,31 @@ except ImportError as e:
     class ExerciseOption:
         pass
 
+    class CourseTreeWidget:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class GlossaryEditorWidget:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class ExercisePreviewDialog:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    ALL_EXERCISE_TYPES = []
+
+    def create_new_course(*args, **kwargs):
+        return None
+
+    def load_manifest(*args, **kwargs):
+        return None
+
+    def load_course_content_from_yaml(*args, **kwargs):
+        return None
+
+    yaml_serializer = None
+
 
 from .course_packager import create_package_for_gui
 from .course_validator import (
@@ -451,6 +476,8 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.status_bar.showMessage("Advanced filters cleared.", 2000)
 
     def _filter_tree_view(self, text: str):
+        if not self.tree_widget:
+            return
         search_term = text.lower().strip()
         selected_type_filter = self.type_filter_combo.currentText()
         selected_asset_filter = self.asset_filter_combo.currentText()
@@ -1050,6 +1077,8 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         find_and_select(hidden_root, item_data_obj)
 
     def update_tree_view(self):
+        if not self.tree_widget:
+            return
         expanded_items_data = {}
         selected_item_data = None
 
@@ -1489,7 +1518,15 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     course_dict_for_import, self.current_course_content_path
                 )
                 reloaded_course = load_course_content_from_yaml(
-                    self.current_course_content_path, self.manifest_data
+                    content_filepath=self.current_course_content_path,
+                    course_id=self.manifest_data.get("course_id", "unknown_course"),
+                    course_title=self.manifest_data.get("course_title", "Untitled Course"),
+                    target_lang=self.manifest_data.get("target_language", "Unknown Target"),
+                    source_lang=self.manifest_data.get("source_language", "Unknown Source"),
+                    version=self.manifest_data.get("version", "0.0.0"),
+                    author=self.manifest_data.get("author"),
+                    description=self.manifest_data.get("description"),
+                    image_file=self.manifest_data.get("image_file"),
                 )
                 if reloaded_course:
                     self.course_data = reloaded_course

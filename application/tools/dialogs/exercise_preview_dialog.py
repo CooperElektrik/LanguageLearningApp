@@ -33,18 +33,34 @@ except ImportError as e:
     )
 
     class Exercise:
-        pass
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.type = ""
+            self.prompt = ""
+            self.sentence_template = ""
+            self.answer = ""
+            self.options = []
+            self.correct_option = ""
 
     class BaseExerciseWidget:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    class TranslationExerciseWidget(BaseExerciseWidget):
         pass
 
-    class TranslationExerciseWidget:
+    class MultipleChoiceExerciseWidget(BaseExerciseWidget):
         pass
 
-    class MultipleChoiceExerciseWidget:
+    class FillInTheBlankExerciseWidget(BaseExerciseWidget):
         pass
 
-    class FillInTheBlankExerciseWidget:
+    class SentenceJumbleExerciseWidget(BaseExerciseWidget):
+        pass
+
+    class ContextBlockWidget(BaseExerciseWidget):
+        pass
+
+    class ListenSelectExerciseWidget(BaseExerciseWidget):
         pass
 
 

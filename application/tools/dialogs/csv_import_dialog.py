@@ -91,13 +91,17 @@ class CsvImportDialog(QDialog):
     def _update_column_inputs(self):
         while self.column_mapping_layout.count() > 0:
             item = self.column_mapping_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-            elif item.layout():
-                while item.layout().count() > 0:
-                    sub_item = item.layout().takeAt(0)
-                    if sub_item.widget():
-                        sub_item.widget().deleteLater()
+            if item is not None:
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+                elif item.layout():
+                    sub_layout = item.layout()
+                    if sub_layout is not None:
+                        while sub_layout.count() > 0:
+                            sub_item = sub_layout.takeAt(0)
+                            if sub_item is not None and sub_item.widget():
+                                sub_item.widget().deleteLater()
 
         current_type = self.exercise_type_combo.currentText()
         self.column_mapping_group.setTitle(
