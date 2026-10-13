@@ -373,3 +373,43 @@ QStatusBar {
     color: #9d9daf;
     border-top: 1px solid #2d2d3a;
 }
+
+/* Course cards (QFrame-based CourseCardWidget) */
+QFrame#course_card {
+    background-color: #23232c;
+    border: 1px solid #32323e;
+    border-radius: 6px;
+}
+
+QFrame#course_card:hover {
+    background-color: #282834;
+    border: 1px solid #4b7bec;
+}
+
+QFrame#course_card:focus {
+    border: 1px solid #4b7bec;
+}
+
+QFrame#course_card[pressed="true"] {
+    background-color: #202029;
+    border: 1px solid #4b7bec;
+}
+
+/* Scoped child typography so card states never bleed into labels */
+QLabel#course_card_title {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: transparent;
+}
+
+QLabel#course_card_description {
+    color: #9d9daf;
+    background-color: transparent;
+}
+
+QLabel#course_card_metadata {
+    font-size: 9pt;
+    color: #e2e2e8;
+    background-color: transparent;
+}

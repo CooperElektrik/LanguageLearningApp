@@ -5,7 +5,7 @@ import settings
 import utils
 import yaml
 from PySide6.QtCore import QEvent, QSize, Qt, QUrl, Signal
-from PySide6.QtGui import QDesktopServices, QPixmap
+from PySide6.QtGui import QDesktopServices, QKeyEvent, QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -26,7 +27,59 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class CourseButton(QPushButton):
+class CourseThumbnailLabel(QLabel):
+    """Fixed-width course artwork thumbnail.
+
+    Encapsulates the aspect-ratio scaling math so the card itself stays a
+    pure layout: the source pixmap is scaled once, when set, to fit inside a
+    (THUMBNAIL_WIDTH x MAX_HEIGHT) box, and the widget takes that scaled size
+    as its fixed size. No per-paint or per-resize math is needed.
+    """
+
+    THUMBNAIL_WIDTH = 150
+    MAX_HEIGHT = 180
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("course_card_thumbnail")
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Clicks anywhere on the card (including the artwork) activate it.
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+    def setSourcePath(self, image_path):
+        """Load artwork from *image_path*; hides the label when unavailable."""
+        pixmap = QPixmap(image_path) if image_path else QPixmap()
+        if pixmap.isNull():
+            self.setVisible(False)
+            return
+        scaled = pixmap.scaled(
+            QSize(self.THUMBNAIL_WIDTH, self.MAX_HEIGHT),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        if scaled.isNull():
+            self.setVisible(False)
+            return
+        self.setPixmap(scaled)
+        # Fixed column width keeps titles aligned across cards; the label is
+        # centered vertically by the card layout.
+        self.setFixedSize(self.THUMBNAIL_WIDTH, scaled.height())
+
+
+class CourseCardWidget(QFrame):
+    """Selectable card representing a single course.
+
+    A focusable container (QFrame), not a QPushButton: QFrame computes its
+    size hints from its child layout, so no sizeHint() override is needed,
+    and card visuals are scoped to ``QFrame#course_card`` selectors instead
+    of leaking button pseudo-states into child labels. Activation (mouse and
+    keyboard) is handled explicitly and reported via :attr:`clicked`.
+    """
+
+    clicked = Signal()
+
+    METADATA_MIN_WIDTH = 180
+
     def __init__(
         self,
         course_title,
@@ -37,126 +90,186 @@ class CourseButton(QPushButton):
         target_language,
         image_path=None,
         manifest_path=None,
+        parent=None,
     ):
-        super().__init__()
+        super().__init__(parent)
         self.manifest_path = manifest_path
-        self.setObjectName("course_select_button")
+        self.setObjectName("course_card")
+        self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
+        self.setLineWidth(1)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAccessibleName(course_title or "")
+        if course_description:
+            self.setAccessibleDescription(course_description)
+        self.setProperty("pressed", False)
+        self._armed = False
+        self._press_visual = False
 
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(20)
 
-        # Image on the left
+        # Artwork on the left (hidden when no image is available).
+        self.thumbnail = CourseThumbnailLabel(self)
         if image_path:
-            pixmap = QPixmap(image_path)
-            image_label = QLabel()
+            self.thumbnail.setSourcePath(image_path)
+        else:
+            self.thumbnail.setVisible(False)
+        main_layout.addWidget(self.thumbnail, 0, Qt.AlignmentFlag.AlignVCenter)
 
-            # Define a minimum width for the image
-            MIN_IMAGE_WIDTH = 150
-
-            # Scale the pixmap while maintaining aspect ratio
-            scaled_pixmap = pixmap.scaled(
-                QSize(MIN_IMAGE_WIDTH, 150),  # Use MIN_IMAGE_WIDTH as base for scaling
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-
-            # Ensure the scaled pixmap's width is at least MIN_IMAGE_WIDTH
-            if scaled_pixmap.width() < MIN_IMAGE_WIDTH:
-                scaled_pixmap = pixmap.scaled(
-                    QSize(
-                        MIN_IMAGE_WIDTH,
-                        int(pixmap.height() * (MIN_IMAGE_WIDTH / pixmap.width())),
-                    ),
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-
-            image_label.setPixmap(scaled_pixmap)
-            main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignVCenter)
-
-        # Text section in the middle
+        # Text section in the middle; stretch lets it absorb width changes
+        # while word wrapping keeps the height responsive to font metrics.
         text_layout = QVBoxLayout()
         text_layout.setSpacing(5)
         text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        title_label = QLabel(course_title)
-        title_label.setObjectName("course_button_title_label")
-        text_layout.addWidget(title_label)
+        self.title_label = QLabel(course_title or "")
+        self.title_label.setObjectName("course_card_title")
+        self.title_label.setWordWrap(True)
+        self.title_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        text_layout.addWidget(self.title_label)
 
+        self.description_label = None
         if course_description:
-            description_label = QLabel(course_description)
-            description_label.setObjectName("course_button_description_label")
-            description_label.setWordWrap(True)
-            text_layout.addWidget(description_label)
+            self.description_label = QLabel(course_description)
+            self.description_label.setObjectName("course_card_description")
+            self.description_label.setWordWrap(True)
+            self.description_label.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents
+            )
+            text_layout.addWidget(self.description_label)
 
-        # Metadata section in a container to control its minimum width
-        main_layout.addLayout(text_layout, 1)  # Add stretch factor
+        main_layout.addLayout(text_layout, 1)
 
-        # Right panel to hold the separator and metadata text, ensuring fixed width for alignment
-        right_panel_widget = QWidget()
-        right_panel_layout = QHBoxLayout(right_panel_widget)
-        right_panel_layout.setContentsMargins(
-            0, 0, 0, 0
-        )  # No internal margins for the panel itself
-        right_panel_layout.setSpacing(10)  # Space between separator and metadata text block
-
+        # Separator + metadata on the right. The metadata panel uses a
+        # minimum width (not a fixed width) so long values wrap instead of
+        # overflowing on small screens or large fonts.
         separator = QFrame()
+        separator.setObjectName("course_card_separator")
         separator.setFrameShape(QFrame.Shape.VLine)
         separator.setFrameShadow(QFrame.Shadow.Sunken)
-        right_panel_layout.addWidget(separator)
+        separator.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        main_layout.addWidget(separator)
 
-        # Metadata text layout (this will contain the actual metadata labels)
-        metadata_text_layout = QVBoxLayout()
-        metadata_text_layout.setSpacing(5)
-        # Align items within this layout to the top-left (VCenter for vertical, AlignLeft for horizontal)
-        metadata_text_layout.setAlignment(
+        metadata_panel = QWidget()
+        metadata_panel.setObjectName("course_card_metadata_panel")
+        metadata_panel.setMinimumWidth(self.METADATA_MIN_WIDTH)
+        metadata_panel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        metadata_layout = QVBoxLayout(metadata_panel)
+        metadata_layout.setContentsMargins(0, 0, 0, 0)
+        metadata_layout.setSpacing(5)
+        metadata_layout.setAlignment(
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
         )
 
         if author:
-            author_label = QLabel(f"<b>{self.tr('Author')}:</b> {author}")
-            author_label.setObjectName("course_button_metadata_label")
-            metadata_text_layout.addWidget(author_label)
+            metadata_layout.addWidget(
+                self._make_metadata_label(f"<b>{self.tr('Author')}:</b> {author}")
+            )
 
         if version:
-            version_label = QLabel(f"<b>{self.tr('Version')}:</b> {version}")
-            version_label.setObjectName("course_button_metadata_label")
-            metadata_text_layout.addWidget(version_label)
+            metadata_layout.addWidget(
+                self._make_metadata_label(f"<b>{self.tr('Version')}:</b> {version}")
+            )
 
         if source_language and target_language:
-            language_label = QLabel(
-                f"<b>{self.tr('Language')}:</b> {source_language} → {target_language}"
+            metadata_layout.addWidget(
+                self._make_metadata_label(
+                    f"<b>{self.tr('Language')}:</b> {source_language} → {target_language}"
+                )
             )
-            language_label.setObjectName("course_button_metadata_label")
-            metadata_text_layout.addWidget(language_label)
 
-        right_panel_layout.addLayout(metadata_text_layout)  # Add labels layout to the right panel
-        # Set a fixed width for the entire right panel to ensure consistent alignment across buttons.
-        # This value may need adjustment based on font, language, and content length.
-        right_panel_widget.setFixedWidth(260)
-        main_layout.addWidget(right_panel_widget, 0)  # Add panel to main layout, no stretch factor
+        main_layout.addWidget(metadata_panel, 0)
 
-        self.setLayout(main_layout)
+    @staticmethod
+    def _make_metadata_label(rich_text):
+        label = QLabel(rich_text)
+        label.setObjectName("course_card_metadata")
+        label.setWordWrap(True)
+        label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        return label
 
-    def sizeHint(self) -> QSize:
-        """Use the card layout's size, not QPushButton's text-based size.
+    def click(self):
+        """Programmatically activate the card (equivalent to a user click)."""
+        self.clicked.emit()
 
-        QPushButton computes its sizeHint from its own text/icon and ignores
-        child layouts, so without this override the card is laid out at button
-        height (~25px) and every child (image, title, metadata) is squeezed to
-        zero height, rendering the card as an empty collapsed strip.
-        """
-        layout = self.layout()
-        if layout is not None:
-            return layout.totalSizeHint()
-        return super().sizeHint()
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._armed = True
+            self._set_pressed_visual(True)
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
-    def minimumSizeHint(self) -> QSize:
-        layout = self.layout()
-        if layout is not None:
-            return layout.totalMinimumSize()
-        return super().minimumSizeHint()
+    def mouseMoveEvent(self, event: QMouseEvent):
+        if self._armed:
+            self._set_pressed_visual(self.rect().contains(event.position().toPoint()))
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if self._armed and event.button() == Qt.MouseButton.LeftButton:
+            self._armed = False
+            inside = self.rect().contains(event.position().toPoint())
+            self._set_pressed_visual(False)
+            if inside:
+                self.clicked.emit()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def leaveEvent(self, event: QEvent):
+        self._set_pressed_visual(False)
+        super().leaveEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
+                self.clicked.emit()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+                self._set_pressed_visual(True)
+                event.accept()
+                return
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent):
+        if (
+            event.key() == Qt.Key.Key_Space
+            and not event.isAutoRepeat()
+            and event.modifiers() == Qt.KeyboardModifier.NoModifier
+        ):
+            if self._press_visual:
+                self._set_pressed_visual(False)
+                self.clicked.emit()
+                event.accept()
+                return
+        super().keyReleaseEvent(event)
+
+    def focusOutEvent(self, event):
+        self._set_pressed_visual(False)
+        super().focusOutEvent(event)
+
+    def _set_pressed_visual(self, pressed):
+        pressed = bool(pressed)
+        if pressed == self._press_visual:
+            return
+        self._press_visual = pressed
+        self.setProperty("pressed", pressed)
+        # Dynamic-property selectors ([pressed="true"]) only re-evaluate on
+        # repolish.
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+
+
+# Backward-compatible alias: CourseButton was the previous QPushButton-based
+# implementation. New code should use CourseCardWidget.
+CourseButton = CourseCardWidget
 
 
 class CourseSelectionView(QWidget):
@@ -266,7 +379,7 @@ class CourseSelectionView(QWidget):
                             os.path.join("assets/images/default_preview.jpg")
                         )
 
-                    button = CourseButton(
+                    button = CourseCardWidget(
                         course_title,
                         course_description,
                         author,
@@ -277,7 +390,7 @@ class CourseSelectionView(QWidget):
                         manifest_path,
                     )
                     button.clicked.connect(
-                        lambda checked=False, p=manifest_path: self.course_selected.emit(p)
+                        lambda p=manifest_path: self.course_selected.emit(p)
                     )
                     self.courses_layout.addWidget(button)
                     found_courses = True
