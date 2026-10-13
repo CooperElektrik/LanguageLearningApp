@@ -139,6 +139,25 @@ class CourseButton(QPushButton):
 
         self.setLayout(main_layout)
 
+    def sizeHint(self) -> QSize:
+        """Use the card layout's size, not QPushButton's text-based size.
+
+        QPushButton computes its sizeHint from its own text/icon and ignores
+        child layouts, so without this override the card is laid out at button
+        height (~25px) and every child (image, title, metadata) is squeezed to
+        zero height, rendering the card as an empty collapsed strip.
+        """
+        layout = self.layout()
+        if layout is not None:
+            return layout.totalSizeHint()
+        return super().sizeHint()
+
+    def minimumSizeHint(self) -> QSize:
+        layout = self.layout()
+        if layout is not None:
+            return layout.totalMinimumSize()
+        return super().minimumSizeHint()
+
 
 class CourseSelectionView(QWidget):
     course_selected = Signal(str)  # Emits the absolute path to the course's manifest.yaml
