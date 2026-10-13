@@ -75,18 +75,24 @@ class BaseExerciseEditorWidget(QWidget):
         self.course_root_dir = course_root_dir
 
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.setSpacing(10)
+        self.layout.setContentsMargins(16, 16, 16, 16)
+        self.layout.setSpacing(8)
+
+        self.form_layout = QFormLayout()
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_layout.setVerticalSpacing(8)
+        self.form_layout.setHorizontalSpacing(12)
+        self.form_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.layout.addLayout(self.form_layout)
 
         self.type_label = QLabel(f"Exercise Type: {exercise.type.replace('_', ' ').title()}")
-        self.type_label.setStyleSheet("font-weight: bold; font-size: 13px;")
-        self.layout.addWidget(self.type_label)
-        self.layout.addWidget(self._create_separator())
+        self.type_label.setObjectName("ExerciseTypeHeader")
+        self.type_label.setVisible(False)  # Handled by InspectorHeaderWidget banner
 
     def _create_separator(self):
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
+        separator.setFrameShadow(QFrame.Plain)
         return separator
 
     def _add_asset_field(
@@ -95,23 +101,29 @@ class BaseExerciseEditorWidget(QWidget):
         label_text: str,
         current_value: str | None,
         on_change,
+        field_name: str | None = None,
     ):
-        """Adds a labelled asset path field with drag-and-drop and a Browse... button."""
-        layout = QHBoxLayout()
+        """Adds a labelled asset path field with drag-and-drop and a Browse... button using QFormLayout."""
+        row_layout = QHBoxLayout()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(8)
+
         label = QLabel(label_text)
         line_edit = AssetDropLineEdit(
             current_value or "",
             asset_type=asset_type,
             course_root_dir=self.course_root_dir,
         )
+        line_edit.setProperty("field_name", field_name or f"{asset_type}_file")
         line_edit.textChanged.connect(on_change)
         line_edit.asset_dropped.connect(on_change)
+
         browse_button = QPushButton("Browse...")
         browse_button.clicked.connect(lambda: self._browse_asset(asset_type, line_edit))
-        layout.addWidget(label)
-        layout.addWidget(line_edit, 1)
-        layout.addWidget(browse_button)
-        self.layout.addLayout(layout)
+
+        row_layout.addWidget(line_edit, 1)
+        row_layout.addWidget(browse_button)
+        self.form_layout.addRow(label, row_layout)
         return line_edit
 
     def _browse_asset(self, asset_type: str, target_line_edit: QLineEdit):
@@ -135,12 +147,10 @@ class BaseExerciseEditorWidget(QWidget):
         is_multiline: bool = False,
         is_required: bool = False,
         placeholder_text: str | None = None,
+        field_name: str | None = None,
     ):
-        h_layout = QHBoxLayout()
         label_full_text = label_text + (" *" if is_required else "")
         label = QLabel(label_full_text)
-        label.setMinimumWidth(120)
-        h_layout.addWidget(label)
 
         if is_multiline:
             input_field = QTextEdit()
@@ -154,14 +164,14 @@ class BaseExerciseEditorWidget(QWidget):
 
         if placeholder_text:
             input_field.setPlaceholderText(placeholder_text)
+        if field_name:
+            input_field.setProperty("field_name", field_name)
 
         input_field.textChanged.connect(
             lambda: self._validate_input_field(input_field, is_required)
         )
 
-        h_layout.addWidget(input_field)
-        self.layout.addLayout(h_layout)
-
+        self.form_layout.addRow(label, input_field)
         self._validate_input_field(input_field, is_required)
         return input_field
 
@@ -178,6 +188,32 @@ class BaseExerciseEditorWidget(QWidget):
 
         mark_widget_validity(input_widget, bool(text))
         self.data_changed.emit()
+
+    def focus_field(self, field_name: str | None = None) -> bool:
+        """Cleanly sets focus and marks validity on the specified invalid field."""
+        lookup = field_name or "prompt"
+        # Check direct attributes
+        for attr in [f"{lookup}_input", f"{lookup}_edit", lookup]:
+            w = getattr(self, attr, None)
+            if w and hasattr(w, "setFocus"):
+                w.setFocus()
+                mark_widget_validity(w, False)
+                return True
+
+        # Check by property field_name
+        for child in self.findChildren((QLineEdit, QTextEdit)):
+            if child.property("field_name") == lookup:
+                child.setFocus()
+                mark_widget_validity(child, False)
+                return True
+
+        # Fallback to first editable widget
+        first = self.findChild(QLineEdit) or self.findChild(QTextEdit)
+        if first:
+            first.setFocus()
+            mark_widget_validity(first, False)
+            return True
+        return False
 
     def validate(self) -> tuple[bool, str]:
         """

@@ -35,6 +35,7 @@ class ValidationIssue(str):
         lesson_id: str | None = None,
         exercise_id: str | None = None,
         field: str | None = None,
+        entity_type: str | None = None,
     ):
         instance = super().__new__(cls, message)
         instance.message = message
@@ -43,6 +44,19 @@ class ValidationIssue(str):
         instance.lesson_id = lesson_id
         instance.exercise_id = exercise_id
         instance.field = field
+
+        if entity_type:
+            instance.entity_type = entity_type
+        elif exercise_id:
+            instance.entity_type = "exercise"
+        elif lesson_id:
+            instance.entity_type = "lesson"
+        elif unit_id:
+            instance.entity_type = "unit"
+        elif "glossary" in message.lower():
+            instance.entity_type = "glossary"
+        else:
+            instance.entity_type = "manifest"
         return instance
 
 
@@ -55,6 +69,7 @@ def _collect_error(
     lesson_id: str | None = None,
     exercise_id: str | None = None,
     field: str | None = None,
+    entity_type: str | None = None,
 ):
     """Collects an error message with structured location metadata and path prefix."""
     full_message = f"{path_prefix}{message}" if path_prefix else message
@@ -112,6 +127,7 @@ def _collect_error(
         lesson_id=lesson_id,
         exercise_id=exercise_id,
         field=field,
+        entity_type=entity_type,
     )
     errors_list.append(issue)
 
@@ -522,7 +538,12 @@ def perform_manifest_validation(manifest_data: dict[str, Any], manifest_path: st
             or not manifest_data[field]
             or (isinstance(manifest_data[field], str) and not manifest_data[field].strip())
         ):
-            _collect_error(errors, f"Manifest missing or empty required field: '{field}'")
+            _collect_error(
+                errors,
+                f"Manifest missing or empty required field: '{field}'",
+                field=field,
+                entity_type="manifest",
+            )
 
     if manifest_data.get("content_file"):
         content_filepath = os.path.join(
@@ -532,6 +553,8 @@ def perform_manifest_validation(manifest_data: dict[str, Any], manifest_path: st
             _collect_error(
                 errors,
                 f"Manifest 'content_file' points to a non-existent file: '{content_filepath}' (relative to manifest location)",
+                field="content_file",
+                entity_type="manifest",
             )
 
     if manifest_data.get("glossary_file"):
@@ -542,6 +565,8 @@ def perform_manifest_validation(manifest_data: dict[str, Any], manifest_path: st
             _collect_error(
                 errors,
                 f"Manifest 'glossary_file' points to a non-existent file: '{glossary_filepath}' (relative to manifest location)",
+                field="glossary_file",
+                entity_type="manifest",
             )
 
     if manifest_data.get("image_file"):
@@ -552,6 +577,8 @@ def perform_manifest_validation(manifest_data: dict[str, Any], manifest_path: st
             _collect_error(
                 errors,
                 f"Manifest 'image_file' '{img_val}' not found in course directory or images/ subfolder.",
+                field="image_file",
+                entity_type="manifest",
             )
 
     return errors

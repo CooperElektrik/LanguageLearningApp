@@ -39,11 +39,8 @@ class GlossaryEditorWidget(QWidget):
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-
-        main_layout.addWidget(QLabel("Manage Glossary Entries"))
-        main_layout.addWidget(self._create_separator())
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(8)
 
         # List of glossary entries
         self.glossary_list_widget = QListWidget()
@@ -87,12 +84,9 @@ class GlossaryEditorWidget(QWidget):
         else:
             self.current_glossary_filepath = None
             self.glossary_entries = []
-            QMessageBox.information(
-                self,
-                "Glossary Missing",
-                "Manifest does not specify a 'glossary_file'. Create a new one or add to manifest.",
+            logger.info(
+                "Manifest does not specify a 'glossary_file'. Create entries to start a glossary."
             )
-            # Optionally, prompt to create a new glossary file if not specified
             self.data_changed.emit()  # Even if empty, reflect state
 
         self._populate_list_widget()
@@ -204,3 +198,18 @@ class GlossaryEditorWidget(QWidget):
             self.glossary_entries.remove(entry_to_delete)
             self._populate_list_widget()
             self.data_changed.emit()
+
+    def focus_field(self, field_name: str | None = None) -> bool:
+        """Sets focus to the glossary entry list."""
+        self.glossary_list_widget.setFocus()
+        return True
+
+    def revert(self):
+        """Reloads glossary from disk if available."""
+        if self.current_manifest_path and self.current_glossary_filepath:
+            manifest_dir = os.path.dirname(os.path.abspath(self.current_manifest_path))
+            pool_base_dir = os.path.join(os.path.dirname(manifest_dir), "pool")
+            self.glossary_entries = load_glossary(
+                self.current_glossary_filepath, manifest_dir, pool_base_dir
+            )
+            self._populate_list_widget()

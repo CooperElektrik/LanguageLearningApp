@@ -137,7 +137,12 @@ class CourseTreeWidget(QTreeWidget):
         if target_list is None:
             return False
 
-        new_insert_index = index if index != -1 else len(target_list)
+        if new_parent_obj is None:
+            # Account for static Course Settings (index 0) and Glossary (index 1) root items
+            new_insert_index = max(0, index - 2) if index != -1 else len(target_list)
+            new_insert_index = min(new_insert_index, len(target_list))
+        else:
+            new_insert_index = index if index != -1 else len(target_list)
 
         if original_list is target_list:
             if original_index < new_insert_index:

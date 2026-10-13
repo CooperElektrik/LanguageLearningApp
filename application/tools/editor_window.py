@@ -9,7 +9,9 @@ from PySide6.QtGui import QAction, QActionGroup, QColor, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
+    QDockWidget,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -17,11 +19,13 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QStackedWidget,
     QStyle,
     QTabWidget,
     QToolBar,
+    QToolButton,
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
     QVBoxLayout,
@@ -40,6 +44,9 @@ try:
     from application.core.exercise_types import ALL_EXERCISE_TYPES
     from application.core.models import Course, Exercise, ExerciseOption, Lesson, Unit
     from application.tools.widgets.glossary_editor_widget import GlossaryEditorWidget
+    from application.tools.widgets.inspector_header_widget import InspectorHeaderWidget
+    from application.tools.widgets.lesson_editor_widget import LessonEditorWidget
+    from application.tools.widgets.unit_editor_widget import UnitEditorWidget
 
     from .dialogs.exercise_preview_dialog import ExercisePreviewDialog
     from .widgets.course_tree_widget import CourseTreeWidget
@@ -144,13 +151,11 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.undo_stack = QUndoStack(self)
         self.undo_stack.cleanChanged.connect(lambda clean: self._set_dirty_state(not clean))
 
-        self._editor_cache: dict[str, QWidget] = {}
-
         self._create_actions()
+        self._setup_ui()
         self._create_menu_bar()
         self._create_tool_bar()
         self._set_dirty_state(False)
-        self._setup_ui()
 
         self._set_theme("dark")
 
@@ -265,6 +270,13 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         theme_submenu = view_menu.addMenu("Theme")
         theme_submenu.addAction(self.light_theme_action)
         theme_submenu.addAction(self.dark_theme_action)
+        view_menu.addSeparator()
+        if hasattr(self, "preview_dock"):
+            view_menu.addAction(self.preview_dock.toggleViewAction())
+        if hasattr(self, "asset_dock"):
+            view_menu.addAction(self.asset_dock.toggleViewAction())
+        if hasattr(self, "problems_dock"):
+            view_menu.addAction(self.problems_dock.toggleViewAction())
 
     def _create_tool_bar(self):
         tool_bar = QToolBar("Main Toolbar", self)
@@ -315,43 +327,33 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.light_theme_action.setChecked(False)
 
     def _setup_ui(self):
+        self._editor_cache: dict[str, QWidget] = {}
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         outer_layout = QVBoxLayout(main_widget)
-        outer_layout.setContentsMargins(6, 6, 6, 6)
-        outer_layout.setSpacing(6)
+        outer_layout.setContentsMargins(12, 12, 12, 12)
+        outer_layout.setSpacing(8)
 
-        # Vertical splitter: top = 3-pane workspace, bottom = problems drawer
-        self.vertical_splitter = QSplitter(Qt.Vertical)
-        self.vertical_splitter.setObjectName("EditorVerticalSplitter")
-
-        # 3-Pane Horizontal Splitter
-        self.three_pane_splitter = QSplitter(Qt.Horizontal)
-        self.three_pane_splitter.setObjectName("EditorThreePaneSplitter")
-        self.splitter = self.three_pane_splitter  # For backward-compatibility
+        # 2-Pane Master-Detail Splitter
+        self.master_splitter = QSplitter(Qt.Horizontal)
+        self.master_splitter.setObjectName("MasterSplitter")
+        self.splitter = self.master_splitter  # Backward-compatibility alias
+        self.three_pane_splitter = self.master_splitter  # Backward-compatibility alias
+        self.vertical_splitter = self.master_splitter  # Backward-compatibility alias
 
         # -------------------------------------------------------------
-        # 1. Left Navigation Pane (Tabs: Structure, Manifest, Glossary)
+        # 1. Left Navigation Pane (Master Navigation)
         # -------------------------------------------------------------
         left_pane_widget = QWidget()
         left_pane_widget.setObjectName("LeftNavPane")
         left_pane_layout = QVBoxLayout(left_pane_widget)
-        left_pane_layout.setContentsMargins(4, 4, 4, 4)
-        left_pane_layout.setSpacing(6)
-
-        self.left_nav_tabs = QTabWidget()
-        self.left_nav_tabs.setObjectName("LeftNavTabs")
-
-        # Tab 1: Structure
-        structure_tab_widget = QWidget()
-        structure_layout = QVBoxLayout(structure_tab_widget)
-        structure_layout.setContentsMargins(4, 4, 4, 4)
-        structure_layout.setSpacing(6)
+        left_pane_layout.setContentsMargins(8, 8, 8, 8)
+        left_pane_layout.setSpacing(8)
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search or filter (e.g. type:mcq, missing:audio)...")
         self.search_bar.textChanged.connect(self._filter_tree_view)
-        structure_layout.addWidget(self.search_bar)
+        left_pane_layout.addWidget(self.search_bar)
 
         # Filter Chips Layout
         chips_layout = QHBoxLayout()
@@ -382,75 +384,105 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         chips_layout.addWidget(self.chip_draft)
 
         chips_layout.addStretch(1)
-        structure_layout.addLayout(chips_layout)
+        left_pane_layout.addLayout(chips_layout)
 
-        # Course Tree
+        # Navigation Action Strip Toolbar
+        nav_toolbar_layout = QHBoxLayout()
+        nav_toolbar_layout.setSpacing(4)
+
+        # "Add Item" Dropdown ToolButton
+        self.add_item_btn = QToolButton()
+        self.add_item_btn.setText("+ Add Item ▾")
+        self.add_item_btn.setProperty("primary", True)
+        self.add_item_btn.setPopupMode(QToolButton.InstantPopup)
+        self.add_item_menu = QMenu(self.add_item_btn)
+
+        self.action_add_unit = QAction("+ Add Unit", self)
+        self.action_add_unit.triggered.connect(lambda: self._add_unit())
+        self.add_item_menu.addAction(self.action_add_unit)
+
+        self.action_add_lesson = QAction("+ Add Lesson", self)
+        self.action_add_lesson.triggered.connect(self._add_lesson_from_nav)
+        self.add_item_menu.addAction(self.action_add_lesson)
+
+        self.add_exercise_menu = self.add_item_menu.addMenu("+ Add Exercise")
+        for ex_type in [
+            "translate_to_target",
+            "translate_to_source",
+            "multiple_choice_translation",
+            "fill_in_the_blank",
+            "dictation",
+            "image_association",
+            "listen_and_select",
+            "sentence_jumble",
+            "context_block",
+        ]:
+            type_label = ex_type.replace("_", " ").title()
+            act = QAction(type_label, self)
+            act.triggered.connect(lambda checked=False, t=ex_type: self._add_exercise_from_nav(t))
+            self.add_exercise_menu.addAction(act)
+
+        self.add_item_btn.setMenu(self.add_item_menu)
+        nav_toolbar_layout.addWidget(self.add_item_btn)
+
+        # Reordering arrows
+        self.move_up_btn = QPushButton("↑")
+        self.move_up_btn.setToolTip("Move Item Up")
+        self.move_up_btn.setFixedWidth(28)
+        self.move_up_btn.clicked.connect(self._move_item_up)
+        nav_toolbar_layout.addWidget(self.move_up_btn)
+
+        self.move_down_btn = QPushButton("↓")
+        self.move_down_btn.setToolTip("Move Item Down")
+        self.move_down_btn.setFixedWidth(28)
+        self.move_down_btn.clicked.connect(self._move_item_down)
+        nav_toolbar_layout.addWidget(self.move_down_btn)
+
+        self.move_up_button = self.move_up_btn
+        self.move_down_button = self.move_down_btn
+
+        # Expand / Collapse toggles
+        self.expand_all_button = QPushButton("Expand All")
+        self.expand_all_button.clicked.connect(lambda: self.tree_widget.expandAll() if hasattr(self, "tree_widget") else None)
+        nav_toolbar_layout.addWidget(self.expand_all_button)
+
+        self.collapse_all_button = QPushButton("Collapse All")
+        self.collapse_all_button.clicked.connect(lambda: self.tree_widget.collapseAll() if hasattr(self, "tree_widget") else None)
+        nav_toolbar_layout.addWidget(self.collapse_all_button)
+
+        left_pane_layout.addLayout(nav_toolbar_layout)
+
+        # Unified Course Tree Widget
         self.tree_widget = CourseTreeWidget(self.course_data, self)
         self.tree_widget.setHeaderLabels(["Course Structure"])
         self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_widget.customContextMenuRequested.connect(self._show_context_menu)
         self.tree_widget.itemSelectionChanged.connect(self._on_tree_item_selected)
         self.tree_widget.data_model_reordered.connect(self._handle_data_model_reordered)
-        self.tree_widget.inline_add_requested.connect(self._handle_inline_add)
-        structure_layout.addWidget(self.tree_widget, 1)
+        left_pane_layout.addWidget(self.tree_widget, 1)
 
-        # Tree Bottom Action Bar
-        tree_actions_layout = QHBoxLayout()
-        self.add_unit_button = QPushButton("+ Add Unit")
-        self.add_unit_button.setProperty("primary", True)
-        self.add_unit_button.clicked.connect(lambda: self._add_unit())
-        tree_actions_layout.addWidget(self.add_unit_button)
-
-        self.expand_all_button = QPushButton("Expand All")
-        self.expand_all_button.clicked.connect(self.tree_widget.expandAll)
-        self.collapse_all_button = QPushButton("Collapse All")
-        self.collapse_all_button.clicked.connect(self.tree_widget.collapseAll)
-        tree_actions_layout.addWidget(self.expand_all_button)
-        tree_actions_layout.addWidget(self.collapse_all_button)
-        structure_layout.addLayout(tree_actions_layout)
-
-        self.left_nav_tabs.addTab(structure_tab_widget, "Structure")
-
-        # Tab 2: Manifest Info Placeholder
-        manifest_tab_widget = QWidget()
-        manifest_tab_layout = QVBoxLayout(manifest_tab_widget)
-        manifest_tab_lbl = QLabel("Manifest settings are displayed in the center Inspector.")
-        manifest_tab_lbl.setWordWrap(True)
-        manifest_tab_layout.addWidget(manifest_tab_lbl)
-        manifest_tab_layout.addStretch(1)
-        self.left_nav_tabs.addTab(manifest_tab_widget, "Manifest Info")
-
-        # Tab 3: Glossary Placeholder
-        glossary_tab_widget = QWidget()
-        glossary_tab_layout = QVBoxLayout(glossary_tab_widget)
-        glossary_tab_lbl = QLabel("Glossary vocabulary is displayed in the center Inspector.")
-        glossary_tab_lbl.setWordWrap(True)
-        glossary_tab_layout.addWidget(glossary_tab_lbl)
-        glossary_tab_layout.addStretch(1)
-        self.left_nav_tabs.addTab(glossary_tab_widget, "Glossary")
-
-        self.left_nav_tabs.currentChanged.connect(self._handle_left_tab_changed)
-        left_pane_layout.addWidget(self.left_nav_tabs)
-        self.three_pane_splitter.addWidget(left_pane_widget)
+        self.master_splitter.addWidget(left_pane_widget)
 
         # -------------------------------------------------------------
-        # 2. Center Pane (Inspector / Property Form Editor)
+        # 2. Right Pane (Contextual Inspector Pane)
         # -------------------------------------------------------------
         center_pane_widget = QWidget()
         center_pane_widget.setObjectName("CenterInspectorPane")
         center_pane_layout = QVBoxLayout(center_pane_widget)
-        center_pane_layout.setContentsMargins(6, 6, 6, 6)
-        center_pane_layout.setSpacing(6)
+        center_pane_layout.setContentsMargins(8, 8, 8, 8)
+        center_pane_layout.setSpacing(8)
 
-        inspector_header = QLabel("<b>Inspector & Details</b>")
-        center_pane_layout.addWidget(inspector_header)
+        # Reusable Inspector Header Banner
+        self.inspector_header = InspectorHeaderWidget(self)
+        center_pane_layout.addWidget(self.inspector_header)
 
+        # Detail Editors Stacked Widget wrapped in QScrollArea
         self.detail_editor_stacked_widget = QStackedWidget()
         self.detail_editor_stacked_widget.setObjectName("DetailEditorStackedWidget")
 
-        self._placeholder_editor_widget = QLabel("Select an item to edit its properties.")
+        self._placeholder_editor_widget = QLabel("Select an item in the navigation tree to edit its properties.")
         self._placeholder_editor_widget.setAlignment(Qt.AlignCenter)
-        self._placeholder_editor_widget.setStyleSheet("color: #888899; font-style: italic;")
+        self._placeholder_editor_widget.setStyleSheet("color: #888899; font-style: italic; font-size: 11pt;")
         self.detail_editor_stacked_widget.addWidget(self._placeholder_editor_widget)
 
         self.manifest_editor = ManifestEditorWidget()
@@ -461,68 +493,71 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.glossary_editor.data_changed.connect(self._set_dirty_state)
         self.detail_editor_stacked_widget.addWidget(self.glossary_editor)
 
-        center_pane_layout.addWidget(self.detail_editor_stacked_widget, 1)
+        self.inspector_scroll_area = QScrollArea()
+        self.inspector_scroll_area.setObjectName("InspectorScrollArea")
+        self.inspector_scroll_area.setWidgetResizable(True)
+        self.inspector_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.inspector_scroll_area.setWidget(self.detail_editor_stacked_widget)
+        center_pane_layout.addWidget(self.inspector_scroll_area, 1)
 
+        # Scoped Inspector Action Bar
         self.item_actions_widget = QWidget()
         item_actions_layout = QHBoxLayout(self.item_actions_widget)
         item_actions_layout.setContentsMargins(0, 4, 0, 0)
-        self.move_up_button = QPushButton("Move Up ↑")
-        self.move_up_button.clicked.connect(self._move_item_up)
-        self.move_down_button = QPushButton("Move Down ↓")
-        self.move_down_button.clicked.connect(self._move_item_down)
-        self.preview_exercise_button = QPushButton("Refresh Preview ▶")
+        item_actions_layout.setSpacing(8)
+
+        self.preview_exercise_button = QPushButton("Preview Exercise ▶")
         self.preview_exercise_button.clicked.connect(self._preview_exercise)
+
+        self.revert_button = QPushButton("Revert Changes ↺")
+        self.revert_button.clicked.connect(self._revert_active_item)
+
+        self.delete_item_button = QPushButton("Delete Item ✕")
+        self.delete_item_button.clicked.connect(self._delete_active_item)
+
         item_actions_layout.addStretch(1)
-        item_actions_layout.addWidget(self.move_up_button)
-        item_actions_layout.addWidget(self.move_down_button)
         item_actions_layout.addWidget(self.preview_exercise_button)
-        item_actions_layout.addStretch(1)
+        item_actions_layout.addWidget(self.revert_button)
+        item_actions_layout.addWidget(self.delete_item_button)
+
         center_pane_layout.addWidget(self.item_actions_widget)
         self.item_actions_widget.setVisible(False)
 
-        self.three_pane_splitter.addWidget(center_pane_widget)
+        self.master_splitter.addWidget(center_pane_widget)
+        self.master_splitter.setSizes([340, 860])
+        outer_layout.addWidget(self.master_splitter)
 
         # -------------------------------------------------------------
-        # 3. Right Pane (Live Preview & Integrated Asset Hub)
+        # 3. Peripheral Dock Widgets (QDockWidget)
         # -------------------------------------------------------------
-        right_pane_widget = QWidget()
-        right_pane_widget.setObjectName("RightPreviewPane")
-        right_pane_layout = QVBoxLayout(right_pane_widget)
-        right_pane_layout.setContentsMargins(4, 4, 4, 4)
-        right_pane_layout.setSpacing(6)
-
-        self.right_splitter = QSplitter(Qt.Vertical)
-        self.right_splitter.setObjectName("RightSplitter")
-
+        # Live Preview Dock
         self.live_preview_pane = LivePreviewPane(self)
-        self.right_splitter.addWidget(self.live_preview_pane)
+        self.preview_dock = QDockWidget("Live Preview", self)
+        self.preview_dock.setObjectName("LivePreviewDock")
+        self.preview_dock.setWidget(self.live_preview_pane)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.preview_dock)
 
+        # Asset Hub Dock
         self.asset_hub = AssetHubWidget(course_root_dir=None, parent=self)
         self.asset_hub.asset_selected.connect(self._handle_asset_hub_selected)
-        self.right_splitter.addWidget(self.asset_hub)
-        self.right_splitter.setSizes([450, 300])
+        self.asset_dock = QDockWidget("Asset Hub", self)
+        self.asset_dock.setObjectName("AssetHubDock")
+        self.asset_dock.setWidget(self.asset_hub)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.asset_dock)
+        self.tabifyDockWidget(self.preview_dock, self.asset_dock)
+        self.preview_dock.raise_()
 
-        right_pane_layout.addWidget(self.right_splitter, 1)
-        self.three_pane_splitter.addWidget(right_pane_widget)
-
-        # Set 3-pane widths (Left: 310, Center: 510, Right: 380)
-        self.three_pane_splitter.setSizes([310, 510, 380])
-        self.vertical_splitter.addWidget(self.three_pane_splitter)
-
-        # -------------------------------------------------------------
-        # 4. Bottom Problems & Validation Drawer
-        # -------------------------------------------------------------
+        # Problems & Validation Drawer Dock
         self.problems_drawer = ProblemsDrawer(self)
         self.problems_drawer.validate_requested.connect(self.validate_current_course)
         self.problems_drawer.issue_selected.connect(self._navigate_to_validation_issue)
-        self.vertical_splitter.addWidget(self.problems_drawer)
-        self.vertical_splitter.setSizes([680, 140])
+        self.problems_dock = QDockWidget("Problems & Validation", self)
+        self.problems_dock.setObjectName("ProblemsDock")
+        self.problems_dock.setWidget(self.problems_drawer)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.problems_dock)
+        self.problems_dock.setVisible(False)
 
-        outer_layout.addWidget(self.vertical_splitter)
-
-        self.current_editor_widget = None
-        self.current_selected_tree_item = None
-
+        # Status Bar
         self.status_bar = self.statusBar()
         self.current_file_label = QLabel("No course loaded")
         self.dirty_status_label = QLabel("")
@@ -531,14 +566,30 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.status_bar.addPermanentWidget(self.current_file_label, stretch=1)
         self.status_bar.addPermanentWidget(self.dirty_status_label)
 
-        if self.is_dirty:
-            self.dirty_status_label.setText("Unsaved Changes*")
-            self.dirty_status_label.setStyleSheet(
-                "color: orange; padding-right: 10px; font-weight: bold;"
+        self.current_editor_widget = None
+        self.current_selected_tree_item = None
+
+    def _handle_asset_hub_selected(self, asset_path: str):
+        """Inserts selected asset path into the active exercise input if applicable."""
+        if not self.current_editor_widget:
+            return
+        if asset_path.endswith((".mp3", ".wav", ".ogg", ".flac", ".m4a")):
+            target_attr = getattr(self.current_editor_widget, "audio_file_edit", None) or getattr(
+                self.current_editor_widget, "audio_edit", None
             )
-        else:
-            self.dirty_status_label.setText("Saved")
-            self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
+            if target_attr and hasattr(target_attr, "setText"):
+                target_attr.setText(asset_path)
+                self.status_bar.showMessage(f"Asset assigned: {asset_path}", 3000)
+                return
+        elif asset_path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")):
+            target_attr = getattr(self.current_editor_widget, "image_file_edit", None) or getattr(
+                self.current_editor_widget, "image_edit", None
+            )
+            if target_attr and hasattr(target_attr, "setText"):
+                target_attr.setText(asset_path)
+                self.status_bar.showMessage(f"Asset assigned: {asset_path}", 3000)
+                return
+        self.status_bar.showMessage(f"Asset selected: {asset_path}", 2000)
 
     def _set_active_chip(self, chip_name: str):
         for chip, name in [
@@ -558,110 +609,181 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         elif item_type == "exercise":
             self._add_exercise(parent_obj)
 
-    def _handle_left_tab_changed(self, index: int):
-        if index == 0:
-            sel = self.tree_widget.currentItem()
-            if sel:
-                self._on_tree_item_selected()
-            else:
-                self._display_item_editor(None)
-        elif index == 1:
-            manifest_item_data = {
-                "type": "manifest",
-                "manifest_data": self.manifest_data,
-                "course_obj": self.course_data,
-            }
-            self._display_item_editor(manifest_item_data)
-        elif index == 2:
-            glossary_item_data = {"type": "glossary"}
-            self._display_item_editor(glossary_item_data)
+    def _add_lesson_from_nav(self):
+        """Adds a new lesson to the currently selected Unit or parent of selected Lesson/Exercise."""
+        if not self.tree_widget or not self.course_data:
+            return
+        item = self.tree_widget.currentItem()
+        target_unit = None
+        if item:
+            item_data = item.data(0, Qt.UserRole)
+            if isinstance(item_data, Unit):
+                target_unit = item_data
+            elif isinstance(item_data, Lesson):
+                p = item.parent()
+                if p:
+                    target_unit = p.data(0, Qt.UserRole)
+            elif isinstance(item_data, Exercise):
+                p = item.parent()
+                if p and p.parent():
+                    target_unit = p.parent().data(0, Qt.UserRole)
+        if not target_unit and self.course_data.units:
+            target_unit = self.course_data.units[-1]
+        if target_unit:
+            self._add_lesson(target_unit)
+        else:
+            self._add_unit()
 
-    def _update_context_paths(self):
-        base_dir = (
-            os.path.dirname(self.current_manifest_path)
-            if self.current_manifest_path
-            else (
-                os.path.dirname(self.current_course_content_path)
-                if self.current_course_content_path
-                else None
-            )
-        )
-        if hasattr(self, "asset_hub"):
-            self.asset_hub.set_course_root_dir(base_dir)
-        if hasattr(self, "live_preview_pane"):
-            langs = {
-                "target": (
-                    self.course_data.target_language if self.course_data else "Target Language"
-                ),
-                "source": (
-                    self.course_data.source_language if self.course_data else "Source Language"
-                ),
-            }
-            self.live_preview_pane.set_course_context(langs, base_dir)
+    def _add_exercise_from_nav(self, exercise_type: str = "translate_to_target"):
+        """Adds a new exercise to the currently selected Lesson or parent of selected Exercise."""
+        if not self.tree_widget or not self.course_data:
+            return
+        item = self.tree_widget.currentItem()
+        target_lesson = None
+        if item:
+            item_data = item.data(0, Qt.UserRole)
+            if isinstance(item_data, Lesson):
+                target_lesson = item_data
+            elif isinstance(item_data, Exercise):
+                p = item.parent()
+                if p:
+                    target_lesson = p.data(0, Qt.UserRole)
+            elif isinstance(item_data, Unit) and item_data.lessons:
+                target_lesson = item_data.lessons[-1]
+        if not target_lesson:
+            for u in self.course_data.units:
+                if u.lessons:
+                    target_lesson = u.lessons[-1]
+                    break
+        if target_lesson:
+            self._add_exercise(target_lesson, exercise_type)
 
-    def _handle_asset_hub_selected(self, relative_asset_path: str):
-        self.status_bar.showMessage(
-            f"Selected asset: {relative_asset_path} (drag directly into fields)", 3000
-        )
+    def _revert_active_item(self):
+        """Reverts uncommitted changes in the active inspector editor."""
+        if not self.current_selected_tree_item:
+            return
+        item_data = self.current_selected_tree_item.data(0, Qt.UserRole)
+        if hasattr(self.current_editor_widget, "revert"):
+            self.current_editor_widget.revert()
+            self._set_dirty_state(False)
+            self.status_bar.showMessage("Reverted changes to current item.", 2000)
+        elif isinstance(item_data, Exercise):
+            self._display_item_editor(item_data)
+            self._set_dirty_state(False)
+            self.status_bar.showMessage("Reverted exercise changes.", 2000)
+
+    def _delete_active_item(self):
+        """Deletes the active Unit, Lesson, or Exercise from the course hierarchy."""
+        if not self.current_selected_tree_item:
+            return
+        item_data = self.current_selected_tree_item.data(0, Qt.UserRole)
+        if isinstance(item_data, Exercise):
+            self._delete_exercise(self.current_selected_tree_item)
+        elif isinstance(item_data, Lesson):
+            self._delete_lesson(self.current_selected_tree_item)
+        elif isinstance(item_data, Unit):
+            self._delete_unit(self.current_selected_tree_item)
 
     def _navigate_to_validation_issue(self, issue: Any):
         issue_str = str(issue)
+        entity_type = getattr(issue, "entity_type", None)
         unit_id = getattr(issue, "unit_id", None)
         lesson_id = getattr(issue, "lesson_id", None)
         exercise_id = getattr(issue, "exercise_id", None)
+        field = getattr(issue, "field", None)
 
-        if "Manifest" in issue_str:
-            self.left_nav_tabs.setCurrentIndex(1)
+        if hasattr(self, "problems_dock") and not self.problems_dock.isVisible():
+            self.problems_dock.setVisible(True)
+
+        if entity_type == "manifest" or (
+            not unit_id and not lesson_id and not exercise_id and "manifest" in issue_str.lower()
+        ):
+            if self.tree_widget.topLevelItemCount() > 0:
+                self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
+                if hasattr(self.manifest_editor, "focus_field"):
+                    self.manifest_editor.focus_field(field)
+            self.status_bar.showMessage(f"Navigated to: {issue_str[:80]}", 3000)
             return
-        elif "glossary" in issue_str.lower():
-            self.left_nav_tabs.setCurrentIndex(2)
+
+        if entity_type == "glossary" or "glossary" in issue_str.lower():
+            if self.tree_widget.topLevelItemCount() > 1:
+                self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(1))
+                if hasattr(self.glossary_editor, "focus_field"):
+                    self.glossary_editor.focus_field(field)
+            self.status_bar.showMessage(f"Navigated to: {issue_str[:80]}", 3000)
             return
-        else:
-            self.left_nav_tabs.setCurrentIndex(0)
 
         if not self.course_data:
             return
 
         target_obj = None
-        for unit in self.course_data.units:
-            if exercise_id or "Exercise" in issue_str:
+        if exercise_id:
+            for unit in self.course_data.units:
                 for lesson in unit.lessons:
                     for ex in lesson.exercises:
-                        if (exercise_id and ex.exercise_id == exercise_id) or (
-                            ex.exercise_id and ex.exercise_id in issue_str
-                        ):
+                        if ex.exercise_id == exercise_id:
                             target_obj = ex
                             break
                     if target_obj:
                         break
-            if target_obj:
-                break
-            if lesson_id or "Lesson" in issue_str:
+                if target_obj:
+                    break
+
+        if not target_obj and lesson_id:
+            for unit in self.course_data.units:
                 for lesson in unit.lessons:
-                    if (lesson_id and lesson.lesson_id == lesson_id) or (
-                        lesson.lesson_id and lesson.lesson_id in issue_str
-                    ):
+                    if lesson.lesson_id == lesson_id:
                         target_obj = lesson
                         break
-            if target_obj:
-                break
-            if (unit_id and unit.unit_id == unit_id) or (
-                unit.unit_id and unit.unit_id in issue_str
-            ):
-                target_obj = unit
-                break
+                if target_obj:
+                    break
+
+        if not target_obj and unit_id:
+            for unit in self.course_data.units:
+                if unit.unit_id == unit_id:
+                    target_obj = unit
+                    break
+
+        if not target_obj:
+            for unit in self.course_data.units:
+                if "Exercise" in issue_str:
+                    for lesson in unit.lessons:
+                        for ex in lesson.exercises:
+                            if ex.exercise_id and ex.exercise_id in issue_str:
+                                target_obj = ex
+                                break
+                        if target_obj:
+                            break
+                if target_obj:
+                    break
+                if "Lesson" in issue_str:
+                    for lesson in unit.lessons:
+                        if lesson.lesson_id and lesson.lesson_id in issue_str:
+                            target_obj = lesson
+                            break
+                    if target_obj:
+                        break
+                if unit.unit_id and unit.unit_id in issue_str:
+                    target_obj = unit
+                    break
 
         if target_obj:
             self._expand_and_select_item(target_obj)
             self.status_bar.showMessage(f"Navigated to: {issue_str[:80]}", 3000)
-            field = getattr(issue, "field", None)
-            if field and self.current_editor_widget:
+            if self.current_editor_widget and hasattr(self.current_editor_widget, "focus_field"):
+                self.current_editor_widget.focus_field(field)
+            elif field and self.current_editor_widget:
                 for attr_name in [f"{field}_edit", f"{field}_input", field]:
                     w = getattr(self.current_editor_widget, attr_name, None)
                     if w and hasattr(w, "setFocus"):
                         w.setFocus()
                         mark_widget_validity(w, False)
                         break
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.status_label.setText("● Validation Issue")
+                self.inspector_header.status_label.setStyleSheet(
+                    "color: #e74c3c; font-weight: 600; font-size: 9pt;"
+                )
 
     def _handle_data_model_reordered(self, moved_obj: Any, new_parent_obj: Any):
         self.update_tree_view()
@@ -774,21 +896,45 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     parent = parent.parent()
             iterator += 1
 
+    def _update_context_paths(self):
+        course_root = None
+        if self.current_manifest_path:
+            course_root = os.path.dirname(self.current_manifest_path)
+        elif self.current_course_content_path:
+            course_root = os.path.dirname(self.current_course_content_path)
+        if hasattr(self, "asset_hub"):
+            self.asset_hub.set_course_root_dir(course_root)
+
     def _set_dirty_state(self, dirty: bool = True):
-        self.is_dirty = dirty
-        self.setWindowTitle(
-            f"LL Course Editor{' *' if dirty else ''} - "
-            f"{os.path.basename(self.current_manifest_path) if self.current_manifest_path else 'New Course'}"
-        )
-        if hasattr(self, "dirty_status_label"):
-            if dirty:
-                self.dirty_status_label.setText("Unsaved Changes*")
-                self.dirty_status_label.setStyleSheet(
-                    "color: orange; padding-right: 10px; font-weight: bold;"
-                )
-            else:
-                self.dirty_status_label.setText("Saved")
-                self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
+        try:
+            self.is_dirty = dirty
+            self.setWindowTitle(
+                f"LL Course Editor{' *' if dirty else ''} - "
+                f"{os.path.basename(self.current_manifest_path) if self.current_manifest_path else 'New Course'}"
+            )
+            if hasattr(self, "dirty_status_label"):
+                if dirty:
+                    self.dirty_status_label.setText("Unsaved Changes*")
+                    self.dirty_status_label.setStyleSheet(
+                        "color: orange; padding-right: 10px; font-weight: bold;"
+                    )
+                else:
+                    self.dirty_status_label.setText("Saved")
+                    self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
+
+            if hasattr(self, "inspector_header"):
+                if dirty:
+                    self.inspector_header.status_label.setText("● Unsaved Changes*")
+                    self.inspector_header.status_label.setStyleSheet(
+                        "color: #f39c12; font-weight: 600; font-size: 9pt;"
+                    )
+                else:
+                    self.inspector_header.status_label.setText("● Saved")
+                    self.inspector_header.status_label.setStyleSheet(
+                        "color: #27ae60; font-weight: 600; font-size: 9pt;"
+                    )
+        except RuntimeError:
+            pass
 
     def _flush_active_editor(self):
         """Ensure active editor widgets flush their uncommitted data before saving or switching."""
@@ -894,36 +1040,18 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.detail_editor_stacked_widget.setCurrentWidget(self._placeholder_editor_widget)
 
     def _populate_unit_editor_widget(self, widget: QWidget, unit: Unit):
-        widget.unit_id_edit.setText(unit.unit_id)
-        widget.unit_title_edit.blockSignals(True)
-        widget.unit_title_edit.setText(unit.title)
-        widget.unit_title_edit.blockSignals(False)
-        try:
-            widget.unit_title_edit.textChanged.disconnect()
-        except RuntimeError:
-            pass
-        widget.unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
-        widget.unit_title_edit.textChanged.connect(
-            lambda text: self._validate_line_edit_required(widget.unit_title_edit, True)
-        )
-        self._validate_line_edit_required(widget.unit_title_edit, True)
+        if hasattr(widget, "load_unit"):
+            widget.load_unit(unit)
+        else:
+            widget.unit_id_edit.setText(unit.unit_id)
+            widget.unit_title_edit.setText(unit.title)
 
     def _populate_lesson_editor_widget(self, widget: QWidget, lesson: Lesson):
-        widget.lesson_id_edit.setText(lesson.lesson_id)
-        widget.lesson_title_edit.blockSignals(True)
-        widget.lesson_title_edit.setText(lesson.title)
-        widget.lesson_title_edit.blockSignals(False)
-        try:
-            widget.lesson_title_edit.textChanged.disconnect()
-        except RuntimeError:
-            pass
-        widget.lesson_title_edit.textChanged.connect(
-            lambda text: self._update_lesson_title(lesson, text)
-        )
-        widget.lesson_title_edit.textChanged.connect(
-            lambda text: self._validate_line_edit_required(widget.lesson_title_edit, True)
-        )
-        self._validate_line_edit_required(widget.lesson_title_edit, True)
+        if hasattr(widget, "load_lesson"):
+            widget.load_lesson(lesson)
+        else:
+            widget.lesson_id_edit.setText(lesson.lesson_id)
+            widget.lesson_title_edit.setText(lesson.title)
 
     def _validate_line_edit_required(self, input_widget: QLineEdit, is_required: bool):
         if not is_required:
@@ -934,30 +1062,26 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self._set_dirty_state(True)
 
     def _create_unit_editor_widget(self, unit: Unit):
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.addWidget(QLabel(f"Editing Unit: {unit.title}"))
-        id_layout = QHBoxLayout()
-        id_layout.addWidget(QLabel("Unit ID:"))
-        unit_id_edit = QLineEdit(unit.unit_id)
-        unit_id_edit.setReadOnly(True)
-        id_layout.addWidget(unit_id_edit)
-        layout.addLayout(id_layout)
-        title_layout = QHBoxLayout()
-        title_label = QLabel("Title: *")
-        title_layout.addWidget(title_label)
-        unit_title_edit = QLineEdit(unit.title)
-        unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
-        unit_title_edit.textChanged.connect(
-            lambda text: self._validate_line_edit_required(unit_title_edit, True)
-        )
-        title_layout.addWidget(unit_title_edit)
-        layout.addLayout(title_layout)
-        layout.addStretch(1)
-        widget.unit_id_edit = unit_id_edit
-        widget.unit_title_edit = unit_title_edit
-        self._validate_line_edit_required(unit_title_edit, True)
+        widget = UnitEditorWidget(self)
+        widget.load_unit(unit)
+        widget.data_changed.connect(lambda: self._set_dirty_state(True))
+        widget.title_changed.connect(self._handle_active_unit_title_changed)
         return widget
+
+    def _handle_active_unit_title_changed(self, new_title: str):
+        if (
+            self.current_selected_tree_item
+            and isinstance(self.current_selected_tree_item.data(0, Qt.UserRole), Unit)
+        ):
+            self.current_selected_tree_item.setText(0, new_title)
+        if hasattr(self, "inspector_header"):
+            course_title = (self.course_data.title if self.course_data else "Course")
+            self.inspector_header.set_context(
+                "Unit",
+                [course_title, new_title or "Untitled Unit"],
+                new_title or "Untitled Unit",
+                is_dirty=self.is_dirty,
+            )
 
     def _update_unit_title(self, unit: Unit, new_title: str):
         unit.title = new_title.strip()
@@ -969,30 +1093,31 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.current_selected_tree_item.setText(0, new_title.strip())
 
     def _create_lesson_editor_widget(self, lesson: Lesson):
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.addWidget(QLabel(f"Editing Lesson: {lesson.title}"))
-        id_layout = QHBoxLayout()
-        id_layout.addWidget(QLabel("Lesson ID:"))
-        lesson_id_edit = QLineEdit(lesson.lesson_id)
-        lesson_id_edit.setReadOnly(True)
-        id_layout.addWidget(lesson_id_edit)
-        layout.addLayout(id_layout)
-        title_layout = QHBoxLayout()
-        title_label = QLabel("Title: *")
-        title_layout.addWidget(title_label)
-        lesson_title_edit = QLineEdit(lesson.title)
-        lesson_title_edit.textChanged.connect(lambda text: self._update_lesson_title(lesson, text))
-        lesson_title_edit.textChanged.connect(
-            lambda text: self._validate_line_edit_required(lesson_title_edit, True)
-        )
-        title_layout.addWidget(lesson_title_edit)
-        layout.addLayout(title_layout)
-        layout.addStretch(1)
-        widget.lesson_id_edit = lesson_id_edit
-        widget.lesson_title_edit = lesson_title_edit
-        self._validate_line_edit_required(lesson_title_edit, True)
+        widget = LessonEditorWidget(self)
+        widget.load_lesson(lesson)
+        widget.data_changed.connect(lambda: self._set_dirty_state(True))
+        widget.title_changed.connect(self._handle_active_lesson_title_changed)
         return widget
+
+    def _handle_active_lesson_title_changed(self, new_title: str):
+        if (
+            self.current_selected_tree_item
+            and isinstance(self.current_selected_tree_item.data(0, Qt.UserRole), Lesson)
+        ):
+            self.current_selected_tree_item.setText(0, new_title)
+        if hasattr(self, "inspector_header"):
+            course_title = (self.course_data.title if self.course_data else "Course")
+            unit_title = (
+                self.current_selected_tree_item.parent().text(0)
+                if self.current_selected_tree_item and self.current_selected_tree_item.parent()
+                else "Unit"
+            )
+            self.inspector_header.set_context(
+                "Lesson",
+                [course_title, unit_title, new_title or "Untitled Lesson"],
+                new_title or "Untitled Lesson",
+                is_dirty=self.is_dirty,
+            )
 
     def _update_lesson_title(self, lesson: Lesson, new_title: str):
         lesson.title = new_title.strip()
@@ -1066,24 +1191,106 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         if not selected_items:
             self._display_item_editor(None)
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.setVisible(False)
             return
 
         self.current_selected_tree_item = selected_items[0]
         item_data = self.current_selected_tree_item.data(0, Qt.UserRole)
         self._display_item_editor(item_data)
 
-        if isinstance(item_data, (Unit, Lesson, Exercise)):
+        course_title = (self.manifest_data.get("course_title") if self.manifest_data else None) or (
+            self.course_data.title if self.course_data else "Course"
+        )
+
+        if isinstance(item_data, dict) and item_data.get("type") == "manifest":
             self.item_actions_widget.setVisible(True)
+            self.preview_exercise_button.setVisible(False)
+            self.delete_item_button.setVisible(False)
+            self.revert_button.setVisible(True)
+            self.move_up_btn.setEnabled(False)
+            self.move_down_btn.setEnabled(False)
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.setVisible(True)
+                self.inspector_header.set_context(
+                    "Settings",
+                    [course_title, "Settings"],
+                    course_title,
+                    is_dirty=self.is_dirty,
+                )
+        elif isinstance(item_data, dict) and item_data.get("type") == "glossary":
+            self.item_actions_widget.setVisible(True)
+            self.preview_exercise_button.setVisible(False)
+            self.delete_item_button.setVisible(False)
+            self.revert_button.setVisible(True)
+            self.move_up_btn.setEnabled(False)
+            self.move_down_btn.setEnabled(False)
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.setVisible(True)
+                self.inspector_header.set_context(
+                    "Glossary",
+                    [course_title, "Glossary"],
+                    "Course Glossary",
+                    is_dirty=self.is_dirty,
+                )
+        elif isinstance(item_data, (Unit, Lesson, Exercise)):
+            self.item_actions_widget.setVisible(True)
+            self.preview_exercise_button.setVisible(isinstance(item_data, Exercise))
+            self.delete_item_button.setVisible(True)
+            self.revert_button.setVisible(True)
+
             parent_list, current_index = self._get_item_list_and_index(item_data)
-            if parent_list is not None and current_index is not None:
-                self.move_up_button.setEnabled(current_index > 0)
-                self.move_down_button.setEnabled(current_index < len(parent_list) - 1)
-            else:
-                self.move_up_button.setEnabled(False)
-                self.move_down_button.setEnabled(False)
-            self.preview_exercise_button.setEnabled(isinstance(item_data, Exercise))
+            can_up = parent_list is not None and current_index is not None and current_index > 0
+            can_down = (
+                parent_list is not None
+                and current_index is not None
+                and current_index < len(parent_list) - 1
+            )
+            self.move_up_btn.setEnabled(can_up)
+            self.move_down_btn.setEnabled(can_down)
+
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.setVisible(True)
+                if isinstance(item_data, Unit):
+                    self.inspector_header.set_context(
+                        "Unit",
+                        [course_title, item_data.title or "Untitled Unit"],
+                        item_data.title or "Untitled Unit",
+                        is_dirty=self.is_dirty,
+                    )
+                elif isinstance(item_data, Lesson):
+                    unit_item = self.current_selected_tree_item.parent()
+                    unit_title = unit_item.text(0) if unit_item else "Unit"
+                    self.inspector_header.set_context(
+                        "Lesson",
+                        [course_title, unit_title, item_data.title or "Untitled Lesson"],
+                        item_data.title or "Untitled Lesson",
+                        is_dirty=self.is_dirty,
+                    )
+                elif isinstance(item_data, Exercise):
+                    lesson_item = self.current_selected_tree_item.parent()
+                    unit_item = lesson_item.parent() if lesson_item else None
+                    unit_title = unit_item.text(0) if unit_item else "Unit"
+                    lesson_title = lesson_item.text(0) if lesson_item else "Lesson"
+                    type_label = item_data.type.replace("_", " ").title()
+                    ex_name = (
+                        getattr(item_data, "title", "")
+                        or getattr(item_data, "prompt", "")
+                        or getattr(item_data, "source_word", "")
+                        or f"Exercise ({type_label})"
+                    )
+                    self.inspector_header.set_context(
+                        type_label,
+                        [course_title, unit_title, lesson_title, type_label],
+                        ex_name,
+                        is_dirty=self.is_dirty,
+                    )
         else:
             self.item_actions_widget.setVisible(False)
+            self.move_up_btn.setEnabled(False)
+            self.move_down_btn.setEnabled(False)
+            if hasattr(self, "inspector_header"):
+                self.inspector_header.setVisible(False)
 
     def _get_item_list_and_index(self, item_data_obj: Any) -> tuple[list | None, int | None]:
         """Helper to get the list and index of an item for reordering."""
@@ -1225,13 +1432,19 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         def find_and_select(parent_item, target_data_obj):
             for i in range(parent_item.childCount()):
                 child_item = parent_item.child(i)
-                if child_item.data(0, Qt.UserRole) is target_data_obj:
+                data = child_item.data(0, Qt.UserRole)
+                if data is target_data_obj:
                     self.tree_widget.setCurrentItem(child_item)
                     self.tree_widget.expandItem(parent_item)
                     if child_item.childCount() > 0:
                         self.tree_widget.expandItem(child_item)
                     self.tree_widget.scrollToItem(child_item)
                     return True
+                if isinstance(data, dict) and isinstance(target_data_obj, dict):
+                    if data.get("type") and data.get("type") == target_data_obj.get("type"):
+                        self.tree_widget.setCurrentItem(child_item)
+                        self.tree_widget.scrollToItem(child_item)
+                        return True
                 if find_and_select(child_item, target_data_obj):
                     return True
             return False
@@ -1262,6 +1475,21 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         if not self.course_data:
             return
 
+        # 1. Course Settings (Manifest) Root Item
+        manifest_item = QTreeWidgetItem(self.tree_widget, ["⚙ Course Settings"])
+        manifest_item.setData(
+            0,
+            Qt.UserRole,
+            {"type": "manifest", "manifest_data": self.manifest_data, "course_obj": self.course_data},
+        )
+        manifest_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+        # 2. Course Glossary Root Item
+        glossary_item = QTreeWidgetItem(self.tree_widget, ["📖 Course Glossary"])
+        glossary_item.setData(0, Qt.UserRole, {"type": "glossary"})
+        glossary_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+        # 3. Units, Lessons, Exercises
         for unit in self.course_data.units:
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
@@ -1308,23 +1536,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                         exercise_item.flags() | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
                     )
 
-                # Inline "+ Add Exercise..." button under lesson
-                add_ex_item = QTreeWidgetItem(lesson_item, ["+ Add Exercise..."])
-                add_ex_item.setData(0, Qt.UserRole, {"action": "add_exercise", "target": lesson})
-                add_ex_item.setForeground(0, QColor("#8888aa"))
-                add_ex_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-
-            # Inline "+ Add Lesson..." button under unit
-            add_les_item = QTreeWidgetItem(unit_item, ["+ Add Lesson..."])
-            add_les_item.setData(0, Qt.UserRole, {"action": "add_lesson", "target": unit})
-            add_les_item.setForeground(0, QColor("#8888aa"))
-            add_les_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-
         if selected_item_data:
             self._expand_and_select_item(selected_item_data)
+        elif self.tree_widget.topLevelItemCount() > 0:
+            self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
 
         # Reapply current filter after update_tree_view rebuilds it
-        # This ensures that any active filters are maintained after a reorder operation.
         self._filter_tree_view(self.search_bar.text())
 
     def new_course(self):
@@ -1576,9 +1793,13 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         logger.info(f"Validating course content for: {self.course_data.title}")
 
+        if hasattr(self, "problems_dock"):
+            self.problems_dock.setVisible(True)
+            self.problems_dock.raise_()
+
         if hasattr(self, "problems_drawer"):
             self.problems_drawer.set_issues(all_errors)
-            if not self.problems_drawer.is_drawer_visible():
+            if hasattr(self.problems_drawer, "is_drawer_visible") and not self.problems_drawer.is_drawer_visible():
                 self.problems_drawer.toggle_drawer()
 
         if not all_errors:

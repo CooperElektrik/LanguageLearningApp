@@ -26,6 +26,50 @@ QWidget#AssetHub {
 QLabel {
     color: #1f2024;
     background-color: transparent;
+    font-size: 10pt;
+}
+
+/* Typography and Inspector Header Rules */
+QLabel#InspectorTitle {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #1f2024;
+}
+
+QLabel#InspectorBadge {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #2d55b8;
+    background-color: rgba(56, 103, 214, 0.1);
+    border: 1px solid #3867d6;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+QLabel#InspectorBreadcrumbs {
+    font-size: 9pt;
+    color: #6b6d7c;
+}
+
+QLabel#InspectorStatus {
+    font-size: 9pt;
+    font-weight: 600;
+}
+
+/* QDockWidget Styling */
+QDockWidget {
+    color: #1f2024;
+}
+
+QDockWidget::title {
+    text-align: left;
+    background-color: #eaebf0;
+    padding: 6px 10px;
+    border: 1px solid #dcdde2;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    font-weight: bold;
+    font-size: 10pt;
 }
 
 /* Line Edits and Text Edits */
@@ -37,6 +81,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     border-radius: 4px;
     selection-background-color: #3867d6;
     selection-color: #ffffff;
+    font-size: 10pt;
 }
 
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
@@ -64,6 +109,7 @@ QComboBox {
     border-radius: 4px;
     padding: 4px 8px;
     min-height: 24px;
+    font-size: 10pt;
 }
 
 QComboBox:hover {
@@ -93,6 +139,7 @@ QPushButton {
     border-radius: 4px;
     padding: 5px 12px;
     font-weight: 500;
+    font-size: 10pt;
 }
 
 QPushButton:hover {
@@ -111,13 +158,14 @@ QPushButton:disabled {
 }
 
 /* Primary/Accent Action Buttons */
-QPushButton#primaryAction, QPushButton[primary="true"] {
+QPushButton#primaryAction, QPushButton[primary="true"], QToolButton[primary="true"] {
     background-color: #3867d6;
     border: 1px solid #2d55b8;
     color: #ffffff;
+    font-weight: bold;
 }
 
-QPushButton#primaryAction:hover, QPushButton[primary="true"]:hover {
+QPushButton#primaryAction:hover, QPushButton[primary="true"]:hover, QToolButton[primary="true"]:hover {
     background-color: #2d55b8;
 }
 

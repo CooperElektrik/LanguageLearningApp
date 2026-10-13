@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QWidget,
 )
+
+from .exercise_editor_widgets import mark_widget_validity
 
 try:
     from application.core.models import Course
@@ -38,6 +40,10 @@ class ManifestEditorWidget(QWidget):
         self.current_course_dir: str = None
 
         self.form_layout = QFormLayout(self)
+        self.form_layout.setContentsMargins(16, 16, 16, 16)
+        self.form_layout.setVerticalSpacing(8)
+        self.form_layout.setHorizontalSpacing(12)
+        self.form_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         def add_required_row(label_text: str, input_widget: QWidget, field_name: str):
             label = QLabel(label_text + " *")
@@ -136,10 +142,33 @@ class ManifestEditorWidget(QWidget):
 
     def _validate_field(self, input_widget: QLineEdit):
         text = input_widget.text().strip()
-        if not text:
-            input_widget.setStyleSheet("border: 1px solid red;")
-        else:
-            input_widget.setStyleSheet("")
+        mark_widget_validity(input_widget, bool(text))
+
+    def focus_field(self, field_name: str | None = None) -> bool:
+        """Cleanly sets focus and highlights an invalid field."""
+        field_map = {
+            "course_id": self.course_id_input,
+            "course_title": self.course_title_input,
+            "title": self.course_title_input,
+            "target_language": self.target_lang_input,
+            "source_language": self.source_lang_input,
+            "content_file": self.content_file_input,
+            "version": self.version_input,
+            "author": self.author_input,
+            "description": self.description_input,
+            "image_file": self.image_file_input,
+        }
+        target = field_map.get(field_name) if field_name else self.course_title_input
+        if target:
+            target.setFocus()
+            mark_widget_validity(target, False)
+            return True
+        return False
+
+    def revert(self):
+        """Restores fields back to the committed manifest data."""
+        if self.current_manifest_data is not None and self.current_course_obj is not None:
+            self.load_data(self.current_manifest_data, self.current_course_obj, self.current_course_dir)
 
     def load_data(
         self,
