@@ -8,11 +8,13 @@ from PySide6.QtCore import (
     QCoreApplication,
     QElapsedTimer,
     Qt,
+    QTimer,
 )  # Qt for alignment flags, Timers, Buffer
 from PySide6.QtGui import QPixmap  # For splash screen
 from PySide6.QtWidgets import (
     QApplication,
     QSplashScreen,
+    QWidget,
 )  # QMessageBox is no longer directly used here
 
 # --- Start of Patched Section for PyInstaller Compatibility ---
@@ -65,6 +67,8 @@ utils.set_app_root_dir(
 )  # `utils.get_resource_path` needs this base for relative paths.
 
 # --- End of Patched Section ---
+
+logger = logging.getLogger(__name__)
 
 
 def setup_logging():
@@ -138,6 +142,36 @@ def install_crash_handler(log_dir: str):
                 crash_dialog_open = False
 
     sys.excepthook = handle_exception
+
+
+def finish_splash_screen(
+    splash: QSplashScreen | None,
+    splash_timer: QElapsedTimer | None,
+    main_window: QWidget,
+    minimum_display_time_ms: int = 1000,
+) -> None:
+    """Closes the splash screen once the main window is ready, honoring a minimum display time."""
+    if not splash:
+        return
+
+    def _finish() -> None:
+        try:
+            splash.finish(main_window)
+        except Exception as e:
+            logger.debug(f"Error finishing splash screen: {e}")
+
+    if splash_timer:
+        elapsed_ms = splash_timer.elapsed()
+        if elapsed_ms < minimum_display_time_ms:
+            remaining_time = max(1, int(minimum_display_time_ms - elapsed_ms))
+            logger.debug(
+                f"App loaded quickly ({elapsed_ms}ms). Waiting {remaining_time}ms for minimum splash display."
+            )
+            QTimer.singleShot(remaining_time, _finish)
+            return
+        logger.debug(f"App loading took {elapsed_ms}ms. Minimum splash time met.")
+
+    _finish()
 
 
 def main():
@@ -227,6 +261,10 @@ def main():
     logger.info(
         f"Application startup wall time (until main window shown): {startup_elapsed_time:.2f} seconds."
     )
+
+    # --- Finish Splash Screen ---
+    finish_splash_screen(splash, splash_timer, main_window)
+
     exit_code = app.exec()
 
     # Record the end time and print the elapsed time
