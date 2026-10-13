@@ -190,7 +190,6 @@ class BaseExercisePlayerView(QWidget):
                 error_msg = self.tr("Unsupported exercise type: {0}").format(exercise.type)
                 logger.error(error_msg + f" (Exercise ID: {exercise.exercise_id})")
                 self.feedback_label.setText(error_msg)
-                self.feedback_label.setStyleSheet("color: red;")
                 self.current_exercise_obj = None  # Clear if widget fails to load
                 return False
 
@@ -371,7 +370,6 @@ class BaseExercisePlayerView(QWidget):
         self.current_exercise_obj = None
 
         self.feedback_label.setText("")
-        self.feedback_label.setStyleSheet("")
 
         self._toggle_hint_visibility(force_show=False)  # Hide any visible hint
         self.notes_text_edit.clear()

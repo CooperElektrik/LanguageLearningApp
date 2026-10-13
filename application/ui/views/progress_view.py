@@ -109,7 +109,6 @@ class ProgressView(QWidget):
         self.retention_breakdown_label = QLabel()
         self.retention_breakdown_label.setObjectName("retention_breakdown_label")
         self.retention_breakdown_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.retention_breakdown_label.setStyleSheet("color: #a0a0b0; font-size: 11px;")
         retention_layout.addWidget(self.retention_breakdown_label)
 
         self.scroll_content_layout.addWidget(self.retention_group)

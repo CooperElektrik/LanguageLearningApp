@@ -80,7 +80,6 @@ def build_executable(
         (os.path.join(project_root, "courses"), "courses"),
         (os.path.join(project_root, "application", "assets"), "assets"),
         (os.path.join(project_root, "application", "localization"), "localization"),
-        (os.path.join(project_root, "application", "ui", "styles"), "ui/styles"),
         (os.path.join(project_root, "application", "tools", "styles"), "tools/styles"),
     ]
 

@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 class UnifiedSetupDialog(QDialog):
     """A unified dialog for the initial setup of all settings."""
 
-    theme_changed = Signal(str)
     font_size_changed = Signal(int)
     locale_changed = Signal(str)
 
@@ -131,16 +130,6 @@ class UnifiedSetupDialog(QDialog):
         layout = QFormLayout(page)
         layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        # Theme
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
-        self.theme_combo.currentTextChanged.connect(self.on_theme_selected)
-        layout.addRow(self.tr("Theme:"), self.theme_combo)
-
-        self.theme_description_label = QLabel()
-        self.theme_description_label.setWordWrap(True)
-        layout.addRow("", self.theme_description_label)
-
         # Language
         self.locale_combo = QComboBox()
         self._populate_locale_combo()
@@ -160,13 +149,6 @@ class UnifiedSetupDialog(QDialog):
 
         self.stack.addWidget(page)
         self.nav_list.addItem(self.tr("User Interface"))
-
-    def on_theme_selected(self, theme_name):
-        description = settings.AVAILABLE_THEMES.get(theme_name, {}).get(
-            "description", ""
-        )
-        self.theme_description_label.setText(self.tr(description))
-        self.theme_changed.emit(theme_name)
 
     def create_audio_settings_page(self):
         page = QWidget()
@@ -282,11 +264,6 @@ class UnifiedSetupDialog(QDialog):
 
     def load_settings(self):
         # UI Settings
-        current_theme_name = self.q_settings.value(
-            settings.QSETTINGS_KEY_UI_THEME, settings.DEFAULT_THEME, type=str
-        )
-        self.theme_combo.setCurrentText(current_theme_name)
-        self.on_theme_selected(current_theme_name)
         current_locale_code = self.q_settings.value(
             settings.QSETTINGS_KEY_LOCALE, settings.DEFAULT_LOCALE, type=str
         )
@@ -326,9 +303,6 @@ class UnifiedSetupDialog(QDialog):
 
     def save_and_accept(self):
         # UI Settings
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_UI_THEME, self.theme_combo.currentText()
-        )
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_LOCALE, self.locale_combo.currentData()
         )
@@ -416,8 +390,6 @@ class UnifiedSetupDialog(QDialog):
         self.nav_list.item(1).setText(self.tr("User Interface"))
         ui_page = self.stack.widget(1)
         form_layout = ui_page.layout()
-        form_layout.labelForField(self.theme_combo).setText(self.tr("Theme:"))
-        self.on_theme_selected(self.theme_combo.currentText())
         form_layout.labelForField(self.locale_combo).setText(self.tr("Language:"))
         form_layout.labelForField(self.font_size_slider.parent()).setText(
             self.tr("Font Size:")

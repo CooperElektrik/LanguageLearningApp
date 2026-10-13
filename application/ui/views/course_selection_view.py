@@ -172,12 +172,12 @@ class CourseSelectionView(QWidget):
 
         header_layout.addStretch()
 
-        self.import_button = QPushButton(self.tr("📥 Import Package (.lcpkg)..."))
+        self.import_button = QPushButton(self.tr("Import Package (.lcpkg)..."))
         self.import_button.setObjectName("course_import_button")
         self.import_button.clicked.connect(self._on_import_course_clicked)
         header_layout.addWidget(self.import_button)
 
-        self.refresh_button = QPushButton(self.tr("🔄 Refresh"))
+        self.refresh_button = QPushButton(self.tr("Refresh"))
         self.refresh_button.setObjectName("course_refresh_button")
         self.refresh_button.clicked.connect(self._find_and_display_courses)
         header_layout.addWidget(self.refresh_button)
@@ -308,15 +308,15 @@ class CourseSelectionView(QWidget):
         btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         btn_layout.setSpacing(15)
 
-        starter_btn = QPushButton(self.tr("📦 Load Spanish Starter Course"))
+        starter_btn = QPushButton(self.tr("Load Spanish Starter Course"))
         starter_btn.clicked.connect(self._load_starter_course)
         btn_layout.addWidget(starter_btn)
 
-        import_btn = QPushButton(self.tr("📥 Import Package (.lcpkg)..."))
+        import_btn = QPushButton(self.tr("Import Package (.lcpkg)..."))
         import_btn.clicked.connect(self._on_import_course_clicked)
         btn_layout.addWidget(import_btn)
 
-        folder_btn = QPushButton(self.tr("📂 Open Courses Folder"))
+        folder_btn = QPushButton(self.tr("Open Courses Folder"))
         folder_btn.clicked.connect(self._open_courses_folder)
         btn_layout.addWidget(folder_btn)
 
@@ -368,7 +368,7 @@ class CourseSelectionView(QWidget):
 
     def retranslateUi(self):
         self.title_label.setText(self.tr("Select a Course"))
-        self.import_button.setText(self.tr("📥 Import Package (.lcpkg)..."))
-        self.refresh_button.setText(self.tr("🔄 Refresh"))
+        self.import_button.setText(self.tr("Import Package (.lcpkg)..."))
+        self.refresh_button.setText(self.tr("Refresh"))
         logger.debug("CourseSelectionView retranslated.")
 

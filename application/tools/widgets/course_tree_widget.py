@@ -62,9 +62,9 @@ class CourseTreeWidget(QTreeWidget):
     def get_asset_badges(exercise: Exercise) -> str:
         parts = []
         if getattr(exercise, "audio_file", None):
-            parts.append("🔊")
+            parts.append("[AUDIO]")
         if getattr(exercise, "image_file", None):
-            parts.append("🖼️")
+            parts.append("[IMAGE]")
         return " ".join(parts)
 
     def supportedDropActions(self) -> Qt.DropActions:

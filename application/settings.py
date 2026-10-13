@@ -15,30 +15,6 @@ IMAGES_DIR = os.path.join(
 )  # Directory for images like splash screen
 SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")  # Sub-directory for sound effects
 LOCALIZATION_DIR = "localization"  # Directory containing .qm files
-THEME_DIR = "ui/styles"  # Directory containing .qss files
-LIGHT_THEME_FILE = "light_theme.qss"  # Light theme
-DARK_THEME_FILE = "dark_theme.qss"  # Dark theme
-
-# The default theme shown to new users
-DEFAULT_THEME = "Dark"
-
-AVAILABLE_THEMES = {
-    "System": {
-        "file": "system_default",
-        "description": "Uses the default system look and feel.",
-        "is_dark": False,
-    },
-    "Light": {
-        "file": LIGHT_THEME_FILE,
-        "description": "A clean and simple light theme.",
-        "is_dark": False,
-    },
-    "Dark": {
-        "file": DARK_THEME_FILE,
-        "description": "A clean and simple dark theme.",
-        "is_dark": True,
-    },
-}  # Name to filename mapping
 
 # Splash screen image
 SPLASH_IMAGE_FILE = os.path.join(IMAGES_DIR, "splash.jpg")
@@ -53,7 +29,6 @@ SOUND_FILE_COMPLETE = "complete.mp3"
 # --- QSettings Keys ---
 QSETTINGS_KEY_SOUND_ENABLED = "audio/sound_effects_enabled"
 QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
-QSETTINGS_KEY_UI_THEME = "ui/theme"  # New key for storing selected theme
 QSETTINGS_KEY_FONT_SIZE = "ui/font_size"
 QSETTINGS_KEY_AUTOPLAY_AUDIO = "audio/autoplay_audio_enabled"
 QSETTINGS_KEY_AUTOSHOW_HINTS = "ui/autoshow_hints_enabled"

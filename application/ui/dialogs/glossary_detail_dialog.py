@@ -117,7 +117,7 @@ class GlossaryDetailDialog(QDialog):
 
         # Audio Playback
         audio_layout = QHBoxLayout()
-        self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
+        self.play_audio_button = QPushButton(self.tr("Play Audio"))
         self.play_audio_button.setObjectName("detail_play_audio_button")
         self.play_audio_button.clicked.connect(self._play_audio)
         audio_layout.addWidget(self.play_audio_button)
@@ -203,7 +203,7 @@ class GlossaryDetailDialog(QDialog):
             self.play_audio_button.setText(self.tr("No Audio Available"))
         else:
             self.play_audio_button.setEnabled(True)
-            self.play_audio_button.setText(self.tr("🔊 Play Audio"))
+            self.play_audio_button.setText(self.tr("Play Audio"))
 
     def _prepare_content_with_glossary_links(self, original_content: str) -> str:
         """

@@ -234,8 +234,8 @@ Check the logs for details.</source>
         <translation type="vanished">Заметки:</translation>
     </message>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Воспроизвести аудио</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Воспроизвести аудио</translation>
     </message>
     <message>
         <source>Pronunciation:</source>
@@ -488,8 +488,8 @@ Since this is your first time opening this application, let&apos;s set up your u
         <translation type="vanished">Скрыть подсказку</translation>
     </message>
     <message>
-        <source>Finish Lesson 🎉</source>
-        <translation type="vanished">Урок завершен 🎉</translation>
+        <source>Finish Lesson</source>
+        <translation type="vanished">Урок завершен</translation>
     </message>
     <message>
         <source>Review Mistakes →</source>
@@ -563,8 +563,8 @@ Explanation: {0}</source>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Воспроизвести аудио</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Воспроизвести аудио</translation>
     </message>
 </context>
 <context>
@@ -758,12 +758,12 @@ Happy learning!</source>
         <translation type="vanished">Произнесите, пожалуйста: </translation>
     </message>
     <message>
-        <source>🔊 Play Reference</source>
-        <translation type="vanished">🔊 Воспроизвести образец</translation>
+        <source>Play Reference</source>
+        <translation type="vanished">Воспроизвести образец</translation>
     </message>
     <message>
-        <source>🎤 Record</source>
-        <translation type="vanished">🎤 Запись</translation>
+        <source>Record</source>
+        <translation type="vanished">Запись</translation>
     </message>
     <message>
         <source>Tap record and speak clearly.</source>
@@ -782,8 +782,8 @@ Happy learning!</source>
         <translation type="vanished">Сравнение с целевым текстом:</translation>
     </message>
     <message>
-        <source>🔄 Try Again</source>
-        <translation type="vanished">🔄 Попробовать снова</translation>
+        <source>Try Again</source>
+        <translation type="vanished">Попробовать снова</translation>
     </message>
     <message>
         <source>Submit and Continue</source>
@@ -818,8 +818,8 @@ Happy learning!</source>
         <translation type="vanished">Запись... Говорите!</translation>
     </message>
     <message>
-        <source>⏹️ Stop Recording</source>
-        <translation type="vanished">⏹️ Остановить запись</translation>
+        <source>Stop Recording</source>
+        <translation type="vanished">Остановить запись</translation>
     </message>
     <message>
         <source>Processing audio... Please wait.</source>
@@ -1105,8 +1105,8 @@ The welcome guide will be shown the next time you load a course.</source>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Воспроизвести аудио</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Воспроизвести аудио</translation>
     </message>
 </context>
 </TS>

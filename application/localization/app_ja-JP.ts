@@ -235,8 +235,8 @@ Check the logs for details.</source>
         <translation type="vanished">メモ:</translation>
     </message>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 音声再生</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">音声再生</translation>
     </message>
     <message>
         <source>Pronunciation:</source>
@@ -489,8 +489,8 @@ Since this is your first time opening this application, let&apos;s set up your u
         <translation type="vanished">ヒントを隠す</translation>
     </message>
     <message>
-        <source>Finish Lesson 🎉</source>
-        <translation type="vanished">レッスン完了 🎉</translation>
+        <source>Finish Lesson</source>
+        <translation type="vanished">レッスン完了</translation>
     </message>
     <message>
         <source>Review Mistakes →</source>
@@ -564,8 +564,8 @@ Explanation: {0}</source>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 音声再生</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">音声再生</translation>
     </message>
 </context>
 <context>
@@ -759,12 +759,12 @@ Happy learning!</source>
         <translation type="vanished">発音してください: </translation>
     </message>
     <message>
-        <source>🔊 Play Reference</source>
-        <translation type="vanished">🔊 参考音再生</translation>
+        <source>Play Reference</source>
+        <translation type="vanished">参考音再生</translation>
     </message>
     <message>
-        <source>🎤 Record</source>
-        <translation type="vanished">🎤 録音</translation>
+        <source>Record</source>
+        <translation type="vanished">録音</translation>
     </message>
     <message>
         <source>Tap record and speak clearly.</source>
@@ -783,8 +783,8 @@ Happy learning!</source>
         <translation type="vanished">目標テキストとの比較:</translation>
     </message>
     <message>
-        <source>🔄 Try Again</source>
-        <translation type="vanished">🔄 再試行</translation>
+        <source>Try Again</source>
+        <translation type="vanished">再試行</translation>
     </message>
     <message>
         <source>Submit and Continue</source>
@@ -819,8 +819,8 @@ Happy learning!</source>
         <translation type="vanished">録音中... 今話してください！</translation>
     </message>
     <message>
-        <source>⏹️ Stop Recording</source>
-        <translation type="vanished">⏹️ 録音停止</translation>
+        <source>Stop Recording</source>
+        <translation type="vanished">録音停止</translation>
     </message>
     <message>
         <source>Processing audio... Please wait.</source>
@@ -1106,8 +1106,8 @@ The welcome guide will be shown the next time you load a course.</source>
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 音声再生</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">音声再生</translation>
     </message>
 </context>
 </TS>

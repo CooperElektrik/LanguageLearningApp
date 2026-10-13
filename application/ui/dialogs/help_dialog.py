@@ -35,25 +35,10 @@ class FaqItemWidget(QWidget):
         self.toggle_button = QPushButton(f"▶ {self.question_text}")
         self.toggle_button.setCheckable(True)
         self.toggle_button.setChecked(False)
-        self.toggle_button.setStyleSheet("""
-            QPushButton {
-                text-align: left;
-                padding: 8px;
-                border: none;
-                font-weight: bold;
-                background-color: transparent;
-            }
-            QPushButton:hover {
-                background-color: rgba(128, 128, 128, 0.15);
-            }
-        """)
 
         self.answer_label = QLabel(self.answer_text)
         self.answer_label.setWordWrap(True)
         self.answer_label.setVisible(False)
-        self.answer_label.setStyleSheet(
-            "padding: 2px 8px 8px 25px;"
-        )  # Indent answer
 
         # --- Layout ---
         layout = QVBoxLayout(self)
@@ -109,7 +94,6 @@ class HelpDialog(QDialog):
 
         self._init_ui()
         self._populate_faq_content()
-        self._apply_stylesheet()
 
     def _init_ui(self):
         """Initialize the main UI layout and widgets."""
@@ -211,38 +195,6 @@ class HelpDialog(QDialog):
             )
 
         self.faq_layout.addStretch()  # Pushes all content to the top
-
-    def _apply_stylesheet(self):
-        """Apply a global stylesheet for a better look."""
-        # The return is removed, and the stylesheet is updated to target the named widget.
-        self.setStyleSheet("""
-            /* Style the frame of the scroll area */
-            QScrollArea {
-                border: 1px solid rgba(128, 128, 128, 0.3);
-                border-radius: 4px;
-            }
-            #categoryHeader {
-                font-size: 16pt;
-                font-weight: bold;
-                padding-top: 15px;
-                padding-bottom: 5px;
-            }
-            /* Styles for the control buttons (Expand/Collapse/Close) */
-            QDialogButtonBox QPushButton, HelpDialog > QHBoxLayout > QPushButton {
-                background-color: #0078d4;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-weight: normal;
-            }
-            QDialogButtonBox QPushButton:hover, HelpDialog > QHBoxLayout > QPushButton:hover {
-                background-color: #005a9e;
-            }
-            QDialogButtonBox QPushButton:pressed, HelpDialog > QHBoxLayout > QPushButton:pressed {
-                background-color: #004578;
-            }
-        """)
 
     def changeEvent(self, event: QEvent):
         """Handles language change events to re-translate the UI."""

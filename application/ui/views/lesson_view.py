@@ -165,7 +165,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
                     self.view_state == LessonViewState.REVIEWING_MISTAKES
                     or not self.mistakes_queue
                 ):
-                    self.next_button.setText(self.tr("Finish Lesson 🎉"))
+                    self.next_button.setText(self.tr("Finish Lesson"))
                 else:
                     self.next_button.setText(self.tr("Review Mistakes →"))
             else:
@@ -187,7 +187,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         if not self.current_lesson:
             logger.error(f"Could not load lesson with ID: {lesson_id}")
             self.feedback_label.setText(self.tr("Error: Could not load lesson data."))
-            self.feedback_label.setStyleSheet("color: red;")
             self.view_state = LessonViewState.INITIAL_LOAD
             self._update_button_states()
             return
@@ -264,7 +263,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             )
         self.feedback_label.setText("")  # Clear feedback label
         # self._toggle_hint_visibility(force_show=False) # Done by _load_exercise_widget in base
-        self.feedback_label.setStyleSheet("")
 
         if self.current_exercise_index >= len(self.exercises_in_session):
             if (
@@ -298,7 +296,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             )
         else:
             self.feedback_label.setText(self.tr("Error loading exercise. Skipping."))
-            self.feedback_label.setStyleSheet("color: red;")
             self.view_state = LessonViewState.ANSWER_SUBMITTED
 
         # Defer button state update to ensure UI changes (like hint visibility) are processed
@@ -341,7 +338,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             feedback_text_display = self.tr("Skipped. Correct answer: {0}").format(
                 correct_answer_display_part
             )
-            self.feedback_label.setStyleSheet("color: orange;")
             is_correct = False
             quality_score_for_srs = 0
             if self.current_exercise_obj.explanation:
@@ -354,13 +350,9 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
                 "dictation",
             ]:
                 self.feedback_label.setText(self.tr("Please provide an answer."))
-                self.feedback_label.setStyleSheet("color: orange;")
                 return
 
             is_correct, feedback_text_display = self._evaluate_answer(user_answer)
-            self.feedback_label.setStyleSheet(
-                "color: green;" if is_correct else "color: red;"
-            )
             utils.play_sound(
                 settings.SOUND_FILE_CORRECT
                 if is_correct
@@ -442,7 +434,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         self.feedback_label.setText(
             self.tr("Let's go over the exercises you had trouble with.")
         )
-        self.feedback_label.setStyleSheet("")
 
         self._load_next_exercise_in_lesson()
 
@@ -459,8 +450,6 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
                 self.current_lesson.title if self.current_lesson else ""
             )
         )
-        self.feedback_label.setStyleSheet("color: blue;")
-
         super()._clear_exercise_area()
         self.current_exercise_obj = None
 

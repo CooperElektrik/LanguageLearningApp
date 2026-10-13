@@ -148,6 +148,9 @@ def main():
     # However, for a simple splash, QPixmap can be loaded first.
     # For consistency and potential future needs (e.g., early dialogs), create QApplication first.
     app = QApplication(sys.argv)
+    # Use Qt's Fusion style as the single, minimal look-and-feel baseline. It is
+    # consistent across platforms and needs no custom stylesheet to look right.
+    app.setStyle("Fusion")
     splash: QSplashScreen | None = None
     splash_timer: QElapsedTimer | None = None
 

@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class SettingsDialog(QDialog):
-    theme_changed = Signal(str)  # Emitted when the theme is changed
     font_size_changed = Signal(int)  # Emitted when font size slider changes
     locale_changed = Signal(
         str
@@ -140,13 +139,9 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(self.audio_group)
 
         # --- UI Settings ---
-        # UI Settings (General, then Theme, then Font)
+        # UI Settings (General, then Language, then Font)
         self.ui_group = QGroupBox(self.tr("User Interface"))
         ui_layout = QFormLayout(self.ui_group)
-
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(list(settings.AVAILABLE_THEMES.keys()))
-        ui_layout.addRow(self.tr("Theme:"), self.theme_combo)
 
         self.locale_combo = QComboBox()
         self._populate_locale_combo()
@@ -165,11 +160,6 @@ class SettingsDialog(QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
-        font_size_note = QLabel(
-            self.tr("Note: Themes that set font sizes explicitly cannot be changed.")
-        )
-        font_size_note.setWordWrap(True)
-        ui_layout.addRow(font_size_note)
 
         self.autoshow_hints_checkbox = QCheckBox(
             self.tr("Show hints automatically in exercises")
@@ -343,19 +333,6 @@ class SettingsDialog(QDialog):
 
         self.volume_slider.setValue(volume)
 
-        current_theme_name = self.q_settings.value(
-            settings.QSETTINGS_KEY_UI_THEME,
-            settings.DEFAULT_THEME,  # Default to "Dark" theme
-            type=str,
-        )
-        if current_theme_name in settings.AVAILABLE_THEMES:
-            self.theme_combo.setCurrentText(current_theme_name)
-        else:  # Handle case where saved theme is no longer available
-            self.theme_combo.setCurrentText("System")
-            logger.warning(
-                f"Saved theme '{current_theme_name}' not found in available themes. Defaulting to 'System'."
-            )
-
         current_locale_code = self.q_settings.value(
             settings.QSETTINGS_KEY_LOCALE,
             settings.DEFAULT_LOCALE,
@@ -408,11 +385,7 @@ class SettingsDialog(QDialog):
         # self.unload_model_button.setVisible(is_whisper or is_vosk)
 
     def _reset_ui_settings(self):
-        """Resets UI related settings (theme, font size) to their defaults and applies them live."""
-        # Reset theme
-        self.theme_combo.setCurrentText(settings.DEFAULT_THEME)
-        self.theme_changed.emit(settings.DEFAULT_THEME)
-
+        """Resets UI related settings (font size, language) to their defaults and applies them live."""
         # Reset font size
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)
         # self._update_font_size_label(settings.DEFAULT_FONT_SIZE) # This will also emit font_size_changed
@@ -429,7 +402,7 @@ class SettingsDialog(QDialog):
             self,
             self.tr("UI Settings Reset"),
             self.tr(
-                "Theme, font size and language have been reset to defaults. Click OK or Apply to save."
+                "Font size and language have been reset to defaults. Click OK or Apply to save."
             ),
         )
         self.retranslateUi()  # Ensure dialog itself updates if language was reset
@@ -484,10 +457,6 @@ class SettingsDialog(QDialog):
             self.autoshow_hints_checkbox.isChecked(),
         )
         utils.update_sound_volume()  # Ensure live update takes effect if slider was just moved
-
-        selected_theme_name = self.theme_combo.currentText()
-        self.q_settings.setValue(settings.QSETTINGS_KEY_UI_THEME, selected_theme_name)
-        self.theme_changed.emit(selected_theme_name)  # Emit signal AFTER saving
 
         selected_locale_code = (
             self.locale_combo.currentData()
@@ -573,7 +542,6 @@ class SettingsDialog(QDialog):
         # Row labels in QFormLayout are tricky to retranslate directly without storing references.
         # For simplicity, we might accept that QFormLayout row labels don't auto-update
         # or we would need to store references to those QLabel objects.
-        # self.ui_layout.labelForField(self.theme_combo).setText(self.tr("Theme:")) # Example if labels were stored
         self.autoshow_hints_checkbox.setText(
             self.tr("Show hints automatically in exercises")
         )

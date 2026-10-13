@@ -234,8 +234,8 @@ Check the logs for details.</source>
         <translation type="vanished">Notizen:</translation>
     </message>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Audio abspielen</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Audio abspielen</translation>
     </message>
     <message>
         <source>Pronunciation:</source>
@@ -488,8 +488,8 @@ Da dies das erste Mal ist, dass Sie diese Anwendung öffnen, lassen Sie uns Ihre
         <translation type="vanished">Hinweis ausblenden</translation>
     </message>
     <message>
-        <source>Finish Lesson 🎉</source>
-        <translation type="vanished">Lektion beendet 🎉</translation>
+        <source>Finish Lesson</source>
+        <translation type="vanished">Lektion beendet</translation>
     </message>
     <message>
         <source>Review Mistakes →</source>
@@ -563,8 +563,8 @@ Erklärung: {0}</translation>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Audio abspielen</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Audio abspielen</translation>
     </message>
 </context>
 <context>
@@ -758,12 +758,12 @@ Viel Erfolg beim Lernen!</translation>
         <translation type="vanished">Bitte sprechen Sie: </translation>
     </message>
     <message>
-        <source>🔊 Play Reference</source>
-        <translation type="vanished">🔊 Referenz abspielen</translation>
+        <source>Play Reference</source>
+        <translation type="vanished">Referenz abspielen</translation>
     </message>
     <message>
-        <source>🎤 Record</source>
-        <translation type="vanished">🎤 Aufnehmen</translation>
+        <source>Record</source>
+        <translation type="vanished">Aufnehmen</translation>
     </message>
     <message>
         <source>Tap record and speak clearly.</source>
@@ -782,8 +782,8 @@ Viel Erfolg beim Lernen!</translation>
         <translation type="vanished">Vergleich mit Zieltext:</translation>
     </message>
     <message>
-        <source>🔄 Try Again</source>
-        <translation type="vanished">🔄 Erneut versuchen</translation>
+        <source>Try Again</source>
+        <translation type="vanished">Erneut versuchen</translation>
     </message>
     <message>
         <source>Submit and Continue</source>
@@ -818,8 +818,8 @@ Viel Erfolg beim Lernen!</translation>
         <translation type="vanished">Aufnahme läuft... Sprechen Sie jetzt!</translation>
     </message>
     <message>
-        <source>⏹️ Stop Recording</source>
-        <translation type="vanished">⏹️ Aufnahme stoppen</translation>
+        <source>Stop Recording</source>
+        <translation type="vanished">Aufnahme stoppen</translation>
     </message>
     <message>
         <source>Processing audio... Please wait.</source>
@@ -1105,8 +1105,8 @@ Der Willkommensleitfaden wird beim nächsten Laden eines Kurses angezeigt.</tran
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Audio abspielen</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Audio abspielen</translation>
     </message>
 </context>
 </TS>

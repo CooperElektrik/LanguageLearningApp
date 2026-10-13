@@ -18,6 +18,7 @@ from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QIcon,
+    QPalette,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -108,7 +109,6 @@ class MainWindow(QMainWindow):
             QApplication.instance()
         )
         self._setup_ui_elements()
-        self._load_and_apply_initial_theme()
         self._return_to_selection_screen()  # This will set the initial menu state
 
         # New: Check for initial UI setup after everything is ready
@@ -180,13 +180,10 @@ class MainWindow(QMainWindow):
     def _update_toolbar_icons(self):
         self.main_toolbar.clear()
 
-        q_settings = QSettings()
-        theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, app_settings.DEFAULT_THEME, type=str
-        )
-
-        theme_info = app_settings.AVAILABLE_THEMES.get(str(theme_name))
-        is_dark_theme = bool(theme_info.get("is_dark", False)) if isinstance(theme_info, dict) else False
+        # The application no longer ships custom themes; pick the icon variant
+        # that contrasts with the current (Fusion) palette instead.
+        window_color = self.palette().color(QPalette.ColorRole.Window)
+        is_dark_theme = window_color.lightness() < 128
         icon_suffix = "_dark.png" if is_dark_theme else "_light.png"
 
         # Icon paths
@@ -221,50 +218,6 @@ class MainWindow(QMainWindow):
     def _show_help_dialog(self):
         dialog = HelpDialog(self)
         dialog.exec()
-
-    def _load_and_apply_initial_theme(self):
-        q_settings = QSettings()
-        theme_name = q_settings.value(
-            app_settings.QSETTINGS_KEY_UI_THEME, app_settings.DEFAULT_THEME, type=str
-        )
-        self.apply_theme(theme_name)
-
-    def apply_theme(self, theme_name: str):
-        logger.info(f"Attempting to apply theme: {theme_name}")
-        self._update_toolbar_icons()
-        theme_info = app_settings.AVAILABLE_THEMES.get(theme_name)
-        if not theme_info:
-            logger.warning(
-                f"Theme '{theme_name}' not found in AVAILABLE_THEMES. Applying system default."
-            )
-            app = QApplication.instance()
-            if app:
-                app.setStyleSheet("")
-            return
-
-        qss_filename = theme_info.get("file")
-
-        if theme_name == "System" or qss_filename == "system_default":
-            app = QApplication.instance()
-            if app:
-                app.setStyleSheet("")
-            logger.info("Applied system default theme.")
-            return
-
-        if isinstance(qss_filename, str) and qss_filename:
-            theme_abs_path = utils.get_resource_path(
-                os.path.join(app_settings.THEME_DIR, qss_filename)
-            )
-            app = QApplication.instance()
-            if app:
-                utils.apply_stylesheet(app, theme_abs_path)
-        else:
-            logger.warning(
-                f"Theme '{theme_name}' file not found. Applying system default."
-            )
-            app = QApplication.instance()
-            if app:
-                app.setStyleSheet("")
 
     def apply_font_size(self, new_size: int):
         font = QApplication.instance().font()
@@ -598,7 +551,6 @@ class MainWindow(QMainWindow):
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self.stt_manager, self)
-        dialog.theme_changed.connect(self.apply_theme)
         dialog.locale_changed.connect(self.apply_locale)
         dialog.font_size_changed.connect(self.apply_font_size)
         dialog.exec()
@@ -686,7 +638,6 @@ class MainWindow(QMainWindow):
                 "Initial setup not fully completed. Showing unified setup dialog."
             )
             dialog = UnifiedSetupDialog(self)
-            dialog.theme_changed.connect(self.apply_theme)
             dialog.locale_changed.connect(self.apply_locale)
             dialog.font_size_changed.connect(self.apply_font_size)
             dialog.exec()

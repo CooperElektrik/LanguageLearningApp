@@ -234,8 +234,8 @@ Kiểm tra nhật ký để biết chi tiết.</translation>
         <translation type="vanished">Ghi chú:</translation>
     </message>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Phát Âm thanh</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Phát Âm thanh</translation>
     </message>
     <message>
         <source>Pronunciation:</source>
@@ -488,8 +488,8 @@ Vì đây là lần đầu tiên bạn mở ứng dụng này, hãy thiết lậ
         <translation type="vanished">Ẩn Gợi ý</translation>
     </message>
     <message>
-        <source>Finish Lesson 🎉</source>
-        <translation type="vanished">Hoàn thành Bài học 🎉</translation>
+        <source>Finish Lesson</source>
+        <translation type="vanished">Hoàn thành Bài học</translation>
     </message>
     <message>
         <source>Review Mistakes →</source>
@@ -563,8 +563,8 @@ Giải thích: {0}</translation>
 <context>
     <name>ListenSelectExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Phát Âm thanh</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Phát Âm thanh</translation>
     </message>
 </context>
 <context>
@@ -758,12 +758,12 @@ Chúc bạn học tốt!</translation>
         <translation type="vanished">Vui lòng phát âm: </translation>
     </message>
     <message>
-        <source>🔊 Play Reference</source>
-        <translation type="vanished">🔊 Phát Tham chiếu</translation>
+        <source>Play Reference</source>
+        <translation type="vanished">Phát Tham chiếu</translation>
     </message>
     <message>
-        <source>🎤 Record</source>
-        <translation type="vanished">🎤 Ghi âm</translation>
+        <source>Record</source>
+        <translation type="vanished">Ghi âm</translation>
     </message>
     <message>
         <source>Tap record and speak clearly.</source>
@@ -782,8 +782,8 @@ Chúc bạn học tốt!</translation>
         <translation type="vanished">So sánh với văn bản đích:</translation>
     </message>
     <message>
-        <source>🔄 Try Again</source>
-        <translation type="vanished">🔄 Thử lại</translation>
+        <source>Try Again</source>
+        <translation type="vanished">Thử lại</translation>
     </message>
     <message>
         <source>Submit and Continue</source>
@@ -818,8 +818,8 @@ Chúc bạn học tốt!</translation>
         <translation type="vanished">Đang ghi âm... Nói ngay!</translation>
     </message>
     <message>
-        <source>⏹️ Stop Recording</source>
-        <translation type="vanished">⏹️ Dừng Ghi âm</translation>
+        <source>Stop Recording</source>
+        <translation type="vanished">Dừng Ghi âm</translation>
     </message>
     <message>
         <source>Processing audio... Please wait.</source>
@@ -1105,8 +1105,8 @@ Hướng dẫn chào mừng sẽ được hiển thị vào lần tiếp theo b�
 <context>
     <name>TranslationExerciseWidget</name>
     <message>
-        <source>🔊 Play Audio</source>
-        <translation type="vanished">🔊 Phát Âm thanh</translation>
+        <source>Play Audio</source>
+        <translation type="vanished">Phát Âm thanh</translation>
     </message>
 </context>
 </TS>

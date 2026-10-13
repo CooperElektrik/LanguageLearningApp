@@ -237,7 +237,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         # self._toggle_hint_visibility(force_show=False) # Done by _load_exercise_widget in base
 
         self.feedback_label.setText("")
-        self.feedback_label.setStyleSheet("")
 
         if self.current_exercise_index >= self.total_exercises_in_session:
             self._finish_review_session()
@@ -258,7 +257,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             self.feedback_label.setText(
                 self.tr("Error loading exercise. Please rate to continue.")
             )
-            self.feedback_label.setStyleSheet("color: red;")
             self.view_state = ReviewState.ANSWER_SUBMITTED
 
         # Defer button state update to ensure UI changes (like hint visibility) are processed
@@ -288,15 +286,11 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             self.current_exercise_widget, TranslationExerciseWidget
         ):
             self.feedback_label.setText(self.tr("Please provide an answer."))
-            self.feedback_label.setStyleSheet("color: orange;")
             return
 
         is_correct, feedback_text = self._evaluate_answer(user_answer)
 
         self.feedback_label.setText(feedback_text)
-        self.feedback_label.setStyleSheet(
-            "color: green;" if is_correct else "color: red;"
-        )
         utils.play_sound(
             settings.SOUND_FILE_CORRECT if is_correct else settings.SOUND_FILE_INCORRECT
         )
@@ -341,7 +335,6 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             )
 
         self.feedback_label.setText(feedback_message)
-        self.feedback_label.setStyleSheet("color: blue;")
 
         self._last_submission_was_correct = False
         self.view_state = ReviewState.ANSWER_SUBMITTED

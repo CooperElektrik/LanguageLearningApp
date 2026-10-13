@@ -32,7 +32,7 @@ LL offers a rich set of features to enhance your language learning journey:
 *   **Detailed Mistake Explanations:** Receive specific feedback on incorrect answers to understand *why* you made a mistake and improve faster.
 *   **Keyboard Shortcuts:** Navigate exercises and submit answers efficiently using intuitive keyboard commands (e.g., number keys for options, Ctrl+H for hints, Ctrl+N for notes).
 *   **Personalized Progress Tracking:** Monitor your total XP, study streaks, and unlock achievements as you progress.
-*   **Customizable Settings:** Adjust audio (volume, sound effects, autoplay), UI theme (System, Light, or Dark), font size, and developer options.
+*   **Customizable Settings:** Adjust audio (volume, sound effects, autoplay), font size, language, and developer options.
 *   **User Onboarding:** A helpful welcome guide appears for new users, explaining core features and initial setup.
 *   **Course Content Editor:** A dedicated standalone Course Editor allows for creating and modifying course units, lessons, and exercises. Launch it directly with:
     ```bash

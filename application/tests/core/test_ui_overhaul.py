@@ -58,8 +58,8 @@ def test_course_tree_widget_badges():
         image_file="img.png",
     )
     badges = CourseTreeWidget.get_asset_badges(ex)
-    assert "🔊" in badges
-    assert "🖼️" in badges
+    assert "[AUDIO]" in badges
+    assert "[IMAGE]" in badges
 
     ex_no_assets = Exercise(exercise_id="ex2", type="mcq", prompt="Test")
     assert CourseTreeWidget.get_asset_badges(ex_no_assets) == ""

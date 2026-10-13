@@ -303,7 +303,7 @@ class TranslationExerciseWidget(BaseExerciseWidget):
         self.prompt_label.setText(formatted_prompt)
 
         if self.exercise.audio_file:
-            self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
+            self.play_audio_button = QPushButton(self.tr("Play Audio"))
             self.play_audio_button.setObjectName("play_audio_button")
             self.play_audio_button.clicked.connect(
                 lambda: self._play_audio_file(self.exercise.audio_file)
@@ -531,7 +531,7 @@ class ListenSelectExerciseWidget(ButtonOptionExerciseWidget):
         self.prompt_label.setText(formatted_prompt)
 
         if self.exercise.audio_file:
-            self.play_audio_button = QPushButton(self.tr("🔊 Play Audio"))
+            self.play_audio_button = QPushButton(self.tr("Play Audio"))
             self.play_audio_button.setObjectName("play_audio_button")
             self.play_audio_button.clicked.connect(
                 lambda: self._play_audio_file(self.exercise.audio_file)
@@ -809,7 +809,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
         # 2. Play Reference Button
         if self.exercise.audio_file:
-            self.play_ref_button = QPushButton(self.tr("🔊 Play Reference"))
+            self.play_ref_button = QPushButton(self.tr("Play Reference"))
             self.play_ref_button.setObjectName("play_ref_button")
             self.play_ref_button.clicked.connect(
                 lambda: self._play_audio_file(self.exercise.audio_file)
@@ -817,7 +817,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             grid_layout.addWidget(self.play_ref_button, 1, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
 
         # 3. Record Button (Large, central)
-        self.record_button = QPushButton("🎤")
+        self.record_button = QPushButton("Record")
         self.record_button.setObjectName("record_button")
         self.record_button.setCheckable(True)
         self.record_button.toggled.connect(self._handle_record_toggle)
@@ -856,7 +856,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
         # Feedback actions
         feedback_action_layout = QHBoxLayout()
-        self.try_again_button = QPushButton(self.tr("🔄 Try Again"))
+        self.try_again_button = QPushButton(self.tr("Try Again"))
         self.try_again_button.setObjectName("try_again_button")
         self.try_again_button.clicked.connect(self.clear_input)
 
@@ -990,7 +990,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
             self.feedback_group.setVisible(False)
             self.status_label.setText(self.tr("Recording... Speak now!"))
-            self.record_button.setText("⏹️")
+            self.record_button.setText("Stop")
             self.record_button.setProperty("recording", True)
 
             # Clean up previous temp file if it exists
@@ -1020,7 +1020,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 logger.info("Audio recording stopped.")
 
                 self.status_label.setText(self.tr("Processing... Please wait."))
-                self.record_button.setText("🎤")
+                self.record_button.setText("Record")
                 self.record_button.setProperty("recording", False)
                 self.record_button.setEnabled(False)
 

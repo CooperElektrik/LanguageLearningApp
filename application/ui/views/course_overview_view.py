@@ -49,17 +49,14 @@ class CourseOverviewView(QWidget):
         stats_header_layout.setContentsMargins(0, 4, 0, 8)
         stats_header_layout.setSpacing(8)
 
-        self.streak_badge_label = QLabel("🔥 0 Days")
+        self.streak_badge_label = QLabel("0 Days")
         self.streak_badge_label.setObjectName("overview_streak_badge")
-        self.streak_badge_label.setStyleSheet("background-color: #e65100; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
 
-        self.xp_badge_label = QLabel("⭐ 0 XP")
+        self.xp_badge_label = QLabel("0 XP")
         self.xp_badge_label.setObjectName("overview_xp_badge")
-        self.xp_badge_label.setStyleSheet("background-color: #2e7d32; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
 
-        self.retention_badge_label = QLabel("🧠 0% Retention")
+        self.retention_badge_label = QLabel("0% Retention")
         self.retention_badge_label.setObjectName("overview_retention_badge")
-        self.retention_badge_label.setStyleSheet("background-color: #1565c0; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
 
         stats_header_layout.addStretch(1)
         stats_header_layout.addWidget(self.streak_badge_label)
@@ -208,9 +205,9 @@ class CourseOverviewView(QWidget):
         if self.course_manager.course is None:
             logger.warning("RefreshView called but no course is loaded.")
             self._clear_layout(self.units_layout)
-            self.streak_badge_label.setText("🔥 0 Days")
-            self.xp_badge_label.setText("⭐ 0 XP")
-            self.retention_badge_label.setText("🧠 0% Retention")
+            self.streak_badge_label.setText("0 Days")
+            self.xp_badge_label.setText("0 XP")
+            self.retention_badge_label.setText("0% Retention")
             self.due_count_label.setText(self.tr("N/A"))
             self.start_review_button.setEnabled(False)
             self.start_weak_review_button.setEnabled(False)
@@ -222,15 +219,15 @@ class CourseOverviewView(QWidget):
         )
 
         streak = self.progress_manager.get_current_streak()
-        self.streak_badge_label.setText(f"🔥 {streak} Days")
+        self.streak_badge_label.setText(f"{streak} Days")
 
         xp = self.progress_manager.get_total_xp()
-        self.xp_badge_label.setText(f"⭐ {xp} XP")
+        self.xp_badge_label.setText(f"{xp} XP")
 
         all_exercises = self.course_manager.get_all_exercises()
         retention_stats = self.progress_manager.get_retention_stats(all_exercises)
         self.retention_badge_label.setText(
-            f"🧠 {retention_stats['average_retention']}% Retention"
+            f"{retention_stats['average_retention']}% Retention"
         )
 
         all_exercises = self.course_manager.get_all_exercises()

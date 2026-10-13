@@ -121,10 +121,10 @@ class AudioLevelMeter(QWidget):
             painter.drawText(QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text)
         else:
             if self._current_level > 0.15:
-                status_text = "🎙️ Voice detected"
+                status_text = "Voice detected"
                 painter.setPen(QColor("#4caf50"))
             else:
-                status_text = "🎙️ Listening... (speak into mic)"
+                status_text = "Listening... (speak into mic)"
                 painter.setPen(QColor("#64b5f6"))
             painter.drawText(QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text)
 
