@@ -72,7 +72,8 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(app_icon_path))
 
         self.setGeometry(100, 100, 1024, 768)
-        self.showFullScreen()
+        if os.environ.get("QT_QPA_PLATFORM") != "offscreen":
+            self.showFullScreen()
 
         # Main stack to switch between app states (selection, learning, editing)
         self.main_stack = QStackedWidget()
@@ -90,6 +91,9 @@ class MainWindow(QMainWindow):
 
         # Placeholders for other modes' main widgets
         self.learning_widget = None
+        self.navigation_dock_widget: QDockWidget | None = None
+        self.progress_dock_widget: QDockWidget | None = None
+        self.dock_separator = None
 
         # Animation objects for learning view's central stack
         self.central_stack_fade_effect: QGraphicsOpacityEffect | None = None
@@ -316,12 +320,10 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(courses_dir))
 
     def _setup_learning_ui(self):
-        self.learning_widget = QMainWindow()
-        # IMPORTANT: Prevent the nested QMainWindow from having its own menu bar
-        self.learning_widget.setMenuBar(None)
-
-        right_panel_stack = QStackedWidget()
-        self.learning_widget.setCentralWidget(right_panel_stack)
+        # Central learning stack directly hosted in the main stack without nested QMainWindow
+        right_panel_stack = QStackedWidget(self)
+        right_panel_stack.setObjectName("learningCentralStack")
+        self.learning_widget = right_panel_stack
 
         # --- Animation setup for the central learning area ---
         self.central_stack_fade_effect = QGraphicsOpacityEffect(right_panel_stack)
@@ -336,27 +338,25 @@ class MainWindow(QMainWindow):
         right_panel_stack.currentChanged.connect(self._animate_central_stack_fade)
         # --- END ---
 
-        self.navigation_dock_widget = QDockWidget(
-            self.tr("Course Navigation"), self.learning_widget
-        )
+        # Dock widgets attached directly to MainWindow (self)
+        self.navigation_dock_widget = QDockWidget(self.tr("Course Navigation"), self)
+        self.navigation_dock_widget.setObjectName("navigationDockWidget")
         course_overview_view = CourseOverviewView(self.course_manager, self.progress_manager)
         self.navigation_dock_widget.setWidget(course_overview_view)
-        self.learning_widget.addDockWidget(
-            Qt.DockWidgetArea.LeftDockWidgetArea, self.navigation_dock_widget
-        )
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.navigation_dock_widget)
+        self.navigation_dock_widget.setVisible(True)
 
-        self.progress_dock_widget = QDockWidget(self.tr("Progress"), self.learning_widget)
+        self.progress_dock_widget = QDockWidget(self.tr("Progress"), self)
+        self.progress_dock_widget.setObjectName("progressDockWidget")
         progress_view = ProgressView(self.course_manager, self.progress_manager)
         self.progress_dock_widget.setWidget(progress_view)
-        self.learning_widget.addDockWidget(
-            Qt.DockWidgetArea.RightDockWidgetArea, self.progress_dock_widget
-        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.progress_dock_widget)
         self.progress_dock_widget.setVisible(False)
 
         # Store the toggle actions to add them to the main menu
         self.toggle_nav_dock_action = self.navigation_dock_widget.toggleViewAction()
         self.toggle_progress_dock_action = self.progress_dock_widget.toggleViewAction()
-        self.view_menu.addSeparator()
+        self.dock_separator = self.view_menu.addSeparator()
         self.view_menu.addAction(self.toggle_nav_dock_action)
         self.view_menu.addAction(self.toggle_progress_dock_action)
 
@@ -478,13 +478,26 @@ class MainWindow(QMainWindow):
 
     def _clear_dynamic_widgets(self):
         if self.learning_widget:
-            # Remove dynamic dock actions from the main menu
+            # Remove dynamic dock actions and separator from the main menu
+            if getattr(self, "dock_separator", None):
+                self.view_menu.removeAction(self.dock_separator)
+                self.dock_separator = None
             if self.toggle_nav_dock_action:
                 self.view_menu.removeAction(self.toggle_nav_dock_action)
                 self.toggle_nav_dock_action = None
             if self.toggle_progress_dock_action:
                 self.view_menu.removeAction(self.toggle_progress_dock_action)
                 self.toggle_progress_dock_action = None
+
+            # Remove docks from MainWindow
+            if self.navigation_dock_widget:
+                self.removeDockWidget(self.navigation_dock_widget)
+                self.navigation_dock_widget.deleteLater()
+                self.navigation_dock_widget = None
+            if self.progress_dock_widget:
+                self.removeDockWidget(self.progress_dock_widget)
+                self.progress_dock_widget.deleteLater()
+                self.progress_dock_widget = None
 
             # Clear animation objects to prevent dangling references
             self.central_stack_fade_animation = None
@@ -494,9 +507,6 @@ class MainWindow(QMainWindow):
             self.learning_widget.deleteLater()
             self.learning_widget = None
             self.learning_ui_views = {}
-            # Clean up dock widget references to be safe
-            self.navigation_dock_widget = None
-            self.progress_dock_widget = None
 
         self.course_manager = None
         self.progress_manager = None
@@ -605,7 +615,7 @@ class MainWindow(QMainWindow):
                 "• Central Area: Lessons and review exercises appear here.\n\n"
                 "Happy learning!"
             )
-            QMessageBox.information(self.learning_widget, title, message)
+            QMessageBox.information(self, title, message)
             q_settings.setValue(app_settings.QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN, True)
             logger.info("Onboarding message shown and flag set.")
 
@@ -640,6 +650,11 @@ class MainWindow(QMainWindow):
     def start_review_session(self):
         if not self.learning_widget:
             return
+
+        # Hide navigation dock during review session
+        if self.navigation_dock_widget:
+            self.navigation_dock_widget.setVisible(False)
+
         review_view = self.learning_ui_views["review"]
         review_view.start_review_session()
         if review_view.total_exercises_in_session > 0:
@@ -649,6 +664,11 @@ class MainWindow(QMainWindow):
         """Starts a review session containing only the user's weakest exercises."""
         if not self.learning_widget:
             return
+
+        # Hide navigation dock during review session
+        if self.navigation_dock_widget:
+            self.navigation_dock_widget.setVisible(False)
+
         review_view = self.learning_ui_views["review"]
         weak_exercises = self.progress_manager.get_weakest_exercises(
             self.course_manager.get_all_exercises()

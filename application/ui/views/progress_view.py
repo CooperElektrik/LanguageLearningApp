@@ -5,7 +5,6 @@ import utils
 from core.course_manager import CourseManager  # For type hinting
 from core.progress_manager import ProgressManager  # For type hinting
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -13,10 +12,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QProgressBar,
     QScrollArea,
-    QStyle,
     QVBoxLayout,
     QWidget,
 )
+
+try:
+    from application.ui.widgets.achievement_card_widget import AchievementCardWidget
+except ImportError:
+    from ui.widgets.achievement_card_widget import AchievementCardWidget
 
 logger = logging.getLogger(__name__)
 
@@ -134,64 +137,17 @@ class ProgressView(QWidget):
 
     def _add_achievement(self, title: str, description: str, is_unlocked: bool, icon_filename: str):
         """Adds a single achievement display to the grid layout."""
-
-        achievement_frame = QFrame()
-        achievement_frame.setObjectName("achievement_frame")
-        achievement_frame.setFrameShape(QFrame.Shape.StyledPanel)
-        achievement_frame.setFrameShadow(QFrame.Shadow.Raised)
-
-        achievement_frame.setProperty("unlocked", is_unlocked)
-
-        achievement_layout = QVBoxLayout(achievement_frame)
-        achievement_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        icon_label = QLabel()
-        icon_label.setObjectName("achievement_icon_label")
-
-        # icons are in 'application/assets/icons/'
-        icon_relative_path = os.path.join("assets", "icons", icon_filename)
-        icon_path = utils.get_resource_path(icon_relative_path)
-
-        pixmap = QPixmap(icon_path)
-        if pixmap.isNull():
-            pixmap = (
-                self.style().standardIcon(QStyle.StandardPixmap.SP_DialogNoButton).pixmap(64, 64)
-            )
-            logger.warning(f"Achievement icon not found: {icon_path}. Using default icon.")
-
-        # Apply grayscale effect if locked
-        if not is_unlocked:
-            grayscale_pixmap = QPixmap(pixmap.size())
-            grayscale_pixmap.fill(Qt.GlobalColor.transparent)
-            painter = QPainter(grayscale_pixmap)
-            painter.setOpacity(0.3)
-            painter.drawPixmap(0, 0, pixmap)
-            painter.end()
-            pixmap = grayscale_pixmap
-
-        icon_label.setPixmap(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio))
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setScaledContents(True)
-        achievement_layout.addWidget(
-            icon_label,
-            stretch=1,
-            alignment=(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter),
+        card = AchievementCardWidget(
+            title=title,
+            description=description,
+            is_unlocked=is_unlocked,
+            icon_filename=icon_filename,
+            parent=self.achievements_group,
         )
-
-        title_label = QLabel(title)
-        title_label.setObjectName("achievement_title_label")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        achievement_layout.addWidget(title_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        desc_label = QLabel(description)
-        desc_label.setObjectName("achievement_description_label")
-        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        desc_label.setWordWrap(True)
-        achievement_layout.addWidget(desc_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
 
         row = self.achievements_grid_layout.count() // 3  # 3 columns per row
         col = self.achievements_grid_layout.count() % 3
-        self.achievements_grid_layout.addWidget(achievement_frame, row, col)
+        self.achievements_grid_layout.addWidget(card, row, col)
 
     def refresh_view(self):
         """Refreshes all dynamic content in the progress view."""
