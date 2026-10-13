@@ -118,27 +118,21 @@ class ItemCommandsMixin:
             self._expand_and_select_item(new_exercise)
 
     # --- Units -----------------------------------------------------------
-    def _add_unit(self):
+    def _add_unit(self, title: str | None = None):
         if not self.course_data:
             return
         unit_id_suffix = str(uuid.uuid4().hex[:8])
-        default_title = f"New Unit {len(self.course_data.units) + 1}"
-        unit_title, ok = QInputDialog.getText(
-            self, "New Unit", "Enter Unit Title:", text=default_title
+        unit_title = title.strip() if title and title.strip() else f"New Unit {len(self.course_data.units) + 1}"
+        new_unit = Unit(
+            unit_id=f"unit_{unit_id_suffix}", title=unit_title, lessons=[]
         )
-        if ok and unit_title and unit_title.strip():
-            new_unit = Unit(
-                unit_id=f"unit_{unit_id_suffix}", title=unit_title.strip(), lessons=[]
-            )
-            if hasattr(self, "undo_stack"):
-                self.undo_stack.push(AddUnitCommand(self, new_unit))
-            else:
-                self.course_data.units.append(new_unit)
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._expand_and_select_item(new_unit)
-        elif ok:
-            QMessageBox.warning(self, "Invalid Input", "Unit title cannot be empty.")
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddUnitCommand(self, new_unit))
+        else:
+            self.course_data.units.append(new_unit)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_unit)
 
     def _delete_unit(self, item: QTreeWidgetItem):
         unit_to_delete: Unit = item.data(0, Qt.UserRole)
@@ -163,31 +157,25 @@ class ItemCommandsMixin:
                 self.item_actions_widget.setVisible(False)
 
     # --- Lessons ---------------------------------------------------------
-    def _add_lesson(self, unit_item: QTreeWidgetItem):
-        unit: Unit = unit_item.data(0, Qt.UserRole)
+    def _add_lesson(self, unit_or_item: Any, title: str | None = None):
+        unit = unit_or_item if isinstance(unit_or_item, Unit) else unit_or_item.data(0, Qt.UserRole)
         if not unit:
             return
         lesson_id_suffix = str(uuid.uuid4().hex[:8])
-        default_title = f"New Lesson {len(unit.lessons) + 1}"
-        lesson_title, ok = QInputDialog.getText(
-            self, "New Lesson", "Enter Lesson Title:", text=default_title
+        lesson_title = title.strip() if title and title.strip() else f"New Lesson {len(unit.lessons) + 1}"
+        new_lesson = Lesson(
+            lesson_id=f"lesson_{lesson_id_suffix}",
+            title=lesson_title,
+            exercises=[],
+            unit_id=unit.unit_id,
         )
-        if ok and lesson_title and lesson_title.strip():
-            new_lesson = Lesson(
-                lesson_id=f"lesson_{lesson_id_suffix}",
-                title=lesson_title.strip(),
-                exercises=[],
-                unit_id=unit.unit_id,
-            )
-            if hasattr(self, "undo_stack"):
-                self.undo_stack.push(AddLessonCommand(self, unit, new_lesson))
-            else:
-                unit.lessons.append(new_lesson)
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._expand_and_select_item(new_lesson)
-        elif ok:
-            QMessageBox.warning(self, "Invalid Input", "Lesson title cannot be empty.")
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddLessonCommand(self, unit, new_lesson))
+        else:
+            unit.lessons.append(new_lesson)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_lesson)
 
     def _delete_lesson(self, item: QTreeWidgetItem):
         lesson_to_delete: Lesson = item.data(0, Qt.UserRole)
@@ -219,32 +207,23 @@ class ItemCommandsMixin:
                     self.item_actions_widget.setVisible(False)
 
     # --- Exercises -------------------------------------------------------
-    def _add_exercise(self, lesson_item: QTreeWidgetItem):
-        lesson: Lesson = lesson_item.data(0, Qt.UserRole)
+    def _add_exercise(self, lesson_or_item: Any, exercise_type: str | None = None):
+        lesson = lesson_or_item if isinstance(lesson_or_item, Lesson) else lesson_or_item.data(0, Qt.UserRole)
         if not lesson:
             return
 
-        item_type_name, ok = QInputDialog.getItem(
-            self,
-            "New Exercise",
-            "Select Exercise Type:",
-            CREATABLE_EXERCISE_TYPES,
-            0,
-            False,
+        item_type_name = exercise_type or CREATABLE_EXERCISE_TYPES[0]
+        exercise_id_suffix = str(uuid.uuid4().hex[:8])
+        new_exercise = Exercise(
+            exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
         )
-
-        if ok and item_type_name:
-            exercise_id_suffix = str(uuid.uuid4().hex[:8])
-            new_exercise = Exercise(
-                exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
-            )
-            if hasattr(self, "undo_stack"):
-                self.undo_stack.push(AddExerciseCommand(self, lesson, new_exercise))
-            else:
-                lesson.exercises.append(new_exercise)
-                self.update_tree_view()
-                self._set_dirty_state(True)
-                self._expand_and_select_item(new_exercise)
+        if hasattr(self, "undo_stack"):
+            self.undo_stack.push(AddExerciseCommand(self, lesson, new_exercise))
+        else:
+            lesson.exercises.append(new_exercise)
+            self.update_tree_view()
+            self._set_dirty_state(True)
+            self._expand_and_select_item(new_exercise)
 
     def _delete_exercise(self, item: QTreeWidgetItem):
         exercise_to_delete: Exercise = item.data(0, Qt.UserRole)

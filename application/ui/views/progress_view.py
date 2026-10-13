@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QLabel,
+    QProgressBar,
     QScrollArea,
     QStyle,
     QVBoxLayout,
@@ -86,6 +87,32 @@ class ProgressView(QWidget):
         streak_layout.addWidget(self.streak_value_label)
         streak_layout.addWidget(self.streak_description_label)
         self.scroll_content_layout.addWidget(self.streak_group)
+
+        # Retention & Mastery Section (SM-2)
+        self.retention_group = QGroupBox(self.tr("Memory Retention & Mastery (SM-2)"))
+        self.retention_group.setObjectName("retention_groupbox")
+        retention_layout = QVBoxLayout(self.retention_group)
+
+        self.retention_gauge = QProgressBar()
+        self.retention_gauge.setObjectName("retention_gauge")
+        self.retention_gauge.setRange(0, 100)
+        self.retention_gauge.setValue(0)
+        self.retention_gauge.setTextVisible(True)
+        self.retention_gauge.setFormat("%v% Estimated Retention")
+        retention_layout.addWidget(self.retention_gauge)
+
+        self.retention_desc_label = QLabel()
+        self.retention_desc_label.setObjectName("retention_desc_label")
+        self.retention_desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        retention_layout.addWidget(self.retention_desc_label)
+
+        self.retention_breakdown_label = QLabel()
+        self.retention_breakdown_label.setObjectName("retention_breakdown_label")
+        self.retention_breakdown_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.retention_breakdown_label.setStyleSheet("color: #a0a0b0; font-size: 11px;")
+        retention_layout.addWidget(self.retention_breakdown_label)
+
+        self.scroll_content_layout.addWidget(self.retention_group)
 
         # Achievements Section
         self.achievements_group = QGroupBox(self.tr("Achievements"))
@@ -194,6 +221,21 @@ class ProgressView(QWidget):
         else:
             self.streak_value_label.setProperty("active_streak", False)
             self.streak_description_label.setText(self.tr("Start a new streak today!"))
+
+        # Retention & Mastery Stats
+        all_exercises = self.course_manager.get_all_exercises() if self.course_manager else []
+        retention_stats = self.progress_manager.get_retention_stats(all_exercises)
+        avg_retention = retention_stats["average_retention"]
+        self.retention_gauge.setValue(int(avg_retention))
+        self.retention_desc_label.setText(
+            self.tr("Estimated Memory Retention: {0}%").format(avg_retention)
+        )
+        learning_count = max(0, retention_stats["learned_count"] - retention_stats["mastered_count"])
+        self.retention_breakdown_label.setText(
+            self.tr("Mastered: {0}  |  Learning: {1}  |  Due for Review: {2}").format(
+                retention_stats["mastered_count"], learning_count, retention_stats["due_count"]
+            )
+        )
 
         # Clear existing achievements before re-adding
         self._clear_grid_layout(self.achievements_grid_layout)

@@ -12,8 +12,10 @@ from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -399,6 +401,8 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handles keyboard shortcuts specific to ReviewView, like rating."""
+        key = event.key()
+
         if self.view_state == ReviewState.ANSWER_SUBMITTED:
             key_map = {
                 Qt.Key_1: 0,  # Again
@@ -406,11 +410,9 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
                 Qt.Key_3: 4,  # Good
                 Qt.Key_4: 5,  # Easy
             }
-            if event.key() in key_map:
-                if (
-                    self.rating_buttons_widget.isVisible()
-                ):  # Ensure rating buttons are active
-                    quality_score = key_map[event.key()]
+            if key in key_map:
+                if self.rating_buttons_widget.isVisible():
+                    quality_score = key_map[key]
                     logger.debug(
                         f"Rating key '{event.text()}' pressed, calling _handle_rating({quality_score})"
                     )
@@ -418,7 +420,41 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
                     event.accept()
                     return
 
-        # Pass unhandled events to the base class (for Ctrl+H, Ctrl+N)
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                # Default rating on Enter is Good (4) if correct, or Again (0) if incorrect
+                default_score = 4 if self._last_submission_was_correct else 0
+                self._handle_rating(default_score)
+                event.accept()
+                return
+
+        elif self.view_state == ReviewState.ASKING_QUESTION:
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                if self.submit_button.isVisible() and self.submit_button.isEnabled():
+                    self._handle_user_submission_from_button()
+                    event.accept()
+                    return
+
+            focused = self.focusWidget()
+            if not isinstance(focused, (QLineEdit, QTextEdit)):
+                if key in [
+                    Qt.Key_1,
+                    Qt.Key_2,
+                    Qt.Key_3,
+                    Qt.Key_4,
+                    Qt.Key_5,
+                    Qt.Key_6,
+                    Qt.Key_7,
+                    Qt.Key_8,
+                    Qt.Key_9,
+                ]:
+                    if self.current_exercise_widget and hasattr(
+                        self.current_exercise_widget, "options_group"
+                    ):
+                        self.current_exercise_widget.keyPressEvent(event)
+                        if event.isAccepted():
+                            return
+
+        # Pass unhandled events to the base class (for Ctrl+H, Ctrl+N, Space)
         super().keyPressEvent(event)
 
     # Note: changeEvent for retranslation is already in the base class and inherited.

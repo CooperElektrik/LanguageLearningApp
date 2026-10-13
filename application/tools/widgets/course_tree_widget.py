@@ -15,60 +15,77 @@ logger = logging.getLogger(__name__)
 # Define a custom MIME type for our draggable items
 _LL_ITEM_MIME_TYPE = "application/x-lingua-learn-item"
 
+EXERCISE_TYPE_BADGES = {
+    "multiple_choice_translation": "[MCQ]",
+    "translate_to_target": "[TRANS→]",
+    "translate_to_source": "[TRANS←]",
+    "fill_in_the_blank": "[FIB]",
+    "dictation": "[DICT]",
+    "image_association": "[IMG-MCQ]",
+    "listen_and_select": "[L&S]",
+    "sentence_jumble": "[JUMB]",
+    "context_block": "[CONT]",
+    "pronunciation_practice": "[PRON]",
+}
+
 
 class CourseTreeWidget(QTreeWidget):
+    """
+    Hierarchical tree widget for course units, lessons, and exercises.
+    Supports drag-and-drop reordering, status badges (audio, image, exercise type),
+    and inline action triggers.
+    """
+
     # Signal to notify EditorWindow about a data model change requiring tree refresh
     # Emits (moved_obj, new_parent_obj)
     data_model_reordered = Signal(object, object)
+    inline_add_requested = Signal(str, object)  # ("unit"|"lesson"|"exercise", parent_obj)
 
-    def __init__(self, course_data: Any, parent=None):
+    def __init__(self, course_data: Any = None, parent=None):
         super().__init__(parent)
         self.course_data = course_data  # Reference to the top-level Course object
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
-        # Use DragDropMode.DragDrop for full control over drop logic
         self.setDragDropMode(QTreeWidget.DragDrop)
-        self.setSelectionMode(
-            QTreeWidget.SingleSelection
-        )  # Ensure only one item dragged at a time
+        self.setSelectionMode(QTreeWidget.SingleSelection)
+        self.itemClicked.connect(self._handle_item_clicked)
 
     def set_course_data(self, course_data: Any):
-        """Updates the reference to the top-level Course object.
-
-        The widget is constructed before a course is loaded (``course_data`` is
-        ``None`` then), so the reference must be refreshed whenever the editor
-        loads or switches courses; otherwise drag-and-drop can never resolve the
-        dragged object.
-        """
         self.course_data = course_data
 
+    @staticmethod
+    def get_exercise_type_badge(exercise_type: str) -> str:
+        return EXERCISE_TYPE_BADGES.get(exercise_type, f"[{exercise_type[:4].upper()}]")
+
+    @staticmethod
+    def get_asset_badges(exercise: Exercise) -> str:
+        parts = []
+        if getattr(exercise, "audio_file", None):
+            parts.append("🔊")
+        if getattr(exercise, "image_file", None):
+            parts.append("🖼️")
+        return " ".join(parts)
+
     def supportedDropActions(self) -> Qt.DropActions:
-        return Qt.MoveAction  # We only support moving items
+        return Qt.MoveAction
 
     def mimeTypes(self) -> list[str]:
-        """Declare the custom MIME types this widget can provide for drag operations."""
         return [_LL_ITEM_MIME_TYPE]
 
     def mimeData(self, items: list[QTreeWidgetItem]) -> QMimeData:
-        """
-        Creates a QMimeData object containing the data for the dragged items.
-        We serialize the unique ID of the underlying Python object.
-        """
         mime_data = QMimeData()
         if not items:
             return mime_data
 
-        item = items[0]  # Assuming SingleSelection, so only one item
+        item = items[0]
         obj = item.data(0, Qt.UserRole)
-
-        if obj is None:
+        if obj is None or isinstance(obj, dict):
             return mime_data
 
-        # Store object's ID and type for later lookup
         item_data = {
-            "id": id(obj),  # Unique ID of the Python object in memory
-            "type": type(obj).__name__,  # Class name for type checking
+            "id": id(obj),
+            "type": type(obj).__name__,
         }
         json_data = json.dumps(item_data).encode("utf-8")
         mime_data.setData(_LL_ITEM_MIME_TYPE, QByteArray(json_data))
@@ -81,144 +98,87 @@ class CourseTreeWidget(QTreeWidget):
         data: QMimeData,
         action: Qt.DropAction,
     ) -> bool:
-        """
-        Handles the drop event. Deserializes the MIME data, identifies the
-        dragged object, determines the new parent and position, and updates
-        the underlying data model.
-        """
         if not data.hasFormat(_LL_ITEM_MIME_TYPE):
-            logger.warning("Drop event: MIME data format not supported.")
             return False
         if action != Qt.MoveAction:
-            logger.warning("Drop event: Only MoveAction is supported.")
             return False
 
         try:
             json_data = data.data(_LL_ITEM_MIME_TYPE).data().decode("utf-8")
             item_data = json.loads(json_data)
             dragged_obj_id = item_data.get("id")
-            item_data.get("type")
         except (json.JSONDecodeError, AttributeError, TypeError) as e:
             logger.error(f"Failed to parse MIME data: {e}")
             return False
 
-        # Find the actual Python object being dragged
-        dragged_obj, _original_parent_obj, original_list, original_index = (
+        dragged_obj, _orig_parent, original_list, original_index = (
             self._find_obj_and_context_by_id(dragged_obj_id, self.course_data)
         )
 
         if not dragged_obj:
-            logger.error(f"Dragged object with ID {dragged_obj_id} not found in model.")
             return False
 
-        # Determine the target parent object based on the drop location
         new_parent_obj = None
         if parent_item:
             new_parent_obj = parent_item.data(0, Qt.UserRole)
-            if (
-                new_parent_obj is None
-            ):  # Dropped on manifest item or other non-data item
-                logger.warning(f"Drop on invalid parent item: {parent_item.text(0)}")
-                QMessageBox.warning(
-                    self, "Invalid Drop Location", "Cannot drop items here."
-                )
+            if isinstance(new_parent_obj, dict):
                 return False
 
-        # Validate the drop type (e.g., Unit can only be top-level, Lesson in Unit, Exercise in Lesson)
         is_valid_drop = self._validate_drop_target(dragged_obj, new_parent_obj)
         if not is_valid_drop:
             QMessageBox.warning(
                 self,
                 "Invalid Move",
-                f"A {type(dragged_obj).__name__} cannot be dropped into a {type(new_parent_obj).__name__ if new_parent_obj else 'top-level'}.",
+                f"A {type(dragged_obj).__name__} cannot be placed here.",
             )
             return False
 
-        # Determine the target list (where the object will be inserted)
-        target_list: list[Any] | None = self._get_target_list(new_parent_obj)
+        target_list = self._get_target_list(new_parent_obj)
         if target_list is None:
-            logger.error(
-                f"Could not determine target list for new parent {new_parent_obj}."
-            )
-            QMessageBox.critical(
-                self, "Internal Error", "Could not determine target list for drop."
-            )
             return False
 
-        # Calculate the new index
-        # 'index' from dropMimeData is the row where data should be inserted.
-        # If dropping onto an item (index == -1), it means it should be a child.
-        # However, our drop validation already directs 'OnItem' drops to valid parents,
-        # so 'index' here should generally be a valid sibling insertion point, or -1 for 'OnItem' child.
-        # In this implementation, we use 'index' as the insertion point into the target list.
         new_insert_index = index if index != -1 else len(target_list)
 
-        # Handle moving within the same list vs. moving to a new list
         if original_list is target_list:
             if original_index < new_insert_index:
-                new_insert_index -= (
-                    1  # Adjust index if removing from before insert point
-                )
-            moved_obj_from_list = original_list.pop(original_index)
-            target_list.insert(new_insert_index, moved_obj_from_list)
+                new_insert_index -= 1
+            moved_obj = original_list.pop(original_index)
+            target_list.insert(new_insert_index, moved_obj)
         else:
-            # Moving to a new parent/list
-            if (
-                original_list and dragged_obj in original_list
-            ):  # Ensure it's still there
-                original_list.remove(dragged_obj)  # Remove by value, not index
+            if original_list and dragged_obj in original_list:
+                original_list.remove(dragged_obj)
             else:
-                logger.error(
-                    f"Dragged object {dragged_obj_id} not found in its original list during removal."
-                )
-                return (
-                    False  # Should not happen if _find_obj_and_context_by_id is robust
-                )
+                return False
 
-            # Update parent references if moving a Lesson to a new Unit
             if isinstance(dragged_obj, Lesson) and isinstance(new_parent_obj, Unit):
                 dragged_obj.unit_id = new_parent_obj.unit_id
-                # Regenerate exercise_ids for children for consistency if parent changes
                 for ex in dragged_obj.exercises:
-                    # Regenerate exercise_id to reflect new lesson_id context if needed
-                    # For simplicity, we just assign a new UUID part, assuming lesson_id is part of ex_id prefix
-                    # A more robust ID system might be fully UUID-based.
                     ex.exercise_id = f"{dragged_obj.lesson_id}_ex{dragged_obj.exercises.index(ex)}_{uuid.uuid4().hex[:4]}"
 
             target_list.insert(new_insert_index, dragged_obj)
 
-        # Emit signal to EditorWindow to refresh tree view
         self.data_model_reordered.emit(dragged_obj, new_parent_obj)
         return True
 
     def _validate_drop_target(self, dragged_obj: Any, new_parent_obj: Any) -> bool:
-        """
-        Validates if dragged_obj can be dropped as a child of new_parent_obj.
-        """
         if isinstance(dragged_obj, Unit):
-            # Units can only be top-level items (no parent_obj)
             return new_parent_obj is None
         elif isinstance(dragged_obj, Lesson):
-            # Lessons can only be children of Units
             return isinstance(new_parent_obj, Unit)
         elif isinstance(dragged_obj, Exercise):
-            # Exercises can only be children of Lessons
             return isinstance(new_parent_obj, Lesson)
-        return False  # Unknown object type
+        return False
 
     def _get_target_list(self, new_parent_obj: Any) -> list[Any] | None:
-        """
-        Returns the specific Python list where the dragged object should be inserted.
-        """
-        if new_parent_obj is None:  # Top-level (for Units)
-            return self.course_data.units
+        if new_parent_obj is None:
+            return self.course_data.units if self.course_data else None
         elif isinstance(new_parent_obj, Unit):
-            if not hasattr(new_parent_obj, "lessons"):
-                new_parent_obj.lessons = []  # Initialize if not present
+            if not hasattr(new_parent_obj, "lessons") or new_parent_obj.lessons is None:
+                new_parent_obj.lessons = []
             return new_parent_obj.lessons
         elif isinstance(new_parent_obj, Lesson):
-            if not hasattr(new_parent_obj, "exercises"):
-                new_parent_obj.exercises = []  # Initialize if not present
+            if not hasattr(new_parent_obj, "exercises") or new_parent_obj.exercises is None:
+                new_parent_obj.exercises = []
             return new_parent_obj.exercises
         return None
 
@@ -229,10 +189,6 @@ class CourseTreeWidget(QTreeWidget):
         parent_obj: Any = None,
         current_list: list[Any] | None = None,
     ) -> tuple[Any, Any, list[Any] | None, int]:
-        """
-        Recursively finds the Python object by its ID and returns its context (parent, list, index).
-        Returns (found_obj, parent_of_found_obj, list_containing_found_obj, index_in_list).
-        """
         if id(current_obj) == obj_id:
             return (
                 current_obj,
@@ -241,7 +197,6 @@ class CourseTreeWidget(QTreeWidget):
                 current_list.index(current_obj) if current_list else -1,
             )
 
-        # Search in lists (units, lessons, exercises)
         if isinstance(current_obj, (Course, Unit, Lesson)):
             if hasattr(current_obj, "units") and isinstance(current_obj.units, list):
                 for unit in current_obj.units:
@@ -251,9 +206,7 @@ class CourseTreeWidget(QTreeWidget):
                     if found_obj:
                         return found_obj, p_obj, l_list, idx
 
-            if hasattr(current_obj, "lessons") and isinstance(
-                current_obj.lessons, list
-            ):
+            if hasattr(current_obj, "lessons") and isinstance(current_obj.lessons, list):
                 for lesson in current_obj.lessons:
                     found_obj, p_obj, l_list, idx = self._find_obj_and_context_by_id(
                         obj_id, lesson, current_obj, current_obj.lessons
@@ -261,9 +214,7 @@ class CourseTreeWidget(QTreeWidget):
                     if found_obj:
                         return found_obj, p_obj, l_list, idx
 
-            if hasattr(current_obj, "exercises") and isinstance(
-                current_obj.exercises, list
-            ):
+            if hasattr(current_obj, "exercises") and isinstance(current_obj.exercises, list):
                 for exercise in current_obj.exercises:
                     found_obj, p_obj, l_list, idx = self._find_obj_and_context_by_id(
                         obj_id, exercise, current_obj, current_obj.exercises
@@ -271,4 +222,12 @@ class CourseTreeWidget(QTreeWidget):
                     if found_obj:
                         return found_obj, p_obj, l_list, idx
 
-        return None, None, None, -1  # Not found
+        return None, None, None, -1
+
+    def _handle_item_clicked(self, item: QTreeWidgetItem, column: int):
+        data = item.data(0, Qt.UserRole)
+        if isinstance(data, dict) and "action" in data:
+            action = data.get("action")
+            parent_target = data.get("target")
+            if action in ["add_unit", "add_lesson", "add_exercise"]:
+                self.inline_add_requested.emit(action.replace("add_", ""), parent_target)

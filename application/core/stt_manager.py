@@ -40,21 +40,28 @@ class STTManager(QObject):
             f"Whisper configured to use device='{self.whisper_device}' with compute_type='{self.whisper_compute_type}'."
         )
 
-        # Determine samplerate for Vosk
-        try:
-            import sounddevice as sd
+        # Vosk samplerate is determined lazily on demand to avoid blocking GUI startup
+        self._vosk_samplerate: int | None = None
 
-            device_info = sd.query_devices(sd.default.device[0], "input")
-            self.vosk_samplerate = int(device_info["default_samplerate"])
-        except Exception as e:
-            logger.warning(
-                f"Could not determine default audio device samplerate for Vosk: {e}. Using default {app_settings.AUDIO_SAMPLE_RATE}."
-            )
-            self.vosk_samplerate = (
-                app_settings.AUDIO_SAMPLE_RATE
-            )  # Default if detection fails
+    @property
+    def vosk_samplerate(self) -> int:
+        if self._vosk_samplerate is None:
+            try:
+                import sounddevice as sd
 
-        logger.info(f"Vosk configured with samplerate={self.vosk_samplerate}.")
+                device_info = sd.query_devices(sd.default.device[0], "input")
+                self._vosk_samplerate = int(device_info["default_samplerate"])
+                logger.info(f"Vosk samplerate detected from audio device: {self._vosk_samplerate}.")
+            except Exception as e:
+                logger.warning(
+                    f"Could not determine default audio device samplerate for Vosk: {e}. Using default {app_settings.AUDIO_SAMPLE_RATE}."
+                )
+                self._vosk_samplerate = app_settings.AUDIO_SAMPLE_RATE
+        return self._vosk_samplerate
+
+    @vosk_samplerate.setter
+    def vosk_samplerate(self, value: int):
+        self._vosk_samplerate = value
 
     def get_selected_stt_engine(self) -> str:
         return str(

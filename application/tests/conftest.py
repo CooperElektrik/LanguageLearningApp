@@ -1,9 +1,22 @@
 
+import os
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pytest
 import yaml
+from PySide6.QtWidgets import QApplication
 from core.course_manager import CourseManager
 from core.models import Course, Exercise, ExerciseOption, Lesson, Unit
 from core.progress_manager import ProgressManager
+
+
+@pytest.fixture(scope="session", autouse=True)
+def q_app():
+    """Ensures a QApplication instance exists for all tests needing Qt event loop or widgets."""
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(["--platform", "offscreen"])
+    return app
 
 
 @pytest.fixture

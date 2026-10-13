@@ -6,6 +6,7 @@ from typing import Any
 import Levenshtein
 
 from . import course_loader, glossary_loader
+from .diff_utils import generate_diff_html
 from .models import Course, Exercise, GlossaryEntry, Lesson, Unit
 from .whisper_engine import _FASTER_WHISPER_AVAILABLE
 
@@ -282,13 +283,17 @@ class CourseManager(QObject):
         if is_correct_exact:
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, self.tr(
+            diff_html = generate_diff_html(correct_answer_display, user_answer)
+            msg = self.tr(
                 "Accepted (close match). Correct: {0}. You wrote: {1}"
             ).format(correct_answer_display, user_answer)
+            return True, f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>"
         else:
-            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
+            diff_html = generate_diff_html(correct_answer_display, user_answer)
+            msg = self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
                 correct_answer_display, user_answer
             )
+            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
@@ -356,13 +361,17 @@ class CourseManager(QObject):
         if is_correct_exact:
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
-            return True, self.tr(
+            diff_html = generate_diff_html(correct_answer_display, selected_option_text)
+            msg = self.tr(
                 "Accepted (close match). Correct: {0}. You wrote: {1}"
             ).format(correct_answer_display, selected_option_text)
+            return True, f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>"
         else:
-            return False, self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
+            diff_html = generate_diff_html(correct_answer_display, selected_option_text)
+            msg = self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
                 correct_answer_display, selected_option_text
             )
+            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
@@ -378,13 +387,14 @@ class CourseManager(QObject):
         is_correct = (
             user_answer_norm == correct_answer_norm
         )  # Jumble should usually be exact order
-        return is_correct, (
-            self.tr("Correct: {0}").format(correct_answer_display)
-            if is_correct
-            else self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(
+        if is_correct:
+            return True, self.tr("Correct: {0}").format(correct_answer_display)
+        else:
+            diff_html = generate_diff_html(correct_answer_display, user_answer)
+            msg = self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(
                 correct_answer_display, user_answer
             )
-        )
+            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
 
     def _check_completion_answer(
         self, exercise: Exercise, user_answer: str

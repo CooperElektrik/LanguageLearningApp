@@ -13,3 +13,4 @@ application/models/
 pate_egg.txt
 .env
 gemini.md
+*.db

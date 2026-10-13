@@ -25,6 +25,7 @@ try:
     from application.core.models import Exercise, ExerciseOption
 
     from ..dialogs.asset_manager_dialog import AssetManagerDialog
+    from .asset_drop_line_edit import AssetDropLineEdit
 except ImportError:
     logging.warning("Could not import Exercise model in ExerciseEditorWidgets.")
 
@@ -41,6 +42,17 @@ except ImportError:
     class AssetManagerDialog:
         def __init__(self, *args, **kwargs):
             pass
+
+    class AssetDropLineEdit(QLineEdit):
+        pass
+
+
+def mark_widget_validity(widget: QWidget, is_valid: bool):
+    """Sets Qt dynamic property 'hasError' without modifying styleSheet directly."""
+    widget.setProperty("hasError", not is_valid)
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
+    widget.update()
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +82,7 @@ class BaseExerciseEditorWidget(QWidget):
         self.type_label = QLabel(
             f"Exercise Type: {exercise.type.replace('_', ' ').title()}"
         )
-        self.type_label.setFont(QFont("Arial", 12, QFont.Bold))
+        self.type_label.setStyleSheet("font-weight: bold; font-size: 13px;")
         self.layout.addWidget(self.type_label)
         self.layout.addWidget(self._create_separator())
 
@@ -87,17 +99,16 @@ class BaseExerciseEditorWidget(QWidget):
         current_value: str | None,
         on_change,
     ):
-        """Adds a labelled asset path field with a Browse... button.
-
-        ``asset_type`` is ``"audio"`` or ``"image"`` and controls both the
-        placeholder and which asset picker is launched.  ``on_change`` receives
-        the new text so each editor can store it on the right exercise field.
-        """
+        """Adds a labelled asset path field with drag-and-drop and a Browse... button."""
         layout = QHBoxLayout()
         label = QLabel(label_text)
-        line_edit = QLineEdit(current_value or "")
-        line_edit.setPlaceholderText(f"e.g., assets/{asset_type}s/example")
+        line_edit = AssetDropLineEdit(
+            current_value or "",
+            asset_type=asset_type,
+            course_root_dir=self.course_root_dir,
+        )
         line_edit.textChanged.connect(on_change)
+        line_edit.asset_dropped.connect(on_change)
         browse_button = QPushButton("Browse...")
         browse_button.clicked.connect(lambda: self._browse_asset(asset_type, line_edit))
         layout.addWidget(label)
@@ -161,7 +172,7 @@ class BaseExerciseEditorWidget(QWidget):
 
     def _validate_input_field(self, input_widget, is_required: bool):
         if not is_required:
-            input_widget.setStyleSheet("")
+            mark_widget_validity(input_widget, True)
             return
 
         text = ""
@@ -170,10 +181,7 @@ class BaseExerciseEditorWidget(QWidget):
         elif isinstance(input_widget, QTextEdit):
             text = input_widget.toPlainText().strip()
 
-        if not text:
-            input_widget.setStyleSheet("border: 1px solid red;")
-        else:
-            input_widget.setStyleSheet("")
+        mark_widget_validity(input_widget, bool(text))
         self.data_changed.emit()
 
     def validate(self) -> tuple[bool, str]:
@@ -653,11 +661,9 @@ class SentenceJumbleExerciseEditorWidget(BaseExerciseEditorWidget):
         self, input_widget, is_required: bool
     ):  # Override for QTextEdit specific to words
         if isinstance(input_widget, QTextEdit) and input_widget == self.words_input:
-            if is_required and not self.exercise.words:
-                input_widget.setStyleSheet("border: 1px solid red;")
-            else:
-                input_widget.setStyleSheet("")
-        else:  # Call super for other QLineEdit fields if any, or general handling
+            has_words = bool(self.exercise.words)
+            mark_widget_validity(input_widget, not is_required or has_words)
+        else:
             super()._validate_input_field(input_widget, is_required)
         self.data_changed.emit()
 

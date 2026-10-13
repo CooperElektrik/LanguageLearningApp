@@ -43,11 +43,31 @@ class CourseOverviewView(QWidget):
         self.course_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(self.course_title_label)
 
-        # XP Label
-        self.xp_label = QLabel()
-        self.xp_label.setObjectName("xp_total_label")
-        self.xp_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.main_layout.addWidget(self.xp_label)
+        # Stats Badges Header Layout
+        self.stats_header_widget = QWidget()
+        stats_header_layout = QHBoxLayout(self.stats_header_widget)
+        stats_header_layout.setContentsMargins(0, 4, 0, 8)
+        stats_header_layout.setSpacing(8)
+
+        self.streak_badge_label = QLabel("🔥 0 Days")
+        self.streak_badge_label.setObjectName("overview_streak_badge")
+        self.streak_badge_label.setStyleSheet("background-color: #e65100; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
+
+        self.xp_badge_label = QLabel("⭐ 0 XP")
+        self.xp_badge_label.setObjectName("overview_xp_badge")
+        self.xp_badge_label.setStyleSheet("background-color: #2e7d32; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
+
+        self.retention_badge_label = QLabel("🧠 0% Retention")
+        self.retention_badge_label.setObjectName("overview_retention_badge")
+        self.retention_badge_label.setStyleSheet("background-color: #1565c0; color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px;")
+
+        stats_header_layout.addStretch(1)
+        stats_header_layout.addWidget(self.streak_badge_label)
+        stats_header_layout.addWidget(self.xp_badge_label)
+        stats_header_layout.addWidget(self.retention_badge_label)
+        stats_header_layout.addStretch(1)
+
+        self.main_layout.addWidget(self.stats_header_widget)
 
         # SRS/Daily Review Section
         self.srs_groupbox = QGroupBox(self.tr("Daily Review"))
@@ -122,7 +142,19 @@ class CourseOverviewView(QWidget):
             return
 
         for unit in units:
-            unit_groupbox = QGroupBox(unit.title)
+            completed_in_unit = sum(
+                1
+                for les in unit.lessons
+                if self.progress_manager.is_lesson_completed(
+                    les.lesson_id, self.course_manager
+                )
+            )
+            unit_title_text = (
+                f"{unit.title} ({completed_in_unit}/{len(unit.lessons)} completed)"
+                if unit.lessons
+                else unit.title
+            )
+            unit_groupbox = QGroupBox(unit_title_text)
             unit_groupbox.setObjectName("unit_groupbox")
             unit_layout = QVBoxLayout(unit_groupbox)
 
@@ -176,7 +208,9 @@ class CourseOverviewView(QWidget):
         if self.course_manager.course is None:
             logger.warning("RefreshView called but no course is loaded.")
             self._clear_layout(self.units_layout)
-            self.xp_label.setText(self.tr("Course not loaded."))
+            self.streak_badge_label.setText("🔥 0 Days")
+            self.xp_badge_label.setText("⭐ 0 XP")
+            self.retention_badge_label.setText("🧠 0% Retention")
             self.due_count_label.setText(self.tr("N/A"))
             self.start_review_button.setEnabled(False)
             self.start_weak_review_button.setEnabled(False)
@@ -187,8 +221,16 @@ class CourseOverviewView(QWidget):
             self.course_manager.get_course_title() or self.tr("Language Course")
         )
 
-        self.xp_label.setText(
-            self.tr("Total XP: {0}").format(self.progress_manager.get_total_xp())
+        streak = self.progress_manager.get_current_streak()
+        self.streak_badge_label.setText(f"🔥 {streak} Days")
+
+        xp = self.progress_manager.get_total_xp()
+        self.xp_badge_label.setText(f"⭐ {xp} XP")
+
+        all_exercises = self.course_manager.get_all_exercises()
+        retention_stats = self.progress_manager.get_retention_stats(all_exercises)
+        self.retention_badge_label.setText(
+            f"🧠 {retention_stats['average_retention']}% Retention"
         )
 
         all_exercises = self.course_manager.get_all_exercises()

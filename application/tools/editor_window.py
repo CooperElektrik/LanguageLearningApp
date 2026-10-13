@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QActionGroup, QFont, QUndoStack
+from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QStackedWidget,
     QStyle,
+    QTabWidget,
     QTextEdit,
     QToolBar,
     QTreeWidgetItem,
@@ -100,6 +101,7 @@ from .csv_importer import import_csv_data, load_existing_course_data, save_cours
 from .dialogs.csv_import_dialog import CsvImportDialog
 from .dialogs.package_creation_dialog import PackageCreationDialog
 from .editor.item_commands import ItemCommandsMixin
+from .widgets.asset_hub_widget import AssetHubWidget
 from .widgets.exercise_editor_widgets import (
     BaseExerciseEditorWidget,
     ContextBlockExerciseEditorWidget,
@@ -110,8 +112,11 @@ from .widgets.exercise_editor_widgets import (
     MultipleChoiceExerciseEditorWidget,
     SentenceJumbleExerciseEditorWidget,
     TranslationExerciseEditorWidget,
+    mark_widget_validity,
 )
+from .widgets.live_preview_pane import LivePreviewPane
 from .widgets.manifest_editor_widget import ManifestEditorWidget
+from .widgets.problems_drawer import ProblemsDrawer
 
 logger = logging.getLogger(__name__)
 
@@ -320,132 +325,140 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         outer_layout = QVBoxLayout(main_widget)
+        outer_layout.setContentsMargins(6, 6, 6, 6)
+        outer_layout.setSpacing(6)
 
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setObjectName("EditorSplitter")
+        # Vertical splitter: top = 3-pane workspace, bottom = problems drawer
+        self.vertical_splitter = QSplitter(Qt.Vertical)
+        self.vertical_splitter.setObjectName("EditorVerticalSplitter")
 
+        # 3-Pane Horizontal Splitter
+        self.three_pane_splitter = QSplitter(Qt.Horizontal)
+        self.three_pane_splitter.setObjectName("EditorThreePaneSplitter")
+        self.splitter = self.three_pane_splitter  # For backward-compatibility
+
+        # -------------------------------------------------------------
+        # 1. Left Navigation Pane (Tabs: Structure, Manifest, Glossary)
+        # -------------------------------------------------------------
         left_pane_widget = QWidget()
-        left_pane_widget.setObjectName("LeftPane")
+        left_pane_widget.setObjectName("LeftNavPane")
         left_pane_layout = QVBoxLayout(left_pane_widget)
-        left_pane_layout.setContentsMargins(0, 0, 0, 0)
+        left_pane_layout.setContentsMargins(4, 4, 4, 4)
+        left_pane_layout.setSpacing(6)
+
+        self.left_nav_tabs = QTabWidget()
+        self.left_nav_tabs.setObjectName("LeftNavTabs")
+
+        # Tab 1: Structure
+        structure_tab_widget = QWidget()
+        structure_layout = QVBoxLayout(structure_tab_widget)
+        structure_layout.setContentsMargins(4, 4, 4, 4)
+        structure_layout.setSpacing(6)
 
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search units, lessons, exercises...")
+        self.search_bar.setPlaceholderText("Search or filter (e.g. type:mcq, missing:audio)...")
         self.search_bar.textChanged.connect(self._filter_tree_view)
-        left_pane_layout.addWidget(self.search_bar)
+        structure_layout.addWidget(self.search_bar)
 
-        self.advanced_filters_group = QGroupBox("Advanced Filters")
-        advanced_filters_layout = QVBoxLayout(self.advanced_filters_group)
+        # Filter Chips Layout
+        chips_layout = QHBoxLayout()
+        chips_layout.setSpacing(4)
+        self.chip_all = QPushButton("All")
+        self.chip_all.setProperty("isChip", True)
+        self.chip_all.setCheckable(True)
+        self.chip_all.setChecked(True)
+        self.chip_all.clicked.connect(lambda: self._set_active_chip("all"))
+        chips_layout.addWidget(self.chip_all)
 
-        # Exercise Type Filter
-        type_filter_layout = QHBoxLayout()
-        type_filter_layout.addWidget(QLabel("Type:"))
-        self.type_filter_combo = QComboBox()
-        self.type_filter_combo.addItems(["All Types"] + ALL_EXERCISE_TYPES)
-        self.type_filter_combo.currentIndexChanged.connect(
-            lambda: self._filter_tree_view(self.search_bar.text())
-        )
-        type_filter_layout.addWidget(self.type_filter_combo)
-        advanced_filters_layout.addLayout(type_filter_layout)
+        self.chip_audio = QPushButton("Audio")
+        self.chip_audio.setProperty("isChip", True)
+        self.chip_audio.setCheckable(True)
+        self.chip_audio.clicked.connect(lambda: self._set_active_chip("audio"))
+        chips_layout.addWidget(self.chip_audio)
 
-        # Asset Presence Filter
-        asset_filter_layout = QHBoxLayout()
-        asset_filter_layout.addWidget(QLabel("Assets:"))
-        self.asset_filter_combo = QComboBox()
-        self.asset_filter_combo.addItems(
-            [
-                "Any Asset Status",
-                "Has Audio",
-                "No Audio",
-                "Has Image",
-                "No Image",
-                "Has Both Audio & Image",
-                "Missing Any Asset",  # Assumes if either audio or image is missing
-            ]
-        )
-        self.asset_filter_combo.currentIndexChanged.connect(
-            lambda: self._filter_tree_view(self.search_bar.text())
-        )
-        asset_filter_layout.addWidget(self.asset_filter_combo)
-        advanced_filters_layout.addLayout(asset_filter_layout)
+        self.chip_image = QPushButton("Image")
+        self.chip_image.setProperty("isChip", True)
+        self.chip_image.setCheckable(True)
+        self.chip_image.clicked.connect(lambda: self._set_active_chip("image"))
+        chips_layout.addWidget(self.chip_image)
 
-        # Search Scope Filter
-        scope_filter_layout = QHBoxLayout()
-        scope_filter_layout.addWidget(QLabel("Search In:"))
-        self.scope_filter_combo = QComboBox()
-        self.scope_filter_combo.addItems(
-            [
-                "All Text Fields",
-                "Prompt Only",
-                "Answer Only",
-                "Source Word Only",
-                "Sentence Template Only",
-                "Translation Hint Only",
-            ]
-        )
-        self.scope_filter_combo.currentIndexChanged.connect(
-            lambda: self._filter_tree_view(self.search_bar.text())
-        )
-        scope_filter_layout.addWidget(self.scope_filter_combo)
-        advanced_filters_layout.addLayout(scope_filter_layout)
+        self.chip_draft = QPushButton("Draft")
+        self.chip_draft.setProperty("isChip", True)
+        self.chip_draft.setCheckable(True)
+        self.chip_draft.clicked.connect(lambda: self._set_active_chip("draft"))
+        chips_layout.addWidget(self.chip_draft)
 
-        # Clear Filters Button
-        self.clear_filters_button = QPushButton("Clear Filters")
-        self.clear_filters_button.clicked.connect(self._clear_advanced_filters)
-        advanced_filters_layout.addWidget(self.clear_filters_button)
+        chips_layout.addStretch(1)
+        structure_layout.addLayout(chips_layout)
 
-        left_pane_layout.addWidget(self.advanced_filters_group)
-
+        # Course Tree
         self.tree_widget = CourseTreeWidget(self.course_data, self)
         self.tree_widget.setHeaderLabels(["Course Structure"])
-        self.tree_widget.setFont(QFont("Arial", 10))
         self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_widget.customContextMenuRequested.connect(self._show_context_menu)
         self.tree_widget.itemSelectionChanged.connect(self._on_tree_item_selected)
-
         self.tree_widget.data_model_reordered.connect(self._handle_data_model_reordered)
+        self.tree_widget.inline_add_requested.connect(self._handle_inline_add)
+        structure_layout.addWidget(self.tree_widget, 1)
 
-        left_pane_layout.addWidget(self.tree_widget, 1)
-
+        # Tree Bottom Action Bar
         tree_actions_layout = QHBoxLayout()
+        self.add_unit_button = QPushButton("+ Add Unit")
+        self.add_unit_button.setProperty("primary", True)
+        self.add_unit_button.clicked.connect(lambda: self._add_unit())
+        tree_actions_layout.addWidget(self.add_unit_button)
+
         self.expand_all_button = QPushButton("Expand All")
         self.expand_all_button.clicked.connect(self.tree_widget.expandAll)
         self.collapse_all_button = QPushButton("Collapse All")
         self.collapse_all_button.clicked.connect(self.tree_widget.collapseAll)
         tree_actions_layout.addWidget(self.expand_all_button)
         tree_actions_layout.addWidget(self.collapse_all_button)
-        tree_actions_layout.addStretch(1)
-        left_pane_layout.addLayout(tree_actions_layout)
+        structure_layout.addLayout(tree_actions_layout)
 
-        self.splitter.addWidget(left_pane_widget)
+        self.left_nav_tabs.addTab(structure_tab_widget, "Structure")
 
-        right_pane_widget = QWidget()
-        right_pane_layout = QVBoxLayout(right_pane_widget)
+        # Tab 2: Manifest Info Placeholder
+        manifest_tab_widget = QWidget()
+        manifest_tab_layout = QVBoxLayout(manifest_tab_widget)
+        manifest_tab_lbl = QLabel("Manifest settings are displayed in the center Inspector.")
+        manifest_tab_lbl.setWordWrap(True)
+        manifest_tab_layout.addWidget(manifest_tab_lbl)
+        manifest_tab_layout.addStretch(1)
+        self.left_nav_tabs.addTab(manifest_tab_widget, "Manifest Info")
+
+        # Tab 3: Glossary Placeholder
+        glossary_tab_widget = QWidget()
+        glossary_tab_layout = QVBoxLayout(glossary_tab_widget)
+        glossary_tab_lbl = QLabel("Glossary vocabulary is displayed in the center Inspector.")
+        glossary_tab_lbl.setWordWrap(True)
+        glossary_tab_layout.addWidget(glossary_tab_lbl)
+        glossary_tab_layout.addStretch(1)
+        self.left_nav_tabs.addTab(glossary_tab_widget, "Glossary")
+
+        self.left_nav_tabs.currentChanged.connect(self._handle_left_tab_changed)
+        left_pane_layout.addWidget(self.left_nav_tabs)
+        self.three_pane_splitter.addWidget(left_pane_widget)
+
+        # -------------------------------------------------------------
+        # 2. Center Pane (Inspector / Property Form Editor)
+        # -------------------------------------------------------------
+        center_pane_widget = QWidget()
+        center_pane_widget.setObjectName("CenterInspectorPane")
+        center_pane_layout = QVBoxLayout(center_pane_widget)
+        center_pane_layout.setContentsMargins(6, 6, 6, 6)
+        center_pane_layout.setSpacing(6)
+
+        inspector_header = QLabel("<b>Inspector & Details</b>")
+        center_pane_layout.addWidget(inspector_header)
+
         self.detail_editor_stacked_widget = QStackedWidget()
         self.detail_editor_stacked_widget.setObjectName("DetailEditorStackedWidget")
-        right_pane_layout.addWidget(self.detail_editor_stacked_widget, 1)
 
-        self.item_actions_widget = QWidget()
-        item_actions_layout = QHBoxLayout(self.item_actions_widget)
-        item_actions_layout.setContentsMargins(0, 5, 0, 0)
-        self.move_up_button = QPushButton("Move Up ↑")
-        self.move_up_button.clicked.connect(self._move_item_up)
-        self.move_down_button = QPushButton("Move Down ↓")
-        self.move_down_button.clicked.connect(self._move_item_down)
-        self.preview_exercise_button = QPushButton("Preview Exercise ▶")
-        self.preview_exercise_button.clicked.connect(self._preview_exercise)
-        item_actions_layout.addStretch(1)
-        item_actions_layout.addWidget(self.move_up_button)
-        item_actions_layout.addWidget(self.move_down_button)
-        item_actions_layout.addWidget(self.preview_exercise_button)
-        item_actions_layout.addStretch(1)
-        right_pane_layout.addWidget(self.item_actions_widget)
-        self.item_actions_widget.setVisible(False)
-
-        self.splitter.addWidget(right_pane_widget)
-        self.splitter.setSizes([350, 850])
-
-        outer_layout.addWidget(self.splitter)
+        self._placeholder_editor_widget = QLabel("Select an item to edit its properties.")
+        self._placeholder_editor_widget.setAlignment(Qt.AlignCenter)
+        self._placeholder_editor_widget.setStyleSheet("color: #888899; font-style: italic;")
+        self.detail_editor_stacked_widget.addWidget(self._placeholder_editor_widget)
 
         self.manifest_editor = ManifestEditorWidget()
         self.manifest_editor.data_changed.connect(self._set_dirty_state)
@@ -454,6 +467,65 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.glossary_editor = GlossaryEditorWidget()
         self.glossary_editor.data_changed.connect(self._set_dirty_state)
         self.detail_editor_stacked_widget.addWidget(self.glossary_editor)
+
+        center_pane_layout.addWidget(self.detail_editor_stacked_widget, 1)
+
+        self.item_actions_widget = QWidget()
+        item_actions_layout = QHBoxLayout(self.item_actions_widget)
+        item_actions_layout.setContentsMargins(0, 4, 0, 0)
+        self.move_up_button = QPushButton("Move Up ↑")
+        self.move_up_button.clicked.connect(self._move_item_up)
+        self.move_down_button = QPushButton("Move Down ↓")
+        self.move_down_button.clicked.connect(self._move_item_down)
+        self.preview_exercise_button = QPushButton("Refresh Preview ▶")
+        self.preview_exercise_button.clicked.connect(self._preview_exercise)
+        item_actions_layout.addStretch(1)
+        item_actions_layout.addWidget(self.move_up_button)
+        item_actions_layout.addWidget(self.move_down_button)
+        item_actions_layout.addWidget(self.preview_exercise_button)
+        item_actions_layout.addStretch(1)
+        center_pane_layout.addWidget(self.item_actions_widget)
+        self.item_actions_widget.setVisible(False)
+
+        self.three_pane_splitter.addWidget(center_pane_widget)
+
+        # -------------------------------------------------------------
+        # 3. Right Pane (Live Preview & Integrated Asset Hub)
+        # -------------------------------------------------------------
+        right_pane_widget = QWidget()
+        right_pane_widget.setObjectName("RightPreviewPane")
+        right_pane_layout = QVBoxLayout(right_pane_widget)
+        right_pane_layout.setContentsMargins(4, 4, 4, 4)
+        right_pane_layout.setSpacing(6)
+
+        self.right_splitter = QSplitter(Qt.Vertical)
+        self.right_splitter.setObjectName("RightSplitter")
+
+        self.live_preview_pane = LivePreviewPane(self)
+        self.right_splitter.addWidget(self.live_preview_pane)
+
+        self.asset_hub = AssetHubWidget(course_root_dir=None, parent=self)
+        self.asset_hub.asset_selected.connect(self._handle_asset_hub_selected)
+        self.right_splitter.addWidget(self.asset_hub)
+        self.right_splitter.setSizes([450, 300])
+
+        right_pane_layout.addWidget(self.right_splitter, 1)
+        self.three_pane_splitter.addWidget(right_pane_widget)
+
+        # Set 3-pane widths (Left: 310, Center: 510, Right: 380)
+        self.three_pane_splitter.setSizes([310, 510, 380])
+        self.vertical_splitter.addWidget(self.three_pane_splitter)
+
+        # -------------------------------------------------------------
+        # 4. Bottom Problems & Validation Drawer
+        # -------------------------------------------------------------
+        self.problems_drawer = ProblemsDrawer(self)
+        self.problems_drawer.validate_requested.connect(self.validate_current_course)
+        self.problems_drawer.issue_selected.connect(self._navigate_to_validation_issue)
+        self.vertical_splitter.addWidget(self.problems_drawer)
+        self.vertical_splitter.setSizes([680, 140])
+
+        outer_layout.addWidget(self.vertical_splitter)
 
         self.current_editor_widget = None
         self.current_selected_tree_item = None
@@ -475,199 +547,241 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.dirty_status_label.setText("Saved")
             self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
 
+    def _set_active_chip(self, chip_name: str):
+        for chip, name in [
+            (self.chip_all, "all"),
+            (self.chip_audio, "audio"),
+            (self.chip_image, "image"),
+            (self.chip_draft, "draft"),
+        ]:
+            chip.setChecked(name == chip_name)
+        self._filter_tree_view(self.search_bar.text())
+
+    def _handle_inline_add(self, item_type: str, parent_obj: Any):
+        if item_type == "unit":
+            self._add_unit()
+        elif item_type == "lesson":
+            self._add_lesson(parent_obj)
+        elif item_type == "exercise":
+            self._add_exercise(parent_obj)
+
+    def _handle_left_tab_changed(self, index: int):
+        if index == 0:
+            sel = self.tree_widget.currentItem()
+            if sel:
+                self._on_tree_item_selected()
+            else:
+                self._display_item_editor(None)
+        elif index == 1:
+            manifest_item_data = {
+                "type": "manifest",
+                "manifest_data": self.manifest_data,
+                "course_obj": self.course_data,
+            }
+            self._display_item_editor(manifest_item_data)
+        elif index == 2:
+            glossary_item_data = {"type": "glossary"}
+            self._display_item_editor(glossary_item_data)
+
+    def _update_context_paths(self):
+        base_dir = (
+            os.path.dirname(self.current_manifest_path)
+            if self.current_manifest_path
+            else (
+                os.path.dirname(self.current_course_content_path)
+                if self.current_course_content_path
+                else None
+            )
+        )
+        if hasattr(self, "asset_hub"):
+            self.asset_hub.set_course_root_dir(base_dir)
+        if hasattr(self, "live_preview_pane"):
+            langs = {
+                "target": (
+                    self.course_data.target_language
+                    if self.course_data
+                    else "Target Language"
+                ),
+                "source": (
+                    self.course_data.source_language
+                    if self.course_data
+                    else "Source Language"
+                ),
+            }
+            self.live_preview_pane.set_course_context(langs, base_dir)
+
+    def _handle_asset_hub_selected(self, relative_asset_path: str):
+        self.status_bar.showMessage(
+            f"Selected asset: {relative_asset_path} (drag directly into fields)", 3000
+        )
+
+    def _navigate_to_validation_issue(self, issue: Any):
+        issue_str = str(issue)
+        unit_id = getattr(issue, "unit_id", None)
+        lesson_id = getattr(issue, "lesson_id", None)
+        exercise_id = getattr(issue, "exercise_id", None)
+
+        if "Manifest" in issue_str:
+            self.left_nav_tabs.setCurrentIndex(1)
+            return
+        elif "glossary" in issue_str.lower():
+            self.left_nav_tabs.setCurrentIndex(2)
+            return
+        else:
+            self.left_nav_tabs.setCurrentIndex(0)
+
+        if not self.course_data:
+            return
+
+        target_obj = None
+        for unit in self.course_data.units:
+            if exercise_id or "Exercise" in issue_str:
+                for lesson in unit.lessons:
+                    for ex in lesson.exercises:
+                        if (exercise_id and ex.exercise_id == exercise_id) or (
+                            ex.exercise_id and ex.exercise_id in issue_str
+                        ):
+                            target_obj = ex
+                            break
+                    if target_obj:
+                        break
+            if target_obj:
+                break
+            if lesson_id or "Lesson" in issue_str:
+                for lesson in unit.lessons:
+                    if (lesson_id and lesson.lesson_id == lesson_id) or (
+                        lesson.lesson_id and lesson.lesson_id in issue_str
+                    ):
+                        target_obj = lesson
+                        break
+            if target_obj:
+                break
+            if (unit_id and unit.unit_id == unit_id) or (
+                unit.unit_id and unit.unit_id in issue_str
+            ):
+                target_obj = unit
+                break
+
+        if target_obj:
+            self._expand_and_select_item(target_obj)
+            self.status_bar.showMessage(f"Navigated to: {issue_str[:80]}", 3000)
+            field = getattr(issue, "field", None)
+            if field and self.current_editor_widget:
+                for attr_name in [f"{field}_edit", f"{field}_input", field]:
+                    w = getattr(self.current_editor_widget, attr_name, None)
+                    if w and hasattr(w, "setFocus"):
+                        w.setFocus()
+                        mark_widget_validity(w, False)
+                        break
+
     def _handle_data_model_reordered(self, moved_obj: Any, new_parent_obj: Any):
-        """
-        Slot to handle the data_model_reordered signal from CourseTreeWidget.
-        Refreshes the tree view and re-selects the moved item.
-        """
         self.update_tree_view()
         self._set_dirty_state(True)
         self._expand_and_select_item(moved_obj)
         self.status_bar.showMessage("Item reordered successfully.", 2000)
 
     def _clear_advanced_filters(self):
-        """Resets all advanced filter combo boxes to their default selections."""
-        self.type_filter_combo.setCurrentIndex(0)  # "All Types"
-        self.asset_filter_combo.setCurrentIndex(0)  # "Any Asset Status"
-        self.scope_filter_combo.setCurrentIndex(0)  # "All Text Fields"
-        # The _filter_tree_view will be called automatically by the currentIndexChanged signals.
-        self.status_bar.showMessage("Advanced filters cleared.", 2000)
+        """Resets search bar and filter chips."""
+        self.search_bar.clear()
+        self._set_active_chip("all")
+        self.status_bar.showMessage("Filters cleared.", 2000)
 
-    def _filter_tree_view(self, text: str):
+    def _filter_tree_view(self, text: str = ""):
         if not self.tree_widget:
             return
-        search_term = text.lower().strip()
-        selected_type_filter = self.type_filter_combo.currentText()
-        selected_asset_filter = self.asset_filter_combo.currentText()
-        selected_scope_filter = self.scope_filter_combo.currentText()
+        query = (text or self.search_bar.text()).strip().lower()
 
-        # Store expanded state and selection before clearing
-        expanded_state = {}
-        selected_item_data = None
-        current_sel_item = self.tree_widget.currentItem()
-        if current_sel_item:
-            selected_item_data = current_sel_item.data(0, Qt.UserRole)
-            iterator = QTreeWidgetItemIterator(self.tree_widget)
-            while iterator.value():
-                item = iterator.value()
-                item_data = item.data(0, Qt.UserRole)
-                if item_data:
-                    expanded_state[id(item_data)] = item.isExpanded()
-                iterator += 1
+        # Parse query syntax
+        type_filter = None
+        asset_mode = None
+        text_tokens = []
 
-        # Clear existing selection before re-populating if necessary,
-        # otherwise currentItem might be invalid after hiding/showing
-        self.tree_widget.setCurrentItem(None)
+        for token in query.split():
+            if token.startswith("type:"):
+                type_filter = token[5:].strip()
+            elif token in ["missing:audio", "no:audio"]:
+                asset_mode = "missing_audio"
+            elif token in ["has:audio", "with:audio"]:
+                asset_mode = "has_audio"
+            elif token in ["missing:image", "no:image"]:
+                asset_mode = "missing_image"
+            elif token in ["has:image", "with:image"]:
+                asset_mode = "has_image"
+            else:
+                text_tokens.append(token)
 
-        # First pass: Determine visibility of each item based on all filters
-        iterator = QTreeWidgetItemIterator(
-            self.tree_widget, QTreeWidgetItemIterator.All
-        )
-        items_to_potentially_show_parents_for = []  # Collect items that become visible
+        search_term = " ".join(text_tokens)
 
+        # Check filter chips
+        if hasattr(self, "chip_audio") and self.chip_audio.isChecked():
+            asset_mode = "has_audio"
+        elif hasattr(self, "chip_image") and self.chip_image.isChecked():
+            asset_mode = "has_image"
+        elif hasattr(self, "chip_draft") and self.chip_draft.isChecked():
+            asset_mode = "missing_assets"
+
+        iterator = QTreeWidgetItemIterator(self.tree_widget, QTreeWidgetItemIterator.All)
         while iterator.value():
             item = iterator.value()
             item_data = item.data(0, Qt.UserRole)
+            is_visible = True
 
-            is_item_visible_by_filters = True
-
-            # Items like "Manifest Info" or root items of a tree
-            if not item_data or (
-                isinstance(item_data, dict) and item_data.get("type") == "manifest"
-            ):
-                # Manifest item is special, only hide if search term is active and doesn't match its text
-                if search_term and search_term not in item.text(0).lower():
-                    is_item_visible_by_filters = False
-                item.setHidden(not is_item_visible_by_filters)
-                if is_item_visible_by_filters:
-                    items_to_potentially_show_parents_for.append(item)
+            if isinstance(item_data, dict):
+                item.setHidden(bool(search_term or type_filter or asset_mode))
                 iterator += 1
                 continue
 
-            # Units and Lessons only check search term
             if isinstance(item_data, (Unit, Lesson)):
                 if search_term and search_term not in item.text(0).lower():
-                    is_item_visible_by_filters = False
-                item.setHidden(not is_item_visible_by_filters)
-                if is_item_visible_by_filters:
-                    items_to_potentially_show_parents_for.append(item)
+                    is_visible = False
+                item.setHidden(not is_visible)
                 iterator += 1
                 continue
 
-            # Exercises: Apply all filters
             if isinstance(item_data, Exercise):
-                exercise = item_data
-                item_text_for_search = ""  # Default to empty
-
-                # Apply Search Scope Filter
-                if (
-                    search_term
-                ):  # Only consider scope if a search term is actually provided
-                    if selected_scope_filter == "Prompt Only":
-                        item_text_for_search = (exercise.prompt or "").lower()
-                    elif selected_scope_filter == "Answer Only":
-                        item_text_for_search = (exercise.answer or "").lower()
-                    elif selected_scope_filter == "Source Word Only":
-                        item_text_for_search = (exercise.source_word or "").lower()
-                    elif selected_scope_filter == "Sentence Template Only":
-                        item_text_for_search = (
-                            exercise.sentence_template or ""
-                        ).lower()
-                    elif selected_scope_filter == "Translation Hint Only":
-                        item_text_for_search = (exercise.translation_hint or "").lower()
-                    else:  # "All Text Fields"
-                        searchable_content = [
-                            exercise.prompt,
-                            exercise.answer,
-                            exercise.source_word,
-                            exercise.sentence_template,
-                            exercise.translation_hint,
-                            exercise.title,  # For context_block
-                            item.text(0),  # Display text in tree
-                        ]
-                        # For sentence_jumble, exercise.words is a list of strings
-                        if hasattr(exercise, "words") and isinstance(
-                            exercise.words, list
-                        ):
-                            searchable_content.append(" ".join(exercise.words))
-
-                        # For MCQ/Association, exercise.options is a list of ExerciseOption
-                        if hasattr(exercise, "options") and isinstance(
-                            exercise.options, list
-                        ):
-                            for option_obj in exercise.options:
-                                if hasattr(option_obj, "text"):
-                                    searchable_content.append(option_obj.text)
-
-                        item_text_for_search = "".join(
-                            str(s).lower() for s in searchable_content if s
-                        )
-
-                    if search_term not in item_text_for_search:
-                        is_item_visible_by_filters = False
-
-                # Apply Exercise Type Filter
-                if is_item_visible_by_filters and selected_type_filter != "All Types":
-                    # Convert 'translate_to_target' to 'Translate to Target' for comparison if needed, or use exact type
-                    # For simplicity, we are directly using the internal type strings in QComboBox for now.
-                    if exercise.type != selected_type_filter:
-                        is_item_visible_by_filters = False
-
-                # Apply Asset Presence Filter
-                if (
-                    is_item_visible_by_filters
-                    and selected_asset_filter != "Any Asset Status"
+                ex = item_data
+                if type_filter and type_filter not in ex.type.lower():
+                    is_visible = False
+                if asset_mode == "has_audio" and not getattr(ex, "audio_file", None):
+                    is_visible = False
+                elif asset_mode == "missing_audio" and getattr(ex, "audio_file", None):
+                    is_visible = False
+                elif asset_mode == "has_image" and not getattr(ex, "image_file", None):
+                    is_visible = False
+                elif asset_mode == "missing_image" and getattr(ex, "image_file", None):
+                    is_visible = False
+                elif asset_mode == "missing_assets" and (
+                    getattr(ex, "audio_file", None) or getattr(ex, "image_file", None)
                 ):
-                    has_audio = bool(exercise.audio_file)
-                    has_image = bool(exercise.image_file)
+                    is_visible = False
 
-                    if (
-                        selected_asset_filter == "Has Audio"
-                        and not has_audio
-                        or selected_asset_filter == "No Audio"
-                        and has_audio
-                        or selected_asset_filter == "Has Image"
-                        and not has_image
-                        or selected_asset_filter == "No Image"
-                        and has_image
-                        or selected_asset_filter == "Has Both Audio & Image"
-                        and not (has_audio and has_image)
-                        or selected_asset_filter == "Missing Any Asset"
-                        and (has_audio or has_image)
-                    ):
-                        is_item_visible_by_filters = False
+                if is_visible and search_term:
+                    searchable = " ".join([
+                        getattr(ex, "prompt", "") or "",
+                        getattr(ex, "title", "") or "",
+                        getattr(ex, "answer", "") or "",
+                        getattr(ex, "source_word", "") or "",
+                        getattr(ex, "sentence_template", "") or "",
+                        getattr(ex, "explanation", "") or "",
+                    ]).lower()
+                    if search_term not in searchable:
+                        is_visible = False
 
-                item.setHidden(not is_item_visible_by_filters)
-                if is_item_visible_by_filters:
-                    items_to_potentially_show_parents_for.append(item)
+                item.setHidden(not is_visible)
 
-            iterator += 1  # Move to the next item
+            iterator += 1
 
-        # Second pass: Ensure parents of visible children are also visible and expanded
-        for item in items_to_potentially_show_parents_for:
-            parent = item.parent()
-            while parent:
-                parent.setHidden(False)
-                # Only expand parents if they were previously expanded or if they need to reveal a matching child
-                # This prevents over-expanding the whole tree when filters are applied.
-                parent_data_id = id(parent.data(0, Qt.UserRole))
-                if expanded_state.get(parent_data_id):
+        # Second pass: ensure parents of visible items are visible and expanded
+        iterator = QTreeWidgetItemIterator(self.tree_widget, QTreeWidgetItemIterator.All)
+        while iterator.value():
+            item = iterator.value()
+            if not item.isHidden():
+                parent = item.parent()
+                while parent:
+                    parent.setHidden(False)
                     parent.setExpanded(True)
-                elif (
-                    item.isExpanded() or not item.isHidden()
-                ):  # If child was expanded or is now visible, expand parent
-                    parent.setExpanded(True)
-                parent = parent.parent()
-
-        # Restore previous selection if it's still visible
-        if selected_item_data:
-            self._expand_and_select_item(selected_item_data)
-        elif (
-            self.tree_widget.topLevelItem(0)
-            and not self.tree_widget.topLevelItem(0).isHidden()
-        ):
-            # If nothing was selected or selected item became hidden, select manifest info if visible
-            self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
+                    parent = parent.parent()
+            iterator += 1
 
     def _set_dirty_state(self, dirty: bool = True):
         self.is_dirty = dirty
@@ -675,74 +789,113 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             f"LL Course Editor{' *' if dirty else ''} - "
             f"{os.path.basename(self.current_manifest_path) if self.current_manifest_path else 'New Course'}"
         )
+        if hasattr(self, "dirty_status_label"):
+            if dirty:
+                self.dirty_status_label.setText("Unsaved Changes*")
+                self.dirty_status_label.setStyleSheet("color: orange; padding-right: 10px; font-weight: bold;")
+            else:
+                self.dirty_status_label.setText("Saved")
+                self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
 
     def _display_item_editor(self, item_data: Any):
-        self._clear_editor_pane()
+        if not hasattr(self, "_editor_cache"):
+            self._editor_cache = {}
 
         if isinstance(item_data, dict) and item_data.get("type") == "manifest":
             self.current_editor_widget = self.manifest_editor
             self.manifest_editor.load_data(
-                item_data.get("manifest_data", {}),
+                item_data.get("manifest_data", {}) or (self.manifest_data or {}),
                 item_data.get("course_obj", self.course_data),
                 os.path.dirname(self.current_manifest_path)
                 if self.current_manifest_path
                 else None,
             )
             self.detail_editor_stacked_widget.setCurrentWidget(self.manifest_editor)
+            self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, dict) and item_data.get("type") == "glossary":
             self.current_editor_widget = self.glossary_editor
             self.glossary_editor.load_glossary_data(
                 self.manifest_data, self.current_manifest_path
             )
             self.detail_editor_stacked_widget.setCurrentWidget(self.glossary_editor)
+            self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, Unit):
-            self.current_editor_widget = self._create_unit_editor_widget(item_data)
-            self.detail_editor_stacked_widget.addWidget(self.current_editor_widget)
-            self.detail_editor_stacked_widget.setCurrentWidget(
-                self.current_editor_widget
-            )
+            cache_key = "unit_editor"
+            if cache_key not in self._editor_cache:
+                w = self._create_unit_editor_widget(item_data)
+                self._editor_cache[cache_key] = w
+                self.detail_editor_stacked_widget.addWidget(w)
+            else:
+                w = self._editor_cache[cache_key]
+                self._populate_unit_editor_widget(w, item_data)
+            self.current_editor_widget = w
+            self.detail_editor_stacked_widget.setCurrentWidget(w)
+            self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, Lesson):
-            self.current_editor_widget = self._create_lesson_editor_widget(item_data)
-            self.detail_editor_stacked_widget.addWidget(self.current_editor_widget)
-            self.detail_editor_stacked_widget.setCurrentWidget(
-                self.current_editor_widget
-            )
+            cache_key = "lesson_editor"
+            if cache_key not in self._editor_cache:
+                w = self._create_lesson_editor_widget(item_data)
+                self._editor_cache[cache_key] = w
+                self.detail_editor_stacked_widget.addWidget(w)
+            else:
+                w = self._editor_cache[cache_key]
+                self._populate_lesson_editor_widget(w, item_data)
+            self.current_editor_widget = w
+            self.detail_editor_stacked_widget.setCurrentWidget(w)
+            self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, Exercise):
-            self.current_editor_widget = self._create_exercise_editor_widget(item_data)
-            self.detail_editor_stacked_widget.addWidget(self.current_editor_widget)
-            self.detail_editor_stacked_widget.setCurrentWidget(
-                self.current_editor_widget
-            )
+            cache_key = f"exercise_{id(item_data)}"
+            if cache_key not in self._editor_cache:
+                w = self._create_exercise_editor_widget(item_data)
+                self._editor_cache[cache_key] = w
+                self.detail_editor_stacked_widget.addWidget(w)
+            else:
+                w = self._editor_cache[cache_key]
+            self.current_editor_widget = w
+            self.detail_editor_stacked_widget.setCurrentWidget(w)
+            self.live_preview_pane.update_preview(item_data)
         else:
-            self.current_editor_widget = QLabel(
-                "Select an item to edit its properties."
-            )
-            self.current_editor_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.detail_editor_stacked_widget.addWidget(self.current_editor_widget)
-            self.detail_editor_stacked_widget.setCurrentWidget(
-                self.current_editor_widget
-            )
+            self.current_editor_widget = self._placeholder_editor_widget
+            self.detail_editor_stacked_widget.setCurrentWidget(self._placeholder_editor_widget)
+            self.live_preview_pane.update_preview(None)
 
     def _clear_editor_pane(self):
-        for i in reversed(range(self.detail_editor_stacked_widget.count())):
-            widget = self.detail_editor_stacked_widget.widget(i)
-            if (
-                widget is not self.manifest_editor
-                and widget is not self.glossary_editor
-            ):
-                self.detail_editor_stacked_widget.removeWidget(widget)
-                widget.deleteLater()
         self.current_editor_widget = None
+        if hasattr(self, "_placeholder_editor_widget"):
+            self.detail_editor_stacked_widget.setCurrentWidget(self._placeholder_editor_widget)
+
+    def _populate_unit_editor_widget(self, widget: QWidget, unit: Unit):
+        widget.unit_id_edit.setText(unit.unit_id)
+        widget.unit_title_edit.blockSignals(True)
+        widget.unit_title_edit.setText(unit.title)
+        widget.unit_title_edit.blockSignals(False)
+        try:
+            widget.unit_title_edit.textChanged.disconnect()
+        except RuntimeError:
+            pass
+        widget.unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
+        widget.unit_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(widget.unit_title_edit, True))
+        self._validate_line_edit_required(widget.unit_title_edit, True)
+
+    def _populate_lesson_editor_widget(self, widget: QWidget, lesson: Lesson):
+        widget.lesson_id_edit.setText(lesson.lesson_id)
+        widget.lesson_title_edit.blockSignals(True)
+        widget.lesson_title_edit.setText(lesson.title)
+        widget.lesson_title_edit.blockSignals(False)
+        try:
+            widget.lesson_title_edit.textChanged.disconnect()
+        except RuntimeError:
+            pass
+        widget.lesson_title_edit.textChanged.connect(lambda text: self._update_lesson_title(lesson, text))
+        widget.lesson_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(widget.lesson_title_edit, True))
+        self._validate_line_edit_required(widget.lesson_title_edit, True)
 
     def _validate_line_edit_required(self, input_widget: QLineEdit, is_required: bool):
         if not is_required:
-            input_widget.setStyleSheet("")
+            mark_widget_validity(input_widget, True)
             return
         text = input_widget.text().strip()
-        if not text:
-            input_widget.setStyleSheet("border: 1px solid red;")
-        else:
-            input_widget.setStyleSheet("")
+        mark_widget_validity(input_widget, bool(text))
         self._set_dirty_state(True)
 
     def _create_unit_editor_widget(self, unit: Unit):
@@ -1117,50 +1270,9 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         if not self.course_data:
             return
 
-        manifest_item_data = {
-            "type": "manifest",
-            "manifest_data": self.manifest_data,
-            "course_obj": self.course_data,
-        }
-        manifest_item = QTreeWidgetItem(self.tree_widget, ["Manifest Info"])
-        manifest_item.setData(0, Qt.UserRole, manifest_item_data)
-        manifest_item.setFont(0, QFont("Arial", 11, QFont.Bold))
-        manifest_item.setFlags(
-            manifest_item.flags()
-            & ~Qt.ItemFlag.ItemIsDragEnabled
-            & ~Qt.ItemFlag.ItemIsDropEnabled
-        )
-        if (
-            id(manifest_item_data) in expanded_items_data
-            and expanded_items_data[id(manifest_item_data)]
-        ):
-            manifest_item.setExpanded(True)
-
-        glossary_item_data = {"type": "glossary"}
-        glossary_item = QTreeWidgetItem(self.tree_widget, ["Glossary"])
-        glossary_item.setData(0, Qt.UserRole, glossary_item_data)
-        glossary_item.setFont(0, QFont("Arial", 11, QFont.Bold))
-        # Glossary item itself is not draggable/droppable, only its content.
-        glossary_item.setFlags(
-            glossary_item.flags()
-            & ~Qt.ItemFlag.ItemIsDragEnabled
-            & ~Qt.ItemFlag.ItemIsDropEnabled
-        )
-        # Place after Manifest Info
-        self.tree_widget.insertTopLevelItem(
-            self.tree_widget.indexOfTopLevelItem(manifest_item) + 1, glossary_item
-        )
-
-        if (
-            id(glossary_item_data) in expanded_items_data
-            and expanded_items_data[id(glossary_item_data)]
-        ):
-            glossary_item.setExpanded(True)
-
         for unit in self.course_data.units:
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
-            unit_item.setFont(0, QFont("Arial", 10, QFont.Bold))
             unit_item.setFlags(
                 unit_item.flags()
                 | Qt.ItemFlag.ItemIsDragEnabled
@@ -1198,7 +1310,11 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
                     if len(ex_display_text_content) > 50:  # Truncate if too long
                         ex_display_text_content = ex_display_text_content[:47] + "..."
-                    ex_display_text = f"[{exercise.type}] {ex_display_text_content}"
+                    type_badge = self.tree_widget.get_exercise_type_badge(exercise.type)
+                    asset_badges = self.tree_widget.get_asset_badges(exercise)
+                    badge_suffix = f"  {asset_badges}" if asset_badges else ""
+                    ex_display_text = f"{type_badge} {ex_display_text_content}{badge_suffix}"
+
                     exercise_item = QTreeWidgetItem(lesson_item, [ex_display_text])
                     exercise_item.setData(0, Qt.UserRole, exercise)
                     exercise_item.setFlags(
@@ -1206,6 +1322,22 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                         | Qt.ItemIsDragEnabled
                         | Qt.ItemIsDropEnabled
                     )
+
+                # Inline "+ Add Exercise..." button under lesson
+                add_ex_item = QTreeWidgetItem(lesson_item, ["+ Add Exercise..."])
+                add_ex_item.setData(
+                    0, Qt.UserRole, {"action": "add_exercise", "target": lesson}
+                )
+                add_ex_item.setForeground(0, QColor("#8888aa"))
+                add_ex_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+            # Inline "+ Add Lesson..." button under unit
+            add_les_item = QTreeWidgetItem(unit_item, ["+ Add Lesson..."])
+            add_les_item.setData(
+                0, Qt.UserRole, {"action": "add_lesson", "target": unit}
+            )
+            add_les_item.setForeground(0, QColor("#8888aa"))
+            add_les_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
         if selected_item_data:
             self._expand_and_select_item(selected_item_data)
@@ -1233,10 +1365,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.manifest_data, self.course_data = create_new_course()
         self.current_manifest_path = None
         self.current_course_content_path = None
+        self._update_context_paths()
         self.update_tree_view()
         self._set_dirty_state(False)
         self._clear_editor_pane()
-        self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
+        if self.tree_widget.topLevelItemCount() > 0:
+            self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
         self.item_actions_widget.setVisible(False)
 
         self.current_file_label.setText("New Course (Unsaved)")
@@ -1311,10 +1445,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self._set_dirty_state(False)
             return
 
+        self._update_context_paths()
         self.update_tree_view()
         self._set_dirty_state(False)
         self._clear_editor_pane()
-        self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
+        if self.tree_widget.topLevelItemCount() > 0:
+            self.tree_widget.setCurrentItem(self.tree_widget.topLevelItem(0))
         self.item_actions_widget.setVisible(False)
 
         self.current_file_label.setText(os.path.basename(self.current_manifest_path))
@@ -1394,6 +1530,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         self.current_manifest_path = manifest_file
         self.current_course_content_path = content_file
+        self._update_context_paths()
         self.current_file_label.setText(os.path.basename(self.current_manifest_path))
         self._set_dirty_state(False)
         self.status_bar.showMessage("Course saved successfully!", 3000)
@@ -1449,7 +1586,6 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             elif reply == QMessageBox.StandardButton.Cancel:
                 return
 
-
         all_errors = []
         logger.info(f"Validating manifest: {self.current_manifest_path}")
         manifest_errors = perform_manifest_validation(
@@ -1470,23 +1606,21 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         logger.info(f"Validating course content for: {self.course_data.title}")
 
+        if hasattr(self, "problems_drawer"):
+            self.problems_drawer.set_issues(all_errors)
+            if not self.problems_drawer.is_drawer_visible():
+                self.problems_drawer.toggle_drawer()
+
         if not all_errors:
+            self.status_bar.showMessage("Validation Successful! No errors found.", 4000)
             QMessageBox.information(
                 self, "Validation Result", "Validation Successful! No errors found."
             )
         else:
-            error_dialog = QDialog(self)
-            error_dialog.setWindowTitle("Validation Errors")
-            layout = QVBoxLayout(error_dialog)
-            text_edit = QTextEdit()
-            text_edit.setReadOnly(True)
-            text_edit.setText("\n".join(all_errors))
-            layout.addWidget(text_edit)
-            ok_button = QPushButton("OK")
-            ok_button.clicked.connect(error_dialog.accept)
-            layout.addWidget(ok_button)
-            error_dialog.setMinimumSize(600, 400)
-            error_dialog.exec()
+            self.status_bar.showMessage(
+                f"Validation found {len(all_errors)} issues. See Problems drawer below.",
+                5000,
+            )
 
     def import_from_csv(self):
         if not self.course_data or not self.manifest_data:

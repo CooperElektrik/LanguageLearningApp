@@ -62,9 +62,15 @@ except ImportError:  # This makes Nuitka happy
     import settings as app_settings  # Fallback for Nuitka
     from core.course_manager import CourseManager
     from core.models import Exercise
-    from core.stt_common import TranscriptionResult
-    from core.stt_manager import STTManager
     from ui.dialogs.glossary_detail_dialog import GlossaryDetailDialog
+
+try:
+    from application.ui.widgets.audio_level_meter import AudioLevelMeter
+except ImportError:
+    try:
+        from ui.widgets.audio_level_meter import AudioLevelMeter
+    except ImportError:
+        from .audio_level_meter import AudioLevelMeter
 
 logger = logging.getLogger(__name__)
 
@@ -818,20 +824,28 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.record_button.setFixedSize(100, 100)
         grid_layout.addWidget(self.record_button, 2, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
 
-        # 4. Status Label
+        # 4. Animated Microphone Level Meter
+        self.level_meter = AudioLevelMeter(self)
+        grid_layout.addWidget(self.level_meter, 3, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
+
+        self._level_sample_timer = QTimer(self)
+        self._level_sample_timer.setInterval(50)
+        self._level_sample_timer.timeout.connect(self._sample_audio_level)
+
+        # 5. Status Label
         self.status_label = QLabel(self.tr("Tap the microphone to start recording."))
         self.status_label.setObjectName("pronunciation_status_label")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_layout.addWidget(self.status_label, 3, 0, 1, 4)
+        grid_layout.addWidget(self.status_label, 4, 0, 1, 4)
 
-        # 5. Model Loading Progress Bar
+        # 6. Model Loading Progress Bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
-        grid_layout.addWidget(self.progress_bar, 4, 0, 1, 4)
+        grid_layout.addWidget(self.progress_bar, 5, 0, 1, 4)
 
-        # 6. Rich Feedback Area (Unified)
+        # 7. Rich Feedback Area (Unified)
         self.feedback_group = QGroupBox(self.tr("Your Results"))
         self.feedback_group.setObjectName("pronunciation_feedback_group")
         feedback_layout = QVBoxLayout(self.feedback_group)
@@ -856,7 +870,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         feedback_action_layout.addStretch(1)
         feedback_layout.addLayout(feedback_action_layout)
 
-        grid_layout.addWidget(self.feedback_group, 5, 0, 1, 4)
+        grid_layout.addWidget(self.feedback_group, 6, 0, 1, 4)
 
         # --- Signal Connections & Initial State ---
         self.stt_manager.modelLoadingStarted.connect(self._on_model_loading_started)
@@ -993,9 +1007,14 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self._qbuffer.open(QIODevice.OpenModeFlag.WriteOnly)
             self._audio_recorder.start(self._qbuffer)
             self._is_recording = True
+            self.level_meter.set_recording(True)
+            self._level_sample_timer.start()
             logger.info("Audio recording started.")
         else:
             if self._audio_recorder and self._is_recording:
+                self._level_sample_timer.stop()
+                self.level_meter.set_recording(False)
+                self.level_meter.set_level(0.0)
                 self._audio_recorder.stop()
                 self._is_recording = False
                 logger.info("Audio recording stopped.")
@@ -1013,6 +1032,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 else:
                     self.status_label.setText(self.tr("No audio data recorded."))
                     self.record_button.setEnabled(True)
+
+    def _sample_audio_level(self):
+        if self._is_recording and self._audio_buffer and self._audio_buffer.size() > 0:
+            tail = self._audio_buffer.right(2048).data()
+            self.level_meter.process_pcm_bytes(tail)
 
     def _save_and_transcribe_audio(self):
         try:
@@ -1197,6 +1221,11 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
     def stop_media(self):
         super().stop_media()
+        if hasattr(self, "_level_sample_timer") and self._level_sample_timer.isActive():
+            self._level_sample_timer.stop()
+        if hasattr(self, "level_meter"):
+            self.level_meter.set_recording(False)
+            self.level_meter.set_level(0.0)
         if self._is_recording and self._audio_recorder:
             self._audio_recorder.stop()
             self._is_recording = False

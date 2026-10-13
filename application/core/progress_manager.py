@@ -431,6 +431,50 @@ class ProgressManager:
         """Returns the current SRS attributes for a specific exercise."""
         return self.exercise_srs_data[exercise_id]
 
+    def get_retention_stats(self, all_course_exercises: list[Exercise]) -> dict[str, Any]:
+        """Calculates memory retention and mastery metrics using the SM-2 / Ebbinghaus decay model."""
+        import math
+
+        now = datetime.now()
+        total = len(all_course_exercises)
+        learned_count = 0
+        mastered_count = 0
+        due_count = 0
+        retention_sum = 0.0
+
+        for ex in all_course_exercises:
+            srs = self.exercise_srs_data.get(ex.exercise_id, {})
+            reps = srs.get("repetitions", 0)
+            is_learned = srs.get("is_initially_learned", False)
+            last_rev = srs.get("last_reviewed")
+            interval = srs.get("interval_days", 0)
+
+            if is_learned or reps > 0:
+                learned_count += 1
+                if last_rev:
+                    delta_days = max(0.0, (now - last_rev).total_seconds() / 86400.0)
+                    stability = max(1.0, float(interval))
+                    retention = math.exp(-delta_days / stability)
+                else:
+                    retention = 1.0
+
+                retention_sum += retention
+                if reps >= 2 and retention >= 0.8:
+                    mastered_count += 1
+                if retention < 0.85 or (
+                    srs.get("next_review_due") and srs.get("next_review_due") <= now
+                ):
+                    due_count += 1
+
+        avg_retention = (retention_sum / learned_count * 100.0) if learned_count > 0 else 0.0
+        return {
+            "total_exercises": total,
+            "learned_count": learned_count,
+            "mastered_count": mastered_count,
+            "due_count": due_count,
+            "average_retention": round(avg_retention, 1),
+        }
+
     def get_due_exercises(
         self, all_course_exercises: list[Exercise], limit: int | None = None
     ) -> list[Exercise]:

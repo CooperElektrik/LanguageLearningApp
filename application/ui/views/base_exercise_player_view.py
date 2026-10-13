@@ -117,6 +117,7 @@ class BaseExercisePlayerView(QWidget):
         self.feedback_label.setObjectName(f"{self.__class__.__name__}_feedback_label")
         self.feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.feedback_label.setWordWrap(True)
+        self.feedback_label.setTextFormat(Qt.TextFormat.RichText)
         self.main_layout.addWidget(self.feedback_label)
 
         # Action Buttons Area: Subclasses will populate this with specific buttons
@@ -420,6 +421,20 @@ class BaseExercisePlayerView(QWidget):
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handles common keyboard shortcuts for the exercise player."""
+        if event.key() == Qt.Key_Space:
+            focused = self.focusWidget()
+            if not isinstance(focused, (QLineEdit, QTextEdit)):
+                if (
+                    self.current_exercise_widget
+                    and getattr(self.current_exercise_widget, "exercise", None)
+                    and getattr(self.current_exercise_widget.exercise, "audio_file", None)
+                ):
+                    self.current_exercise_widget._play_audio_file(
+                        self.current_exercise_widget.exercise.audio_file
+                    )
+                    event.accept()
+                    return
+
         if event.modifiers() == Qt.ControlModifier:
             if event.key() == Qt.Key_H:
                 # Check if the specific view (LessonView or ReviewView) has this button

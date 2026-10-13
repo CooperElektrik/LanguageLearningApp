@@ -23,10 +23,68 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def _collect_error(errors_list: list[str], message: str, path_prefix: str = ""):
-    """Collects an error message with a path prefix."""
+
+class ValidationIssue(str):
+    """Represents a validation issue, extending str for backward compatibility."""
+
+    def __new__(
+        cls,
+        message: str,
+        severity: str = "error",
+        unit_id: str | None = None,
+        lesson_id: str | None = None,
+        exercise_id: str | None = None,
+        field: str | None = None,
+    ):
+        instance = super().__new__(cls, message)
+        instance.message = message
+        instance.severity = severity
+        instance.unit_id = unit_id
+        instance.lesson_id = lesson_id
+        instance.exercise_id = exercise_id
+        instance.field = field
+        return instance
+
+
+def _collect_error(
+    errors_list: list[Any],
+    message: str,
+    path_prefix: str = "",
+    severity: str = "error",
+    unit_id: str | None = None,
+    lesson_id: str | None = None,
+    exercise_id: str | None = None,
+    field: str | None = None,
+):
+    """Collects an error message with structured location metadata and path prefix."""
     full_message = f"{path_prefix}{message}" if path_prefix else message
-    errors_list.append(full_message)
+    if not unit_id and "Unit '" in path_prefix:
+        try:
+            unit_id = path_prefix.split("Unit '")[1].split("'")[0]
+        except IndexError:
+            pass
+    if not lesson_id and "Lesson '" in path_prefix:
+        try:
+            lesson_id = path_prefix.split("Lesson '")[1].split("'")[0]
+        except IndexError:
+            pass
+    if not exercise_id and "Exercise" in path_prefix and "('" in path_prefix:
+        try:
+            exercise_id = path_prefix.split("Exercise")[1].split("('")[1].split("')")[0]
+        except IndexError:
+            pass
+    if "Warning:" in message:
+        severity = "warning"
+
+    issue = ValidationIssue(
+        full_message,
+        severity=severity,
+        unit_id=unit_id,
+        lesson_id=lesson_id,
+        exercise_id=exercise_id,
+        field=field,
+    )
+    errors_list.append(issue)
 
 
 def _validate_exercise_translation_internal(

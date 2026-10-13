@@ -12,8 +12,10 @@ from PySide6.QtGui import QKeyEvent  # Added for keyPressEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
+    QTextEdit,
     QWidget,
 )
 from ui.views.base_exercise_player_view import BaseExercisePlayerView
@@ -520,6 +522,46 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
     def keyPressEvent(self, event: QKeyEvent):
         """Handles keyboard shortcuts specific to LessonView."""
-        # Add any lesson-specific shortcuts here if needed in the future
-        # For now, just pass to base for common shortcuts like Ctrl+H, Ctrl+N
+        key = event.key()
+        focused = self.focusWidget()
+
+        # Enter / Return navigation
+        if key in (Qt.Key_Return, Qt.Key_Enter):
+            if self.view_state in [
+                LessonViewState.ASKING_QUESTION,
+                LessonViewState.REVIEWING_MISTAKES,
+            ]:
+                if self.submit_button.isVisible() and self.submit_button.isEnabled():
+                    self._handle_submit_button_click()
+                    event.accept()
+                    return
+            elif self.view_state in [
+                LessonViewState.ANSWER_SUBMITTED,
+                LessonViewState.LESSON_COMPLETED,
+            ]:
+                if self.next_button.isVisible() and self.next_button.isEnabled():
+                    self._handle_next_action_click()
+                    event.accept()
+                    return
+
+        # Number keys 1-9 for multiple choice options if not typing in text field
+        if not isinstance(focused, (QLineEdit, QTextEdit)):
+            if key in [
+                Qt.Key_1,
+                Qt.Key_2,
+                Qt.Key_3,
+                Qt.Key_4,
+                Qt.Key_5,
+                Qt.Key_6,
+                Qt.Key_7,
+                Qt.Key_8,
+                Qt.Key_9,
+            ]:
+                if self.current_exercise_widget and hasattr(
+                    self.current_exercise_widget, "options_group"
+                ):
+                    self.current_exercise_widget.keyPressEvent(event)
+                    if event.isAccepted():
+                        return
+
         super().keyPressEvent(event)
