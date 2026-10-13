@@ -1,0 +1,5 @@
+- Never do incremental file reads. Read the full file instead.
+- Keep changes focused on the requested task.
+- Preserve existing project conventions unless the task explicitly requires changing them.
+- Do not modify unrelated files.
+- Do not use Search-Replace-style scripts.
