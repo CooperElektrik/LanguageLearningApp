@@ -17,7 +17,7 @@ def read_manifest(manifest_filepath: str, messages: list[str]) -> dict[str, Any]
         messages.append(f"Error: Manifest file not found: {manifest_filepath}")
         return None
     try:
-        with open(manifest_filepath, "r", encoding="utf-8") as f:
+        with open(manifest_filepath, encoding="utf-8") as f:
             manifest_data = yaml.safe_load(f)
         if not isinstance(manifest_data, dict):
             messages.append(
@@ -64,7 +64,7 @@ def create_package_for_gui(
 
     course_content_data = None
     try:
-        with open(abs_content_filepath, "r", encoding="utf-8") as f_content:
+        with open(abs_content_filepath, encoding="utf-8") as f_content:
             course_content_data = yaml.safe_load(f_content)
     except Exception as e:
         messages.append(

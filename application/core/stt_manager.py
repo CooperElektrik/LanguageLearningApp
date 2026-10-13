@@ -1,11 +1,10 @@
 import logging
+from typing import Any
 
-import av
-import numpy as np
 import settings as app_settings
-import soundfile as sf
 from PySide6.QtCore import QObject, QRunnable, QSettings, QThreadPool, Signal
 
+from .stt_common import resample_audio
 from .vosk_manager import ModelLoader as VoskModelLoader  # Renamed to avoid conflict
 from .vosk_manager import TranscriptionTask as VoskTranscriptionTask
 from .whisper_engine import (
@@ -27,10 +26,8 @@ class STTManager(QObject):
         self.q_settings = QSettings()
         self.thread_pool = QThreadPool.globalInstance()
 
-        self._active_whisper_model_instance: object | None = (
-            None  # Use object for type hinting flexibility
-        )
-        self._active_vosk_model_instance: object | None = None
+        self._active_whisper_model_instance: Any = None
+        self._active_vosk_model_instance: Any = None
         self._active_model_name_loaded: str | None = (
             None  # Stores the name/path of the currently loaded model
         )
@@ -184,81 +181,11 @@ class STTManager(QObject):
             self.modelUnloaded.emit(unloaded_model_path)
             logger.info(f"Model '{unloaded_model_path}' unloaded.")
 
-    def _resample_audio(
-        self, input_path: str, target_sr: int, engine_name: str
-    ) -> str | None:
-        """
-        Resamples an audio file to a target sample rate using PyAV and saves it.
+    @staticmethod
+    def _resample_audio(input_path: str, target_sr: int, engine_name: str) -> str | None:
+        """Resamples an audio file to a target sample rate using PyAV (delegates to stt_common)."""
+        return resample_audio(input_path, target_sr, engine_name)
 
-        Args:
-            input_path (str): Path to the input audio file.
-            target_sr (int): The target sample rate (e.g., 16000).
-            engine_name (str): The name of the STT engine (e.g., "whisper" or "vosk"),
-                               used for logging and file naming.
-
-        Returns:
-            Optional[str]: The path to the new resampled audio file, or None on failure.
-        """
-        logger.info(
-            f"Resampling audio from '{input_path}' to {target_sr}Hz for {engine_name.capitalize()} using PyAV."
-        )
-        try:
-            # Define a unique output path based on the engine and sample rate
-            if engine_name == "whisper":
-                output_path = input_path.replace(".wav", "_resampled_whisper.wav")
-            else:
-                output_path = input_path.replace(
-                    ".wav", f"_resampled_vosk_{target_sr}.wav"
-                )
-
-            # Use a 'with' statement for proper resource management
-            with av.open(input_path) as in_container:
-                # Find the first audio stream
-                in_stream = next(
-                    (s for s in in_container.streams if s.type == "audio"), None
-                )
-                if in_stream is None:
-                    logger.error(f"No audio streams found in {input_path}")
-                    return None
-
-                # Set up the resampler to convert to mono, float, with the target sample rate
-                resampler = av.AudioResampler(
-                    format="fltp",  # Output format: float, planar
-                    layout="mono",  # Output layout: single channel
-                    rate=target_sr,  # Output sample rate
-                )
-
-                resampled_frames = []
-                # Decode all frames from the input stream and resample them
-                for frame in in_container.decode(in_stream):
-                    resampled_frames.extend(resampler.resample(frame))
-
-                # **IMPORTANT**: Flush the resampler to get any buffered frames
-                resampled_frames.extend(resampler.resample(None))
-
-                if not resampled_frames:
-                    logger.error(
-                        f"Resampling produced no frames for {input_path}. The file might be empty or corrupt."
-                    )
-                    return None
-
-                # Concatenate all resampled frames into a single numpy array
-                # .to_ndarray() for fltp/mono gives a shape of (1, n_samples), so we reshape to a 1D array.
-                resampled_audio_data = np.concatenate(
-                    [frame.to_ndarray().reshape(-1) for frame in resampled_frames]
-                )
-
-                # Write the resampled data to the new file
-                sf.write(output_path, resampled_audio_data, target_sr)
-                logger.info(f"Successfully saved resampled audio to '{output_path}'")
-                return output_path
-
-        except Exception as e:
-            logger.error(
-                f"Error during audio resampling for {engine_name.capitalize()}: {e}",
-                exc_info=True,
-            )
-            return None
 
     def transcribe_audio(
         self,

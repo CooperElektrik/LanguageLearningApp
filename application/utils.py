@@ -1,11 +1,19 @@
 import logging
 import os
 import sys
+
 try:
     from application import settings
 except ImportError:
     import settings
-from PySide6.QtCore import QCoreApplication, QLocale, QSettings, QTranslator, QUrl
+from PySide6.QtCore import (
+    QCoreApplication,
+    QLocale,
+    QSettings,
+    QStandardPaths,
+    QTranslator,
+    QUrl,
+)
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 
 logger = logging.getLogger(__name__)
@@ -43,10 +51,10 @@ def _init_sound_player():
         _sound_player.setAudioOutput(_audio_output)
 
         # Set volume from saved settings
-        volume_int = q_settings.value(
+        volume_val = q_settings.value(
             settings.QSETTINGS_KEY_SOUND_VOLUME, settings.SOUND_VOLUME_DEFAULT, type=int
         )
-        volume_float = float(volume_int) / 100.0
+        volume_float = float(int(str(volume_val))) / 100.0 if volume_val is not None else 1.0
         _audio_output.setVolume(volume_float)
         logger.debug(f"Sound player initialized with volume: {volume_float}")
 
@@ -68,7 +76,7 @@ def play_sound(sound_filename: str):
     sound_path_relative = os.path.join(settings.SOUNDS_DIR, sound_filename)
     sound_path_abs = get_resource_path(sound_path_relative)
 
-    if os.path.exists(sound_path_abs):
+    if _sound_player is not None and os.path.exists(sound_path_abs):
         _sound_player.setSource(QUrl.fromLocalFile(sound_path_abs))
         _sound_player.play()
     else:
@@ -79,12 +87,79 @@ def update_sound_volume():
     """Updates the volume of the sound player based on saved settings."""
     if _audio_output:
         q_settings = QSettings()
-        volume_int = q_settings.value(
+        volume_val = q_settings.value(
             settings.QSETTINGS_KEY_SOUND_VOLUME, settings.SOUND_VOLUME_DEFAULT, type=int
         )
-        volume_float = float(volume_int) / 100.0
+        volume_float = float(int(str(volume_val))) / 100.0 if volume_val is not None else 1.0
         _audio_output.setVolume(volume_float)
         logger.debug(f"Sound volume updated to: {volume_float}")
+
+
+def get_log_dir() -> str:
+    """Returns the writable directory path for application log files."""
+    base_dir = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.AppLocalDataLocation
+    )
+    if not base_dir:
+        base_dir = os.getcwd()
+    log_dir = os.path.join(base_dir, "logs")
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+    except OSError:
+        pass
+    return log_dir
+
+
+def get_user_courses_dir() -> str:
+    """Returns the writable directory path for user-installed or downloaded courses."""
+    base_dir = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.AppDataLocation
+    )
+    if not base_dir:
+        base_dir = os.getcwd()
+    courses_dir = os.path.join(base_dir, settings.COURSES_DIR)
+    try:
+        os.makedirs(courses_dir, exist_ok=True)
+    except OSError:
+        pass
+    return courses_dir
+
+
+def get_courses_search_directories() -> list[str]:
+    """Returns a list of directories to scan for courses in priority order."""
+    search_dirs: list[str] = []
+
+    # 1. User AppData courses directory (writeable, persistent)
+    user_courses = get_user_courses_dir()
+    if user_courses and os.path.isdir(user_courses) and user_courses not in search_dirs:
+        search_dirs.append(user_courses)
+
+    # 2. Bundled application resources courses directory
+    try:
+        bundled_courses = get_resource_path(settings.COURSES_DIR)
+        if (
+            bundled_courses
+            and os.path.isdir(bundled_courses)
+            and bundled_courses not in search_dirs
+        ):
+            search_dirs.append(bundled_courses)
+    except Exception:
+        pass
+
+    # 3. Development project root directory if running from source
+    if not getattr(sys, "frozen", False):
+        try:
+            root_courses = os.path.join(os.path.dirname(get_app_root_dir()), settings.COURSES_DIR)
+            if (
+                root_courses
+                and os.path.isdir(root_courses)
+                and root_courses not in search_dirs
+            ):
+                search_dirs.append(root_courses)
+        except Exception:
+            pass
+
+    return search_dirs
 
 
 def set_app_root_dir(app_root_dir: str):
@@ -118,9 +193,10 @@ def get_app_root_dir() -> str:
     Raises:
         RuntimeError: If the application is not frozen and set_app_root_dir() has not been called.
     """
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    meipass = getattr(sys, "_MEIPASS", None)
+    if getattr(sys, "frozen", False) and meipass:
         # For frozen apps, _MEIPASS is always the root.
-        return sys._MEIPASS
+        return str(meipass)
 
     if _APP_ROOT_DIR is None:
         # Attempt a fallback for non-frozen, non-set scenarios (e.g., running a utility script directly)
@@ -167,11 +243,12 @@ def get_resource_path(relative_path: str) -> str:
     # Sanitize relative_path to use OS-specific separators
     relative_path = os.path.normpath(relative_path)
 
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    meipass = getattr(sys, "_MEIPASS", None)
+    if getattr(sys, "frozen", False) and meipass:
         # Application is frozen (e.g., Nuitka or PyInstaller bundle)
         # sys._MEIPASS is the path to the temporary directory where bundled files are extracted.
         # This temporary directory acts as the application root.
-        base_path = sys._MEIPASS
+        base_path = str(meipass)
     else:
         # Application is running from source files.
         # Use the application root directory set by set_app_root_dir().
@@ -191,7 +268,7 @@ def apply_stylesheet(app_or_widget, qss_file_path: str):
     """
     if os.path.exists(qss_file_path):
         try:
-            with open(qss_file_path, "r", encoding="utf-8") as f:
+            with open(qss_file_path, encoding="utf-8") as f:
                 style_sheet_content = f.read()
             app_or_widget.setStyleSheet(style_sheet_content)
             logger.info(f"Successfully applied stylesheet from: {qss_file_path}")

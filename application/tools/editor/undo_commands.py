@@ -1,9 +1,10 @@
 """QUndoCommand classes for course editor operations."""
 
-import copy
 from typing import Any
+
 from PySide6.QtGui import QUndoCommand
-from application.core.models import Unit, Lesson, Exercise
+
+from application.core.models import Exercise, Lesson, Unit
 
 
 class AddUnitCommand(QUndoCommand):

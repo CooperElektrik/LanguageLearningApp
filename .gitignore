@@ -2,11 +2,14 @@ venv/
 dist/
 build/
 .vscode/
-courses/
+courses/*
+!courses/starter_spanish/
+!courses/starter_spanish/**
 application/core/data/
 application/models/
 *.pyc
 *.spec
+*.lcpkg
 pate_egg.txt
 .env
 gemini.md

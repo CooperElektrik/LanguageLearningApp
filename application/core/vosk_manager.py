@@ -7,10 +7,15 @@ import py7zr
 import settings as app_settings
 import utils
 
-from .stt_common import BaseModelLoader, BaseTranscriptionTask, TranscriptionResult
+from .stt_common import (
+    BaseModelLoader,
+    BaseTranscriptionTask,
+    TranscriptionResult,
+    resample_audio,
+)
 
 try:
-    from vosk import KaldiRecognizer, Model
+    from vosk import KaldiRecognizer, Model  # type: ignore
 
     _VOSK_AVAILABLE = True
 except ImportError:
@@ -18,18 +23,27 @@ except ImportError:
     logger.warning("VOSK not found. VOSK STT will be unavailable.")
     _VOSK_AVAILABLE = False
 
-    class Model:
+    class Model:  # type: ignore
         def __init__(self, *args, **kwargs):
             pass
 
-    class KaldiRecognizer:
+    class KaldiRecognizer:  # type: ignore
         def __init__(self, *args, **kwargs):
+            pass
+
+        def SetWords(self, *args, **kwargs):
             pass
 
         def AcceptWaveform(self, *args, **kwargs):
             return False
 
         def Result(self):
+            return json.dumps({"text": ""})
+
+        def PartialResult(self):
+            return json.dumps({"partial": ""})
+
+        def FinalResult(self):
             return json.dumps({"text": ""})
 
 
@@ -162,9 +176,8 @@ class TranscriptionTask(BaseTranscriptionTask):
             self.recorded_samplerate
             and self.recorded_samplerate != self.samplerate
         ):
-            from .stt_manager import STTManager
-            resampled = STTManager._resample_audio(
-                None, self.audio_path, self.samplerate, "vosk"
+            resampled = resample_audio(
+                self.audio_path, self.samplerate, "vosk"
             )
             if resampled:
                 audio_file_to_use = resampled

@@ -292,7 +292,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.light_theme_action.setChecked(True)
 
         try:
-            with open(qss_file_path, "r", encoding="utf-8") as f:
+            with open(qss_file_path, encoding="utf-8") as f:
                 qss_content = f.read()
             QApplication.instance().setStyleSheet(qss_content)
             self.status_bar.showMessage(
@@ -1183,7 +1183,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 ):
                     lesson_item.setExpanded(True)
 
-                for idx, exercise in enumerate(lesson.exercises):
+                for exercise in lesson.exercises:
                     ex_display_text_content = "No Content"
                     if exercise.title:  # Primarily for context_block
                         ex_display_text_content = exercise.title
@@ -1220,12 +1220,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 self,
                 "Unsaved Changes",
                 "You have unsaved changes. Do you want to save them before creating a new course?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
             )
-            if reply == QMessageBox.Save:
+            if reply == QMessageBox.StandardButton.Save:
                 if not self.save_course():
                     return
-            elif reply == QMessageBox.Cancel:
+            elif reply == QMessageBox.StandardButton.Cancel:
                 return
 
         self.manifest_data, self.course_data = create_new_course()
@@ -1247,12 +1249,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 self,
                 "Unsaved Changes",
                 "You have unsaved changes. Do you want to save them before opening a new course?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
             )
-            if reply == QMessageBox.Save:
+            if reply == QMessageBox.StandardButton.Save:
                 if not self.save_course():
                     return
-            elif reply == QMessageBox.Cancel:
+            elif reply == QMessageBox.StandardButton.Cancel:
                 return
 
         manifest_file, _ = QFileDialog.getOpenFileName(
@@ -1404,13 +1408,15 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 self,
                 "Unsaved Changes",
                 "You have unsaved changes. Do you want to save them before exiting?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
             )
-            if reply == QMessageBox.Save:
+            if reply == QMessageBox.StandardButton.Save:
                 if not self.save_course():
                     event.ignore()
                     return
-            elif reply == QMessageBox.Cancel:
+            elif reply == QMessageBox.StandardButton.Cancel:
                 event.ignore()
                 return
         event.accept()
@@ -1433,13 +1439,16 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 self,
                 "Unsaved Changes",
                 "You have unsaved changes. It's recommended to save before validating. Save now?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
             )
-            if reply == QMessageBox.Save:
+            if reply == QMessageBox.StandardButton.Save:
                 if not self.save_course():
                     return
-            elif reply == QMessageBox.Cancel:
+            elif reply == QMessageBox.StandardButton.Cancel:
                 return
+
 
         all_errors = []
         logger.info(f"Validating manifest: {self.current_manifest_path}")

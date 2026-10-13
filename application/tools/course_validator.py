@@ -76,7 +76,9 @@ def _validate_exercise_mcq_internal(
 
     correct_count = 0
     for i, option in enumerate(exercise.options):
-        option_path = f"{path_prefix}Option #{i + 1} ('{option.text[:20] if hasattr(option, 'text') else 'N/A'}...'): "
+        opt_text = getattr(option, "text", None)
+        option_text_preview = opt_text[:20] if opt_text else "N/A"
+        option_path = f"{path_prefix}Option #{i + 1} ('{option_text_preview}...'): "
         if (
             not hasattr(option, "text")
             or not isinstance(option.text, str)

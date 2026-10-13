@@ -24,7 +24,7 @@ def load_glossary(
         return []
 
     try:
-        with open(glossary_path, "r", encoding="utf-8") as f:
+        with open(glossary_path, encoding="utf-8") as f:
             raw_glossary_data = yaml.safe_load(f)
         logger.info(f"Successfully loaded raw glossary data from {glossary_path}")
     except FileNotFoundError:  # This is technically redundant due to os.path.exists check, but kept for defense-in-depth or if file disappears

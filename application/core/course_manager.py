@@ -234,9 +234,11 @@ class CourseManager(QObject):
         return all_exercises
 
     def _normalize_answer_for_comparison(
-        self, text: str, for_pronunciation: bool = False
+        self, text: str | None, for_pronunciation: bool = False
     ) -> str:
         """Normalizes text for comparison (lowercase, strip, optionally remove punctuation)."""
+        if not text:
+            return ""
         text_norm = text.lower().strip()
         if for_pronunciation:
             # For pronunciation, be more aggressive with punctuation removal

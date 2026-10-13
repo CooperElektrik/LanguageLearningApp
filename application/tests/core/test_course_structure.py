@@ -68,7 +68,7 @@ def test_round_trip_serialization(sample_course_data, tmp_path):
     assert yaml_serializer.save_course_to_yaml(sample_course_data, str(save_path))
 
     # Reload it
-    with open(save_path, "r", encoding="utf-8") as f:
+    with open(save_path, encoding="utf-8") as f:
         reloaded_data = yaml.safe_load(f)
 
     # Basic structural assertions

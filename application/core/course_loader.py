@@ -12,22 +12,23 @@ logger = logging.getLogger(__name__)
 
 
 def _validate_asset_path(
-    asset_path: str | None, course_base_dir: str, pool_base_dir: str
+    asset_path: str | None,
+    course_base_dir: str | None,
+    pool_base_dir: str | None,
 ) -> str | None:
-    """
-    Checks if an asset exists in the course or shared pool directories and returns the valid path.
-    """
+    """Checks if an asset exists in the course or shared pool directories and returns the valid path."""
     if not asset_path:
         return None
 
-    # Construct full paths
-    course_asset_path = os.path.join(course_base_dir, asset_path)
-    if os.path.exists(course_asset_path):
-        return course_asset_path
+    if course_base_dir:
+        course_asset_path = os.path.join(course_base_dir, asset_path)
+        if os.path.exists(course_asset_path):
+            return course_asset_path
 
-    pool_asset_path = os.path.join(pool_base_dir, asset_path)
-    if os.path.exists(pool_asset_path):
-        return pool_asset_path
+    if pool_base_dir:
+        pool_asset_path = os.path.join(pool_base_dir, asset_path)
+        if os.path.exists(pool_asset_path):
+            return pool_asset_path
 
     logger.warning(f"Asset not found: '{asset_path}'.")
     return None
@@ -67,6 +68,84 @@ def create_new_course() -> tuple[dict[str, Any], Course]:
     return manifest, course_obj
 
 
+def import_course_package(
+    package_path: str, target_base_dir: str
+) -> tuple[bool, str, str | None]:
+    """Imports a .lcpkg course archive into target_base_dir.
+
+    Args:
+        package_path: Absolute path to the .lcpkg or .zip file.
+        target_base_dir: Directory where the course folder should be extracted.
+
+    Returns:
+        (success, message, manifest_path or None)
+    """
+    import shutil
+    import zipfile
+
+    if not os.path.exists(package_path):
+        return False, f"Package file not found: {package_path}", None
+
+    if not zipfile.is_zipfile(package_path):
+        return False, f"File is not a valid zip or .lcpkg package: {package_path}", None
+
+    try:
+        with zipfile.ZipFile(package_path, "r") as zf:
+            namelist = zf.namelist()
+            if "manifest.yaml" not in namelist:
+                return (
+                    False,
+                    "Package is invalid: missing 'manifest.yaml' in root of archive.",
+                    None,
+                )
+
+            with zf.open("manifest.yaml") as mf:
+                manifest_data = yaml.safe_load(mf)
+
+            if not isinstance(manifest_data, dict):
+                return False, "Package manifest is corrupted or not a valid YAML dictionary.", None
+
+            course_id = manifest_data.get("course_id")
+            course_title = manifest_data.get("course_title", "Imported Course")
+            if not course_id:
+                course_id = os.path.splitext(os.path.basename(package_path))[0]
+
+            course_dir_name = "".join(
+                c for c in str(course_id) if c.isalnum() or c in ("-", "_")
+            ).strip()
+            if not course_dir_name:
+                course_dir_name = f"course_{uuid.uuid4().hex[:8]}"
+
+            dest_course_dir = os.path.join(target_base_dir, course_dir_name)
+            os.makedirs(dest_course_dir, exist_ok=True)
+
+            # Safe extraction avoiding Zip Slip vulnerability
+            for member in zf.infolist():
+                member_path = os.path.normpath(member.filename)
+                if member_path.startswith("..") or os.path.isabs(member_path):
+                    continue
+                target_path = os.path.abspath(os.path.join(dest_course_dir, member_path))
+                if os.path.commonpath([dest_course_dir, target_path]) != dest_course_dir:
+                    continue
+
+                if member.is_dir():
+                    os.makedirs(target_path, exist_ok=True)
+                else:
+                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                    with zf.open(member) as source, open(target_path, "wb") as target:
+                        shutil.copyfileobj(source, target)
+
+            dest_manifest = os.path.join(dest_course_dir, "manifest.yaml")
+            logger.info(
+                f"Successfully imported course '{course_title}' to {dest_course_dir}"
+            )
+            return True, f"Course '{course_title}' imported successfully!", dest_manifest
+
+    except Exception as e:
+        logger.error(f"Error importing course package '{package_path}': {e}", exc_info=True)
+        return False, f"Failed to import course package: {e}", None
+
+
 def load_manifest(manifest_path: str) -> dict[str, Any] | None:
     """Loads the course manifest YAML file."""
     logger.debug(f"Attempting to load manifest from: {manifest_path}")
@@ -74,7 +153,7 @@ def load_manifest(manifest_path: str) -> dict[str, Any] | None:
         logger.error(f"Manifest file not found: {manifest_path}")
         return None
     try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
+        with open(manifest_path, encoding="utf-8") as f:
             manifest_data = yaml.safe_load(f)
         logger.info(f"Manifest loaded successfully from {manifest_path}")
         return manifest_data
@@ -90,8 +169,8 @@ def load_manifest(manifest_path: str) -> dict[str, Any] | None:
 def _parse_exercise_options(
     options_data: Any,
     correct_option_text: str | None,
-    course_base_dir: str,
-    pool_base_dir: str,
+    course_base_dir: str | None = None,
+    pool_base_dir: str | None = None,
 ) -> list[ExerciseOption]:
     """Helper to parse options data into a list of ExerciseOption objects."""
     logger.debug(
@@ -139,8 +218,8 @@ def _parse_exercise(
     index: int,
     target_language: str,
     source_language: str,
-    course_base_dir: str,
-    pool_base_dir: str,
+    course_base_dir: str | None = None,
+    pool_base_dir: str | None = None,
 ) -> Exercise | None:
     """Parses a single exercise entry from YAML data into an Exercise object."""
     ex_id = f"{lesson_id}_ex{index}"
@@ -268,7 +347,7 @@ def load_course_content(
         logger.error(f"Course content file not found: {content_filepath}")
         return None
     try:
-        with open(content_filepath, "r", encoding="utf-8") as f:
+        with open(content_filepath, encoding="utf-8") as f:
             raw_course_data = yaml.safe_load(f)
         logger.info(f"Successfully loaded raw course data from {content_filepath}")
     except yaml.YAMLError as e:

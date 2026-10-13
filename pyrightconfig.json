@@ -1,7 +1,10 @@
 {
+  "venvPath": ".",
+  "venv": "venv",
   "extraPaths": [
     "application"
   ],
+  "typeCheckingMode": "basic",
   "reportConstantRedefinition": "none",
   "reportUnknownMemberType": "none",
   "reportUnknownArgumentType": "none",
@@ -13,5 +16,9 @@
   "reportAny": "none",
   "reportExplicitAny": "none",
   "reportMissingParameterType": "none",
-  "reportImplicitOverride": "none"
+  "reportImplicitOverride": "none",
+  "reportMissingTypeStubs": "none",
+  "reportPrivateUsage": "none",
+  "reportImportCycles": "none"
 }
+

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -21,9 +22,6 @@ logger = logging.getLogger(__name__)
 SM2_DEFAULT_EASE_FACTOR = 2.5
 SM2_MIN_EASE_FACTOR = 1.3
 SM2_MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
-
-
-from dataclasses import dataclass
 
 
 @dataclass
@@ -148,84 +146,102 @@ class ProgressManager:
                     f"Could not create progress data directory {self.progress_data_dir}: {e}. Application may not function correctly."
                 )
 
-    def load_progress(self):
-        """Loads progress data from the JSON file."""
-        if not os.path.exists(self.progress_file):
-            logger.info(
-                f"No progress file found for course '{self.course_id}' at {self.progress_file}. Starting fresh."
-            )
-            return
-
-        try:
-            with open(self.progress_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                logger.debug(f"Raw progress data loaded from {self.progress_file}.")
-
-                raw_srs_data = data.get("exercise_srs_data", {})
-                for ex_id, srs_attrs in raw_srs_data.items():
-                    # Convert datetime strings back to datetime objects
-                    if srs_attrs.get("last_reviewed"):
-                        srs_attrs["last_reviewed"] = datetime.fromisoformat(
-                            srs_attrs["last_reviewed"]
-                        )
-                    if srs_attrs.get("next_review_due"):
-                        srs_attrs["next_review_due"] = datetime.fromisoformat(
-                            srs_attrs["next_review_due"]
-                        )
-
-                    # Ensure new flag exists for older progress files
-                    if "is_initially_learned" not in srs_attrs:
-                        # For existing data, if repetitions > 0, assume it was initially learned.
-                        srs_attrs["is_initially_learned"] = (
-                            srs_attrs.get("repetitions", 0) > 0
-                        )
-                        logger.info(
-                            f"Populated 'is_initially_learned' for {ex_id} based on repetitions for backward compatibility."
-                        )
-
-                    self.exercise_srs_data[ex_id] = srs_attrs
-
-                self.xp = data.get("xp", 0)
-                logger.debug(f"Loaded XP: {self.xp}")
-
-                raw_last_study_date = data.get("last_study_date")
-                if raw_last_study_date:
-                    self.last_study_date = date.fromisoformat(raw_last_study_date)
-                    logger.debug(f"Loaded last study date: {self.last_study_date}")
-                self.current_streak_days = data.get("current_streak_days", 0)
-                logger.debug(f"Loaded current streak: {self.current_streak_days} days.")
-
-                self.exercise_notes = data.get("exercise_notes", {})
-                logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
-
-                self.lesson_progress = data.get("lesson_progress", {})
-                logger.debug(
-                    f"Loaded progress for {len(self.lesson_progress)} lessons."
+    def _parse_progress_dict(self, data: dict[str, Any]):
+        """Parses loaded progress dictionary into internal state."""
+        raw_srs_data = data.get("exercise_srs_data", {})
+        for ex_id, srs_attrs in raw_srs_data.items():
+            # Convert datetime strings back to datetime objects
+            if srs_attrs.get("last_reviewed"):
+                srs_attrs["last_reviewed"] = datetime.fromisoformat(
+                    srs_attrs["last_reviewed"]
+                )
+            if srs_attrs.get("next_review_due"):
+                srs_attrs["next_review_due"] = datetime.fromisoformat(
+                    srs_attrs["next_review_due"]
                 )
 
+            # Ensure new flag exists for older progress files
+            if "is_initially_learned" not in srs_attrs:
+                srs_attrs["is_initially_learned"] = (
+                    srs_attrs.get("repetitions", 0) > 0
+                )
                 logger.info(
-                    f"Progress loaded for course '{self.course_id}' from {self.progress_file}. Total exercises with SRS data: {len(self.exercise_srs_data)}"
+                    f"Populated 'is_initially_learned' for {ex_id} based on repetitions for backward compatibility."
                 )
-        except json.JSONDecodeError as e:
-            logger.error(
-                f"Error decoding JSON from progress file {self.progress_file}: {e}. Progress may be lost."
-            )
-        except Exception as e:
-            logger.error(
-                f"Failed to load progress from {self.progress_file}: {e}. Progress may be reset."
-            )
-            # Reset all progress data if loading fails critically
-            logger.warning(
-                "Resetting all progress data due to critical loading failure."
-            )
+
+            self.exercise_srs_data[ex_id] = srs_attrs
+
+        self.xp = data.get("xp", 0)
+        logger.debug(f"Loaded XP: {self.xp}")
+
+        raw_last_study_date = data.get("last_study_date")
+        if raw_last_study_date:
+            self.last_study_date = date.fromisoformat(raw_last_study_date)
+            logger.debug(f"Loaded last study date: {self.last_study_date}")
+        self.current_streak_days = data.get("current_streak_days", 0)
+        logger.debug(f"Loaded current streak: {self.current_streak_days} days.")
+
+        self.exercise_notes = data.get("exercise_notes", {})
+        logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
+
+        self.lesson_progress = data.get("lesson_progress", {})
+        logger.debug(
+            f"Loaded progress for {len(self.lesson_progress)} lessons."
+        )
+
+    def load_progress(self):
+        """Loads progress data from the JSON file, with automatic backup fallback."""
+        bak_file = f"{self.progress_file}.bak"
+        loaded = False
+
+        if os.path.exists(self.progress_file):
+            try:
+                with open(self.progress_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._parse_progress_dict(data)
+                    loaded = True
+                    logger.info(
+                        f"Progress loaded for course '{self.course_id}' from {self.progress_file}. "
+                        f"Total exercises with SRS data: {len(self.exercise_srs_data)}"
+                    )
+            except (json.JSONDecodeError, OSError) as e:
+                logger.error(
+                    f"Error reading progress file {self.progress_file}: {e}. Attempting backup recovery."
+                )
+
+        if not loaded and os.path.exists(bak_file):
+            try:
+                with open(bak_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._parse_progress_dict(data)
+                    loaded = True
+                    logger.warning(
+                        f"Successfully recovered progress for course '{self.course_id}' from backup file {bak_file}."
+                    )
+                    self.save_progress()  # Re-persist recovered data
+            except Exception as e:
+                logger.error(f"Failed to recover progress from backup file {bak_file}: {e}")
+
+        if not loaded:
+            if not os.path.exists(self.progress_file):
+                logger.info(
+                    f"No progress file found for course '{self.course_id}' at {self.progress_file}. Starting fresh."
+                )
+            else:
+                logger.warning(
+                    "Resetting all progress data due to critical loading failure."
+                )
             self.exercise_srs_data = defaultdict(default_srs_record)
             self.xp = 0
             self.last_study_date = None
             self.current_streak_days = 0
             self.exercise_notes = {}
+            self.lesson_progress = {}
 
     def save_progress(self):
-        """Saves current progress data to the JSON file."""
+        """Saves current progress data atomically with automatic backup."""
+        import shutil
+
         logger.info(
             f"Attempting to save progress for course '{self.course_id}' to {self.progress_file}"
         )
@@ -241,6 +257,7 @@ class ProgressManager:
             srs_data_for_save[ex_id] = srs_copy
 
         data = {
+            "schema_version": 1,
             "exercise_srs_data": srs_data_for_save,
             "xp": self.xp,
             "last_study_date": (
@@ -250,18 +267,44 @@ class ProgressManager:
             "exercise_notes": self.exercise_notes,
             "lesson_progress": self.lesson_progress,
         }
+
+        tmp_file = f"{self.progress_file}.tmp"
+        bak_file = f"{self.progress_file}.bak"
+
         try:
-            with open(self.progress_file, "w", encoding="utf-8") as f:
+            with open(tmp_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+
+            # Keep backup of previous healthy progress file
+            if os.path.exists(self.progress_file):
+                try:
+                    shutil.copy2(self.progress_file, bak_file)
+                except OSError as be:
+                    logger.warning(f"Could not create backup of progress file: {be}")
+
+            os.replace(tmp_file, self.progress_file)
             logger.info(
                 f"Progress saved successfully for course '{self.course_id}' to {self.progress_file}"
             )
             return True
         except OSError as e:
             logger.error(f"Could not write progress to file {self.progress_file}: {e}")
+            if os.path.exists(tmp_file):
+                try:
+                    os.remove(tmp_file)
+                except OSError:
+                    pass
         except Exception as e:
             logger.error(f"An unexpected error occurred while saving progress: {e}")
+            if os.path.exists(tmp_file):
+                try:
+                    os.remove(tmp_file)
+                except OSError:
+                    pass
         return False
+
 
     def set_lesson_progress(self, lesson_id: str, last_exercise_index: int):
         """Updates the last viewed exercise index for a specific lesson."""
@@ -575,8 +618,8 @@ class ProgressManager:
             ]
             if all_lessons:
                 all_completed = all(
-                    self.is_lesson_completed(l.lesson_id, course_manager_ref)
-                    for l in all_lessons
+                    self.is_lesson_completed(lesson.lesson_id, course_manager_ref)
+                    for lesson in all_lessons
                 )
 
         total_xp = self.get_total_xp()

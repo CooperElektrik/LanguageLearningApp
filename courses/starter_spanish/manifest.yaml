@@ -1,0 +1,11 @@
+course_id: starter_spanish
+course_title: "Spanish for Beginners"
+target_language: "Spanish"
+source_language: "English"
+target_language_code: "es"
+version: "1.0.0"
+author: "LanguageLearningApp Team"
+description: "Essential greetings, everyday phrases, and foundational vocabulary to get you speaking Spanish immediately."
+content_file: "content_spanish.yaml"
+glossary_file: "glossary.yaml"
+use_shared_pool: false

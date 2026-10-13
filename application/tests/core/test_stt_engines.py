@@ -33,8 +33,8 @@ for _name in ("soundfile", "py7zr"):
             _stub.SevenZipFile = _SevenZipFile
         sys.modules[_name] = _stub
 
-from core import vosk_manager, whisper_engine
-from core.stt_common import TranscriptionResult
+from core import vosk_manager, whisper_engine  # noqa: E402
+from core.stt_common import TranscriptionResult  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

@@ -1,10 +1,9 @@
 """Unit tests for application/utils.py functionality."""
 
 import os
-import pytest
-from PySide6.QtCore import QCoreApplication, QLocale, QSettings
 
 from application import utils
+
 try:
     from application import settings
 except ImportError:

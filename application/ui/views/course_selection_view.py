@@ -4,17 +4,24 @@ import os
 import settings
 import utils
 import yaml
-from PySide6.QtCore import QEvent, QSize, Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QEvent, QSize, Qt, QUrl, Signal
+from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import (
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
+
+try:
+    from application.core.course_loader import import_course_package
+except ImportError:
+    from core.course_loader import import_course_package
 
 logger = logging.getLogger(__name__)
 
@@ -150,15 +157,32 @@ class CourseSelectionView(QWidget):
         self._setup_ui()
         self._find_and_display_courses()
 
-    def _setup_ui(self):  # Renamed to self.title_label
+    def _setup_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
         )
 
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(10, 10, 10, 10)
+
         self.title_label = QLabel(self.tr("Select a Course"))
         self.title_label.setObjectName("course_selection_title_label")
-        main_layout.addWidget(self.title_label)
+        header_layout.addWidget(self.title_label)
+
+        header_layout.addStretch()
+
+        self.import_button = QPushButton(self.tr("📥 Import Package (.lcpkg)..."))
+        self.import_button.setObjectName("course_import_button")
+        self.import_button.clicked.connect(self._on_import_course_clicked)
+        header_layout.addWidget(self.import_button)
+
+        self.refresh_button = QPushButton(self.tr("🔄 Refresh"))
+        self.refresh_button.setObjectName("course_refresh_button")
+        self.refresh_button.clicked.connect(self._find_and_display_courses)
+        header_layout.addWidget(self.refresh_button)
+
+        main_layout.addLayout(header_layout)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -170,73 +194,172 @@ class CourseSelectionView(QWidget):
         self.courses_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll_area.setWidget(self.scroll_content)
 
+    def _clear_courses_layout(self):
+        while self.courses_layout.count():
+            item = self.courses_layout.takeAt(0)
+            if item:
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+
     def _find_and_display_courses(self):
-        courses_dir_abs = utils.get_resource_path(settings.COURSES_DIR)
-        if not os.path.isdir(courses_dir_abs):
-            logger.error(f"Courses directory not found at: {courses_dir_abs}")
-            self.courses_layout.addWidget(
-                QLabel(self.tr("Error: Courses directory not found."))
-            )
-            return
+        self._clear_courses_layout()
+
+        search_dirs = utils.get_courses_search_directories()
+        logger.info(f"Scanning for courses across directories: {search_dirs}")
 
         found_courses = False
-        for course_dir_name in os.listdir(courses_dir_abs):
-            course_path = os.path.join(courses_dir_abs, course_dir_name)
-            manifest_path = os.path.join(course_path, settings.MANIFEST_FILENAME)
+        seen_course_ids = set()
 
-            if os.path.isfile(manifest_path):
+        for courses_dir in search_dirs:
+            if not os.path.isdir(courses_dir):
+                continue
+
+            for course_dir_name in sorted(os.listdir(courses_dir)):
+                course_path = os.path.join(courses_dir, course_dir_name)
+                if not os.path.isdir(course_path):
+                    continue
+
+                manifest_path = os.path.join(course_path, settings.MANIFEST_FILENAME)
+                if not os.path.isfile(manifest_path):
+                    continue
+
                 try:
-                    with open(manifest_path, "r", encoding="utf-8") as f:
+                    with open(manifest_path, encoding="utf-8") as f:
                         manifest_data = yaml.safe_load(f)
-                        course_title = manifest_data.get(
-                            "course_title", course_dir_name
-                        )
-                        course_description = manifest_data.get("description", "")
-                        author = manifest_data.get("author", "")
-                        version = manifest_data.get("version", "")
-                        source_language = manifest_data.get("source_language", "")
-                        target_language = manifest_data.get("target_language", "")
-                        image_file = manifest_data.get("image_file")
 
-                        image_path = None
-                        potential_path = ""
-                        if image_file:
-                            potential_path = os.path.join(
-                                course_path, "images", image_file
-                            )
+                    if not isinstance(manifest_data, dict):
+                        continue
+
+                    course_id = manifest_data.get("course_id", course_dir_name)
+                    if course_id in seen_course_ids:
+                        continue  # Avoid duplicates; higher priority directory wins
+                    seen_course_ids.add(course_id)
+
+                    course_title = manifest_data.get("course_title", course_dir_name)
+                    course_description = manifest_data.get("description", "")
+                    author = manifest_data.get("author", "")
+                    version = manifest_data.get("version", "")
+                    source_language = manifest_data.get("source_language", "")
+                    target_language = manifest_data.get("target_language", "")
+                    image_file = manifest_data.get("image_file")
+
+                    image_path = None
+                    if image_file:
+                        potential_path = os.path.join(course_path, "images", image_file)
                         if os.path.exists(potential_path):
                             image_path = potential_path
-                        else:
-                            image_path = utils.get_resource_path(
-                                os.path.join("assets/images/default_preview.jpg")
-                            )
+                        elif os.path.exists(os.path.join(course_path, image_file)):
+                            image_path = os.path.join(course_path, image_file)
 
-                        button = CourseButton(
-                            course_title,
-                            course_description,
-                            author,
-                            version,
-                            source_language,
-                            target_language,
-                            image_path,
-                            manifest_path,
+                    if not image_path:
+                        image_path = utils.get_resource_path(
+                            os.path.join("assets/images/default_preview.jpg")
                         )
-                        button.clicked.connect(
-                            lambda checked=False, p=manifest_path: (
-                                self.course_selected.emit(p)
-                            )
+
+                    button = CourseButton(
+                        course_title,
+                        course_description,
+                        author,
+                        version,
+                        source_language,
+                        target_language,
+                        image_path,
+                        manifest_path,
+                    )
+                    button.clicked.connect(
+                        lambda checked=False, p=manifest_path: (
+                            self.course_selected.emit(p)
                         )
-                        self.courses_layout.addWidget(button)
-                        found_courses = True
+                    )
+                    self.courses_layout.addWidget(button)
+                    found_courses = True
                 except Exception as e:
                     logger.warning(
-                        f"Could not load or parse manifest for course '{course_dir_name}': {e}"
+                        f"Could not load manifest for course '{course_dir_name}': {e}"
                     )
 
         if not found_courses:
-            self.courses_layout.addWidget(
-                QLabel(self.tr("No valid courses found in the courses directory."))
+            self._render_empty_state()
+
+    def _render_empty_state(self):
+        empty_frame = QFrame()
+        empty_frame.setObjectName("course_empty_state_frame")
+        empty_layout = QVBoxLayout(empty_frame)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setContentsMargins(40, 40, 40, 40)
+        empty_layout.setSpacing(15)
+
+        welcome_label = QLabel(self.tr("<h2>Welcome to LanguageLearningApp!</h2>"))
+        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.addWidget(welcome_label)
+
+        sub_label = QLabel(
+            self.tr(
+                "No courses were found in your library.<br>"
+                "Get started by loading the starter course or importing a course package."
             )
+        )
+        sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sub_label.setWordWrap(True)
+        empty_layout.addWidget(sub_label)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        btn_layout.setSpacing(15)
+
+        starter_btn = QPushButton(self.tr("📦 Load Spanish Starter Course"))
+        starter_btn.clicked.connect(self._load_starter_course)
+        btn_layout.addWidget(starter_btn)
+
+        import_btn = QPushButton(self.tr("📥 Import Package (.lcpkg)..."))
+        import_btn.clicked.connect(self._on_import_course_clicked)
+        btn_layout.addWidget(import_btn)
+
+        folder_btn = QPushButton(self.tr("📂 Open Courses Folder"))
+        folder_btn.clicked.connect(self._open_courses_folder)
+        btn_layout.addWidget(folder_btn)
+
+        empty_layout.addLayout(btn_layout)
+        self.courses_layout.addWidget(empty_frame)
+
+    def _load_starter_course(self):
+        """Loads or installs the starter course bundled with the application."""
+        # Check bundled courses first
+        for d in utils.get_courses_search_directories():
+            manifest = os.path.join(d, "starter_spanish", settings.MANIFEST_FILENAME)
+            if os.path.isfile(manifest):
+                self.course_selected.emit(manifest)
+                return
+
+        QMessageBox.information(
+            self,
+            self.tr("Starter Course"),
+            self.tr("Starter course was not found in the search directories. Try refreshing or importing an .lcpkg file."),
+        )
+
+    def _on_import_course_clicked(self):
+        pkg_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Import Course Package"),
+            "",
+            self.tr("Course Packages (*.lcpkg *.zip);;All Files (*)"),
+        )
+        if not pkg_path:
+            return
+
+        dest_dir = utils.get_user_courses_dir()
+        success, msg, manifest_path = import_course_package(pkg_path, dest_dir)
+        if success and manifest_path:
+            QMessageBox.information(self, self.tr("Import Successful"), msg)
+            self._find_and_display_courses()
+            self.course_selected.emit(manifest_path)
+        else:
+            QMessageBox.warning(self, self.tr("Import Failed"), msg)
+
+    def _open_courses_folder(self):
+        courses_dir = utils.get_user_courses_dir()
+        QDesktopServices.openUrl(QUrl.fromLocalFile(courses_dir))
 
     def changeEvent(self, event: QEvent):
         if event.type() == QEvent.Type.LanguageChange:
@@ -245,6 +368,7 @@ class CourseSelectionView(QWidget):
 
     def retranslateUi(self):
         self.title_label.setText(self.tr("Select a Course"))
-        # Course buttons are created dynamically with titles from manifest, so they don't need retranslation here.
-        # The "No valid courses" or "Error" labels are also dynamic.
+        self.import_button.setText(self.tr("📥 Import Package (.lcpkg)..."))
+        self.refresh_button.setText(self.tr("🔄 Refresh"))
         logger.debug("CourseSelectionView retranslated.")
+

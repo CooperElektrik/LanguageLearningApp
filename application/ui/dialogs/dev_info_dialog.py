@@ -14,6 +14,13 @@ from PySide6.QtWidgets import (
 logger = logging.getLogger(__name__)
 
 
+try:
+    from application import settings, utils
+except ImportError:
+    import settings
+    import utils
+
+
 def format_dict_for_display(data_dict: dict, indent=2) -> str:
     """Formats a dictionary into a pretty-printed JSON string."""
     try:
@@ -34,7 +41,11 @@ class DevInfoDialog(QDialog):
         parent=None,
     ):
         super().__init__(parent)
-        self.setWindowTitle(self.tr("Developer Information"))
+        self.setWindowTitle(
+            self.tr("Developer Information - {0} v{1}").format(
+                settings.APP_NAME, settings.APP_VERSION
+            )
+        )
         self.setMinimumSize(700, 500)
 
         layout = QVBoxLayout(self)
@@ -58,6 +69,17 @@ class DevInfoDialog(QDialog):
         current_exercise: Exercise | None,
     ):
         info_str = []
+
+        # --- App Info ---
+        info_str.append("=" * 28 + " APPLICATION INFORMATION " + "=" * 28)
+        app_data = {
+            "App Name": settings.APP_NAME,
+            "App Version": settings.APP_VERSION,
+            "Log Directory": utils.get_log_dir(),
+            "User Courses Directory": utils.get_user_courses_dir(),
+        }
+        info_str.append(format_dict_for_display(app_data))
+        info_str.append("\n")
 
         # --- Course Info ---
         info_str.append("=" * 30 + " COURSE INFORMATION " + "=" * 30)

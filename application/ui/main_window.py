@@ -351,6 +351,38 @@ class MainWindow(QMainWindow):
                 self.tr("Could not launch the Course Editor: {0}").format(str(e)),
             )
 
+    def _import_course_package(self):
+        """Allows user to import a course package (.lcpkg / .zip) into user courses."""
+        from PySide6.QtWidgets import QFileDialog, QMessageBox
+
+        from application.core.course_loader import import_course_package
+
+        pkg_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Import Course Package"),
+            "",
+            self.tr("Course Packages (*.lcpkg *.zip);;All Files (*)"),
+        )
+        if not pkg_path:
+            return
+
+        dest_dir = utils.get_user_courses_dir()
+        success, msg, manifest_path = import_course_package(pkg_path, dest_dir)
+        if success and manifest_path:
+            QMessageBox.information(self, self.tr("Import Successful"), msg)
+            self.course_selection_view._find_and_display_courses()
+            self._load_course_for_learning(manifest_path)
+        else:
+            QMessageBox.warning(self, self.tr("Import Failed"), msg)
+
+    def _open_courses_folder(self):
+        """Opens the user courses directory in the default system file manager."""
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        courses_dir = utils.get_user_courses_dir()
+        QDesktopServices.openUrl(QUrl.fromLocalFile(courses_dir))
+
     def _setup_learning_ui(self):
         self.learning_widget = QMainWindow()
         # IMPORTANT: Prevent the nested QMainWindow from having its own menu bar
@@ -453,6 +485,19 @@ class MainWindow(QMainWindow):
             self._return_to_selection_screen
         )
         file_menu.addAction(self.return_to_selection_action)
+
+        self.import_course_package_action = QAction(
+            self.tr("Import Course Package (.lcpkg)..."), self
+        )
+        self.import_course_package_action.setShortcut("Ctrl+I")
+        self.import_course_package_action.triggered.connect(self._import_course_package)
+        file_menu.addAction(self.import_course_package_action)
+
+        self.open_courses_dir_action = QAction(
+            self.tr("Open Courses Folder"), self
+        )
+        self.open_courses_dir_action.triggered.connect(self._open_courses_folder)
+        file_menu.addAction(self.open_courses_dir_action)
 
         self.open_for_editing_action = QAction(
             self.tr("Open Course for Editing..."), self
@@ -763,6 +808,8 @@ class MainWindow(QMainWindow):
 
         # Action Texts
         self.return_to_selection_action.setText(self.tr("Return to Course Selection"))
+        self.import_course_package_action.setText(self.tr("Import Course Package (.lcpkg)..."))
+        self.open_courses_dir_action.setText(self.tr("Open Courses Folder"))
         self.open_for_editing_action.setText(self.tr("Open Course for Editing..."))
         self.settings_action.setText(self.tr("&Settings..."))
         self.quit_action.setText(self.tr("&Quit"))

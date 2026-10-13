@@ -13,7 +13,7 @@ application_root_dir = os.path.abspath(os.path.join(current_script_dir, ".."))
 if application_root_dir not in sys.path:
     sys.path.insert(0, application_root_dir)
 
-from core.exercise_types import CSV_IMPORTABLE_TYPES
+from core.exercise_types import CSV_IMPORTABLE_TYPES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def load_existing_course_data(yaml_filepath: str) -> dict[str, Any]:
     """Loads existing course data from a YAML file into a dictionary format."""
     if os.path.exists(yaml_filepath):
         try:
-            with open(yaml_filepath, "r", encoding="utf-8") as f:
+            with open(yaml_filepath, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
                 if data and "units" in data and isinstance(data["units"], list):
                     return data
@@ -394,7 +394,7 @@ def import_csv_data(
         target_lesson["exercises"] = []
 
     try:
-        with open(csv_filepath, mode="r", encoding="utf-8-sig") as csvfile:
+        with open(csv_filepath, encoding="utf-8-sig") as csvfile:
             reader = list(csv.DictReader(csvfile))
 
             if not reader:

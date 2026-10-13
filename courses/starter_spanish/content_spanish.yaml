@@ -1,0 +1,129 @@
+units:
+  - unit_id: "u1_greetings"
+    title: "Unit 1: Greetings & Basics"
+    lessons:
+      - lesson_id: "u1_l1_hello"
+        title: "Lesson 1: Hello & Goodbye"
+        exercises:
+          - exercise_id: "u1_l1_ex1"
+            type: "translate_to_target"
+            prompt: "Hello"
+            answer: "Hola"
+            explanation: "'Hola' is the universal Spanish greeting for 'Hello'."
+
+          - exercise_id: "u1_l1_ex2"
+            type: "translate_to_source"
+            prompt: "Adiós"
+            answer: "Goodbye"
+            explanation: "'Adiós' means 'Goodbye' in Spanish."
+
+          - exercise_id: "u1_l1_ex3"
+            type: "multiple_choice_translation"
+            prompt: "Translate this word:"
+            source_word: "Hello"
+            options:
+              - text: "Hola"
+                correct: true
+              - text: "Adiós"
+                correct: false
+              - text: "Gracias"
+                correct: false
+            explanation: "'Hola' is the correct translation for 'Hello'."
+
+          - exercise_id: "u1_l1_ex4"
+            type: "fill_in_the_blank"
+            sentence_template: "__BLANK__, ¿cómo estás?"
+            correct_option: "Hola"
+            options:
+              - "Hola"
+              - "Adiós"
+              - "No"
+            translation_hint: "Hello, how are you?"
+            explanation: "'Hola' fits the greeting context best."
+
+          - exercise_id: "u1_l1_ex5"
+            type: "sentence_jumble"
+            prompt: "Arrange the words to say 'Good morning, friend':"
+            words: ["Buenos", "días,", "amigo"]
+            answer: "Buenos días, amigo"
+            explanation: "'Buenos días' translates to 'Good morning'."
+
+          - exercise_id: "u1_l1_ex6"
+            type: "context_block"
+            title: "Cultural Tip: Greetings"
+            prompt: "In Spanish-speaking cultures, greetings are an essential courtesy before asking questions or starting transactions. Saying 'Buenos días' or 'Buenas tardes' creates a friendly atmosphere."
+
+          - exercise_id: "u1_l1_ex7"
+            type: "pronunciation_practice"
+            prompt: "Pronounce: Hola"
+            target_pronunciation_text: "Hola"
+            explanation: "Remember that the letter 'H' is always silent in Spanish!"
+
+      - lesson_id: "u1_l2_politeness"
+        title: "Lesson 2: Common Courtesy"
+        exercises:
+          - exercise_id: "u1_l2_ex1"
+            type: "translate_to_target"
+            prompt: "Please"
+            answer: "Por favor"
+            explanation: "'Por favor' means 'Please'."
+
+          - exercise_id: "u1_l2_ex2"
+            type: "translate_to_source"
+            prompt: "Muchas gracias"
+            answer: "Thank you very much"
+            explanation: "'Muchas gracias' expresses deep gratitude."
+
+          - exercise_id: "u1_l2_ex3"
+            type: "multiple_choice_translation"
+            prompt: "Translate 'Thank you':"
+            source_word: "Thank you"
+            options:
+              - text: "Gracias"
+                correct: true
+              - text: "Por favor"
+                correct: false
+              - text: "Sí"
+                correct: false
+            explanation: "'Gracias' means 'Thank you'."
+
+          - exercise_id: "u1_l2_ex4"
+            type: "fill_in_the_blank"
+            sentence_template: "Un café, __BLANK__."
+            correct_option: "por favor"
+            options:
+              - "por favor"
+              - "adiós"
+              - "no"
+            translation_hint: "A coffee, please."
+            explanation: "'Por favor' translates to 'please'."
+
+  - unit_id: "u2_conversations"
+    title: "Unit 2: Simple Conversations"
+    lessons:
+      - lesson_id: "u2_l1_responses"
+        title: "Lesson 1: Yes & No"
+        exercises:
+          - exercise_id: "u2_l1_ex1"
+            type: "translate_to_target"
+            prompt: "Yes"
+            answer: "Sí"
+            explanation: "'Sí' with an accent mark means 'Yes' ('si' without accent means 'if')."
+
+          - exercise_id: "u2_l1_ex2"
+            type: "translate_to_source"
+            prompt: "No"
+            answer: "No"
+            explanation: "'No' is identical in English and Spanish."
+
+          - exercise_id: "u2_l1_ex3"
+            type: "multiple_choice_translation"
+            prompt: "Translate 'Yes':"
+            source_word: "Yes"
+            options:
+              - text: "Sí"
+                correct: true
+              - text: "No"
+                correct: false
+              - text: "Hola"
+                correct: false

@@ -1,11 +1,10 @@
 """Tests for CourseValidator expansions (glossary file validation and duplicate ID detection)."""
 
-import pytest
+from application.core.models import Course, Exercise, Lesson, Unit
 from application.tools.course_validator import (
-    perform_manifest_validation,
     perform_course_content_validation,
+    perform_manifest_validation,
 )
-from application.core.models import Course, Unit, Lesson, Exercise
 
 
 def test_manifest_validation_catches_missing_glossary(tmp_path):

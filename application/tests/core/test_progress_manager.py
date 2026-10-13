@@ -75,3 +75,29 @@ def test_lesson_completion_and_unlocking(course_manager, progress_manager):
     # Now, lesson 1 should be complete and lesson 2 should be unlocked
     assert progress_manager.is_lesson_completed(lesson1_id, course_manager) is True
     assert progress_manager.is_lesson_unlocked(lesson2_id, course_manager) is True
+
+
+def test_progress_backup_recovery(progress_manager):
+    """Tests that corrupted progress files automatically recover from .bak backup."""
+    import os
+
+    ex_id = "u1l1_ex1"
+    progress_manager.update_exercise_srs_data(ex_id, is_correct=True, xp_awarded=50)
+    assert progress_manager.save_progress() is True
+
+    # Make sure .bak exists by saving a second time with more XP
+    progress_manager.xp = 75
+    assert progress_manager.save_progress() is True
+
+    bak_file = f"{progress_manager.progress_file}.bak"
+    assert os.path.exists(bak_file)
+
+    # Corrupt the main progress file intentionally
+    with open(progress_manager.progress_file, "w", encoding="utf-8") as f:
+        f.write("{ invalid json corrupted content ")
+
+    # Create new manager instance; should fall back to .bak and restore
+    new_manager = type(progress_manager)(progress_manager.course_id)
+    assert new_manager.get_total_xp() > 0
+    assert new_manager.get_exercise_srs_data(ex_id)["repetitions"] == 1
+

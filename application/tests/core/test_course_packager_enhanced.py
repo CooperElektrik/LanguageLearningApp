@@ -2,7 +2,7 @@
 
 import os
 import zipfile
-import pytest
+
 from application.tools.course_packager import create_package_for_gui
 
 
@@ -56,3 +56,50 @@ def test_course_packager_bundles_glossary_and_options(tmp_path):
         assert "content.yaml" in namelist
         assert "glossary.yaml" in namelist
         assert "opt1.png" in namelist
+
+
+def test_import_course_package_success(tmp_path):
+    from application.core.course_loader import import_course_package
+
+    # Package a real course
+    course_dir = tmp_path / "course"
+    course_dir.mkdir()
+    manifest_path = course_dir / "manifest.yaml"
+    manifest_path.write_text(
+        "course_id: import_test\n"
+        "course_title: Import Test Course\n"
+        "content_file: content.yaml\n"
+        "version: 1.0.0\n"
+        "target_language: Spanish\n"
+        "source_language: English\n",
+        encoding="utf-8",
+    )
+    (course_dir / "content.yaml").write_text("units: []\n", encoding="utf-8")
+
+    pkg_dir = tmp_path / "pkg"
+    pkg_dir.mkdir()
+    success, pkg_path, _ = create_package_for_gui(
+        str(manifest_path), output_dir_override=str(pkg_dir)
+    )
+    assert success is True
+
+    # Now import into a destination directory
+    dest_dir = tmp_path / "imported_courses"
+    dest_dir.mkdir()
+    ok, msg, imported_manifest = import_course_package(pkg_path, str(dest_dir))
+    assert ok is True
+    assert imported_manifest is not None
+    assert os.path.exists(imported_manifest)
+    assert "Import Test Course" in msg
+
+
+def test_import_course_package_invalid_zip(tmp_path):
+    from application.core.course_loader import import_course_package
+
+    fake_file = tmp_path / "bad.lcpkg"
+    fake_file.write_text("not a zip", encoding="utf-8")
+
+    ok, msg, manifest = import_course_package(str(fake_file), str(tmp_path))
+    assert ok is False
+    assert manifest is None
+

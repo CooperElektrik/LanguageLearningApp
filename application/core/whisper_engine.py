@@ -3,27 +3,32 @@ import logging
 import settings as app_settings
 import utils
 
-from .stt_common import BaseModelLoader, BaseTranscriptionTask, TranscriptionResult
+from .stt_common import (
+    BaseModelLoader,
+    BaseTranscriptionTask,
+    TranscriptionResult,
+    resample_audio,
+)
 
 logger = logging.getLogger(__name__)
 
 try:
-    from faster_whisper import WhisperModel
-    from huggingface_hub.errors import LocalEntryNotFoundError
+    from faster_whisper import WhisperModel  # type: ignore
+    from huggingface_hub.errors import LocalEntryNotFoundError  # type: ignore
 
     _FASTER_WHISPER_AVAILABLE = True
 except ImportError:
     logger.warning("faster_whisper not found. Whisper STT will be unavailable.")
     _FASTER_WHISPER_AVAILABLE = False
 
-    class WhisperModel:
+    class WhisperModel:  # type: ignore
         def __init__(self, *args, **kwargs):
             pass
 
         def transcribe(self, *args, **kwargs):
             raise NotImplementedError("faster_whisper is not installed.")
 
-    class LocalEntryNotFoundError(Exception):
+    class LocalEntryNotFoundError(Exception):  # type: ignore
         pass
 
 
@@ -129,9 +134,8 @@ class WhisperTranscriptionTask(BaseTranscriptionTask):
             and self.recorded_samplerate
             and self.recorded_samplerate != self.target_samplerate
         ):
-            from .stt_manager import STTManager
-            resampled = STTManager._resample_audio(
-                None, self.audio_path, self.target_samplerate, "whisper"
+            resampled = resample_audio(
+                self.audio_path, self.target_samplerate, "whisper"
             )
             if resampled:
                 audio_file_to_use = resampled

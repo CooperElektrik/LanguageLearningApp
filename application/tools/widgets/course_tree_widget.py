@@ -244,7 +244,7 @@ class CourseTreeWidget(QTreeWidget):
         # Search in lists (units, lessons, exercises)
         if isinstance(current_obj, (Course, Unit, Lesson)):
             if hasattr(current_obj, "units") and isinstance(current_obj.units, list):
-                for i, unit in enumerate(current_obj.units):
+                for unit in current_obj.units:
                     found_obj, p_obj, l_list, idx = self._find_obj_and_context_by_id(
                         obj_id, unit, current_obj, current_obj.units
                     )
@@ -254,7 +254,7 @@ class CourseTreeWidget(QTreeWidget):
             if hasattr(current_obj, "lessons") and isinstance(
                 current_obj.lessons, list
             ):
-                for i, lesson in enumerate(current_obj.lessons):
+                for lesson in current_obj.lessons:
                     found_obj, p_obj, l_list, idx = self._find_obj_and_context_by_id(
                         obj_id, lesson, current_obj, current_obj.lessons
                     )
@@ -264,7 +264,7 @@ class CourseTreeWidget(QTreeWidget):
             if hasattr(current_obj, "exercises") and isinstance(
                 current_obj.exercises, list
             ):
-                for i, exercise in enumerate(current_obj.exercises):
+                for exercise in current_obj.exercises:
                     found_obj, p_obj, l_list, idx = self._find_obj_and_context_by_id(
                         obj_id, exercise, current_obj, current_obj.exercises
                     )

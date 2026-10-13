@@ -137,12 +137,12 @@ class BaseExerciseWidget(QWidget):
 
         self.image_label = QLabel()
         self.image_label.setObjectName("image_label")
-        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMaximumWidth(640)
         self.image_label.setMaximumHeight(400)
         self.image_label.setScaledContents(False)
         self._setup_image()
-        self.layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
+        self.layout.addWidget(self.image_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.image_label.setVisible(True)
 
         self._media_player: QMediaPlayer | None = None
@@ -160,8 +160,8 @@ class BaseExerciseWidget(QWidget):
                     scaled_pixmap = pixmap.scaled(
                         self.image_label.maximumWidth(),
                         self.image_label.maximumHeight(),
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
                     )
                     self.image_label.setPixmap(scaled_pixmap)
                     return
@@ -557,14 +557,14 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
 
         self.sentence_display_layout = QHBoxLayout()
         self.sentence_display_layout.setSpacing(5)
-        self.sentence_display_layout.setAlignment(Qt.AlignLeft)
+        self.sentence_display_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.layout.addLayout(self.sentence_display_layout)
 
         self.sentence_placeholder_label = QLabel(
             self.tr("Click words below to build your sentence.")
         )
         self.sentence_placeholder_label.setObjectName("sentence_jumble_placeholder")
-        self.sentence_placeholder_label.setAlignment(Qt.AlignCenter)
+        self.sentence_placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.sentence_placeholder_label)
 
         separator = QFrame()
@@ -788,7 +788,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.prompt_label.setVisible(False)  # We don't use the base prompt label
 
         # Main layout is now a grid
-        grid_layout = QGridLayout(self)
+        grid_layout = QGridLayout()
         grid_layout.setContentsMargins(20, 20, 20, 20)
         self.layout.addLayout(grid_layout)
 
@@ -796,7 +796,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.target_text_label = QLabel(self.exercise.target_pronunciation_text)
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
-        self.target_text_label.setAlignment(Qt.AlignCenter)
+        self.target_text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_layout.addWidget(
             self.target_text_label, 0, 0, 1, 4
         )  # Span across 4 columns
@@ -808,7 +808,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             self.play_ref_button.clicked.connect(
                 lambda: self._play_audio_file(self.exercise.audio_file)
             )
-            grid_layout.addWidget(self.play_ref_button, 1, 0, 1, 4, Qt.AlignCenter)
+            grid_layout.addWidget(self.play_ref_button, 1, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
 
         # 3. Record Button (Large, central)
         self.record_button = QPushButton("🎤")
@@ -816,12 +816,12 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.record_button.setCheckable(True)
         self.record_button.toggled.connect(self._handle_record_toggle)
         self.record_button.setFixedSize(100, 100)
-        grid_layout.addWidget(self.record_button, 2, 0, 1, 4, Qt.AlignCenter)
+        grid_layout.addWidget(self.record_button, 2, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
 
         # 4. Status Label
         self.status_label = QLabel(self.tr("Tap the microphone to start recording."))
         self.status_label.setObjectName("pronunciation_status_label")
-        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_layout.addWidget(self.status_label, 3, 0, 1, 4)
 
         # 5. Model Loading Progress Bar

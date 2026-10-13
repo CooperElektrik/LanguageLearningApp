@@ -20,7 +20,6 @@ from PySide6.QtWidgets import QInputDialog, QMessageBox, QTreeWidgetItem
 from application.core.exercise_types import CREATABLE_EXERCISE_TYPES
 from application.core.models import Exercise, Lesson, Unit
 
-
 from .undo_commands import (
     AddExerciseCommand,
     AddLessonCommand,
@@ -45,9 +44,9 @@ class ItemCommandsMixin:
 
     def _generate_new_ids_for_unit(self, unit: Unit):
         unit.unit_id = f"unit_{uuid.uuid4().hex[:8]}"
-        for l in unit.lessons:
-            l.unit_id = unit.unit_id
-            self._generate_new_ids_for_lesson(l)
+        for lesson in unit.lessons:
+            lesson.unit_id = unit.unit_id
+            self._generate_new_ids_for_lesson(lesson)
 
     # --- Duplication -----------------------------------------------------
     def _duplicate_unit(self, original_unit_item: QTreeWidgetItem):
@@ -210,9 +209,9 @@ class ItemCommandsMixin:
                     self.undo_stack.push(DeleteLessonCommand(self, parent_unit, lesson_to_delete))
                 else:
                     parent_unit.lessons = [
-                        l
-                        for l in parent_unit.lessons
-                        if l.lesson_id != lesson_to_delete.lesson_id
+                        lesson
+                        for lesson in parent_unit.lessons
+                        if lesson.lesson_id != lesson_to_delete.lesson_id
                     ]
                     self.update_tree_view()
                     self._set_dirty_state(True)

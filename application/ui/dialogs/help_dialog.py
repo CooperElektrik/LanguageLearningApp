@@ -91,10 +91,18 @@ class FaqItemWidget(QWidget):
 # --- Reworked Help Dialog ---
 
 
+try:
+    from application import settings
+except ImportError:
+    import settings
+
+
 class HelpDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(self.tr("Help - FAQ"))
+        self.setWindowTitle(
+            self.tr("Help & FAQ - LanguageLearningApp v{0}").format(settings.APP_VERSION)
+        )
         self.setMinimumSize(700, 500)
 
         self._faq_widgets = []

@@ -62,7 +62,7 @@ class Exercise:
         Converts the Exercise object to a dictionary suitable for saving to the
         course content YAML file.
         """
-        data = {
+        data: dict[str, Any] = {
             "type": self.type,
         }
 

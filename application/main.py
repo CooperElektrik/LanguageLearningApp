@@ -1,6 +1,8 @@
 import logging
+import logging.handlers
 import os
 import sys
+import time
 
 from PySide6.QtCore import (
     QCoreApplication,
@@ -20,10 +22,11 @@ from PySide6.QtWidgets import (
 # the Python path is set up correctly to find the application's modules.
 
 # Check if running in a PyInstaller bundle by detecting the `_MEIPASS` attribute.
-if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+_meipass = getattr(sys, "_MEIPASS", None)
+if getattr(sys, "frozen", False) and _meipass:
     # In a bundled app, `sys._MEIPASS` points to the temporary folder
     # where all bundled files are extracted. This is our effective project root.
-    _project_root = sys._MEIPASS
+    _project_root = str(_meipass)
     # We assume the `application` folder is a subdirectory in the bundle.
     _application_dir = os.path.join(_project_root, "application")
 else:
@@ -42,13 +45,13 @@ if _application_dir not in sys.path:
 # With `sys.path` correctly set, we can now import our application modules.
 # We use a try-except to handle different ways the script might be run.
 try:
-    from . import settings, utils
+    from . import settings, utils  # noqa: E402
 except (ImportError, ModuleNotFoundError):
     # This fallback is for scenarios like running `main.py` directly from inside
     # the `application` directory, where the `application` package itself isn't
     # in the path.
-    import settings
-    import utils
+    import settings  # noqa: E402
+    import utils  # noqa: E402
 
 # Ensure both bare names and package-qualified names point to the same module instance.
 sys.modules.setdefault("settings", settings)
@@ -73,21 +76,68 @@ def setup_logging():
     # This is why QCoreApplication setup is done before calling setup_logging() in main().
     if utils.is_developer_mode_active():
         effective_log_level_str = "DEBUG"
-        # Temporary print as logger is not fully configured yet.
         print(
             f"INFO: Developer mode active. Log level forced to DEBUG (was {log_level_setting})."
         )
 
+    handlers = []
+    if sys.stdout is not None:
+        handlers.append(logging.StreamHandler(sys.stdout))
+
+    log_dir = utils.get_log_dir()
+    log_file = os.path.join(log_dir, "app.log")
+    try:
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        )
+        handlers.append(file_handler)
+    except Exception as e:
+        print(f"WARNING: Could not initialize log file handler at {log_file}: {e}")
+
     logging.basicConfig(
         level=getattr(logging, effective_log_level_str, logging.INFO),
         format=settings.LOG_FORMAT,
-        handlers=[logging.StreamHandler(sys.stdout)],
+        handlers=handlers,
     )
     logger = logging.getLogger(__name__)
+    logger.info(f"Logging initialized. Log file: {log_file}")
     return logger
 
 
-import time  # Import time module for wall time measurement
+def install_crash_handler(log_dir: str):
+    """Installs a global exception hook to capture crashes and alert users."""
+    crash_dialog_open = False
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        nonlocal crash_dialog_open
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+
+        import traceback
+        tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        logging.critical(f"Unhandled exception caught by global hook:\n{tb_str}")
+
+        app = QApplication.instance()
+        if app is not None and not crash_dialog_open:
+            crash_dialog_open = True
+            try:
+                from PySide6.QtWidgets import QMessageBox
+                msg_box = QMessageBox()
+                msg_box.setIcon(QMessageBox.Icon.Critical)
+                msg_box.setWindowTitle("Application Error")
+                msg_box.setText("An unexpected error occurred in LanguageLearningApp.")
+                msg_box.setInformativeText(
+                    f"A crash log has been saved to:\n{log_dir}\n\nPlease share this traceback if reporting the issue."
+                )
+                msg_box.setDetailedText(tb_str)
+                msg_box.exec()
+            except Exception:
+                pass
+            finally:
+                crash_dialog_open = False
+
+    sys.excepthook = handle_exception
 
 
 def main():
@@ -110,6 +160,7 @@ def main():
     logger = (
         setup_logging()
     )  # Now setup_logging can safely use utils.is_developer_mode_active()
+    install_crash_handler(utils.get_log_dir())
     # Log the path setup now that the logger is available.
     logger.debug(f"Project root '{_project_root}' is in sys.path.")
 

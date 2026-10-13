@@ -3,6 +3,7 @@ import os
 
 # --- General Application Settings ---
 APP_NAME = "LanguageLearningApp"
+APP_VERSION = "1.0.0"
 ORG_NAME = "CooperElektrik"  # Used for QStandardPaths, QSettings etc.
 
 # --- File and Directory Names (relative to application root or MEIPASS) ---
