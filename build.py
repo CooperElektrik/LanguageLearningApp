@@ -37,11 +37,7 @@ def compile_translations(project_root: str) -> bool:
         print("Localization directory not found, skipping translation compilation.")
         return True
 
-    ts_files = [
-        os.path.join(loc_dir, f)
-        for f in os.listdir(loc_dir)
-        if f.endswith(".ts")
-    ]
+    ts_files = [os.path.join(loc_dir, f) for f in os.listdir(loc_dir) if f.endswith(".ts")]
 
     if not ts_files:
         print("No .ts files found to compile.")
@@ -109,17 +105,27 @@ def build_executable(
             cmd.extend(["--add-data", f"{src}{sep}{dst}"])
 
     # Collect binary packages and dynamic modules
-    cmd.extend([
-        "--collect-all", "vosk",
-        "--collect-all", "av",
-        "--collect-submodules", "sounddevice",
-        "--collect-submodules", "soundfile",
-        "--collect-submodules", "yaml",
-        "--paths", os.path.join(project_root, "application"),
-        "--distpath", os.path.join(project_root, "dist"),
-        "--workpath", os.path.join(project_root, "build"),
-        main_script,
-    ])
+    cmd.extend(
+        [
+            "--collect-all",
+            "vosk",
+            "--collect-all",
+            "av",
+            "--collect-submodules",
+            "sounddevice",
+            "--collect-submodules",
+            "soundfile",
+            "--collect-submodules",
+            "yaml",
+            "--paths",
+            os.path.join(project_root, "application"),
+            "--distpath",
+            os.path.join(project_root, "dist"),
+            "--workpath",
+            os.path.join(project_root, "build"),
+            main_script,
+        ]
+    )
 
     return run_command(cmd, f"Building {app_name} executable")
 

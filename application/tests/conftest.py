@@ -1,13 +1,13 @@
-
 import os
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 import yaml
-from PySide6.QtWidgets import QApplication
 from core.course_manager import CourseManager
 from core.models import Course, Exercise, ExerciseOption, Lesson, Unit
 from core.progress_manager import ProgressManager
+from PySide6.QtWidgets import QApplication
 
 
 @pytest.fixture(scope="session", autouse=True)

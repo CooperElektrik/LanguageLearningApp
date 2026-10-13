@@ -88,22 +88,16 @@ class PackageCreationDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "manifest_filepath": self.manifest_path_input.text(),
-            "output_dir": (
-                self.output_dir_input.text() if self.output_dir_input.text() else None
-            ),
+            "output_dir": (self.output_dir_input.text() if self.output_dir_input.text() else None),
             "package_name_override": (
-                self.package_name_input.text()
-                if self.package_name_input.text().strip()
-                else None
+                self.package_name_input.text() if self.package_name_input.text().strip() else None
             ),
         }
 
     def accept(self):
         data = self.get_data()
         if not data["manifest_filepath"]:
-            QMessageBox.warning(
-                self, "Missing Input", "Please select a Manifest file to package."
-            )
+            QMessageBox.warning(self, "Missing Input", "Please select a Manifest file to package.")
             return
 
         super().accept()

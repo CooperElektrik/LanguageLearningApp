@@ -29,9 +29,7 @@ def test_pronunciation_practice_is_accepted():
 
 
 def test_pronunciation_practice_requires_target_text():
-    exercise = Exercise(
-        exercise_id="e1", type="pronunciation_practice", prompt="Say hello"
-    )
+    exercise = Exercise(exercise_id="e1", type="pronunciation_practice", prompt="Say hello")
     errors = perform_course_content_validation(_course_with(exercise), "/tmp")
     assert any("target_pronunciation_text" in e for e in errors), errors
 

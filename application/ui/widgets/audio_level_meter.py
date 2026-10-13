@@ -6,6 +6,7 @@ during speech recording and pronunciation exercises.
 """
 
 import math
+
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QFont, QLinearGradient, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget
@@ -56,12 +57,14 @@ class AudioLevelMeter(QWidget):
         try:
             try:
                 import numpy as np
+
                 samples = np.frombuffer(pcm_bytes, dtype=np.int16)
                 if len(samples) == 0:
                     return 0.0
                 rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
             except ImportError:
                 import struct
+
                 num_samples = len(pcm_bytes) // 2
                 if num_samples == 0:
                     return 0.0
@@ -118,7 +121,9 @@ class AudioLevelMeter(QWidget):
 
         if not self._is_recording:
             status_text = "Mic idle"
-            painter.drawText(QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text)
+            painter.drawText(
+                QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text
+            )
         else:
             if self._current_level > 0.15:
                 status_text = "Voice detected"
@@ -126,7 +131,9 @@ class AudioLevelMeter(QWidget):
             else:
                 status_text = "Listening... (speak into mic)"
                 painter.setPen(QColor("#64b5f6"))
-            painter.drawText(QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text)
+            painter.drawText(
+                QRectF(margin_x, 0, bar_width, 16), Qt.AlignLeft | Qt.AlignVCenter, status_text
+            )
 
         # Track background
         bg_rect = QRectF(margin_x, bar_y, bar_width, bar_height)
@@ -147,8 +154,8 @@ class AudioLevelMeter(QWidget):
 
             gradient = QLinearGradient(margin_x, bar_y, margin_x + bar_width, bar_y)
             gradient.setColorAt(0.0, QColor("#4caf50"))  # Green
-            gradient.setColorAt(0.65, QColor("#ffca28")) # Amber/Yellow
-            gradient.setColorAt(0.95, QColor("#f44336")) # Red
+            gradient.setColorAt(0.65, QColor("#ffca28"))  # Amber/Yellow
+            gradient.setColorAt(0.95, QColor("#f44336"))  # Red
 
             painter.fillPath(fill_path, QBrush(gradient))
 

@@ -64,16 +64,12 @@ class AssetManagerDialog(QDialog):
         self.asset_list_widget.setViewMode(QListWidget.IconMode)
         self.asset_list_widget.setGridSize(QSize(120, 120))
         self.asset_list_widget.setIconSize(QSize(64, 64))
-        self.asset_list_widget.setMovement(
-            QListWidget.Static
-        )  # Items won't move around visually
+        self.asset_list_widget.setMovement(QListWidget.Static)  # Items won't move around visually
         self.asset_list_widget.setSpacing(10)
         self.asset_list_widget.setWordWrap(True)
         self.asset_list_widget.setSelectionMode(QListWidget.SingleSelection)
 
-        self.asset_list_widget.itemDoubleClicked.connect(
-            self._handle_double_click_select
-        )
+        self.asset_list_widget.itemDoubleClicked.connect(self._handle_double_click_select)
 
         main_layout.addWidget(self.asset_list_widget)
 
@@ -116,9 +112,7 @@ class AssetManagerDialog(QDialog):
                 continue
 
             full_path = os.path.join(self.full_asset_dir, filename)
-            relative_path = os.path.join(self.asset_subdir, filename).replace(
-                os.sep, "/"
-            )
+            relative_path = os.path.join(self.asset_subdir, filename).replace(os.sep, "/")
 
             item = QListWidgetItem(filename)
             item.setData(Qt.UserRole, relative_path)  # Store relative path in UserRole
@@ -191,9 +185,7 @@ class AssetManagerDialog(QDialog):
     def _delete_selected_asset(self):
         selected_items = self.asset_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "No Selection", "Please select an asset to delete."
-            )
+            QMessageBox.information(self, "No Selection", "Please select an asset to delete.")
             return
 
         item_to_delete = selected_items[0]
@@ -230,9 +222,7 @@ class AssetManagerDialog(QDialog):
         """Handle 'Select Asset' button click."""
         selected_items = self.asset_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "No Selection", "Please select an asset to select."
-            )
+            QMessageBox.information(self, "No Selection", "Please select an asset to select.")
             return
 
         self.selected_asset_path = selected_items[0].data(Qt.UserRole)

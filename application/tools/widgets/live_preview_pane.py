@@ -1,7 +1,6 @@
 # application/tools/widgets/live_preview_pane.py
 
 import logging
-import os
 from typing import Any
 
 from PySide6.QtCore import QObject, Qt
@@ -178,9 +177,7 @@ class LivePreviewPane(QWidget):
         self.type_badge.setVisible(True)
         self.show_answer_button.setEnabled(True)
 
-        mock_mgr = MockCourseManager(
-            self.course_languages, self.course_content_base_dir, self
-        )
+        mock_mgr = MockCourseManager(self.course_languages, self.course_content_base_dir, self)
 
         ex_type = exercise.type
         try:
@@ -216,9 +213,7 @@ class LivePreviewPane(QWidget):
     def _show_answer(self):
         if not self.current_exercise:
             return
-        mock_mgr = MockCourseManager(
-            self.course_languages, self.course_content_base_dir, self
-        )
+        mock_mgr = MockCourseManager(self.course_languages, self.course_content_base_dir, self)
         _, msg = mock_mgr.check_answer(self.current_exercise, "")
         self.feedback_label.setText(msg)
         self.feedback_label.setStyleSheet("color: #4b7bec; font-weight: bold; font-size: 11px;")

@@ -78,9 +78,7 @@ class GlossaryDetailDialog(QDialog):
         content_layout = QFormLayout(content_widget)
         content_layout.setObjectName("detail_content_form_layout")
         content_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        content_layout.setFormAlignment(
-            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
-        )
+        content_layout.setFormAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         content_layout.setContentsMargins(10, 10, 10, 10)
         scroll_area.setWidget(content_widget)
         main_layout.addWidget(scroll_area)
@@ -99,9 +97,7 @@ class GlossaryDetailDialog(QDialog):
         self.example_sentence_text.setFrameShape(QFrame.Shape.NoFrame)
         self.example_sentence_text.setMinimumHeight(80)
         self.example_sentence_text.setOpenLinks(False)
-        self.example_sentence_text.anchorClicked.connect(
-            self._handle_glossary_link_clicked
-        )
+        self.example_sentence_text.anchorClicked.connect(self._handle_glossary_link_clicked)
         content_layout.addRow(self.example_sentence_title, self.example_sentence_text)
 
         # Notes
@@ -179,9 +175,7 @@ class GlossaryDetailDialog(QDialog):
             original_example_sentence
         )
         # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
-        html_example = markdown.markdown(
-            markdown_example_with_links, extensions=["extra", "nl2br"]
-        )
+        html_example = markdown.markdown(markdown_example_with_links, extensions=["extra", "nl2br"])
         logger.debug(f"Glossary Example Input MD: '''{markdown_example_with_links}'''")
         logger.debug(f"Glossary Example Output HTML: '''{html_example}'''")
         self.example_sentence_text.setHtml(html_example)
@@ -191,9 +185,7 @@ class GlossaryDetailDialog(QDialog):
         markdown_notes_with_links = self._prepare_content_with_glossary_links(
             original_notes
         )  # Ensure notes are also processed
-        html_notes = markdown.markdown(
-            markdown_notes_with_links, extensions=["extra", "nl2br"]
-        )
+        html_notes = markdown.markdown(markdown_notes_with_links, extensions=["extra", "nl2br"])
         logger.debug(f"Glossary Notes Input MD: '''{markdown_notes_with_links}'''")
         logger.debug(f"Glossary Notes Output HTML: '''{html_notes}'''")
         self.notes_text.setHtml(html_notes)
@@ -217,9 +209,7 @@ class GlossaryDetailDialog(QDialog):
         # Create a regex pattern that matches any of the glossary words, ensuring whole word matching
         # We sort by length descending to match longer phrases first (e.g., "ice cream" before "ice").
         # Filter out empty words to prevent issues and improve performance.
-        sorted_words = sorted(
-            [e.word for e in glossary_entries if e.word], key=len, reverse=True
-        )
+        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
 
         if not sorted_words:
             return original_content
@@ -260,15 +250,11 @@ class GlossaryDetailDialog(QDialog):
                     f"Glossary link clicked, but decoded word is empty. Original URL: {url.toString()}"
                 )
                 return
-            logger.debug(
-                f"Attempting to find glossary entry for decoded word: '{decoded_word}'"
-            )
+            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
             entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
                 # Open a new dialog for the clicked entry
-                new_dialog = GlossaryDetailDialog(
-                    entry, self.course_manager, self.window()
-                )
+                new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
                 new_dialog.exec()
             else:
                 logger.warning(
@@ -303,9 +289,7 @@ class GlossaryDetailDialog(QDialog):
         # Determine the course's base directory (where its manifest is)
         course_base_dir = self.course_manager.get_course_manifest_directory()
         if not course_base_dir:
-            logger.error(
-                "Could not determine course base directory for audio playback."
-            )
+            logger.error("Could not determine course base directory for audio playback.")
             QMessageBox.warning(
                 self,
                 self.tr("Audio Error"),
@@ -334,9 +318,7 @@ class GlossaryDetailDialog(QDialog):
             # Check for errors after attempting to set the source
             if self._media_player.error() != QMediaPlayer.Error.NoError:
                 error_string = self._media_player.errorString()
-                logger.error(
-                    f"Error setting media source {full_audio_path}: {error_string}"
-                )
+                logger.error(f"Error setting media source {full_audio_path}: {error_string}")
                 QMessageBox.warning(
                     self,
                     self.tr("Audio Error"),
@@ -347,10 +329,7 @@ class GlossaryDetailDialog(QDialog):
             self._media_player.play()
 
             # Check playback state and errors after attempting to play
-            if (
-                self._media_player.playbackState()
-                == QMediaPlayer.PlaybackState.PlayingState
-            ):
+            if self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
                 logger.info(f"Playing glossary audio: {full_audio_path}")
             elif self._media_player.error() != QMediaPlayer.Error.NoError:
                 error_string = self._media_player.errorString()
@@ -362,9 +341,7 @@ class GlossaryDetailDialog(QDialog):
                 )
 
         else:
-            logger.error(
-                f"Audio file not found: {full_audio_path} for entry '{self.entry.word}'"
-            )
+            logger.error(f"Audio file not found: {full_audio_path} for entry '{self.entry.word}'")
             QMessageBox.warning(
                 self,
                 self.tr("Audio Error"),
@@ -377,8 +354,7 @@ class GlossaryDetailDialog(QDialog):
         """Stops any playing audio when the dialog is closed."""
         if (
             self._media_player
-            and self._media_player.playbackState()
-            == QMediaPlayer.PlaybackState.PlayingState
+            and self._media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState
         ):
             self._media_player.stop()
         super().closeEvent(event)

@@ -44,9 +44,7 @@ class ManifestEditorWidget(QWidget):
             self.form_layout.addRow(label, input_widget)
             input_widget.setProperty("field_name", field_name)
             if isinstance(input_widget, QLineEdit):
-                input_widget.textChanged.connect(
-                    lambda text: self._validate_field(input_widget)
-                )
+                input_widget.textChanged.connect(lambda text: self._validate_field(input_widget))
             return input_widget
 
         self.course_id_input = QLineEdit()
@@ -96,9 +94,7 @@ class ManifestEditorWidget(QWidget):
         self.use_shared_pool_checkbox = QCheckBox(
             "Use the shared asset pool (application/courses/pool)"
         )
-        self.use_shared_pool_checkbox.stateChanged.connect(
-            lambda: self.data_changed.emit()
-        )
+        self.use_shared_pool_checkbox.stateChanged.connect(lambda: self.data_changed.emit())
         self.form_layout.addRow("Asset Pool:", self.use_shared_pool_checkbox)
 
         self.required_inputs = [
@@ -169,9 +165,7 @@ class ManifestEditorWidget(QWidget):
         self.author_input.setText(manifest_data.get("author", ""))
         self.description_input.setPlainText(manifest_data.get("description", ""))
         self.image_file_input.setText(manifest_data.get("image_file", ""))
-        self.use_shared_pool_checkbox.setChecked(
-            manifest_data.get("use_shared_pool", False)
-        )
+        self.use_shared_pool_checkbox.setChecked(manifest_data.get("use_shared_pool", False))
 
         for widget in self.required_inputs:
             self._validate_field(widget)

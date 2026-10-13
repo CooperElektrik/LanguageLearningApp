@@ -37,9 +37,7 @@ class CourseManager(QObject):
         self.manifest_path = manifest_path
 
         # Initialize answer checker dispatch map
-        self._answer_checkers: dict[
-            str, Callable[[Exercise, str], tuple[bool, str]]
-        ] = {
+        self._answer_checkers: dict[str, Callable[[Exercise, str], tuple[bool, str]]] = {
             "translate_to_target": self._check_translation_answer,
             "translate_to_source": self._check_translation_answer,
             "dictation": self._check_translation_answer,
@@ -71,12 +69,8 @@ class CourseManager(QObject):
             logger.error("Failed to load manifest. Course cannot be initialized.")
             return
         logger.debug("Manifest loaded. Extracting course metadata.")
-        self.target_language = self.manifest_data.get(
-            "target_language", "Unknown Target"
-        )
-        self.source_language = self.manifest_data.get(
-            "source_language", "Unknown Source"
-        )
+        self.target_language = self.manifest_data.get("target_language", "Unknown Target")
+        self.source_language = self.manifest_data.get("source_language", "Unknown Source")
         self.target_language_code = self.manifest_data.get("target_language_code")
         logger.debug(
             f"Target Language: {self.target_language}, Source Language: {self.source_language}"
@@ -130,17 +124,13 @@ class CourseManager(QObject):
             )
             if self.glossary:
                 self._build_glossary_map()
-                logger.info(
-                    f"Glossary loaded successfully with {len(self.glossary)} entries."
-                )
+                logger.info(f"Glossary loaded successfully with {len(self.glossary)} entries.")
             else:
                 logger.warning(
                     f"Failed to load glossary from {glossary_filepath}. Glossary will be empty."
                 )
         else:
-            logger.info(
-                "Manifest does not specify a 'glossary_file'. Skipping glossary loading."
-            )
+            logger.info("Manifest does not specify a 'glossary_file'. Skipping glossary loading.")
 
     def _build_glossary_map(self):
         """Populates the glossary_map for fast word lookups."""
@@ -164,9 +154,7 @@ class CourseManager(QObject):
         """Returns the directory where the current course's content file is located."""
         if self.manifest_data and self.manifest_data.get("content_file"):
             manifest_dir_abs = os.path.dirname(os.path.abspath(self.manifest_path))
-            content_filepath = os.path.join(
-                manifest_dir_abs, self.manifest_data["content_file"]
-            )
+            content_filepath = os.path.join(manifest_dir_abs, self.manifest_data["content_file"])
             return os.path.dirname(content_filepath)
         elif self.manifest_path and os.path.exists(self.manifest_path):
             return os.path.dirname(os.path.abspath(self.manifest_path))
@@ -262,9 +250,7 @@ class CourseManager(QObject):
         # Add other type-specific defaults here if needed
         return app_settings.LEVENSHTEIN_TOLERANCE_DEFAULT
 
-    def _check_translation_answer(
-        self, exercise: Exercise, user_answer: str
-    ) -> tuple[bool, str]:
+    def _check_translation_answer(self, exercise: Exercise, user_answer: str) -> tuple[bool, str]:
         """Checks answer for translation and dictation exercise types."""
         correct_answer_display = exercise.answer
 
@@ -284,16 +270,22 @@ class CourseManager(QObject):
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
             diff_html = generate_diff_html(correct_answer_display, user_answer)
-            msg = self.tr(
-                "Accepted (close match). Correct: {0}. You wrote: {1}"
-            ).format(correct_answer_display, user_answer)
-            return True, f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>"
+            msg = self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(
+                correct_answer_display, user_answer
+            )
+            return (
+                True,
+                f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>",
+            )
         else:
             diff_html = generate_diff_html(correct_answer_display, user_answer)
             msg = self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
                 correct_answer_display, user_answer
             )
-            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
+            return (
+                False,
+                f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>",
+            )
 
     def _check_multiple_choice_answer(
         self, exercise: Exercise, user_answer: str
@@ -311,12 +303,8 @@ class CourseManager(QObject):
         correct_option = next((opt for opt in exercise.options if opt.correct), None)
 
         if not correct_option:
-            logger.error(
-                f"No correct option defined for MC exercise {exercise.exercise_id}."
-            )
-            return False, self.tr(
-                "Error: Exercise configuration issue (no correct answer)."
-            )
+            logger.error(f"No correct option defined for MC exercise {exercise.exercise_id}.")
+            return False, self.tr("Error: Exercise configuration issue (no correct answer).")
 
         correct_answer_display = correct_option.text or correct_option.image_file
 
@@ -343,15 +331,11 @@ class CourseManager(QObject):
         correct_answer_display = exercise.correct_option
 
         if not correct_answer_display:
-            logger.error(
-                f"No correct option defined for FIB exercise {exercise.exercise_id}."
-            )
+            logger.error(f"No correct option defined for FIB exercise {exercise.exercise_id}.")
             return False, "Error: Exercise configuration issue (no correct answer)."
 
         user_answer_norm = self._normalize_answer_for_comparison(selected_option_text)
-        correct_answer_norm = self._normalize_answer_for_comparison(
-            correct_answer_display
-        )
+        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
 
         tolerance = self._get_effective_tolerance(exercise)
         distance = Levenshtein.distance(user_answer_norm, correct_answer_norm)
@@ -362,16 +346,22 @@ class CourseManager(QObject):
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         elif is_correct_fuzzy:
             diff_html = generate_diff_html(correct_answer_display, selected_option_text)
-            msg = self.tr(
-                "Accepted (close match). Correct: {0}. You wrote: {1}"
-            ).format(correct_answer_display, selected_option_text)
-            return True, f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>"
+            msg = self.tr("Accepted (close match). Correct: {0}. You wrote: {1}").format(
+                correct_answer_display, selected_option_text
+            )
+            return (
+                True,
+                f"{msg}<br><div style='margin-top: 4px;'><b>Visual Diff:</b> {diff_html}</div>",
+            )
         else:
             diff_html = generate_diff_html(correct_answer_display, selected_option_text)
             msg = self.tr("Incorrect. Correct: {0}. You wrote: {1}").format(
                 correct_answer_display, selected_option_text
             )
-            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
+            return (
+                False,
+                f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>",
+            )
 
     def _check_sentence_jumble_answer(
         self, exercise: Exercise, user_answer: str
@@ -380,13 +370,9 @@ class CourseManager(QObject):
         correct_answer_display = exercise.answer
         # For jumble, user_answer is already space-joined. We compare normalized strings.
         user_answer_norm = self._normalize_answer_for_comparison(user_answer)
-        correct_answer_norm = self._normalize_answer_for_comparison(
-            correct_answer_display
-        )
+        correct_answer_norm = self._normalize_answer_for_comparison(correct_answer_display)
 
-        is_correct = (
-            user_answer_norm == correct_answer_norm
-        )  # Jumble should usually be exact order
+        is_correct = user_answer_norm == correct_answer_norm  # Jumble should usually be exact order
         if is_correct:
             return True, self.tr("Correct: {0}").format(correct_answer_display)
         else:
@@ -394,11 +380,12 @@ class CourseManager(QObject):
             msg = self.tr("Incorrect. Correct: {0}. You arranged: {1}").format(
                 correct_answer_display, user_answer
             )
-            return False, f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>"
+            return (
+                False,
+                f"{msg}<br><div style='margin-top: 4px;'><b>Correction:</b> {diff_html}</div>",
+            )
 
-    def _check_completion_answer(
-        self, exercise: Exercise, user_answer: str
-    ) -> tuple[bool, str]:
+    def _check_completion_answer(self, exercise: Exercise, user_answer: str) -> tuple[bool, str]:
         """Context block exercises are completed by a single action and are always correct."""
         return True, "Continue"
 
@@ -467,9 +454,9 @@ class CourseManager(QObject):
             return checker(exercise, user_answer.strip())  # Pass user_answer stripped
         else:
             logger.warning(
-                self.tr(
-                    "Answer checking not implemented for exercise type: {0} (ID: {1})"
-                ).format(exercise.type, exercise.exercise_id)
+                self.tr("Answer checking not implemented for exercise type: {0} (ID: {1})").format(
+                    exercise.type, exercise.exercise_id
+                )
             )
             return False, self.tr("Cannot check this exercise type.")
 

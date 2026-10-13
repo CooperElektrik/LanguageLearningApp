@@ -13,9 +13,10 @@ The mixin relies on host attributes supplied by ``EditorWindow``:
 
 import copy
 import uuid
+from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QInputDialog, QMessageBox, QTreeWidgetItem
+from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem
 
 from application.core.exercise_types import CREATABLE_EXERCISE_TYPES
 from application.core.models import Exercise, Lesson, Unit
@@ -35,7 +36,9 @@ class ItemCommandsMixin:
 
     # --- ID regeneration -------------------------------------------------
     def _generate_new_ids_for_exercise(self, exercise: Exercise):
-        exercise.exercise_id = f"ex_{uuid.uuid4().hex[:8]}"
+        ex_id = f"ex_{uuid.uuid4().hex[:8]}"
+        exercise.exercise_id = ex_id
+        exercise.id = ex_id
 
     def _generate_new_ids_for_lesson(self, lesson: Lesson):
         lesson.lesson_id = f"lesson_{uuid.uuid4().hex[:8]}"
@@ -70,9 +73,7 @@ class ItemCommandsMixin:
     def _duplicate_lesson(self, original_lesson_item: QTreeWidgetItem):
         original_lesson: Lesson = original_lesson_item.data(0, Qt.UserRole)
         parent_unit_item = original_lesson_item.parent()
-        parent_unit: Unit = (
-            parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
-        )
+        parent_unit: Unit = parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
 
         if not original_lesson or not parent_unit:
             return
@@ -84,7 +85,9 @@ class ItemCommandsMixin:
 
         original_index = parent_unit.lessons.index(original_lesson)
         if hasattr(self, "undo_stack"):
-            self.undo_stack.push(AddLessonCommand(self, parent_unit, new_lesson, original_index + 1))
+            self.undo_stack.push(
+                AddLessonCommand(self, parent_unit, new_lesson, original_index + 1)
+            )
         else:
             parent_unit.lessons.insert(original_index + 1, new_lesson)
             self.update_tree_view()
@@ -110,7 +113,9 @@ class ItemCommandsMixin:
 
         original_index = parent_lesson.exercises.index(original_exercise)
         if hasattr(self, "undo_stack"):
-            self.undo_stack.push(AddExerciseCommand(self, parent_lesson, new_exercise, original_index + 1))
+            self.undo_stack.push(
+                AddExerciseCommand(self, parent_lesson, new_exercise, original_index + 1)
+            )
         else:
             parent_lesson.exercises.insert(original_index + 1, new_exercise)
             self.update_tree_view()
@@ -122,10 +127,12 @@ class ItemCommandsMixin:
         if not self.course_data:
             return
         unit_id_suffix = str(uuid.uuid4().hex[:8])
-        unit_title = title.strip() if title and title.strip() else f"New Unit {len(self.course_data.units) + 1}"
-        new_unit = Unit(
-            unit_id=f"unit_{unit_id_suffix}", title=unit_title, lessons=[]
+        unit_title = (
+            title.strip()
+            if title and title.strip()
+            else f"New Unit {len(self.course_data.units) + 1}"
         )
+        new_unit = Unit(unit_id=f"unit_{unit_id_suffix}", title=unit_title, lessons=[])
         if hasattr(self, "undo_stack"):
             self.undo_stack.push(AddUnitCommand(self, new_unit))
         else:
@@ -162,7 +169,9 @@ class ItemCommandsMixin:
         if not unit:
             return
         lesson_id_suffix = str(uuid.uuid4().hex[:8])
-        lesson_title = title.strip() if title and title.strip() else f"New Lesson {len(unit.lessons) + 1}"
+        lesson_title = (
+            title.strip() if title and title.strip() else f"New Lesson {len(unit.lessons) + 1}"
+        )
         new_lesson = Lesson(
             lesson_id=f"lesson_{lesson_id_suffix}",
             title=lesson_title,
@@ -189,9 +198,7 @@ class ItemCommandsMixin:
         )
         if reply == QMessageBox.Yes:
             parent_unit_item = item.parent()
-            parent_unit: Unit = (
-                parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
-            )
+            parent_unit: Unit = parent_unit_item.data(0, Qt.UserRole) if parent_unit_item else None
             if parent_unit:
                 if hasattr(self, "undo_stack"):
                     self.undo_stack.push(DeleteLessonCommand(self, parent_unit, lesson_to_delete))
@@ -208,15 +215,17 @@ class ItemCommandsMixin:
 
     # --- Exercises -------------------------------------------------------
     def _add_exercise(self, lesson_or_item: Any, exercise_type: str | None = None):
-        lesson = lesson_or_item if isinstance(lesson_or_item, Lesson) else lesson_or_item.data(0, Qt.UserRole)
+        lesson = (
+            lesson_or_item
+            if isinstance(lesson_or_item, Lesson)
+            else lesson_or_item.data(0, Qt.UserRole)
+        )
         if not lesson:
             return
 
         item_type_name = exercise_type or CREATABLE_EXERCISE_TYPES[0]
-        exercise_id_suffix = str(uuid.uuid4().hex[:8])
-        new_exercise = Exercise(
-            exercise_id=f"ex_{exercise_id_suffix}", type=item_type_name
-        )
+        ex_id = f"{lesson.id}_{uuid.uuid4().hex[:8]}"
+        new_exercise = Exercise(exercise_id=ex_id, id=ex_id, type=item_type_name)
         if hasattr(self, "undo_stack"):
             self.undo_stack.push(AddExerciseCommand(self, lesson, new_exercise))
         else:
@@ -242,7 +251,9 @@ class ItemCommandsMixin:
             )
             if parent_lesson:
                 if hasattr(self, "undo_stack"):
-                    self.undo_stack.push(DeleteExerciseCommand(self, parent_lesson, exercise_to_delete))
+                    self.undo_stack.push(
+                        DeleteExerciseCommand(self, parent_lesson, exercise_to_delete)
+                    )
                 else:
                     parent_lesson.exercises = [
                         e

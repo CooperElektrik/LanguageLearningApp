@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 import sys
 from typing import Any
 
@@ -21,7 +22,6 @@ except ImportError as e:
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
 
 
 class ValidationIssue(str):
@@ -58,21 +58,50 @@ def _collect_error(
 ):
     """Collects an error message with structured location metadata and path prefix."""
     full_message = f"{path_prefix}{message}" if path_prefix else message
-    if not unit_id and "Unit '" in path_prefix:
-        try:
-            unit_id = path_prefix.split("Unit '")[1].split("'")[0]
-        except IndexError:
-            pass
-    if not lesson_id and "Lesson '" in path_prefix:
-        try:
-            lesson_id = path_prefix.split("Lesson '")[1].split("'")[0]
-        except IndexError:
-            pass
-    if not exercise_id and "Exercise" in path_prefix and "('" in path_prefix:
-        try:
-            exercise_id = path_prefix.split("Exercise")[1].split("('")[1].split("')")[0]
-        except IndexError:
-            pass
+    if not unit_id and path_prefix:
+        m = re.search(r"\bUnit '(?P<uid>.+?)'(?: \('(?P<utitle>.*?)'\))?:", path_prefix)
+        if m:
+            unit_id = m.group("uid")
+        else:
+            m = re.search(r"\bUnit '(?P<uid>[^'\n\r]+)'", path_prefix)
+            if m:
+                unit_id = m.group("uid")
+            elif "Unit '" in path_prefix:
+                try:
+                    unit_id = path_prefix.split("Unit '")[-1].split("'")[0]
+                except (IndexError, AttributeError):
+                    pass
+
+    if not lesson_id and path_prefix:
+        m = re.search(r"\bLesson '(?P<lid>.+?)'(?: \('(?P<ltitle>.*?)'\))?:", path_prefix)
+        if m:
+            lesson_id = m.group("lid")
+        else:
+            m = re.search(r"\bLesson '(?P<lid>[^'\n\r]+)'", path_prefix)
+            if m:
+                lesson_id = m.group("lid")
+            elif "Lesson '" in path_prefix:
+                try:
+                    lesson_id = path_prefix.split("Lesson '")[-1].split("'")[0]
+                except (IndexError, AttributeError):
+                    pass
+
+    if not exercise_id and path_prefix:
+        m = re.search(r"\bExercise\b[^(:\n]*\((?:ID: )?'(?P<eid>[^']+)'\)", path_prefix)
+        if not m:
+            m = re.search(r"\bExercise '(?P<eid>[^']+)'", path_prefix)
+        if m:
+            exercise_id = m.group("eid")
+        elif "Exercise" in path_prefix:
+            try:
+                after_ex = path_prefix.split("Exercise")[-1]
+                if "('" in after_ex and "')" in after_ex:
+                    candidate = after_ex.split("('", 1)[1].split("')", 1)[0]
+                    if candidate and " " not in candidate.strip():
+                        exercise_id = candidate.strip()
+            except (IndexError, AttributeError):
+                pass
+
     if "Warning:" in message:
         severity = "warning"
 
@@ -90,27 +119,13 @@ def _collect_error(
 def _validate_exercise_translation_internal(
     exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
-    if (
-        not exercise.prompt
-        or not isinstance(exercise.prompt, str)
-        or not exercise.prompt.strip()
-    ):
-        _collect_error(
-            errors_list, "Missing or empty 'prompt' (must be a string).", path_prefix
-        )
-    if (
-        not exercise.answer
-        or not isinstance(exercise.answer, str)
-        or not exercise.answer.strip()
-    ):
-        _collect_error(
-            errors_list, "Missing or empty 'answer' (must be a string).", path_prefix
-        )
+    if not exercise.prompt or not isinstance(exercise.prompt, str) or not exercise.prompt.strip():
+        _collect_error(errors_list, "Missing or empty 'prompt' (must be a string).", path_prefix)
+    if not exercise.answer or not isinstance(exercise.answer, str) or not exercise.answer.strip():
+        _collect_error(errors_list, "Missing or empty 'answer' (must be a string).", path_prefix)
 
 
-def _validate_exercise_mcq_internal(
-    exercise: Exercise, path_prefix: str, errors_list: list[str]
-):
+def _validate_exercise_mcq_internal(exercise: Exercise, path_prefix: str, errors_list: list[str]):
     if (
         not exercise.source_word
         or not isinstance(exercise.source_word, str)
@@ -122,14 +137,8 @@ def _validate_exercise_mcq_internal(
             path_prefix,
         )
 
-    if (
-        not exercise.options
-        or not isinstance(exercise.options, list)
-        or len(exercise.options) == 0
-    ):
-        _collect_error(
-            errors_list, "Missing, empty, or invalid 'options' list.", path_prefix
-        )
+    if not exercise.options or not isinstance(exercise.options, list) or len(exercise.options) == 0:
+        _collect_error(errors_list, "Missing, empty, or invalid 'options' list.", path_prefix)
         return
 
     correct_count = 0
@@ -142,9 +151,7 @@ def _validate_exercise_mcq_internal(
             or not isinstance(option.text, str)
             or not option.text.strip()
         ):
-            _collect_error(
-                errors_list, "Missing or empty 'text' for option.", option_path
-            )
+            _collect_error(errors_list, "Missing or empty 'text' for option.", option_path)
         if not hasattr(option, "correct") or not isinstance(option.correct, bool):
             _collect_error(
                 errors_list,
@@ -164,9 +171,7 @@ def _validate_exercise_mcq_internal(
         )
 
 
-def _validate_exercise_fib_internal(
-    exercise: Exercise, path_prefix: str, errors_list: list[str]
-):
+def _validate_exercise_fib_internal(exercise: Exercise, path_prefix: str, errors_list: list[str]):
     if (
         not exercise.sentence_template
         or not isinstance(exercise.sentence_template, str)
@@ -195,11 +200,7 @@ def _validate_exercise_fib_internal(
             path_prefix,
         )
 
-    if (
-        not exercise.options
-        or not isinstance(exercise.options, list)
-        or len(exercise.options) == 0
-    ):
+    if not exercise.options or not isinstance(exercise.options, list) or len(exercise.options) == 0:
         _collect_error(
             errors_list,
             "Missing, empty, or invalid 'options' list for blank choices.",
@@ -238,18 +239,10 @@ def _validate_exercise_fib_internal(
 def _validate_exercise_jumble_internal(
     exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
-    if (
-        not exercise.words
-        or not isinstance(exercise.words, list)
-        or len(exercise.words) == 0
-    ):
+    if not exercise.words or not isinstance(exercise.words, list) or len(exercise.words) == 0:
         _collect_error(errors_list, "Missing or empty 'words' list.", path_prefix)
 
-    if (
-        not exercise.answer
-        or not isinstance(exercise.answer, str)
-        or not exercise.answer.strip()
-    ):
+    if not exercise.answer or not isinstance(exercise.answer, str) or not exercise.answer.strip():
         _collect_error(
             errors_list,
             "Missing or empty 'answer' (the correct sentence).",
@@ -280,11 +273,7 @@ def _validate_exercise_association_internal(
 def _validate_exercise_context_internal(
     exercise: Exercise, path_prefix: str, errors_list: list[str]
 ):
-    if (
-        not exercise.prompt
-        or not isinstance(exercise.prompt, str)
-        or not exercise.prompt.strip()
-    ):
+    if not exercise.prompt or not isinstance(exercise.prompt, str) or not exercise.prompt.strip():
         _collect_error(
             errors_list,
             "Missing or empty 'prompt' (which holds the context content).",
@@ -325,13 +314,9 @@ def _validate_exercise_internal(
 
     if hasattr(exercise, "audio_file") and exercise.audio_file:
         if not isinstance(exercise.audio_file, str):
-            _collect_error(
-                errors_list, "'audio_file' field must be a string path.", path_prefix
-            )
+            _collect_error(errors_list, "'audio_file' field must be a string path.", path_prefix)
         else:
-            full_audio_path = os.path.join(
-                course_manifest_base_dir, exercise.audio_file
-            )
+            full_audio_path = os.path.join(course_manifest_base_dir, exercise.audio_file)
             if not os.path.exists(full_audio_path):
                 _collect_error(
                     errors_list,
@@ -341,13 +326,9 @@ def _validate_exercise_internal(
 
     if hasattr(exercise, "image_file") and exercise.image_file:
         if not isinstance(exercise.image_file, str):
-            _collect_error(
-                errors_list, "'image_file' field must be a string path.", path_prefix
-            )
+            _collect_error(errors_list, "'image_file' field must be a string path.", path_prefix)
         else:
-            full_image_path = os.path.join(
-                course_manifest_base_dir, exercise.image_file
-            )
+            full_image_path = os.path.join(course_manifest_base_dir, exercise.image_file)
             if not os.path.exists(full_image_path):
                 _collect_error(
                     errors_list,
@@ -358,8 +339,16 @@ def _validate_exercise_internal(
     # Validate option-level assets
     if hasattr(exercise, "options") and isinstance(exercise.options, list):
         for opt_idx, opt in enumerate(exercise.options):
-            opt_audio = getattr(opt, "audio_file", None) if hasattr(opt, "audio_file") else (opt.get("audio_file") if isinstance(opt, dict) else None)
-            opt_img = getattr(opt, "image_file", None) if hasattr(opt, "image_file") else (opt.get("image_file") if isinstance(opt, dict) else None)
+            opt_audio = (
+                getattr(opt, "audio_file", None)
+                if hasattr(opt, "audio_file")
+                else (opt.get("audio_file") if isinstance(opt, dict) else None)
+            )
+            opt_img = (
+                getattr(opt, "image_file", None)
+                if hasattr(opt, "image_file")
+                else (opt.get("image_file") if isinstance(opt, dict) else None)
+            )
             if opt_audio and isinstance(opt_audio, str):
                 full_opt_audio = os.path.join(course_manifest_base_dir, opt_audio)
                 if not os.path.exists(full_opt_audio):
@@ -414,33 +403,57 @@ def _validate_lesson_internal(
     unit_path_prefix: str,
     errors_list: list[str],
     course_manifest_base_dir: str,
+    unit_id: str | None = None,
 ):
     """Validates a single lesson."""
     path_prefix = f"{unit_path_prefix}Lesson '{lesson.lesson_id}' ('{lesson.title}'): "
+    lesson_id = getattr(lesson, "lesson_id", None)
     if (
         not hasattr(lesson, "lesson_id")
         or not isinstance(lesson.lesson_id, str)
         or not lesson.lesson_id.strip()
     ):
-        _collect_error(errors_list, "Missing or empty 'lesson_id'.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Missing or empty 'lesson_id'.",
+            path_prefix,
+            unit_id=unit_id,
+            lesson_id=lesson_id,
+        )
     if (
         not hasattr(lesson, "title")
         or not isinstance(lesson.title, str)
         or not lesson.title.strip()
     ):
-        _collect_error(errors_list, "Missing or empty 'title'.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Missing or empty 'title'.",
+            path_prefix,
+            unit_id=unit_id,
+            lesson_id=lesson_id,
+        )
 
     if not hasattr(lesson, "exercises") or not isinstance(lesson.exercises, list):
-        _collect_error(errors_list, "Missing or invalid 'exercises' list.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Missing or invalid 'exercises' list.",
+            path_prefix,
+            unit_id=unit_id,
+            lesson_id=lesson_id,
+        )
         return
 
     if not lesson.exercises:
-        _collect_error(errors_list, "Warning: Contains no exercises.", path_prefix)
+        _collect_error(
+            errors_list,
+            "Warning: Contains no exercises.",
+            path_prefix,
+            unit_id=unit_id,
+            lesson_id=lesson_id,
+        )
 
     for i, exercise in enumerate(lesson.exercises):
-        _validate_exercise_internal(
-            exercise, i, path_prefix, errors_list, course_manifest_base_dir
-        )
+        _validate_exercise_internal(exercise, i, path_prefix, errors_list, course_manifest_base_dir)
 
 
 def _validate_unit_internal(
@@ -451,25 +464,24 @@ def _validate_unit_internal(
 ):
     """Validates a single unit."""
     path_prefix = f"{course_path_prefix}Unit '{unit.unit_id}' ('{unit.title}'): "
+    unit_id = getattr(unit, "unit_id", None)
     if (
         not hasattr(unit, "unit_id")
         or not isinstance(unit.unit_id, str)
         or not unit.unit_id.strip()
     ):
-        _collect_error(errors_list, "Missing or empty 'unit_id'.", path_prefix)
-    if (
-        not hasattr(unit, "title")
-        or not isinstance(unit.title, str)
-        or not unit.title.strip()
-    ):
-        _collect_error(errors_list, "Missing or empty 'title'.", path_prefix)
+        _collect_error(errors_list, "Missing or empty 'unit_id'.", path_prefix, unit_id=unit_id)
+    if not hasattr(unit, "title") or not isinstance(unit.title, str) or not unit.title.strip():
+        _collect_error(errors_list, "Missing or empty 'title'.", path_prefix, unit_id=unit_id)
 
     if not hasattr(unit, "lessons") or not isinstance(unit.lessons, list):
-        _collect_error(errors_list, "Missing or invalid 'lessons' list.", path_prefix)
+        _collect_error(
+            errors_list, "Missing or invalid 'lessons' list.", path_prefix, unit_id=unit_id
+        )
         return
 
     if not unit.lessons:
-        _collect_error(errors_list, "Warning: Contains no lessons.", path_prefix)
+        _collect_error(errors_list, "Warning: Contains no lessons.", path_prefix, unit_id=unit_id)
 
     lesson_ids_in_unit = set()
     for lesson in unit.lessons:
@@ -478,22 +490,23 @@ def _validate_unit_internal(
                 errors_list,
                 "Lesson has invalid or missing lesson_id, cannot check for duplicates.",
                 path_prefix,
+                unit_id=unit_id,
             )
         elif lesson.lesson_id in lesson_ids_in_unit:
             _collect_error(
                 errors_list,
                 f"Duplicate lesson_id '{lesson.lesson_id}' found within this unit.",
                 path_prefix,
+                unit_id=unit_id,
+                lesson_id=getattr(lesson, "lesson_id", None),
             )
         lesson_ids_in_unit.add(lesson.lesson_id)
         _validate_lesson_internal(
-            lesson, path_prefix, errors_list, course_manifest_base_dir
+            lesson, path_prefix, errors_list, course_manifest_base_dir, unit_id=unit_id
         )
 
 
-def perform_manifest_validation(
-    manifest_data: dict[str, Any], manifest_path: str
-) -> list[str]:
+def perform_manifest_validation(manifest_data: dict[str, Any], manifest_path: str) -> list[str]:
     """Validates the loaded manifest data, returning a list of errors."""
     errors = []
     required_fields = [
@@ -507,14 +520,9 @@ def perform_manifest_validation(
         if (
             field not in manifest_data
             or not manifest_data[field]
-            or (
-                isinstance(manifest_data[field], str)
-                and not manifest_data[field].strip()
-            )
+            or (isinstance(manifest_data[field], str) and not manifest_data[field].strip())
         ):
-            _collect_error(
-                errors, f"Manifest missing or empty required field: '{field}'"
-            )
+            _collect_error(errors, f"Manifest missing or empty required field: '{field}'")
 
     if manifest_data.get("content_file"):
         content_filepath = os.path.join(
@@ -549,17 +557,13 @@ def perform_manifest_validation(
     return errors
 
 
-def perform_course_content_validation(
-    course: Course, course_manifest_base_dir: str
-) -> list[str]:
+def perform_course_content_validation(course: Course, course_manifest_base_dir: str) -> list[str]:
     """Validates the main course content object, returning a list of errors."""
     errors = []
     path_prefix = f"Course '{course.title}': "
 
     if not course or not hasattr(course, "units") or not isinstance(course.units, list):
-        _collect_error(
-            errors, "Course object is invalid or has no 'units' list.", path_prefix
-        )
+        _collect_error(errors, "Course object is invalid or has no 'units' list.", path_prefix)
         return errors
 
     if not course.units:
@@ -613,13 +617,12 @@ def perform_course_content_validation(
     return errors
 
 
+validate_course_structure = perform_course_content_validation
+
+
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validate LL course content YAML files."
-    )
-    parser.add_argument(
-        "manifest_file", help="Path to the manifest.yaml file for the course."
-    )
+    parser = argparse.ArgumentParser(description="Validate LL course content YAML files.")
+    parser.add_argument("manifest_file", help="Path to the manifest.yaml file for the course.")
     args = parser.parse_args()
 
     current_errors: list[str] = []
@@ -638,19 +641,13 @@ def main():
             "",
         )
     else:
-        manifest_validation_errors = perform_manifest_validation(
-            manifest_data, args.manifest_file
-        )
+        manifest_validation_errors = perform_manifest_validation(manifest_data, args.manifest_file)
         current_errors.extend(manifest_validation_errors)
 
     course_obj: Course | None = None
     course_content_actual_base_dir = None
 
-    if (
-        manifest_data
-        and "content_file" in manifest_data
-        and manifest_data["content_file"]
-    ):
+    if manifest_data and "content_file" in manifest_data and manifest_data["content_file"]:
         manifest_dir = os.path.dirname(os.path.abspath(args.manifest_file))
         content_filepath = os.path.join(manifest_dir, manifest_data["content_file"])
         course_content_actual_base_dir = os.path.dirname(content_filepath)

@@ -111,8 +111,8 @@ class CourseTreeWidget(QTreeWidget):
             logger.error(f"Failed to parse MIME data: {e}")
             return False
 
-        dragged_obj, _orig_parent, original_list, original_index = (
-            self._find_obj_and_context_by_id(dragged_obj_id, self.course_data)
+        dragged_obj, _orig_parent, original_list, original_index = self._find_obj_and_context_by_id(
+            dragged_obj_id, self.course_data
         )
 
         if not dragged_obj:

@@ -76,9 +76,7 @@ class UnifiedSetupDialog(QDialog):
         button_layout.addWidget(self.back_button)
         button_layout.addWidget(self.next_button)
         button_layout.addSpacerItem(
-            QSpacerItem(
-                40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
-            )
+            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         )
         button_layout.addWidget(self.ok_button)
 
@@ -225,9 +223,7 @@ class UnifiedSetupDialog(QDialog):
 
     def _populate_locale_combo(self):
         self.available_locales = utils.get_available_locales()
-        settings_widgets.populate_locale_combo(
-            self.locale_combo, self.available_locales
-        )
+        settings_widgets.populate_locale_combo(self.locale_combo, self.available_locales)
 
     def _on_locale_changed(self, text):
         locale_code = self.locale_combo.currentData()
@@ -303,19 +299,13 @@ class UnifiedSetupDialog(QDialog):
 
     def save_and_accept(self):
         # UI Settings
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_LOCALE, self.locale_combo.currentData()
-        )
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_FONT_SIZE, self.font_size_slider.value()
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_LOCALE, self.locale_combo.currentData())
+        self.q_settings.setValue(settings.QSETTINGS_KEY_FONT_SIZE, self.font_size_slider.value())
         self.q_settings.setValue(settings.QSETTINGS_KEY_INITIAL_UI_SETUP_DONE, True)
 
         # Audio Settings
         selected_mic_id = self.mic_combo.currentData()
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_mic_id
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_mic_id)
         selected_engine = self.stt_engine_combo.currentText()
         self.q_settings.setValue(settings.QSETTINGS_KEY_STT_ENGINE, selected_engine)
         if selected_engine == settings.STT_ENGINE_WHISPER:
@@ -391,9 +381,7 @@ class UnifiedSetupDialog(QDialog):
         ui_page = self.stack.widget(1)
         form_layout = ui_page.layout()
         form_layout.labelForField(self.locale_combo).setText(self.tr("Language:"))
-        form_layout.labelForField(self.font_size_slider.parent()).setText(
-            self.tr("Font Size:")
-        )
+        form_layout.labelForField(self.font_size_slider.parent()).setText(self.tr("Font Size:"))
 
         # Audio page
         self.nav_list.item(2).setText(self.tr("Audio"))
@@ -410,9 +398,7 @@ class UnifiedSetupDialog(QDialog):
         form_layout = audio_page.findChild(QFormLayout)
         if form_layout:
             form_layout.labelForField(self.mic_combo).setText(self.tr("Microphone:"))
-            form_layout.labelForField(self.stt_engine_combo).setText(
-                self.tr("STT Engine:")
-            )
+            form_layout.labelForField(self.stt_engine_combo).setText(self.tr("STT Engine:"))
             self.whisper_label.setText(self.tr("Whisper Model:"))
             self.vosk_label.setText(self.tr("VOSK Model:"))
             self.check_cuda_button.setText(self.tr("Check Now"))

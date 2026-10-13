@@ -49,9 +49,7 @@ def save_course_data(course_data: dict[str, Any], yaml_filepath: str):
     """Saves the course data (dictionary format) to a YAML file."""
     try:
         with open(yaml_filepath, "w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                course_data, f, indent=2, sort_keys=False, allow_unicode=True
-            )
+            yaml.safe_dump(course_data, f, indent=2, sort_keys=False, allow_unicode=True)
         logger.info(f"Course data saved successfully to '{yaml_filepath}'.")
     except Exception as e:
         logger.error(f"Error saving course data to '{yaml_filepath}': {e}")
@@ -235,9 +233,7 @@ def _process_fib_csv_internal(
             "correct_option": correct_option_text,
             "options": options,
         }
-        translation_hint = (
-            row.get(translation_hint_col) if translation_hint_col else None
-        )
+        translation_hint = row.get(translation_hint_col) if translation_hint_col else None
         if translation_hint:
             exercise_data["translation_hint"] = translation_hint
 
@@ -266,9 +262,7 @@ def _process_association_csv_internal(
         asset_path = row.get(asset_col)
         correct_option_text = row.get(correct_option_col)
 
-        if not all(
-            [prompt, correct_option_text]
-        ):  # Asset path can be optional for prompt
+        if not all([prompt, correct_option_text]):  # Asset path can be optional for prompt
             messages.append(
                 f"Warning: Skipping row {row_num + 1}, missing prompt or correct_option data."
             )
@@ -276,7 +270,9 @@ def _process_association_csv_internal(
 
         options = [{"text": correct_option_text, "correct": True}]
         incorrects = [row.get(col) for col in incorrect_options_cols if row.get(col)]
-        if not incorrects:  # Allow association with only one correct option if no incorrects are provided
+        if (
+            not incorrects
+        ):  # Allow association with only one correct option if no incorrects are provided
             messages.append(
                 f"Info: Row {row_num + 1} for '{prompt}' has no incorrect options from columns: {incorrect_options_cols}."
             )
@@ -378,15 +374,11 @@ def import_csv_data(
     messages = []
     success = True
 
-    target_unit = find_or_create_unit(
-        existing_course_data, unit_id, unit_title, messages
-    )
+    target_unit = find_or_create_unit(existing_course_data, unit_id, unit_title, messages)
     if not target_unit:
         return False, messages
 
-    target_lesson = find_or_create_lesson(
-        target_unit, lesson_id, lesson_title, messages
-    )
+    target_lesson = find_or_create_lesson(target_unit, lesson_id, lesson_title, messages)
     if not target_lesson:
         return False, messages
 
@@ -398,9 +390,7 @@ def import_csv_data(
             reader = list(csv.DictReader(csvfile))
 
             if not reader:
-                messages.append(
-                    "Error: CSV file is empty or could not be read as dictionary."
-                )
+                messages.append("Error: CSV file is empty or could not be read as dictionary.")
                 return False, messages
 
             fieldnames = reader[0].keys() if reader else []
@@ -447,9 +437,7 @@ def import_csv_data(
                     ]
 
                 required_mcq_cols = [source_word_col, correct_option_col]
-                missing_mcq_cols = [
-                    col for col in required_mcq_cols if col not in fieldnames
-                ]
+                missing_mcq_cols = [col for col in required_mcq_cols if col not in fieldnames]
                 if missing_mcq_cols:
                     messages.append(
                         f"Error: CSV missing required columns for MCQ: {missing_mcq_cols}. Found fieldnames: {list(fieldnames)}"
@@ -470,10 +458,7 @@ def import_csv_data(
                     messages,
                 )
             elif exercise_type == "fill_in_the_blank":
-                if (
-                    sentence_template_col not in fieldnames
-                    or correct_option_col not in fieldnames
-                ):
+                if sentence_template_col not in fieldnames or correct_option_col not in fieldnames:
                     messages.append(
                         f"Error: CSV missing required columns for fill_in_the_blank: "
                         f"'{sentence_template_col}', '{correct_option_col}'. Found: {list(fieldnames)}"
@@ -482,8 +467,7 @@ def import_csv_data(
                 fib_incorrect_cols = incorrect_options_cols or [
                     fn
                     for fn in fieldnames
-                    if fn.startswith(incorrect_options_prefix)
-                    and fn != incorrect_options_prefix
+                    if fn.startswith(incorrect_options_prefix) and fn != incorrect_options_prefix
                 ]
                 _process_fib_csv_internal(
                     reader,
@@ -492,9 +476,7 @@ def import_csv_data(
                     correct_option_col,
                     fib_incorrect_cols,
                     messages,
-                    translation_hint_col
-                    if translation_hint_col in fieldnames
-                    else None,
+                    translation_hint_col if translation_hint_col in fieldnames else None,
                 )
             elif exercise_type == "image_association":
                 required_cols = [prompt_col, image_file_col, correct_option_col]
@@ -568,9 +550,7 @@ def import_csv_data(
                     reader, target_lesson, title_col, prompt_col, messages
                 )
             else:
-                messages.append(
-                    f"Error: Unsupported exercise type for CSV import: {exercise_type}"
-                )
+                messages.append(f"Error: Unsupported exercise type for CSV import: {exercise_type}")
                 return False, messages
 
     except FileNotFoundError:

@@ -33,9 +33,7 @@ class GlossaryEditorWidget(QWidget):
         super().__init__(parent)
         self.glossary_entries: list[GlossaryEntry] = []
         self.current_glossary_filepath: str = None
-        self.current_manifest_path: str = (
-            None  # Needed to get course root dir for asset dialog
-        )
+        self.current_manifest_path: str = None  # Needed to get course root dir for asset dialog
 
         self._setup_ui()
 
@@ -81,9 +79,7 @@ class GlossaryEditorWidget(QWidget):
         glossary_filename = manifest_data.get("glossary_file")
         if glossary_filename:
             manifest_dir_abs = os.path.dirname(os.path.abspath(manifest_path))
-            self.current_glossary_filepath = os.path.join(
-                manifest_dir_abs, glossary_filename
-            )
+            self.current_glossary_filepath = os.path.join(manifest_dir_abs, glossary_filename)
             pool_base_dir = os.path.join(os.path.dirname(manifest_dir_abs), "pool")
             self.glossary_entries = load_glossary(
                 self.current_glossary_filepath, manifest_dir_abs, pool_base_dir
@@ -101,9 +97,7 @@ class GlossaryEditorWidget(QWidget):
 
         self._populate_list_widget()
 
-    def save_glossary_data(
-        self, manifest_data: dict[str, Any], manifest_path: str
-    ) -> bool:
+    def save_glossary_data(self, manifest_data: dict[str, Any], manifest_path: str) -> bool:
         """
         Saves the current glossary entries to the YAML file.
         Updates manifest_data if glossary_file was missing and a new one is created.
@@ -132,9 +126,7 @@ class GlossaryEditorWidget(QWidget):
             )
             # Trigger manifest save after this, via EditorWindow's _do_save
 
-        if (
-            not self.current_glossary_filepath
-        ):  # Should not happen if above logic is good
+        if not self.current_glossary_filepath:  # Should not happen if above logic is good
             logger.error("No glossary filepath determined for saving.")
             return False
 
@@ -166,9 +158,7 @@ class GlossaryEditorWidget(QWidget):
     def _edit_selected_entry(self):
         selected_items = self.glossary_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Edit Entry", "Please select an entry to edit."
-            )
+            QMessageBox.information(self, "Edit Entry", "Please select an entry to edit.")
             return
 
         current_item = selected_items[0]
@@ -198,9 +188,7 @@ class GlossaryEditorWidget(QWidget):
     def _delete_selected_entry(self):
         selected_items = self.glossary_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Delete Entry", "Please select an entry to delete."
-            )
+            QMessageBox.information(self, "Delete Entry", "Please select an entry to delete.")
             return
 
         item_to_delete = selected_items[0]

@@ -8,7 +8,6 @@ and extra characters/words.
 
 import difflib
 import html
-import re
 import unicodedata
 
 
@@ -21,7 +20,6 @@ def strip_accents_and_case(text: str) -> str:
 def generate_diff_html(expected: str, actual: str, for_speech: bool = False) -> str:
     """
     Generates an HTML snippet comparing ``actual`` (user input) against ``expected``.
-    
     Styling:
     - Exact matches: Green text
     - Close matches (e.g. missing diacritics or capitalization): Amber/Yellow badge
@@ -33,7 +31,7 @@ def generate_diff_html(expected: str, actual: str, for_speech: bool = False) -> 
             f'<div style="margin-top: 4px;">'
             f'<span style="color: #c62828; font-weight: bold;">Expected:</span> '
             f'<span style="color: #2e7d32; font-weight: bold;">{html.escape(expected)}</span>'
-            f'</div>'
+            f"</div>"
         )
 
     expected_clean = expected.strip()
@@ -41,16 +39,10 @@ def generate_diff_html(expected: str, actual: str, for_speech: bool = False) -> 
 
     if expected_clean == actual_clean:
         return (
-            f'<span style="color: #2e7d32; font-weight: bold;">'
-            f'{html.escape(actual_clean)}</span>'
+            f'<span style="color: #2e7d32; font-weight: bold;">{html.escape(actual_clean)}</span>'
         )
 
-    # If the strings have spaces, perform word-level diff with character-level sub-diff
-    expected_words = re.findall(r"\S+|\s+", expected_clean)
-    actual_words = re.findall(r"\S+|\s+", actual_clean)
-
     matcher = difflib.SequenceMatcher(None, expected_clean, actual_clean)
-    similarity = matcher.ratio()
 
     # For sentence or phrase comparisons, character-level sequence matching
     diff_parts = []
@@ -59,9 +51,7 @@ def generate_diff_html(expected: str, actual: str, for_speech: bool = False) -> 
         act_chunk = html.escape(actual_clean[j1:j2])
 
         if tag == "equal":
-            diff_parts.append(
-                f'<span style="color: #2e7d32; font-weight: 600;">{act_chunk}</span>'
-            )
+            diff_parts.append(f'<span style="color: #2e7d32; font-weight: 600;">{act_chunk}</span>')
         elif tag == "replace":
             # Check if this is just an accent or case difference
             clean_exp = strip_accents_and_case(expected_clean[i1:i2])
@@ -106,19 +96,23 @@ def format_feedback_card(
     actual_esc = html.escape(actual)
 
     if is_correct and not is_close_match:
-        status_badge = '<span style="color: #2e7d32; font-weight: bold; font-size: 14px;">✓ Correct: {0}</span>'.format(expected_esc)
+        status_badge = f'<span style="color: #2e7d32; font-weight: bold; font-size: 14px;">✓ Correct: {expected_esc}</span>'
         return status_badge
 
     diff_markup = generate_diff_html(expected, actual)
 
     if is_correct and is_close_match:
         header = f'<span style="color: #e65100; font-weight: bold; font-size: 14px;">~ Accepted (close match). Correct: {expected_esc}. You wrote: {actual_esc}</span>'
-        diff_view = f'<div style="margin-top: 4px; font-size: 13px;"><b>Comparison:</b> {diff_markup}</div>'
+        diff_view = (
+            f'<div style="margin-top: 4px; font-size: 13px;"><b>Comparison:</b> {diff_markup}</div>'
+        )
         return f"{header}<br>{diff_view}"
 
     # Incorrect
     header = f'<span style="color: #c62828; font-weight: bold; font-size: 14px;">✗ Incorrect. Correct: {expected_esc}. You wrote: {actual_esc}</span>'
-    diff_view = f'<div style="margin-top: 4px; font-size: 13px;"><b>Correction:</b> {diff_markup}</div>'
+    diff_view = (
+        f'<div style="margin-top: 4px; font-size: 13px;"><b>Correction:</b> {diff_markup}</div>'
+    )
 
     if explanation:
         exp_markup = f'<div style="margin-top: 6px; color: #555566; font-style: italic;"><b>Explanation:</b> {html.escape(explanation)}</div>'

@@ -68,9 +68,7 @@ def create_new_course() -> tuple[dict[str, Any], Course]:
     return manifest, course_obj
 
 
-def import_course_package(
-    package_path: str, target_base_dir: str
-) -> tuple[bool, str, str | None]:
+def import_course_package(package_path: str, target_base_dir: str) -> tuple[bool, str, str | None]:
     """Imports a .lcpkg course archive into target_base_dir.
 
     Args:
@@ -136,9 +134,7 @@ def import_course_package(
                         shutil.copyfileobj(source, target)
 
             dest_manifest = os.path.join(dest_course_dir, "manifest.yaml")
-            logger.info(
-                f"Successfully imported course '{course_title}' to {dest_course_dir}"
-            )
+            logger.info(f"Successfully imported course '{course_title}' to {dest_course_dir}")
             return True, f"Course '{course_title}' imported successfully!", dest_manifest
 
     except Exception as e:
@@ -160,9 +156,7 @@ def load_manifest(manifest_path: str) -> dict[str, Any] | None:
     except yaml.YAMLError as e:
         logger.error(f"Error parsing manifest YAML file {manifest_path}: {e}")
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred while loading manifest {manifest_path}: {e}"
-        )
+        logger.error(f"An unexpected error occurred while loading manifest {manifest_path}: {e}")
     return None
 
 
@@ -222,7 +216,10 @@ def _parse_exercise(
     pool_base_dir: str | None = None,
 ) -> Exercise | None:
     """Parses a single exercise entry from YAML data into an Exercise object."""
-    ex_id = f"{lesson_id}_ex{index}"
+    if "id" in exercise_data and exercise_data["id"]:
+        ex_id = str(exercise_data["id"])
+    else:
+        ex_id = f"{lesson_id}_ex{index}"
     ex_type = exercise_data.get("type")
     logger.debug(f"Attempting to parse exercise {ex_id} of type '{ex_type}'.")
 
@@ -244,12 +241,8 @@ def _parse_exercise(
     target_pron_text = exercise_data.get("target_pronunciation_text")
     allowed_lev_dist = exercise_data.get("allowed_levenshtein_distance")
 
-    validated_audio_path = _validate_asset_path(
-        audio_file, course_base_dir, pool_base_dir
-    )
-    validated_image_path = _validate_asset_path(
-        image_file, course_base_dir, pool_base_dir
-    )
+    validated_audio_path = _validate_asset_path(audio_file, course_base_dir, pool_base_dir)
+    validated_image_path = _validate_asset_path(image_file, course_base_dir, pool_base_dir)
 
     options: list[ExerciseOption] = []
     if ex_type in [
@@ -271,18 +264,14 @@ def _parse_exercise(
     if ex_type in ["translate_to_target", "translate_to_source", "dictation"] and (
         prompt is None or answer is None
     ):
-        logger.warning(
-            f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing."
-        )
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' or 'answer' is missing.")
         return None
     elif ex_type in [
         "multiple_choice_translation",
         "image_association",
         "listen_and_select",
     ] and (not options):
-        logger.warning(
-            f"Skipping {ex_type} exercise {ex_id}: 'options' are missing/empty."
-        )
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'options' are missing/empty.")
         return None
     elif ex_type == "fill_in_the_blank" and (
         sentence_template is None or correct_option is None or not options
@@ -297,11 +286,9 @@ def _parse_exercise(
         )
         return None
     elif ex_type == "context_block" and prompt is None:
-        logger.warning(
-            f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing."
-        )
+        logger.warning(f"Skipping {ex_type} exercise {ex_id}: 'prompt' content is missing.")
         return None
-    elif ex_type == "pronunciation_practice" and target_pron_text is None:
+    elif ex_type in ["pronunciation_practice", "pronunciation"] and target_pron_text is None:
         logger.warning(
             f"Skipping {ex_type} exercise {ex_id}: 'target_pronunciation_text' is missing."
         )
@@ -309,6 +296,7 @@ def _parse_exercise(
 
     return Exercise(
         exercise_id=ex_id,
+        id=ex_id,
         type=ex_type,
         title=title,
         prompt=prompt,
@@ -326,6 +314,55 @@ def _parse_exercise(
         allowed_levenshtein_distance=allowed_lev_dist,
         raw_data=exercise_data,
     )
+
+
+def _load_lesson(
+    lesson_data: dict[str, Any],
+    unit_id: str,
+    target_lang: str,
+    source_lang: str,
+    course_base_dir: str | None = None,
+    pool_base_dir: str | None = None,
+) -> Lesson | None:
+    """Loads and parses a single lesson from lesson dictionary data."""
+    lesson_id = lesson_data.get("lesson_id")
+    lesson_title = lesson_data.get("title")
+    if not lesson_id or not lesson_title:
+        logger.warning(
+            f"Skipping malformed lesson in unit {unit_id}: {lesson_data}. Missing lesson_id or title."
+        )
+        return None
+    lesson_obj = Lesson(
+        lesson_id=lesson_id,
+        title=lesson_title,
+        unit_id=unit_id,
+    )
+    logger.debug(f"Parsed lesson '{lesson_title}' (ID: {lesson_id}) in unit {unit_id}")
+    for i, ex_data in enumerate(lesson_data.get("exercises", [])):
+        if "id" in ex_data and ex_data["id"]:
+            ex_id = str(ex_data["id"])
+        else:
+            ex_id = f"{lesson_id}_ex{i}"
+
+        exercise_obj = _parse_exercise(
+            ex_data,
+            lesson_id,
+            i,
+            target_lang,
+            source_lang,
+            course_base_dir,
+            pool_base_dir,
+        )
+        if exercise_obj:
+            exercise_obj.id = ex_id
+            exercise_obj.exercise_id = ex_id
+            lesson_obj.exercises.append(exercise_obj)
+            logger.debug(f"Added exercise {exercise_obj.exercise_id} to lesson {lesson_id}")
+        else:
+            logger.warning(
+                f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping."
+            )
+    return lesson_obj
 
 
 def load_course_content(
@@ -354,9 +391,7 @@ def load_course_content(
         logger.error(f"Error parsing course content YAML file {content_filepath}: {e}")
         return None
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred loading course content {content_filepath}: {e}"
-        )
+        logger.error(f"An unexpected error occurred loading course content {content_filepath}: {e}")
         return None
 
     if not raw_course_data or "units" not in raw_course_data:
@@ -365,9 +400,7 @@ def load_course_content(
         )
         return None
 
-    validated_image_path = _validate_asset_path(
-        image_file, course_base_dir, pool_base_dir
-    )
+    validated_image_path = _validate_asset_path(image_file, course_base_dir, pool_base_dir)
 
     course = Course(
         course_id=course_id,
@@ -386,50 +419,23 @@ def load_course_content(
         unit_id = unit_data.get("unit_id")
         unit_title = unit_data.get("title")
         if not unit_id or not unit_title:
-            logger.warning(
-                f"Skipping malformed unit: {unit_data}. Missing unit_id or title."
-            )
+            logger.warning(f"Skipping malformed unit: {unit_data}. Missing unit_id or title.")
             continue
         unit_obj = Unit(unit_id=unit_id, title=unit_title)
         logger.debug(f"Parsed unit '{unit_title}' (ID: {unit_id})")
 
         for lesson_data in unit_data.get("lessons", []):
-            lesson_id = lesson_data.get("lesson_id")
-            lesson_title = lesson_data.get("title")
-            if not lesson_id or not lesson_title:
-                logger.warning(
-                    f"Skipping malformed lesson in unit {unit_id}: {lesson_data}. Missing lesson_id or title."
-                )
-                continue
-            lesson_obj = Lesson(
-                lesson_id=lesson_id,
-                title=lesson_title,
-                unit_id=unit_obj.unit_id,
+            lesson_obj = _load_lesson(
+                lesson_data,
+                unit_obj.unit_id,
+                target_lang,
+                source_lang,
+                course_base_dir,
+                pool_base_dir,
             )
-            logger.debug(
-                f"Parsed lesson '{lesson_title}' (ID: {lesson_id}) in unit {unit_id}"
-            )
-            for i, ex_data in enumerate(lesson_data.get("exercises", [])):
-                exercise_obj = _parse_exercise(
-                    ex_data,
-                    lesson_obj.lesson_id,
-                    i,
-                    target_lang,
-                    source_lang,
-                    course_base_dir,
-                    pool_base_dir,
-                )
-                if exercise_obj:
-                    lesson_obj.exercises.append(exercise_obj)
-                    logger.debug(
-                        f"Added exercise {exercise_obj.exercise_id} to lesson {lesson_id}"
-                    )
-                else:
-                    logger.warning(
-                        f"Failed to parse exercise at index {i} in lesson {lesson_id}. Skipping."
-                    )
-            unit_obj.lessons.append(lesson_obj)
-            logger.debug(f"Added lesson {lesson_id} to unit {unit_id}")
+            if lesson_obj:
+                unit_obj.lessons.append(lesson_obj)
+                logger.debug(f"Added lesson {lesson_obj.lesson_id} to unit {unit_id}")
         course.units.append(unit_obj)
         logger.debug(f"Added unit {unit_id} to course {course_id}")
 

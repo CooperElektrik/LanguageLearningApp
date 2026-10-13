@@ -50,9 +50,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         self.current_exercise_index: int = -1
         self.total_exercises_in_session: int = 0
 
-        self._current_session_name_for_retranslation: str = (
-            "Review Session"  # For retranslation
-        )
+        self._current_session_name_for_retranslation: str = "Review Session"  # For retranslation
         self._last_submission_was_correct: bool = False
         self.view_state: ReviewState = ReviewState.INITIAL_LOAD
 
@@ -85,9 +83,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         control_buttons_layout = QHBoxLayout(self.control_buttons_widget)
         control_buttons_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.toggle_notes_button = self._create_notes_button(
-            "toggle_notes_button_review"
-        )
+        self.toggle_notes_button = self._create_notes_button("toggle_notes_button_review")
         control_buttons_layout.addWidget(self.toggle_notes_button)
 
         self.toggle_hint_button = self._create_hint_button("toggle_hint_button_review")
@@ -163,9 +159,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         self.lookup_button.setEnabled(not is_session_ended and not is_initial)
 
         can_show_hint = (
-            is_asking
-            and self.current_exercise_obj
-            and self.current_exercise_obj.has_hint()
+            is_asking and self.current_exercise_obj and self.current_exercise_obj.has_hint()
         )
         self.toggle_hint_button.setVisible(can_show_hint)
         if logger.isEnabledFor(logging.DEBUG):  # Conditional logging
@@ -176,9 +170,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             )
         if can_show_hint:
             self.toggle_hint_button.setText(
-                self.tr("Hide Hint")
-                if self.hint_label.isVisible()
-                else self.tr("Show Hint")
+                self.tr("Hide Hint") if self.hint_label.isVisible() else self.tr("Show Hint")
             )
 
         if is_submitted_or_shown:
@@ -195,9 +187,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         session_name: str = "Review Session",
     ):
         super()._save_current_note()
-        self._current_session_name_for_retranslation = (
-            session_name  # Store for retranslation
-        )
+        self._current_session_name_for_retranslation = session_name  # Store for retranslation
         self.reset_view()
 
         if exercises is not None:
@@ -254,19 +244,14 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             # Button states (including hint button text) updated at the end of this method
             self.view_state = ReviewState.ASKING_QUESTION
         else:
-            self.feedback_label.setText(
-                self.tr("Error loading exercise. Please rate to continue.")
-            )
+            self.feedback_label.setText(self.tr("Error loading exercise. Please rate to continue."))
             self.view_state = ReviewState.ANSWER_SUBMITTED
 
         # Defer button state update to ensure UI changes (like hint visibility) are processed
         QTimer.singleShot(0, self._update_button_states)
 
     def _handle_user_submission_from_button(self):
-        if (
-            self.current_exercise_widget
-            and self.view_state == ReviewState.ASKING_QUESTION
-        ):
+        if self.current_exercise_widget and self.view_state == ReviewState.ASKING_QUESTION:
             user_answer = self.current_exercise_widget.get_answer()
             self._process_submission(user_answer, was_shown=False)
 
@@ -275,10 +260,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
             self._process_submission(user_answer, was_shown=False)
 
     def _process_submission(self, user_answer: str, was_shown: bool):
-        if (
-            not self.current_exercise_obj
-            or self.view_state != ReviewState.ASKING_QUESTION
-        ):
+        if not self.current_exercise_obj or self.view_state != ReviewState.ASKING_QUESTION:
             return
         self._toggle_hint_visibility(force_show=False)  # Hide hint on submission
 
@@ -300,10 +282,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         self._update_button_states()
 
     def _handle_show_answer(self):
-        if (
-            not self.current_exercise_obj
-            or self.view_state != ReviewState.ASKING_QUESTION
-        ):
+        if not self.current_exercise_obj or self.view_state != ReviewState.ASKING_QUESTION:
             return
         self._toggle_hint_visibility(force_show=False)  # Hide hint when answer is shown
 
@@ -341,10 +320,7 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         self._update_button_states()
 
     def _handle_rating(self, quality_score_sm2: int):  # 0, 3, 4, 5
-        if (
-            not self.current_exercise_obj
-            or self.view_state != ReviewState.ANSWER_SUBMITTED
-        ):
+        if not self.current_exercise_obj or self.view_state != ReviewState.ANSWER_SUBMITTED:
             return
 
         xp_awarded_for_review = (
@@ -370,9 +346,9 @@ class ReviewView(BaseExercisePlayerView):  # Inherit from BaseExercisePlayerView
         QMessageBox.information(
             self,
             self.tr("Review Session Complete"),
-            self.tr(
-                "You've completed this review session! Total exercises: {0}"
-            ).format(self.total_exercises_in_session),
+            self.tr("You've completed this review session! Total exercises: {0}").format(
+                self.total_exercises_in_session
+            ),
         )
         self.review_session_finished.emit()
 

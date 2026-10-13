@@ -235,7 +235,6 @@ class AssetHubWidget(QWidget):
         if not item:
             return
 
-        rel_path = item.data(Qt.UserRole)
         full_path = item.data(Qt.UserRole + 1)
         if not full_path or not os.path.exists(full_path):
             return

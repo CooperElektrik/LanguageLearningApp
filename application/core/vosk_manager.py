@@ -50,6 +50,36 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def extract_model(archive_path: str, target_dir: str) -> None:
+    """Extracts a VOSK model archive (.zip or .7z) to the target directory with path sanitization to prevent Zip Slip."""
+    target_dir = os.path.abspath(target_dir)
+    os.makedirs(target_dir, exist_ok=True)
+
+    def _is_safe_path(base: str, path: str) -> bool:
+        normalized_path = path.replace("\\", "/")
+        dest = os.path.abspath(os.path.join(base, normalized_path))
+        return os.path.commonpath([base, dest]) == base
+
+    if archive_path.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
+            for member in zip_ref.namelist():
+                if not _is_safe_path(target_dir, member):
+                    raise ValueError(
+                        f"Malicious archive member detected in '{archive_path}': '{member}' is outside target directory '{target_dir}'"
+                    )
+            zip_ref.extractall(target_dir)
+    elif archive_path.endswith(".7z"):
+        with py7zr.SevenZipFile(archive_path, mode="r") as sz_ref:
+            for name in sz_ref.getnames():
+                if not _is_safe_path(target_dir, name):
+                    raise ValueError(
+                        f"Malicious archive member detected in '{archive_path}': '{name}' is outside target directory '{target_dir}'"
+                    )
+            sz_ref.extractall(path=target_dir)
+    else:
+        raise ValueError(f"Unsupported archive format for '{archive_path}'")
+
+
 class ModelLoader(BaseModelLoader):
     """
     A QRunnable task to load a VOSK model in a background thread.
@@ -62,16 +92,12 @@ class ModelLoader(BaseModelLoader):
 
     def run(self):
         if not _VOSK_AVAILABLE:
-            error_msg = (
-                "VOSK is not available. Please install vosk and its dependencies."
-            )
+            error_msg = "VOSK is not available. Please install vosk and its dependencies."
             logger.error(error_msg)
             self.signals.error.emit(self.model_path, error_msg)
             return
         try:
-            logger.info(
-                f"Background Task: Attempting to load VOSK model '{self.model_path}'."
-            )
+            logger.info(f"Background Task: Attempting to load VOSK model '{self.model_path}'.")
             # Resolve the actual model path (expected directory)
             actual_model_dir = utils.get_stt_model_path(
                 app_settings.STT_ENGINE_VOSK, self.model_path
@@ -94,25 +120,16 @@ class ModelLoader(BaseModelLoader):
                             f"Found VOSK model {ext} file: '{archive_path}'. Attempting extraction..."
                         )
                         try:
-                            if ext == ".zip":
-                                with zipfile.ZipFile(archive_path, "r") as zip_ref:
-                                    zip_ref.extractall(
-                                        os.path.dirname(actual_model_dir)
-                                    )
-                            elif ext == ".7z":
-                                with py7zr.SevenZipFile(
-                                    archive_path, mode="r"
-                                ) as sz_ref:
-                                    sz_ref.extractall(
-                                        path=os.path.dirname(actual_model_dir)
-                                    )
+                            extract_model(archive_path, os.path.dirname(actual_model_dir))
                             logger.info(
                                 f"Successfully extracted '{archive_path}' to '{os.path.dirname(actual_model_dir)}'."
                             )
                             extracted = True
                             break  # Stop after first successful extraction
                         except Exception as archive_e:
-                            error_msg = f"Failed to extract VOSK model {ext} '{archive_path}': {archive_e}"
+                            error_msg = (
+                                f"Failed to extract VOSK model {ext} '{archive_path}': {archive_e}"
+                            )
                             logger.error(error_msg, exc_info=True)
                             self.signals.error.emit(self.model_path, error_msg)
                             return
@@ -136,9 +153,7 @@ class ModelLoader(BaseModelLoader):
             )
             self.signals.finished.emit(self.model_path, model_instance)
         except Exception as e:
-            error_msg = (
-                f"Background Task: Failed to load VOSK model '{self.model_path}': {e}"
-            )
+            error_msg = f"Background Task: Failed to load VOSK model '{self.model_path}': {e}"
             logger.error(error_msg, exc_info=True)
             self.signals.error.emit(self.model_path, error_msg)
 
@@ -172,20 +187,13 @@ class TranscriptionTask(BaseTranscriptionTask):
 
     def _run_transcription(self) -> TranscriptionResult:
         audio_file_to_use = self.audio_path
-        if (
-            self.recorded_samplerate
-            and self.recorded_samplerate != self.samplerate
-        ):
-            resampled = resample_audio(
-                self.audio_path, self.samplerate, "vosk"
-            )
+        if self.recorded_samplerate and self.recorded_samplerate != self.samplerate:
+            resampled = resample_audio(self.audio_path, self.samplerate, "vosk")
             if resampled:
                 audio_file_to_use = resampled
                 self.cleanup_paths.append(resampled)
 
-        logger.info(
-            f"Background Task: Starting VOSK transcription for {audio_file_to_use}"
-        )
+        logger.info(f"Background Task: Starting VOSK transcription for {audio_file_to_use}")
 
         # VOSK requires a KaldiRecognizer for transcription
         recognizer = KaldiRecognizer(self._model, self.samplerate)
@@ -218,18 +226,10 @@ class TranscriptionTask(BaseTranscriptionTask):
                 transcribed_text = final_result.get("text", "")
 
         if not transcribed_text:
-            logger.warning(
-                f"VOSK transcription returned empty for {self.audio_path}. Attempting FinalResult."
-            )
-            final_result = json.loads(recognizer.FinalResult())
-            transcribed_text = final_result.get("text", "")
+            logger.warning(f"VOSK transcription returned empty for {self.audio_path}.")
 
-        logger.info(
-            f"VOSK transcription result for {self.exercise_id}: {transcribed_text}"
-        )
-        logger.info(
-            f"Background Task: VOSK transcription finished for {self.exercise_id}."
-        )
+        logger.info(f"VOSK transcription result for {self.exercise_id}: {transcribed_text}")
+        logger.info(f"Background Task: VOSK transcription finished for {self.exercise_id}.")
         return TranscriptionResult(
             text=transcribed_text, words=[], engine=app_settings.STT_ENGINE_VOSK
         )

@@ -104,12 +104,8 @@ class MockCourseManager(QObject):
         if exercise.type in ["translate_to_target", "translate_to_source"]:
             correct_answer_display = exercise.answer or "Missing Answer"
         elif exercise.type == "multiple_choice_translation":
-            correct_option = next(
-                (opt for opt in exercise.options if opt.correct), None
-            )
-            correct_answer_display = (
-                correct_option.text if correct_option else "No Correct Option"
-            )
+            correct_option = next((opt for opt in exercise.options if opt.correct), None)
+            correct_answer_display = correct_option.text if correct_option else "No Correct Option"
         elif exercise.type == "fill_in_the_blank":
             correct_answer_display = exercise.correct_option or "Missing Correct Option"
 
@@ -128,9 +124,7 @@ class ExercisePreviewDialog(QDialog):
         parent=None,
     ):
         super().__init__(parent)
-        self.setWindowTitle(
-            f"Preview: {exercise.type.replace('_', ' ').title()} Exercise"
-        )
+        self.setWindowTitle(f"Preview: {exercise.type.replace('_', ' ').title()} Exercise")
         self.setMinimumSize(500, 300)
 
         self.exercise = exercise
@@ -143,9 +137,7 @@ class ExercisePreviewDialog(QDialog):
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
 
-        title_label = QLabel(
-            f"Exercise Type: {self.exercise.type.replace('_', ' ').title()}"
-        )
+        title_label = QLabel(f"Exercise Type: {self.exercise.type.replace('_', ' ').title()}")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(title_label)
@@ -190,9 +182,7 @@ class ExercisePreviewDialog(QDialog):
                 self.exercise, self.mock_course_manager
             )
         else:
-            self.current_exercise_widget = QLabel(
-                "No preview available for this exercise type."
-            )
+            self.current_exercise_widget = QLabel("No preview available for this exercise type.")
             self.current_exercise_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         if self.current_exercise_widget:

@@ -49,9 +49,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         self.mistakes_queue: list[Exercise] = []
         self.current_exercise_index: int = -1
         self.total_exercises_in_lesson: int = 0
-        self.lesson_start_index: int = (
-            0  # New attribute to store where the lesson started
-        )
+        self.lesson_start_index: int = 0  # New attribute to store where the lesson started
 
         self.view_state: LessonViewState = LessonViewState.INITIAL_LOAD
 
@@ -75,9 +73,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
         lesson_action_buttons_layout = QHBoxLayout()
 
-        self.toggle_notes_button = self._create_notes_button(
-            "toggle_notes_button_lesson"
-        )
+        self.toggle_notes_button = self._create_notes_button("toggle_notes_button_lesson")
         lesson_action_buttons_layout.addWidget(self.toggle_notes_button)
 
         self.toggle_hint_button = self._create_hint_button("toggle_hint_button_lesson")
@@ -141,9 +137,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         self.lookup_button.setEnabled(not (is_completed or is_initial))
 
         can_show_hint = (
-            is_asking
-            and self.current_exercise_obj
-            and self.current_exercise_obj.has_hint()
+            is_asking and self.current_exercise_obj and self.current_exercise_obj.has_hint()
         )
         self.toggle_hint_button.setVisible(can_show_hint)
         if logger.isEnabledFor(logging.DEBUG):  # Conditional logging
@@ -154,17 +148,12 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             )
         if can_show_hint:
             self.toggle_hint_button.setText(
-                self.tr("Hide Hint")
-                if self.hint_label.isVisible()
-                else self.tr("Show Hint")
+                self.tr("Hide Hint") if self.hint_label.isVisible() else self.tr("Show Hint")
             )
 
         if is_submitted:
             if self.current_exercise_index + 1 >= len(self.exercises_in_session):
-                if (
-                    self.view_state == LessonViewState.REVIEWING_MISTAKES
-                    or not self.mistakes_queue
-                ):
+                if self.view_state == LessonViewState.REVIEWING_MISTAKES or not self.mistakes_queue:
                     self.next_button.setText(self.tr("Finish Lesson"))
                 else:
                     self.next_button.setText(self.tr("Review Mistakes →"))
@@ -202,9 +191,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             type=str,
         )
 
-        last_index = self.progress_manager.get_lesson_progress(
-            self.current_lesson.lesson_id
-        )
+        last_index = self.progress_manager.get_lesson_progress(self.current_lesson.lesson_id)
 
         should_resume = False
         if last_index is not None and 0 <= last_index < len(self.exercises_in_session):
@@ -235,21 +222,13 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             self.current_exercise_index = 0
             # If restarting, clear previous progress for this lesson
             if last_index is not None:
-                self.progress_manager.set_lesson_progress(
-                    self.current_lesson.lesson_id, 0
-                )
-            logger.info(
-                f"Starting lesson '{self.current_lesson.title}' from the beginning."
-            )
+                self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, 0)
+            logger.info(f"Starting lesson '{self.current_lesson.title}' from the beginning.")
 
-        self.lesson_start_index = (
-            self.current_exercise_index
-        )  # Store where this session started
+        self.lesson_start_index = self.current_exercise_index  # Store where this session started
         self.total_exercises_in_lesson = len(self.exercises_in_session)
 
-        self.progress_bar.setRange(
-            0, self.total_exercises_in_lesson - self.lesson_start_index
-        )
+        self.progress_bar.setRange(0, self.total_exercises_in_lesson - self.lesson_start_index)
         self.progress_bar.setValue(0)
 
         self._load_next_exercise_in_lesson()
@@ -265,10 +244,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         # self._toggle_hint_visibility(force_show=False) # Done by _load_exercise_widget in base
 
         if self.current_exercise_index >= len(self.exercises_in_session):
-            if (
-                self.view_state == LessonViewState.REVIEWING_MISTAKES
-                or not self.mistakes_queue
-            ):
+            if self.view_state == LessonViewState.REVIEWING_MISTAKES or not self.mistakes_queue:
                 self._finish_lesson()
             else:
                 self._start_mistake_review()
@@ -286,9 +262,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             # Button states (including hint button text) updated at the end of this method
 
             if self.view_state != LessonViewState.REVIEWING_MISTAKES:
-                self.progress_bar.setValue(
-                    self.current_exercise_index - self.lesson_start_index
-                )
+                self.progress_bar.setValue(self.current_exercise_index - self.lesson_start_index)
             self.view_state = (
                 LessonViewState.ASKING_QUESTION
                 if self.view_state != LessonViewState.REVIEWING_MISTAKES
@@ -340,6 +314,8 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             )
             is_correct = False
             quality_score_for_srs = 0
+            if self.current_exercise_obj and self.current_exercise_obj not in self.mistakes_queue:
+                self.mistakes_queue.append(self.current_exercise_obj)
             if self.current_exercise_obj.explanation:
                 feedback_text_display += self.tr("\n\nExplanation: {0}").format(
                     self.current_exercise_obj.explanation
@@ -354,9 +330,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
             is_correct, feedback_text_display = self._evaluate_answer(user_answer)
             utils.play_sound(
-                settings.SOUND_FILE_CORRECT
-                if is_correct
-                else settings.SOUND_FILE_INCORRECT
+                settings.SOUND_FILE_CORRECT if is_correct else settings.SOUND_FILE_INCORRECT
             )
 
             if is_correct:
@@ -403,6 +377,12 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
             self.current_exercise_index += 1
             self._load_next_exercise_in_lesson()
 
+    def _on_skip(self):
+        """Re-queues the skipped exercise into mistakes_queue so the learner must complete it."""
+        if self.current_exercise_obj and self.current_exercise_obj not in self.mistakes_queue:
+            self.mistakes_queue.append(self.current_exercise_obj)
+        self._process_answer(user_answer="", was_skipped=True)
+
     def _handle_skip_exercise(self):
         """Handles the 'Skip Exercise' button click."""
         if self.view_state != LessonViewState.ASKING_QUESTION:
@@ -419,21 +399,17 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         )
         if reply == QMessageBox.StandardButton.Yes:
             # self._toggle_hint_visibility(force_show=False) # Already handled by _process_answer
-            self._process_answer(user_answer="", was_skipped=True)
+            self._on_skip()
 
     def _start_mistake_review(self):
         """Initiates the mistake review round at the end of a lesson."""
-        logger.info(
-            f"Starting mistake review round with {len(self.mistakes_queue)} items."
-        )
+        logger.info(f"Starting mistake review round with {len(self.mistakes_queue)} items.")
         self.view_state = LessonViewState.REVIEWING_MISTAKES
         self.exercises_in_session = self.mistakes_queue
         self.current_exercise_index = 0
 
         self.lesson_title_label.setText(self.tr("Reviewing Mistakes"))
-        self.feedback_label.setText(
-            self.tr("Let's go over the exercises you had trouble with.")
-        )
+        self.feedback_label.setText(self.tr("Let's go over the exercises you had trouble with."))
 
         self._load_next_exercise_in_lesson()
 
@@ -441,8 +417,11 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
         """Actions to perform when the entire lesson is completed."""
         self._save_current_note()
         if self.current_lesson:
-            # Clear lesson progress upon completion
-            self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, 0)
+            # Clear lesson progress and record completion
+            if hasattr(self.progress_manager, "record_lesson_completion"):
+                self.progress_manager.record_lesson_completion(self.current_lesson.lesson_id)
+            else:
+                self.progress_manager.set_lesson_progress(self.current_lesson.lesson_id, 0)
         utils.play_sound(settings.SOUND_FILE_COMPLETE)
 
         self.feedback_label.setText(
@@ -487,9 +466,7 @@ class LessonView(BaseExercisePlayerView):  # Inherit from the new base class
 
         self.back_button.setText(self.tr("← Back to Lessons"))
         self.lesson_title_label.setText(
-            self.tr("Lesson Title")
-            if not self.current_lesson
-            else self.current_lesson.title
+            self.tr("Lesson Title") if not self.current_lesson else self.current_lesson.title
         )  # Keep current title if lesson loaded
 
         self.progress_bar.setFormat(self.tr("%v / %m Steps"))

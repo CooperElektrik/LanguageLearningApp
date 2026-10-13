@@ -62,17 +62,13 @@ class MainWindow(QMainWindow):
         self.course_manager: CourseManager | None = None
         self.progress_manager: ProgressManager | None = None
         self.stt_manager = stt_manager
-        self.current_translator: QTranslator | None = (
-            None  # Store the active translator
-        )
+        self.current_translator: QTranslator | None = None  # Store the active translator
 
         logger.info("MainWindow initializing...")
         self.setWindowTitle(self.tr("LanguageLearningApp"))
 
         # Set application icon
-        app_icon_path = utils.get_resource_path(
-            os.path.join("assets", "icons", "logo.png")
-        )
+        app_icon_path = utils.get_resource_path(os.path.join("assets", "icons", "logo.png"))
         self.setWindowIcon(QIcon(app_icon_path))
 
         self.setGeometry(100, 100, 1024, 768)
@@ -88,9 +84,7 @@ class MainWindow(QMainWindow):
 
         # Create the permanent course selection page
         self.course_selection_view = CourseSelectionView()
-        self.course_selection_view.course_selected.connect(
-            self._load_course_for_learning
-        )
+        self.course_selection_view.course_selected.connect(self._load_course_for_learning)
         self.main_stack.addWidget(self.course_selection_view)
         logger.debug("CourseSelectionView added to main stack.")
 
@@ -105,9 +99,7 @@ class MainWindow(QMainWindow):
         self.dev_info_button: QPushButton | None = None
         self._setup_status_bar()
 
-        self.current_translator = utils.setup_initial_translation(
-            QApplication.instance()
-        )
+        self.current_translator = utils.setup_initial_translation(QApplication.instance())
         self._setup_ui_elements()
         self._return_to_selection_screen()  # This will set the initial menu state
 
@@ -156,10 +148,7 @@ class MainWindow(QMainWindow):
 
     def _animate_central_stack_fade(self, index: int):
         """Animates a fade-in for the central widget stack in the learning view."""
-        if (
-            self.central_stack_fade_animation
-            and self.central_stack_fade_animation.targetObject()
-        ):
+        if self.central_stack_fade_animation and self.central_stack_fade_animation.targetObject():
             # Stop any ongoing animation
             self.central_stack_fade_animation.stop()
             # Set start and end values for a fade-in effect
@@ -239,22 +228,16 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.dev_info_button = QPushButton("Dev Info")
         self.dev_info_button.setObjectName("dev_info_status_button")
-        self.dev_info_button.setToolTip(
-            "Show current course/exercise developer information"
-        )
+        self.dev_info_button.setToolTip("Show current course/exercise developer information")
         self.dev_info_button.clicked.connect(self._show_dev_info_dialog)
         self.status_bar.addPermanentWidget(self.dev_info_button)
         self._update_dev_info_button_visibility()
 
     def _load_course_for_learning(self, manifest_path: str):
-        logger.info(
-            f"Attempting to load course for learning from manifest: {manifest_path}"
-        )
+        logger.info(f"Attempting to load course for learning from manifest: {manifest_path}")
         self.course_manager = CourseManager(manifest_path=manifest_path, parent=self)
         if not self.course_manager.course:
-            logger.error(
-                f"Failed to load course from {manifest_path}. Displaying error message."
-            )
+            logger.error(f"Failed to load course from {manifest_path}. Displaying error message.")
             QMessageBox.critical(
                 self, self.tr("Course Load Error"), self.tr("Failed to load course.")
             )
@@ -262,9 +245,7 @@ class MainWindow(QMainWindow):
         logger.info(
             f"Course '{self.course_manager.get_course_title()}' loaded successfully for learning."
         )
-        self.progress_manager = ProgressManager(
-            course_id=self.course_manager.course.course_id
-        )
+        self.progress_manager = ProgressManager(course_id=self.course_manager.course.course_id)
         logger.debug(
             f"ProgressManager initialized for course ID: {self.course_manager.course.course_id}"
         )
@@ -289,9 +270,7 @@ class MainWindow(QMainWindow):
 
     def _load_course_for_editing(self):
         """Launches the standalone Course Editor as a separate process."""
-        project_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         try:
             subprocess.Popen(
                 [sys.executable, "-m", "application.tools.main_editor"],
@@ -360,17 +339,13 @@ class MainWindow(QMainWindow):
         self.navigation_dock_widget = QDockWidget(
             self.tr("Course Navigation"), self.learning_widget
         )
-        course_overview_view = CourseOverviewView(
-            self.course_manager, self.progress_manager
-        )
+        course_overview_view = CourseOverviewView(self.course_manager, self.progress_manager)
         self.navigation_dock_widget.setWidget(course_overview_view)
         self.learning_widget.addDockWidget(
             Qt.DockWidgetArea.LeftDockWidgetArea, self.navigation_dock_widget
         )
 
-        self.progress_dock_widget = QDockWidget(
-            self.tr("Progress"), self.learning_widget
-        )
+        self.progress_dock_widget = QDockWidget(self.tr("Progress"), self.learning_widget)
         progress_view = ProgressView(self.course_manager, self.progress_manager)
         self.progress_dock_widget.setWidget(progress_view)
         self.learning_widget.addDockWidget(
@@ -388,12 +363,8 @@ class MainWindow(QMainWindow):
         self.learning_ui_views = {
             "overview": course_overview_view,
             "progress": progress_view,
-            "lesson": LessonView(
-                self.course_manager, self.progress_manager, self.stt_manager
-            ),
-            "review": ReviewView(
-                self.course_manager, self.progress_manager, self.stt_manager
-            ),
+            "lesson": LessonView(self.course_manager, self.progress_manager, self.stt_manager),
+            "review": ReviewView(self.course_manager, self.progress_manager, self.stt_manager),
             "glossary": GlossaryView(self.course_manager),
             "placeholder": AnimatedPlaceholder(),
             "central_stack": right_panel_stack,
@@ -405,21 +376,13 @@ class MainWindow(QMainWindow):
         right_panel_stack.addWidget(self.learning_ui_views["glossary"])
 
         course_overview_view.lesson_selected.connect(self.start_lesson)
-        course_overview_view.start_review_session_requested.connect(
-            self.start_review_session
-        )
+        course_overview_view.start_review_session_requested.connect(self.start_review_session)
         course_overview_view.start_weakest_review_requested.connect(
             self.start_weakest_review_session
         )
-        self.learning_ui_views["review"].review_session_finished.connect(
-            self.show_course_overview
-        )
-        self.learning_ui_views["review"].back_to_overview_signal.connect(
-            self.show_course_overview
-        )
-        self.learning_ui_views["lesson"].back_to_overview_signal.connect(
-            self.show_course_overview
-        )
+        self.learning_ui_views["review"].review_session_finished.connect(self.show_course_overview)
+        self.learning_ui_views["review"].back_to_overview_signal.connect(self.show_course_overview)
+        self.learning_ui_views["lesson"].back_to_overview_signal.connect(self.show_course_overview)
 
         self.main_stack.addWidget(self.learning_widget)
         self.main_stack.setCurrentWidget(self.learning_widget)
@@ -431,12 +394,8 @@ class MainWindow(QMainWindow):
 
         # --- File Menu ---
         file_menu = self.menuBar().addMenu(self.tr("&File"))
-        self.return_to_selection_action = QAction(
-            self.tr("Return to Course Selection"), self
-        )
-        self.return_to_selection_action.triggered.connect(
-            self._return_to_selection_screen
-        )
+        self.return_to_selection_action = QAction(self.tr("Return to Course Selection"), self)
+        self.return_to_selection_action.triggered.connect(self._return_to_selection_screen)
         file_menu.addAction(self.return_to_selection_action)
 
         self.import_course_package_action = QAction(
@@ -446,15 +405,11 @@ class MainWindow(QMainWindow):
         self.import_course_package_action.triggered.connect(self._import_course_package)
         file_menu.addAction(self.import_course_package_action)
 
-        self.open_courses_dir_action = QAction(
-            self.tr("Open Courses Folder"), self
-        )
+        self.open_courses_dir_action = QAction(self.tr("Open Courses Folder"), self)
         self.open_courses_dir_action.triggered.connect(self._open_courses_folder)
         file_menu.addAction(self.open_courses_dir_action)
 
-        self.open_for_editing_action = QAction(
-            self.tr("Open Course for Editing..."), self
-        )
+        self.open_for_editing_action = QAction(self.tr("Open Course for Editing..."), self)
         self.open_for_editing_action.triggered.connect(self._load_course_for_editing)
         file_menu.addAction(self.open_for_editing_action)
 
@@ -475,9 +430,7 @@ class MainWindow(QMainWindow):
         learning_menu.addAction(self.start_due_review_action)
 
         self.start_weak_review_action = QAction(self.tr("Start Weak Review"), self)
-        self.start_weak_review_action.triggered.connect(
-            self.start_weakest_review_session
-        )
+        self.start_weak_review_action.triggered.connect(self.start_weakest_review_session)
         learning_menu.addAction(self.start_weak_review_action)
 
         # --- View Menu ---
@@ -565,42 +518,33 @@ class MainWindow(QMainWindow):
         actual_locale_to_load = ""
         if locale_code == app_settings.DEFAULT_LOCALE:
             actual_locale_to_load = (
-                app_settings.FORCE_LOCALE
-                if app_settings.FORCE_LOCALE
-                else QLocale.system().name()
+                app_settings.FORCE_LOCALE if app_settings.FORCE_LOCALE else QLocale.system().name()
             )
         else:
             actual_locale_to_load = locale_code
 
         new_translator = QTranslator(app)
         qm_file_path = utils.get_resource_path(
-            os.path.join(
-                app_settings.LOCALIZATION_DIR, f"app_{actual_locale_to_load}.qm"
-            )
+            os.path.join(app_settings.LOCALIZATION_DIR, f"app_{actual_locale_to_load}.qm")
         )
 
         loaded_successfully = new_translator.load(qm_file_path)
         if not loaded_successfully:
             import re
+
             short_locale_code = re.split(r"[-_]", actual_locale_to_load)[0]
             if short_locale_code != actual_locale_to_load:
                 qm_file_path = utils.get_resource_path(
-                    os.path.join(
-                        app_settings.LOCALIZATION_DIR, f"app_{short_locale_code}.qm"
-                    )
+                    os.path.join(app_settings.LOCALIZATION_DIR, f"app_{short_locale_code}.qm")
                 )
                 loaded_successfully = new_translator.load(qm_file_path)
 
         if loaded_successfully:
             app.installTranslator(new_translator)
             self.current_translator = new_translator
-            logger.info(
-                f"Successfully loaded translator for locale: {actual_locale_to_load}"
-            )
+            logger.info(f"Successfully loaded translator for locale: {actual_locale_to_load}")
         else:
-            logger.warning(
-                f"Failed to load translator for locale: {actual_locale_to_load}"
-            )
+            logger.warning(f"Failed to load translator for locale: {actual_locale_to_load}")
 
         self._retranslate_main_window_ui()
 
@@ -618,9 +562,7 @@ class MainWindow(QMainWindow):
                 current_player_widget = central_stack.currentWidget()
                 if hasattr(current_player_widget, "current_exercise_obj"):
                     current_exercise = current_player_widget.current_exercise_obj
-        dialog = DevInfoDialog(
-            self.course_manager, self.progress_manager, current_exercise, self
-        )
+        dialog = DevInfoDialog(self.course_manager, self.progress_manager, current_exercise, self)
         dialog.exec()
 
     def _check_and_show_initial_setup(self):
@@ -634,9 +576,7 @@ class MainWindow(QMainWindow):
 
         # Show the unified dialog if either setup has not been completed.
         if not ui_setup_done or not audio_setup_done:
-            logger.info(
-                "Initial setup not fully completed. Showing unified setup dialog."
-            )
+            logger.info("Initial setup not fully completed. Showing unified setup dialog.")
             dialog = UnifiedSetupDialog(self)
             dialog.locale_changed.connect(self.apply_locale)
             dialog.font_size_changed.connect(self.apply_font_size)

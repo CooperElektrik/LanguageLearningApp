@@ -48,9 +48,7 @@ def create_package_for_gui(
     version = manifest_data.get("version", "unknown")
     content_filename = manifest_data.get("content_file")
     if not course_id or not isinstance(content_filename, str) or not content_filename.strip():
-        messages.append(
-            "Error: Manifest missing critical fields (course_id or content_file)."
-        )
+        messages.append("Error: Manifest missing critical fields (course_id or content_file).")
         return False, None, messages
 
     manifest_dir = os.path.dirname(os.path.abspath(manifest_filepath))
@@ -85,9 +83,7 @@ def create_package_for_gui(
             os.makedirs(output_dir_to_use, exist_ok=True)
             messages.append(f"Info: Created output directory: {output_dir_to_use}")
         except OSError as e:
-            messages.append(
-                f"Error: Could not create output directory '{output_dir_to_use}': {e}"
-            )
+            messages.append(f"Error: Could not create output directory '{output_dir_to_use}': {e}")
             return False, None, messages
     output_package_path = os.path.join(output_dir_to_use, final_package_name)
     messages.append(f"Info: Attempting to create course package: {output_package_path}")
@@ -106,15 +102,42 @@ def create_package_for_gui(
                 f"Info: Added '{os.path.basename(abs_content_filepath)}' to package as '{content_arcname}'."
             )
 
+            assets_to_add = set()
+
             # Add glossary file if specified in manifest
             glossary_rel = manifest_data.get("glossary_file")
             if glossary_rel and isinstance(glossary_rel, str):
                 abs_glossary = os.path.normpath(os.path.join(manifest_dir, glossary_rel))
-                if os.path.commonpath([manifest_dir, abs_glossary]) == manifest_dir and os.path.exists(abs_glossary):
+                if os.path.commonpath(
+                    [manifest_dir, abs_glossary]
+                ) == manifest_dir and os.path.exists(abs_glossary):
                     zf.write(abs_glossary, arcname=glossary_rel)
-                    messages.append(
-                        f"Info: Added glossary '{glossary_rel}' to package."
-                    )
+                    messages.append(f"Info: Added glossary '{glossary_rel}' to package.")
+                    # Extract audio files referenced in glossary
+                    try:
+                        with open(abs_glossary, encoding="utf-8") as f_glossary:
+                            glossary_data = yaml.safe_load(f_glossary)
+                        glossary_entries_list = []
+                        if isinstance(glossary_data, list):
+                            glossary_entries_list = glossary_data
+                        elif isinstance(glossary_data, dict):
+                            if isinstance(glossary_data.get("entries"), list):
+                                glossary_entries_list = glossary_data["entries"]
+                            elif isinstance(glossary_data.get("glossary"), list):
+                                glossary_entries_list = glossary_data["glossary"]
+                            else:
+                                for v in glossary_data.values():
+                                    if isinstance(v, list):
+                                        glossary_entries_list.extend(v)
+                        for entry in glossary_entries_list:
+                            if isinstance(entry, dict):
+                                g_audio = entry.get("audio_file")
+                                if g_audio and isinstance(g_audio, str) and g_audio.strip():
+                                    assets_to_add.add(g_audio.strip())
+                    except Exception as e:
+                        messages.append(
+                            f"Warning: Could not read glossary file '{glossary_rel}' to extract audio assets: {e}"
+                        )
                 elif not os.path.exists(abs_glossary):
                     messages.append(
                         f"Warning: Glossary file '{glossary_rel}' not found at '{abs_glossary}'."
@@ -125,15 +148,18 @@ def create_package_for_gui(
             if manifest_img and isinstance(manifest_img, str):
                 # May be in images/ or directly relative to manifest
                 candidate_img_1 = os.path.normpath(os.path.join(manifest_dir, manifest_img))
-                candidate_img_2 = os.path.normpath(os.path.join(manifest_dir, "images", manifest_img))
+                candidate_img_2 = os.path.normpath(
+                    os.path.join(manifest_dir, "images", manifest_img)
+                )
                 if os.path.exists(candidate_img_1):
                     zf.write(candidate_img_1, arcname=manifest_img)
                     messages.append(f"Info: Added course image '{manifest_img}' to package.")
                 elif os.path.exists(candidate_img_2):
                     zf.write(candidate_img_2, arcname=os.path.join("images", manifest_img))
-                    messages.append(f"Info: Added course image '{os.path.join('images', manifest_img)}' to package.")
+                    messages.append(
+                        f"Info: Added course image '{os.path.join('images', manifest_img)}' to package."
+                    )
 
-            assets_to_add = set()
             if course_content_data and "units" in course_content_data:
                 for unit in course_content_data.get("units", []):
                     for lesson in unit.get("lessons", []):
@@ -165,8 +191,16 @@ def create_package_for_gui(
                     continue
                 if os.path.exists(abs_asset_path):
                     zf.write(abs_asset_path, arcname=asset_relative_path)
+                    messages.append(f"Info: Added asset '{asset_relative_path}' to package.")
+                elif os.path.exists(
+                    os.path.normpath(os.path.join(manifest_dir, "audio", asset_relative_path))
+                ):
+                    candidate_audio = os.path.normpath(
+                        os.path.join(manifest_dir, "audio", asset_relative_path)
+                    )
+                    zf.write(candidate_audio, arcname=os.path.join("audio", asset_relative_path))
                     messages.append(
-                        f"Info: Added asset '{asset_relative_path}' to package."
+                        f"Info: Added asset '{os.path.join('audio', asset_relative_path)}' to package."
                     )
                 else:
                     messages.append(
@@ -184,9 +218,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Package a LL course into a distributable archive."
     )
-    parser.add_argument(
-        "manifest_file", help="Path to the manifest.yaml file for the course."
-    )
+    parser.add_argument("manifest_file", help="Path to the manifest.yaml file for the course.")
     parser.add_argument(
         "--output_dir",
         "-o",

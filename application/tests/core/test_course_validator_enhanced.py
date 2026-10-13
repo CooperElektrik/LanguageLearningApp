@@ -4,6 +4,7 @@ from application.core.models import Course, Exercise, Lesson, Unit
 from application.tools.course_validator import (
     perform_course_content_validation,
     perform_manifest_validation,
+    validate_course_structure,
 )
 
 
@@ -46,3 +47,31 @@ def test_course_content_validation_catches_global_duplicates():
     errors = perform_course_content_validation(course, ".")
     assert any("Course-wide duplicate lesson_id" in err for err in errors)
     assert any("Course-wide duplicate exercise_id" in err for err in errors)
+
+
+def test_course_validation_apostrophe_titles():
+    # Unit and lesson titles containing apostrophes like "Let's Eat"
+    ex = Exercise(exercise_id="ex_food", type="translate_to_target", prompt="", answer="")
+    lesson = Lesson(lesson_id="l_chef", title="Chef's Special", exercises=[ex])
+    unit = Unit(unit_id="u_eat", title="Let's Eat", lessons=[lesson])
+
+    course = Course(
+        course_id="c_food",
+        title="Food Course",
+        target_language="Spanish",
+        source_language="English",
+        version="1.0",
+        units=[unit],
+    )
+
+    errors = validate_course_structure(course, ".")
+    assert len(errors) > 0
+    # Check that unit_id and lesson_id were correctly resolved on the issue object
+    target_issue = None
+    for err in errors:
+        if getattr(err, "unit_id", None) == "u_eat":
+            target_issue = err
+            break
+    assert target_issue is not None
+    assert target_issue.unit_id == "u_eat"
+    assert target_issue.lesson_id == "l_chef"

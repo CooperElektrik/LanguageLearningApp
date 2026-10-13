@@ -54,9 +54,7 @@ def test_fill_in_the_blank_requires_columns(tmp_path):
     )
 
     assert not success
-    assert any(
-        "fill_in_the_blank" in m and "missing required columns" in m for m in messages
-    )
+    assert any("fill_in_the_blank" in m and "missing required columns" in m for m in messages)
 
 
 def test_fill_in_the_blank_skips_incomplete_rows(tmp_path):

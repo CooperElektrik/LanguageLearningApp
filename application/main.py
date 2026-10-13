@@ -76,9 +76,7 @@ def setup_logging():
     # This is why QCoreApplication setup is done before calling setup_logging() in main().
     if utils.is_developer_mode_active():
         effective_log_level_str = "DEBUG"
-        print(
-            f"INFO: Developer mode active. Log level forced to DEBUG (was {log_level_setting})."
-        )
+        print(f"INFO: Developer mode active. Log level forced to DEBUG (was {log_level_setting}).")
 
     handlers = []
     if sys.stdout is not None:
@@ -115,6 +113,7 @@ def install_crash_handler(log_dir: str):
             return
 
         import traceback
+
         tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
         logging.critical(f"Unhandled exception caught by global hook:\n{tb_str}")
 
@@ -123,6 +122,7 @@ def install_crash_handler(log_dir: str):
             crash_dialog_open = True
             try:
                 from PySide6.QtWidgets import QMessageBox
+
                 msg_box = QMessageBox()
                 msg_box.setIcon(QMessageBox.Icon.Critical)
                 msg_box.setWindowTitle("Application Error")
@@ -160,9 +160,7 @@ def main():
 
     # Logger setup should happen early
     global logger  # Make logger accessible globally in this module after setup
-    logger = (
-        setup_logging()
-    )  # Now setup_logging can safely use utils.is_developer_mode_active()
+    logger = setup_logging()  # Now setup_logging can safely use utils.is_developer_mode_active()
     install_crash_handler(utils.get_log_dir())
     # Log the path setup now that the logger is available.
     logger.debug(f"Project root '{_project_root}' is in sys.path.")

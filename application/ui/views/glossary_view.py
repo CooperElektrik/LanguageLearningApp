@@ -58,9 +58,7 @@ class GlossaryView(QWidget):
         # Search Bar
         self.search_bar = QLineEdit()
         self.search_bar.setObjectName("glossary_search_bar")
-        self.search_bar.setPlaceholderText(
-            self.tr("Search words, translations, examples...")
-        )
+        self.search_bar.setPlaceholderText(self.tr("Search words, translations, examples..."))
         self.search_bar.textChanged.connect(self._filter_glossary_list)
         main_layout.addWidget(self.search_bar)
 
@@ -68,9 +66,7 @@ class GlossaryView(QWidget):
         self.glossary_list_widget = QListWidget()
         self.glossary_list_widget.setObjectName("glossary_list_widget")
         self.glossary_list_widget.itemDoubleClicked.connect(self._show_entry_details)
-        main_layout.addWidget(
-            self.glossary_list_widget, 1
-        )  # Add stretch factor for the list
+        main_layout.addWidget(self.glossary_list_widget, 1)  # Add stretch factor for the list
 
     def _create_separator(self) -> QFrame:
         """Creates a horizontal separator line."""
@@ -87,9 +83,7 @@ class GlossaryView(QWidget):
         self.all_glossary_entries.sort(key=lambda entry: entry.word.lower())
 
         self._filter_glossary_list(self.search_bar.text())  # Re-apply current filter
-        logger.info(
-            f"Glossary view refreshed with {len(self.all_glossary_entries)} total entries."
-        )
+        logger.info(f"Glossary view refreshed with {len(self.all_glossary_entries)} total entries.")
 
     def _populate_list_widget(self, entries_to_display: list[GlossaryEntry]):
         self.glossary_list_widget.clear()
@@ -97,12 +91,8 @@ class GlossaryView(QWidget):
             no_results_item = QListWidgetItem(
                 self.tr("No glossary entries found matching your search.")
             )
-            if (
-                not self.search_bar.text()
-            ):  # If search bar is empty, means glossary is empty
-                no_results_item.setText(
-                    self.tr("No glossary entries available for this course.")
-                )
+            if not self.search_bar.text():  # If search bar is empty, means glossary is empty
+                no_results_item.setText(self.tr("No glossary entries available for this course."))
             self.glossary_list_widget.addItem(no_results_item)
             return
 
@@ -112,17 +102,13 @@ class GlossaryView(QWidget):
                 item_text += f" ({entry.part_of_speech})"
 
             list_item = QListWidgetItem(item_text)
-            list_item.setData(
-                Qt.ItemDataRole.UserRole, entry
-            )  # Store the GlossaryEntry object
+            list_item.setData(Qt.ItemDataRole.UserRole, entry)  # Store the GlossaryEntry object
             list_item.setToolTip(
                 self.tr("Double-click to see details for '{0}'").format(entry.word)
             )
 
             if entry.audio_file:
-                list_item.setIcon(
-                    self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume)
-                )
+                list_item.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume))
 
             self.glossary_list_widget.addItem(list_item)
 
@@ -145,14 +131,8 @@ class GlossaryView(QWidget):
                 match = (
                     search_term in entry.word.lower()
                     or search_term in entry.translation.lower()
-                    or (
-                        entry.part_of_speech
-                        and search_term in entry.part_of_speech.lower()
-                    )
-                    or (
-                        entry.example_sentence
-                        and search_term in entry.example_sentence.lower()
-                    )
+                    or (entry.part_of_speech and search_term in entry.part_of_speech.lower())
+                    or (entry.example_sentence and search_term in entry.example_sentence.lower())
                     or (entry.notes and search_term in entry.notes.lower())
                 )
                 if match:
@@ -181,9 +161,7 @@ class GlossaryView(QWidget):
     def retranslateUi(self):
         self.back_button.setText(self.tr("← Back to Course Overview"))
         self.title_label.setText(self.tr("Glossary"))
-        self.search_bar.setPlaceholderText(
-            self.tr("Search words, translations, examples...")
-        )
+        self.search_bar.setPlaceholderText(self.tr("Search words, translations, examples..."))
 
         self.refresh_view()  # Repopulates list with potentially new "No entries" text
         logger.debug("GlossaryView retranslated.")

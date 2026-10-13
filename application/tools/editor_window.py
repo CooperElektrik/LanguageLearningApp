@@ -5,13 +5,11 @@ from typing import Any
 
 import yaml
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QUndoStack
+from PySide6.QtGui import QAction, QActionGroup, QColor, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QDialog,
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -23,7 +21,6 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QStyle,
     QTabWidget,
-    QTextEdit,
     QToolBar,
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
@@ -147,6 +144,8 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.undo_stack = QUndoStack(self)
         self.undo_stack.cleanChanged.connect(lambda clean: self._set_dirty_state(not clean))
 
+        self._editor_cache: dict[str, QWidget] = {}
+
         self._create_actions()
         self._create_menu_bar()
         self._create_tool_bar()
@@ -183,9 +182,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         self.save_as_action = QAction("Save Course &As...", self)
         self.save_as_action.setShortcut(Qt.CTRL | Qt.SHIFT | Qt.Key_S)
-        self.save_as_action.setStatusTip(
-            "Save the current course under a new name or location"
-        )
+        self.save_as_action.setStatusTip("Save the current course under a new name or location")
         self.save_as_action.triggered.connect(self.save_course_as)
 
         self.exit_action = QAction(
@@ -300,9 +297,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             with open(qss_file_path, encoding="utf-8") as f:
                 qss_content = f.read()
             QApplication.instance().setStyleSheet(qss_content)
-            self.status_bar.showMessage(
-                f"Switched to {theme_name.capitalize()} Theme.", 3000
-            )
+            self.status_bar.showMessage(f"Switched to {theme_name.capitalize()} Theme.", 3000)
 
         except FileNotFoundError:
             QMessageBox.warning(
@@ -313,9 +308,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.dark_theme_action.setChecked(False)
             self.light_theme_action.setChecked(False)
         except Exception as e:
-            QMessageBox.warning(
-                self, "Theme Error", f"Failed to apply {theme_name} theme: {e}"
-            )
+            QMessageBox.warning(self, "Theme Error", f"Failed to apply {theme_name} theme: {e}")
             self.status_bar.showMessage(f"Error applying {theme_name} theme.", 3000)
             QApplication.instance().setStyleSheet("")
             self.dark_theme_action.setChecked(False)
@@ -598,14 +591,10 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         if hasattr(self, "live_preview_pane"):
             langs = {
                 "target": (
-                    self.course_data.target_language
-                    if self.course_data
-                    else "Target Language"
+                    self.course_data.target_language if self.course_data else "Target Language"
                 ),
                 "source": (
-                    self.course_data.source_language
-                    if self.course_data
-                    else "Source Language"
+                    self.course_data.source_language if self.course_data else "Source Language"
                 ),
             }
             self.live_preview_pane.set_course_context(langs, base_dir)
@@ -756,14 +745,16 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     is_visible = False
 
                 if is_visible and search_term:
-                    searchable = " ".join([
-                        getattr(ex, "prompt", "") or "",
-                        getattr(ex, "title", "") or "",
-                        getattr(ex, "answer", "") or "",
-                        getattr(ex, "source_word", "") or "",
-                        getattr(ex, "sentence_template", "") or "",
-                        getattr(ex, "explanation", "") or "",
-                    ]).lower()
+                    searchable = " ".join(
+                        [
+                            getattr(ex, "prompt", "") or "",
+                            getattr(ex, "title", "") or "",
+                            getattr(ex, "answer", "") or "",
+                            getattr(ex, "source_word", "") or "",
+                            getattr(ex, "sentence_template", "") or "",
+                            getattr(ex, "explanation", "") or "",
+                        ]
+                    ).lower()
                     if search_term not in searchable:
                         is_visible = False
 
@@ -792,12 +783,48 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         if hasattr(self, "dirty_status_label"):
             if dirty:
                 self.dirty_status_label.setText("Unsaved Changes*")
-                self.dirty_status_label.setStyleSheet("color: orange; padding-right: 10px; font-weight: bold;")
+                self.dirty_status_label.setStyleSheet(
+                    "color: orange; padding-right: 10px; font-weight: bold;"
+                )
             else:
                 self.dirty_status_label.setText("Saved")
                 self.dirty_status_label.setStyleSheet("color: green; padding-right: 10px;")
 
+    def _flush_active_editor(self):
+        """Ensure active editor widgets flush their uncommitted data before saving or switching."""
+        if hasattr(self, "manifest_editor") and self.manifest_editor:
+            if (
+                self.current_editor_widget == self.manifest_editor
+                or getattr(self.manifest_editor, "current_manifest_data", None) is not None
+            ):
+                if self.manifest_data is not None and self.course_data is not None:
+                    self.manifest_editor.apply_changes_to_data(self.manifest_data, self.course_data)
+
+        if hasattr(self, "current_editor_widget") and self.current_editor_widget:
+            if self.current_editor_widget != getattr(self, "manifest_editor", None) and hasattr(
+                self.current_editor_widget, "apply_changes_to_data"
+            ):
+                self.current_editor_widget.apply_changes_to_data(
+                    self.manifest_data, self.course_data
+                )
+            elif hasattr(self.current_editor_widget, "flush"):
+                self.current_editor_widget.flush()
+
+    def _clear_editor_cache(self):
+        """Clears cached editor widgets to prevent memory leaks and stale state."""
+        if hasattr(self, "_editor_cache"):
+            for _key, widget in list(self._editor_cache.items()):
+                if hasattr(self, "detail_editor_stacked_widget") and widget not in (
+                    getattr(self, "_placeholder_editor_widget", None),
+                    getattr(self, "manifest_editor", None),
+                    getattr(self, "glossary_editor", None),
+                ):
+                    self.detail_editor_stacked_widget.removeWidget(widget)
+                    widget.deleteLater()
+            self._editor_cache.clear()
+
     def _display_item_editor(self, item_data: Any):
+        self._flush_active_editor()
         if not hasattr(self, "_editor_cache"):
             self._editor_cache = {}
 
@@ -806,17 +833,13 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.manifest_editor.load_data(
                 item_data.get("manifest_data", {}) or (self.manifest_data or {}),
                 item_data.get("course_obj", self.course_data),
-                os.path.dirname(self.current_manifest_path)
-                if self.current_manifest_path
-                else None,
+                os.path.dirname(self.current_manifest_path) if self.current_manifest_path else None,
             )
             self.detail_editor_stacked_widget.setCurrentWidget(self.manifest_editor)
             self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, dict) and item_data.get("type") == "glossary":
             self.current_editor_widget = self.glossary_editor
-            self.glossary_editor.load_glossary_data(
-                self.manifest_data, self.current_manifest_path
-            )
+            self.glossary_editor.load_glossary_data(self.manifest_data, self.current_manifest_path)
             self.detail_editor_stacked_widget.setCurrentWidget(self.glossary_editor)
             self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, Unit):
@@ -844,7 +867,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.detail_editor_stacked_widget.setCurrentWidget(w)
             self.live_preview_pane.update_preview(None)
         elif isinstance(item_data, Exercise):
-            cache_key = f"exercise_{id(item_data)}"
+            persistent_id = getattr(item_data, "exercise_id", None) or getattr(
+                item_data, "id", None
+            )
+            cache_key = (
+                f"exercise_{persistent_id}" if persistent_id else f"exercise_{id(item_data)}"
+            )
             if cache_key not in self._editor_cache:
                 w = self._create_exercise_editor_widget(item_data)
                 self._editor_cache[cache_key] = w
@@ -860,6 +888,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.live_preview_pane.update_preview(None)
 
     def _clear_editor_pane(self):
+        self._flush_active_editor()
         self.current_editor_widget = None
         if hasattr(self, "_placeholder_editor_widget"):
             self.detail_editor_stacked_widget.setCurrentWidget(self._placeholder_editor_widget)
@@ -874,7 +903,9 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         except RuntimeError:
             pass
         widget.unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
-        widget.unit_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(widget.unit_title_edit, True))
+        widget.unit_title_edit.textChanged.connect(
+            lambda text: self._validate_line_edit_required(widget.unit_title_edit, True)
+        )
         self._validate_line_edit_required(widget.unit_title_edit, True)
 
     def _populate_lesson_editor_widget(self, widget: QWidget, lesson: Lesson):
@@ -886,8 +917,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             widget.lesson_title_edit.textChanged.disconnect()
         except RuntimeError:
             pass
-        widget.lesson_title_edit.textChanged.connect(lambda text: self._update_lesson_title(lesson, text))
-        widget.lesson_title_edit.textChanged.connect(lambda text: self._validate_line_edit_required(widget.lesson_title_edit, True))
+        widget.lesson_title_edit.textChanged.connect(
+            lambda text: self._update_lesson_title(lesson, text)
+        )
+        widget.lesson_title_edit.textChanged.connect(
+            lambda text: self._validate_line_edit_required(widget.lesson_title_edit, True)
+        )
         self._validate_line_edit_required(widget.lesson_title_edit, True)
 
     def _validate_line_edit_required(self, input_widget: QLineEdit, is_required: bool):
@@ -912,9 +947,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         title_label = QLabel("Title: *")
         title_layout.addWidget(title_label)
         unit_title_edit = QLineEdit(unit.title)
-        unit_title_edit.textChanged.connect(
-            lambda text: self._update_unit_title(unit, text)
-        )
+        unit_title_edit.textChanged.connect(lambda text: self._update_unit_title(unit, text))
         unit_title_edit.textChanged.connect(
             lambda text: self._validate_line_edit_required(unit_title_edit, True)
         )
@@ -949,9 +982,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         title_label = QLabel("Title: *")
         title_layout.addWidget(title_label)
         lesson_title_edit = QLineEdit(lesson.title)
-        lesson_title_edit.textChanged.connect(
-            lambda text: self._update_lesson_title(lesson, text)
-        )
+        lesson_title_edit.textChanged.connect(lambda text: self._update_lesson_title(lesson, text))
         lesson_title_edit.textChanged.connect(
             lambda text: self._validate_line_edit_required(lesson_title_edit, True)
         )
@@ -973,12 +1004,8 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             self.current_selected_tree_item.setText(0, new_title.strip())
 
     def _create_exercise_editor_widget(self, exercise: Exercise):
-        target_lang = (
-            self.course_data.target_language if self.course_data else "Target Language"
-        )
-        source_lang = (
-            self.course_data.source_language if self.course_data else "Source Language"
-        )
+        target_lang = self.course_data.target_language if self.course_data else "Target Language"
+        source_lang = self.course_data.source_language if self.course_data else "Source Language"
 
         course_root_dir = None
         if self.current_manifest_path:
@@ -995,21 +1022,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         widget: BaseExerciseEditorWidget
 
-        if (
-            exercise.type == "translate_to_target"
-            or exercise.type == "translate_to_source"
-        ):
+        if exercise.type == "translate_to_target" or exercise.type == "translate_to_source":
             widget = TranslationExerciseEditorWidget(
                 exercise, target_lang, source_lang, course_root_dir
             )
         elif exercise.type == "multiple_choice_translation":
-            widget = MultipleChoiceExerciseEditorWidget(
-                exercise, target_lang, source_lang
-            )
+            widget = MultipleChoiceExerciseEditorWidget(exercise, target_lang, source_lang)
         elif exercise.type == "fill_in_the_blank":
-            widget = FillInTheBlankExerciseEditorWidget(
-                exercise, target_lang, source_lang
-            )
+            widget = FillInTheBlankExerciseEditorWidget(exercise, target_lang, source_lang)
         elif exercise.type == "dictation":
             widget = DictationExerciseEditorWidget(
                 exercise, target_lang, source_lang, course_root_dir
@@ -1065,15 +1085,11 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         else:
             self.item_actions_widget.setVisible(False)
 
-    def _get_item_list_and_index(
-        self, item_data_obj: Any
-    ) -> tuple[list | None, int | None]:
+    def _get_item_list_and_index(self, item_data_obj: Any) -> tuple[list | None, int | None]:
         """Helper to get the list and index of an item for reordering."""
         if isinstance(item_data_obj, Unit):
             try:
-                return self.course_data.units, self.course_data.units.index(
-                    item_data_obj
-                )
+                return self.course_data.units, self.course_data.units.index(item_data_obj)
             except ValueError:
                 return None, None
         elif isinstance(item_data_obj, Lesson):
@@ -1082,9 +1098,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 parent_unit: Unit = parent_unit_item.data(0, Qt.UserRole)
                 if parent_unit and isinstance(parent_unit, Unit):
                     try:
-                        return parent_unit.lessons, parent_unit.lessons.index(
-                            item_data_obj
-                        )
+                        return parent_unit.lessons, parent_unit.lessons.index(item_data_obj)
                     except ValueError:
                         return None, None
         elif isinstance(item_data_obj, Exercise):
@@ -1093,9 +1107,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 parent_lesson: Lesson = parent_lesson_item.data(0, Qt.UserRole)
                 if parent_lesson and isinstance(parent_lesson, Lesson):
                     try:
-                        return parent_lesson.exercises, parent_lesson.exercises.index(
-                            item_data_obj
-                        )
+                        return parent_lesson.exercises, parent_lesson.exercises.index(item_data_obj)
                     except ValueError:
                         return None, None
         return None, None
@@ -1148,9 +1160,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 menu.addAction(add_lesson_action)
 
                 duplicate_unit_action = QAction("Duplicate Unit", self)
-                duplicate_unit_action.triggered.connect(
-                    lambda: self._duplicate_unit(item)
-                )
+                duplicate_unit_action.triggered.connect(lambda: self._duplicate_unit(item))
                 menu.addAction(duplicate_unit_action)
                 menu.addSeparator()
 
@@ -1163,29 +1173,21 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                 menu.addAction(add_exercise_action)
 
                 duplicate_lesson_action = QAction("Duplicate Lesson", self)
-                duplicate_lesson_action.triggered.connect(
-                    lambda: self._duplicate_lesson(item)
-                )
+                duplicate_lesson_action.triggered.connect(lambda: self._duplicate_lesson(item))
                 menu.addAction(duplicate_lesson_action)
                 menu.addSeparator()
 
                 delete_lesson_action = QAction("Delete Lesson", self)
-                delete_lesson_action.triggered.connect(
-                    lambda: self._delete_lesson(item)
-                )
+                delete_lesson_action.triggered.connect(lambda: self._delete_lesson(item))
                 menu.addAction(delete_lesson_action)
             elif isinstance(item_data, Exercise):
                 duplicate_exercise_action = QAction("Duplicate Exercise", self)
-                duplicate_exercise_action.triggered.connect(
-                    lambda: self._duplicate_exercise(item)
-                )
+                duplicate_exercise_action.triggered.connect(lambda: self._duplicate_exercise(item))
                 menu.addAction(duplicate_exercise_action)
                 menu.addSeparator()
 
                 delete_exercise_action = QAction("Delete Exercise", self)
-                delete_exercise_action.triggered.connect(
-                    lambda: self._delete_exercise(item)
-                )
+                delete_exercise_action.triggered.connect(lambda: self._delete_exercise(item))
                 menu.addAction(delete_exercise_action)
 
         menu.exec(self.tree_widget.viewport().mapToGlobal(position))
@@ -1209,24 +1211,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             return
 
         course_languages = {
-            "target": (
-                self.course_data.target_language
-                if self.course_data
-                else "Target Language"
-            ),
-            "source": (
-                self.course_data.source_language
-                if self.course_data
-                else "Source Language"
-            ),
+            "target": (self.course_data.target_language if self.course_data else "Target Language"),
+            "source": (self.course_data.source_language if self.course_data else "Source Language"),
         }
         course_content_base_dir = None
         if self.current_course_content_path:
             course_content_base_dir = os.path.dirname(self.current_course_content_path)
 
-        dialog = ExercisePreviewDialog(
-            item_data, course_languages, course_content_base_dir, self
-        )
+        dialog = ExercisePreviewDialog(item_data, course_languages, course_content_base_dir, self)
         dialog.exec()
 
     def _expand_and_select_item(self, item_data_obj: Any):
@@ -1274,9 +1266,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             unit_item = QTreeWidgetItem(self.tree_widget, [unit.title])
             unit_item.setData(0, Qt.UserRole, unit)
             unit_item.setFlags(
-                unit_item.flags()
-                | Qt.ItemFlag.ItemIsDragEnabled
-                | Qt.ItemFlag.ItemIsDropEnabled
+                unit_item.flags() | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
             )
             if id(unit) in expanded_items_data and expanded_items_data[id(unit)]:
                 unit_item.setExpanded(True)
@@ -1289,10 +1279,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     | Qt.ItemFlag.ItemIsDragEnabled
                     | Qt.ItemFlag.ItemIsDropEnabled
                 )
-                if (
-                    id(lesson) in expanded_items_data
-                    and expanded_items_data[id(lesson)]
-                ):
+                if id(lesson) in expanded_items_data and expanded_items_data[id(lesson)]:
                     lesson_item.setExpanded(True)
 
                 for exercise in lesson.exercises:
@@ -1318,24 +1305,18 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     exercise_item = QTreeWidgetItem(lesson_item, [ex_display_text])
                     exercise_item.setData(0, Qt.UserRole, exercise)
                     exercise_item.setFlags(
-                        exercise_item.flags()
-                        | Qt.ItemIsDragEnabled
-                        | Qt.ItemIsDropEnabled
+                        exercise_item.flags() | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
                     )
 
                 # Inline "+ Add Exercise..." button under lesson
                 add_ex_item = QTreeWidgetItem(lesson_item, ["+ Add Exercise..."])
-                add_ex_item.setData(
-                    0, Qt.UserRole, {"action": "add_exercise", "target": lesson}
-                )
+                add_ex_item.setData(0, Qt.UserRole, {"action": "add_exercise", "target": lesson})
                 add_ex_item.setForeground(0, QColor("#8888aa"))
                 add_ex_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
             # Inline "+ Add Lesson..." button under unit
             add_les_item = QTreeWidgetItem(unit_item, ["+ Add Lesson..."])
-            add_les_item.setData(
-                0, Qt.UserRole, {"action": "add_lesson", "target": unit}
-            )
+            add_les_item.setData(0, Qt.UserRole, {"action": "add_lesson", "target": unit})
             add_les_item.setForeground(0, QColor("#8888aa"))
             add_les_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
@@ -1362,6 +1343,10 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             elif reply == QMessageBox.StandardButton.Cancel:
                 return
 
+        self._clear_editor_cache()
+        if hasattr(self, "manifest_editor") and self.manifest_editor:
+            self.manifest_editor.current_manifest_data = None
+            self.manifest_editor.current_course_obj = None
         self.manifest_data, self.course_data = create_new_course()
         self.current_manifest_path = None
         self.current_course_content_path = None
@@ -1409,9 +1394,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
 
         content_filename = self.manifest_data.get("content_file")
         if not content_filename:
-            QMessageBox.critical(
-                self, "Load Error", "Manifest does not specify 'content_file'."
-            )
+            QMessageBox.critical(self, "Load Error", "Manifest does not specify 'content_file'.")
             self._set_dirty_state(False)
             return
 
@@ -1439,11 +1422,14 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         )
 
         if not self.course_data:
-            QMessageBox.critical(
-                self, "Load Error", "Failed to load course content file."
-            )
+            QMessageBox.critical(self, "Load Error", "Failed to load course content file.")
             self._set_dirty_state(False)
             return
+
+        self._clear_editor_cache()
+        if hasattr(self, "manifest_editor") and self.manifest_editor:
+            self.manifest_editor.current_manifest_data = None
+            self.manifest_editor.current_course_obj = None
 
         self._update_context_paths()
         self.update_tree_view()
@@ -1460,9 +1446,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
     def save_course(self):
         if not self.current_manifest_path or not self.current_course_content_path:
             return self.save_course_as()
-        return self._do_save(
-            self.current_manifest_path, self.current_course_content_path
-        )
+        return self._do_save(self.current_manifest_path, self.current_course_content_path)
 
     def save_course_as(self):
         manifest_file, _ = QFileDialog.getSaveFileName(
@@ -1475,9 +1459,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             return False
 
         manifest_dir = os.path.dirname(manifest_file)
-        course_id_for_filename = self.manifest_data.get(
-            "course_id", str(uuid.uuid4().hex[:8])
-        )
+        course_id_for_filename = self.manifest_data.get("course_id", str(uuid.uuid4().hex[:8]))
         content_filename_from_manifest = self.manifest_data.get(
             "content_file", f"course_{course_id_for_filename}.yaml"
         )
@@ -1490,22 +1472,15 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             QMessageBox.warning(self, "Save Error", "No course data to save.")
             return False
 
-        if self.current_editor_widget == self.manifest_editor:
-            self.manifest_editor.apply_changes_to_data(
-                self.manifest_data, self.course_data
-            )
+        self._flush_active_editor()
 
         # It's better to always attempt to save glossary if it's been loaded
         # so changes in its tab are saved.
-        if (
-            self.glossary_editor.glossary_entries
-        ):  # Only attempt if there's glossary data
+        if self.glossary_editor.glossary_entries:  # Only attempt if there's glossary data
             if not self.glossary_editor.save_glossary_data(
                 self.manifest_data, self.current_manifest_path
             ):
-                QMessageBox.critical(
-                    self, "Save Error", "Failed to save glossary file."
-                )
+                QMessageBox.critical(self, "Save Error", "Failed to save glossary file.")
                 return False
 
         if not yaml_serializer.save_manifest_to_yaml(self.manifest_data, manifest_file):
@@ -1523,9 +1498,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
                     allow_unicode=True,
                 )
         except Exception as e:
-            QMessageBox.critical(
-                self, "Save Error", f"Failed to save course content file: {e}"
-            )
+            QMessageBox.critical(self, "Save Error", f"Failed to save course content file: {e}")
             return False
 
         self.current_manifest_path = manifest_file
@@ -1534,9 +1507,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         self.current_file_label.setText(os.path.basename(self.current_manifest_path))
         self._set_dirty_state(False)
         self.status_bar.showMessage("Course saved successfully!", 3000)
-        QMessageBox.information(
-            self, "Save Successful", "Course and Manifest saved successfully!"
-        )
+        QMessageBox.information(self, "Save Successful", "Course and Manifest saved successfully!")
         return True
 
     def closeEvent(self, event):
@@ -1556,13 +1527,12 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             elif reply == QMessageBox.StandardButton.Cancel:
                 event.ignore()
                 return
+        self._clear_editor_cache()
         event.accept()
 
     def validate_current_course(self):
         if not self.manifest_data or not self.course_data:
-            QMessageBox.warning(
-                self, "Validation Error", "No course loaded to validate."
-            )
+            QMessageBox.warning(self, "Validation Error", "No course loaded to validate.")
             return
         if not self.current_manifest_path:
             QMessageBox.warning(
@@ -1652,9 +1622,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
         dialog = CsvImportDialog(self, default_unit_id, default_lesson_id)
         if dialog.exec() == QDialog.Accepted:
             data = dialog.get_data()
-            course_dict_for_import = load_existing_course_data(
-                self.current_course_content_path
-            )
+            course_dict_for_import = load_existing_course_data(self.current_course_content_path)
             if not course_dict_for_import:
                 QMessageBox.critical(
                     self,
@@ -1675,9 +1643,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             )
             result_message = "\n".join(messages)
             if success:
-                save_course_data(
-                    course_dict_for_import, self.current_course_content_path
-                )
+                save_course_data(course_dict_for_import, self.current_course_content_path)
                 reloaded_course = load_course_content_from_yaml(
                     content_filepath=self.current_course_content_path,
                     course_id=self.manifest_data.get("course_id", "unknown_course"),
@@ -1726,9 +1692,7 @@ class EditorWindow(ItemCommandsMixin, QMainWindow):
             version = self.manifest_data.get("version", "1.0").replace(" ", "_")
             default_package_name_stem = f"{course_id}_{version}"
 
-        dialog = PackageCreationDialog(
-            self, self.current_manifest_path, default_package_name_stem
-        )
+        dialog = PackageCreationDialog(self, self.current_manifest_path, default_package_name_stem)
         if dialog.exec() == QDialog.Accepted:
             data = dialog.get_data()
             success, package_path, messages = create_package_for_gui(

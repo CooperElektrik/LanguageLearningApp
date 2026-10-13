@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -235,9 +236,7 @@ class BaseExercisePlayerView(QWidget):
             and not self.hint_label.isVisible()
         ):
             self._toggle_hint_visibility(force_show=True)
-            logger.info(
-                "Hint automatically shown for the current exercise based on user setting."
-            )
+            logger.info("Hint automatically shown for the current exercise based on user setting.")
 
     # --- Notes Panel Methods (Common Logic) ---
     def _toggle_notes_panel(self, checked: bool):
@@ -256,9 +255,7 @@ class BaseExercisePlayerView(QWidget):
                 self.current_exercise_obj.exercise_id, note_content
             )
             self._update_notes_button_indicator()  # Update button icon based on saved note presence
-            logger.debug(
-                f"Note saved for exercise ID: {self.current_exercise_obj.exercise_id}"
-            )
+            logger.debug(f"Note saved for exercise ID: {self.current_exercise_obj.exercise_id}")
 
     def _update_notes_button_indicator(self):
         """Updates the toggle notes button icon and tooltip based on note presence."""
@@ -267,9 +264,7 @@ class BaseExercisePlayerView(QWidget):
             note_content = self.progress_manager.get_exercise_note(
                 self.current_exercise_obj.exercise_id
             )
-            if (
-                note_content and note_content.strip()
-            ):  # Check if note is not just whitespace
+            if note_content and note_content.strip():  # Check if note is not just whitespace
                 has_note = True
 
         # This assumes the subclass creates self.toggle_notes_button
@@ -284,9 +279,7 @@ class BaseExercisePlayerView(QWidget):
             self.toggle_notes_button.setIcon(self.style().standardIcon(icon_to_use))
             self.toggle_notes_button.setToolTip(tooltip_text)
         else:
-            logger.debug(
-                "_update_notes_button_indicator called but toggle_notes_button not found."
-            )
+            logger.debug("_update_notes_button_indicator called but toggle_notes_button not found.")
 
     # --- Shared action-button factories ---
     # Lesson and Review used to hand-roll identical buttons (and handlers);
@@ -316,9 +309,7 @@ class BaseExercisePlayerView(QWidget):
         if self.current_exercise_obj and self.current_exercise_obj.has_hint():
             self._toggle_hint_visibility()
             self.toggle_hint_button.setText(
-                self.tr("Hide Hint")
-                if self.hint_label.isVisible()
-                else self.tr("Show Hint")
+                self.tr("Hide Hint") if self.hint_label.isVisible() else self.tr("Show Hint")
             )
 
     def _handle_lookup_word(self):
@@ -447,11 +438,7 @@ class BaseExercisePlayerView(QWidget):
             elif event.key() == Qt.Key_N:
                 # Check if the specific view has this button
                 if hasattr(self, "toggle_notes_button") and self.toggle_notes_button:
-                    self.toggle_notes_button.setChecked(
-                        not self.toggle_notes_button.isChecked()
-                    )
+                    self.toggle_notes_button.setChecked(not self.toggle_notes_button.isChecked())
                     event.accept()
                     return
-        super().keyPressEvent(
-            event
-        )  # Pass to parent or for further processing if not handled
+        super().keyPressEvent(event)  # Pass to parent or for further processing if not handled

@@ -17,6 +17,7 @@ from PySide6.QtCore import (
     QSettings,
     QSize,
     Qt,
+    QTimer,
     QUrl,
     Signal,
 )
@@ -112,9 +113,7 @@ def create_rounded_pixmap(
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
     path = QPainterPath()
-    path.addRoundedRect(
-        0, 0, final_size.width(), final_size.height(), corner_radius, corner_radius
-    )
+    path.addRoundedRect(0, 0, final_size.width(), final_size.height(), corner_radius, corner_radius)
 
     painter.setClipPath(path)
     painter.drawPixmap(0, 0, cropped_pixmap)
@@ -156,9 +155,7 @@ class BaseExerciseWidget(QWidget):
 
     def _setup_image(self):
         if self.exercise.image_file and self.assets_base_dir:
-            full_image_path = os.path.join(
-                self.assets_base_dir, self.exercise.image_file
-            )
+            full_image_path = os.path.join(self.assets_base_dir, self.exercise.image_file)
 
             if os.path.exists(full_image_path):
                 pixmap = QPixmap(full_image_path)
@@ -197,9 +194,7 @@ class BaseExerciseWidget(QWidget):
         # Determine the course's base directory (where its manifest is)
         course_base_dir = self.course_manager.get_course_manifest_directory()
         if not course_base_dir:
-            logger.error(
-                "Could not determine course base directory for audio playback."
-            )
+            logger.error("Could not determine course base directory for audio playback.")
             QMessageBox.warning(
                 self,
                 self.tr("Audio Error"),
@@ -234,9 +229,7 @@ class BaseExerciseWidget(QWidget):
                 QMessageBox.warning(
                     self,
                     self.tr("Audio Error"),
-                    self.tr("Cannot prepare audio: {0}").format(
-                        self._media_player.errorString()
-                    ),
+                    self.tr("Cannot prepare audio: {0}").format(self._media_player.errorString()),
                 )
                 return
 
@@ -263,10 +256,7 @@ class BaseExerciseWidget(QWidget):
         pass
 
     def stop_media(self):
-        if (
-            self._media_player
-            and self._media_player.playbackState() == QMediaPlayer.PlayingState
-        ):
+        if self._media_player and self._media_player.playbackState() == QMediaPlayer.PlayingState:
             self._media_player.stop()
 
     def trigger_autoplay_audio(self):
@@ -343,18 +333,14 @@ class ButtonOptionExerciseWidget(BaseExerciseWidget):
             logger.warning(
                 f"No options found for option-based exercise: {self.exercise.exercise_id}"
             )
-            no_options_label = QLabel(
-                self.tr("No options available for this exercise.")
-            )
+            no_options_label = QLabel(self.tr("No options available for this exercise."))
             self.options_layout.addWidget(no_options_label)
         else:
             for i, option_obj in enumerate(options_to_display):
                 button = QPushButton()
                 button.setObjectName(f"option_button_{i}")
                 button.setCheckable(True)
-                button.setSizePolicy(
-                    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-                )
+                button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 button.setFixedHeight(160)
 
                 button_layout = QHBoxLayout(button)
@@ -365,9 +351,7 @@ class ButtonOptionExerciseWidget(BaseExerciseWidget):
                 text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
                 if option_obj.image_file and self.assets_base_dir:
-                    full_image_path = os.path.join(
-                        self.assets_base_dir, option_obj.image_file
-                    )
+                    full_image_path = os.path.join(self.assets_base_dir, option_obj.image_file)
                     if os.path.exists(full_image_path):
                         pixmap = QPixmap(full_image_path)
                         if not pixmap.isNull():
@@ -450,9 +434,7 @@ class RadioButtonOptionExerciseWidget(BaseExerciseWidget):
             logger.warning(
                 f"No options found for option-based exercise: {self.exercise.exercise_id}"
             )
-            options_layout.addWidget(
-                QLabel(self.tr("No options available for this exercise."))
-            )
+            options_layout.addWidget(QLabel(self.tr("No options available for this exercise.")))
         else:
             for i, option_obj in enumerate(options_to_display):
                 rb = QRadioButton(option_obj.text)
@@ -582,9 +564,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         self._setup_word_bank()
 
         self.submit_button = QPushButton(self.tr("Submit Sentence"))
-        self.submit_button.clicked.connect(
-            lambda: self.answer_submitted.emit(self.get_answer())
-        )
+        self.submit_button.clicked.connect(lambda: self.answer_submitted.emit(self.get_answer()))
         self.layout.addWidget(self.submit_button)
 
     def _setup_word_bank(self):
@@ -620,9 +600,7 @@ class SentenceJumbleExerciseWidget(BaseExerciseWidget):
         try:
             self.current_sentence_words.remove(word)
         except ValueError:
-            logger.warning(
-                f"Attempted to remove word '{word}' not found in current sentence."
-            )
+            logger.warning(f"Attempted to remove word '{word}' not found in current sentence.")
             return
 
         # Remove the button from the layout and delete it
@@ -680,9 +658,7 @@ class ContextBlockWidget(BaseExerciseWidget):
         markdown_with_links = self._prepare_content_with_glossary_links(cleaned_prompt)
 
         # Use 'extra' for better Markdown parsing and 'nl2br' for newline handling
-        html_content = markdown.markdown(
-            markdown_with_links, extensions=["extra", "nl2br"]
-        )
+        html_content = markdown.markdown(markdown_with_links, extensions=["extra", "nl2br"])
         logger.debug(f"ContextBlock Input MD: '''{markdown_with_links}'''")
         logger.debug(f"ContextBlock Output HTML: '''{html_content}'''")
 
@@ -707,9 +683,7 @@ class ContextBlockWidget(BaseExerciseWidget):
         if not glossary_entries:
             return original_content
 
-        sorted_words = sorted(
-            [e.word for e in glossary_entries if e.word], key=len, reverse=True
-        )
+        sorted_words = sorted([e.word for e in glossary_entries if e.word], key=len, reverse=True)
         if not sorted_words:
             return original_content
         escaped_words = [re.escape(word) for word in sorted_words]
@@ -744,15 +718,11 @@ class ContextBlockWidget(BaseExerciseWidget):
                 )
                 return
 
-            logger.debug(
-                f"Attempting to find glossary entry for decoded word: '{decoded_word}'"
-            )
+            logger.debug(f"Attempting to find glossary entry for decoded word: '{decoded_word}'")
             entry = self.course_manager.get_glossary_entry_by_word(decoded_word)
             if entry:
                 # Open a new dialog for the clicked entry
-                new_dialog = GlossaryDetailDialog(
-                    entry, self.course_manager, self.window()
-                )
+                new_dialog = GlossaryDetailDialog(entry, self.course_manager, self.window())
                 new_dialog.exec()
             else:
                 logger.warning(
@@ -803,9 +773,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         self.target_text_label.setObjectName("pronunciation_target_label")
         self.target_text_label.setWordWrap(True)
         self.target_text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_layout.addWidget(
-            self.target_text_label, 0, 0, 1, 4
-        )  # Span across 4 columns
+        grid_layout.addWidget(self.target_text_label, 0, 0, 1, 4)  # Span across 4 columns
 
         # 2. Play Reference Button
         if self.exercise.audio_file:
@@ -942,9 +910,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
                 )
             else:
                 self.status_label.setText(self.tr("No audio input device found!"))
-                logger.error(
-                    "No audio input device found (neither preferred nor default)."
-                )
+                logger.error("No audio input device found (neither preferred nor default).")
                 self.record_button.setEnabled(False)
                 return False
         if selected_device_info and not selected_device_info.isNull():
@@ -953,9 +919,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             audio_format.setSampleRate(int(selected_device_info.maximumSampleRate()))
             audio_format.setChannelCount(1)
             audio_format.setSampleFormat(QAudioFormat.SampleFormat.Int16)
-            self._audio_recorder = QAudioSource(
-                selected_device_info, audio_format, self
-            )
+            self._audio_recorder = QAudioSource(selected_device_info, audio_format, self)
             return True
         else:
             self.status_label.setText(self.tr("No audio input device found!"))
@@ -996,9 +960,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             # Clean up previous temp file if it exists
             self._cleanup_temp_file()
 
-            self._temp_audio_file = tempfile.NamedTemporaryFile(
-                suffix=".wav", delete=False
-            )
+            self._temp_audio_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             self._temp_audio_file.close()
             logger.debug(f"Created temp audio file: {self._temp_audio_file.name}")
 
@@ -1071,9 +1033,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         language_code: str | None = None,
     ):
         if not audio_file_path or not os.path.exists(audio_file_path):
-            self.status_label.setText(
-                self.tr("Error: Audio file for transcription not found.")
-            )
+            self.status_label.setText(self.tr("Error: Audio file for transcription not found."))
             self.record_button.setEnabled(True)
             return
         task = self.stt_manager.transcribe_audio(
@@ -1086,9 +1046,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             task.signals.finished.connect(self._on_transcription_finished)
             task.signals.error.connect(self._on_transcription_error)
         else:
-            self.status_label.setText(
-                self.tr("Transcription service not available or disabled.")
-            )
+            self.status_label.setText(self.tr("Transcription service not available or disabled."))
             self.record_button.setEnabled(True)
 
     def _on_transcription_finished(self, exercise_id: str, result: TranscriptionResult):
@@ -1104,9 +1062,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
         else:
             confidence_html = self._generate_confidence_html(result.words)
 
-        self.status_label.setText(
-            self.tr("Transcription complete. Review your feedback below.")
-        )
+        self.status_label.setText(self.tr("Transcription complete. Review your feedback below."))
 
         target_text = self.exercise.target_pronunciation_text
         diff_html = self._generate_diff_html(target_text, full_text)
@@ -1133,7 +1089,9 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
 
     def _generate_confidence_html(self, words: list) -> str:
         if not words:
-            return f"<p><i>{self.tr('No speech detected or words could not be recognized.')}</i></p>"
+            return (
+                f"<p><i>{self.tr('No speech detected or words could not be recognized.')}</i></p>"
+            )
 
         html_parts = []
         for word in words:
@@ -1162,9 +1120,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             user_str, for_pronunciation=True
         )
 
-        matcher = difflib.SequenceMatcher(
-            None, target_str_norm.split(), user_str_norm.split()
-        )
+        matcher = difflib.SequenceMatcher(None, target_str_norm.split(), user_str_norm.split())
         html_parts = []
 
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -1187,9 +1143,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
     def _on_transcription_error(self, exercise_id: str, error_message: str):
         if exercise_id != self.exercise.exercise_id:
             return
-        self.status_label.setText(
-            self.tr("Transcription Error: {0}").format(error_message)
-        )
+        self.status_label.setText(self.tr("Transcription Error: {0}").format(error_message))
         self.record_button.setEnabled(True)
         self.transcription_error.emit(error_message)
 
@@ -1209,9 +1163,7 @@ class PronunciationExerciseWidget(BaseExerciseWidget):
             try:
                 if os.path.exists(self._temp_audio_file.name):
                     os.unlink(self._temp_audio_file.name)
-                    logger.debug(
-                        f"Deleted temp audio file: {self._temp_audio_file.name}"
-                    )
+                    logger.debug(f"Deleted temp audio file: {self._temp_audio_file.name}")
             except Exception as e:
                 logger.warning(
                     f"Could not delete temp audio file '{self._temp_audio_file.name}': {e}"

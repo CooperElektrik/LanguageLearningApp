@@ -97,9 +97,7 @@ def update_sound_volume():
 
 def get_log_dir() -> str:
     """Returns the writable directory path for application log files."""
-    base_dir = QStandardPaths.writableLocation(
-        QStandardPaths.StandardLocation.AppLocalDataLocation
-    )
+    base_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
     if not base_dir:
         base_dir = os.getcwd()
     log_dir = os.path.join(base_dir, "logs")
@@ -112,9 +110,7 @@ def get_log_dir() -> str:
 
 def get_user_courses_dir() -> str:
     """Returns the writable directory path for user-installed or downloaded courses."""
-    base_dir = QStandardPaths.writableLocation(
-        QStandardPaths.StandardLocation.AppDataLocation
-    )
+    base_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)
     if not base_dir:
         base_dir = os.getcwd()
     courses_dir = os.path.join(base_dir, settings.COURSES_DIR)
@@ -150,11 +146,7 @@ def get_courses_search_directories() -> list[str]:
     if not getattr(sys, "frozen", False):
         try:
             root_courses = os.path.join(os.path.dirname(get_app_root_dir()), settings.COURSES_DIR)
-            if (
-                root_courses
-                and os.path.isdir(root_courses)
-                and root_courses not in search_dirs
-            ):
+            if root_courses and os.path.isdir(root_courses) and root_courses not in search_dirs:
                 search_dirs.append(root_courses)
         except Exception:
             pass
@@ -204,9 +196,7 @@ def get_app_root_dir() -> str:
         try:
             # Derive the root directory from this file's location (application/utils.py -> application)
             fallback_root = os.path.dirname(os.path.abspath(__file__))
-            logger.info(
-                f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __file__)"
-            )
+            logger.info(f"Fallback _APP_ROOT_DIR set to: {fallback_root} (derived from __file__)")
             return fallback_root
         except Exception:
             main_module = sys.modules.get("__main__")
@@ -284,9 +274,7 @@ def get_available_locales() -> dict[str, str]:
     mapping display names (e.g., "English", "Tiếng Việt") to locale codes (e.g., "en", "vi").
     Includes a "System" default.
     """
-    locales = {
-        settings.DEFAULT_LOCALE: settings.DEFAULT_LOCALE
-    }  # e.g. {"System": "System"}
+    locales = {settings.DEFAULT_LOCALE: settings.DEFAULT_LOCALE}  # e.g. {"System": "System"}
     localization_dir_abs = get_resource_path(settings.LOCALIZATION_DIR)
 
     if not os.path.isdir(localization_dir_abs):
@@ -295,9 +283,7 @@ def get_available_locales() -> dict[str, str]:
 
     for filename in os.listdir(localization_dir_abs):
         if filename.startswith("app_") and filename.endswith(".qm"):
-            locale_code_full = filename[
-                len("app_") : -len(".qm")
-            ]  # e.g., "en_US", "vi"
+            locale_code_full = filename[len("app_") : -len(".qm")]  # e.g., "en_US", "vi"
             locale_code_short = locale_code_full.split("_")[0]  # e.g., "en", "vi"
 
             # Get native language name for display
@@ -307,13 +293,9 @@ def get_available_locales() -> dict[str, str]:
                 if (
                     native_lang_name and locale_code_short not in locales.values()
                 ):  # Add if not already present by short code
-                    locales[native_lang_name] = (
-                        locale_code_short  # Store short code for loading
-                    )
+                    locales[native_lang_name] = locale_code_short  # Store short code for loading
             except Exception as e:
-                logger.warning(
-                    f"Could not get native name for locale code {locale_code_full}: {e}"
-                )
+                logger.warning(f"Could not get native name for locale code {locale_code_full}: {e}")
                 locales[locale_code_full] = locale_code_short  # Fallback to code
     return locales
 
@@ -343,6 +325,7 @@ def setup_initial_translation(app: QCoreApplication) -> QTranslator | None:
     qm_file_path_short = ""
     if not translator.load(qm_file_path):
         import re
+
         lang_name = re.split(r"[-_]", str(locale_name_to_load))[0]
         qm_file_path_short = get_resource_path(
             os.path.join(settings.LOCALIZATION_DIR, f"app_{lang_name}.qm")

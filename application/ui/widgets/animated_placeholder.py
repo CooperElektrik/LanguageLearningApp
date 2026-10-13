@@ -53,9 +53,7 @@ class AnimatedPlaceholder(QLabel):
 
     def _start_animation(self):
         """Sets up and begins the animation to the next message."""
-        self.current_message_index = (self.current_message_index + 1) % len(
-            self.messages
-        )
+        self.current_message_index = (self.current_message_index + 1) % len(self.messages)
         self.from_text = self.to_text
         self.to_text = self.messages[self.current_message_index]
         self._animation_step = 0
@@ -106,9 +104,7 @@ class AnimatedPlaceholder(QLabel):
             num_revealed = int(progress * to_len)
 
             revealed_part = self.to_text[:num_revealed]
-            random_part = "".join(
-                [self._random_char() for _ in range(to_len - num_revealed)]
-            )
+            random_part = "".join([self._random_char() for _ in range(to_len - num_revealed)])
             self.setText(revealed_part + random_part)
         else:
             # Animation finished
@@ -120,9 +116,7 @@ class AnimatedPlaceholder(QLabel):
 
     def _random_char(self) -> str:
         """Returns a random character for the animation effect."""
-        return random.choice(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        )
+        return random.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
     def setVisible(self, visible: bool):
         """Overrides setVisible to control the animation timers."""
@@ -136,6 +130,4 @@ class AnimatedPlaceholder(QLabel):
 
     def tr(self, text, disambiguation=None, n=-1):
         """Enables translation of the widget's text content."""
-        return QCoreApplication.translate(
-            "AnimatedPlaceholder", text, disambiguation, n
-        )
+        return QCoreApplication.translate("AnimatedPlaceholder", text, disambiguation, n)

@@ -75,18 +75,13 @@ def populate_whisper_model_combo(
         combo.setItemData(combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
 
 
-def populate_vosk_model_combo(
-    combo: QComboBox, translate: Callable[[str], str]
-) -> None:
+def populate_vosk_model_combo(combo: QComboBox, translate: Callable[[str], str]) -> None:
     """Fills a Vosk model combo box with tooltips."""
     combo.addItem("None", userData="None")  # Option to disable
     for model_name, info in settings.VOSK_MODEL_INFO.items():
         combo.addItem(model_name, userData=model_name)
         tooltip_text = translate(
-            "Model: {model_name}\n"
-            "Size: {size}\n"
-            "Language: {lang}\n"
-            "Description: {description}\n"
+            "Model: {model_name}\nSize: {size}\nLanguage: {lang}\nDescription: {description}\n"
         ).format(**info, model_name=model_name)
         combo.setItemData(combo.count() - 1, tooltip_text, Qt.ItemDataRole.ToolTipRole)
 
@@ -95,9 +90,7 @@ def populate_audio_input_devices(combo: QComboBox) -> None:
     """Fills an audio-input combo box, selecting the system default device."""
     combo.clear()
     default_device = QMediaDevices.defaultAudioInput()
-    default_device_id = (
-        default_device.id().toStdString() if not default_device.isNull() else ""
-    )
+    default_device_id = default_device.id().toStdString() if not default_device.isNull() else ""
     for device in QMediaDevices.audioInputs():
         combo.addItem(device.description(), userData=device.id().toStdString())
 

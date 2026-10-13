@@ -1,4 +1,5 @@
 import logging
+import os
 
 import settings as app_settings
 import utils
@@ -13,7 +14,7 @@ from .stt_common import (
 logger = logging.getLogger(__name__)
 
 try:
-    from faster_whisper import WhisperModel  # type: ignore
+    from faster_whisper import WhisperModel, download_model  # type: ignore
     from huggingface_hub.errors import LocalEntryNotFoundError  # type: ignore
 
     _FASTER_WHISPER_AVAILABLE = True
@@ -28,6 +29,9 @@ except ImportError:
         def transcribe(self, *args, **kwargs):
             raise NotImplementedError("faster_whisper is not installed.")
 
+    def download_model(*args, **kwargs):  # type: ignore
+        raise NotImplementedError("faster_whisper is not installed.")
+
     class LocalEntryNotFoundError(Exception):  # type: ignore
         pass
 
@@ -37,9 +41,7 @@ try:
 
     _TORCH_AVAILABLE = True
 except ImportError:
-    logger.warning(
-        "PyTorch not found. Whisper will fall back to CPU or be unavailable."
-    )
+    logger.warning("PyTorch not found. Whisper will fall back to CPU or be unavailable.")
     _TORCH_AVAILABLE = False
     torch = None  # type: ignore
 
@@ -67,9 +69,7 @@ class WhisperModelLoader(BaseModelLoader):
                 app_settings.STT_ENGINE_WHISPER, ""
             )  # Pass empty model_name as faster_whisper handles it
             try:
-                logger.info(
-                    f"Background Task: Attempting to load local model at {download_root}"
-                )
+                logger.info(f"Background Task: Attempting to load local model at {download_root}")
                 model_instance = WhisperModel(
                     self.model_name,
                     device=self.device,
@@ -87,9 +87,7 @@ class WhisperModelLoader(BaseModelLoader):
                     local_files_only=False,
                 )
                 logger.info("Background Task: New model downloaded from HuggingFace.")
-            logger.info(
-                f"Background Task: Model '{self.model_name}' loaded successfully."
-            )
+            logger.info(f"Background Task: Model '{self.model_name}' loaded successfully.")
             self.signals.finished.emit(self.model_name, model_instance)
         except Exception as e:
             logger.error(
@@ -134,19 +132,13 @@ class WhisperTranscriptionTask(BaseTranscriptionTask):
             and self.recorded_samplerate
             and self.recorded_samplerate != self.target_samplerate
         ):
-            resampled = resample_audio(
-                self.audio_path, self.target_samplerate, "whisper"
-            )
+            resampled = resample_audio(self.audio_path, self.target_samplerate, "whisper")
             if resampled:
                 audio_file_to_use = resampled
                 self.cleanup_paths.append(resampled)
 
-        lang_info = (
-            f" with language '{self.language_code}'" if self.language_code else ""
-        )
-        logger.info(
-            f"Background Task: Starting transcription for {audio_file_to_use}{lang_info}"
-        )
+        lang_info = f" with language '{self.language_code}'" if self.language_code else ""
+        logger.info(f"Background Task: Starting transcription for {audio_file_to_use}{lang_info}")
         segments, _info = self._model.transcribe(
             audio_file_to_use,
             beam_size=app_settings.WHISPER_BEAM_SIZE,
@@ -176,28 +168,30 @@ def check_whisper_model_downloaded(model_name: str) -> bool:
     if not _FASTER_WHISPER_AVAILABLE:
         return False
     try:
-        # faster_whisper's WhisperModel constructor checks for local files
-        # by attempting to load them. If local_files_only=True and it fails,
-        # it raises LocalEntryNotFoundError.
-        # We don't need to actually load the model, just check if the files exist.
-        # The download_root is where faster_whisper stores the models.
+        # Check if the model directory or files exist on disk in the cache path
+        # rather than instantiating the full CTranslate2 model runtime.
+        if os.path.isdir(model_name):
+            return True
+
         download_root = utils.get_stt_model_path(app_settings.STT_ENGINE_WHISPER, "")
-        # This will raise LocalEntryNotFoundError if the model is not found locally
-        # when local_files_only is True.
-        WhisperModel(
+        if not download_root or not os.path.exists(download_root):
+            return False
+
+        if os.path.isdir(os.path.join(download_root, model_name)):
+            return True
+
+        # download_model with local_files_only=True verifies if cached files exist
+        # without initializing the CTranslate2 model runtime.
+        model_path = download_model(
             model_name,
-            device="cpu",
-            compute_type="int8",
-            download_root=download_root,
             local_files_only=True,
+            cache_dir=download_root,
         )
-        return True
-    except LocalEntryNotFoundError:
+        return os.path.isdir(model_path)
+    except (LocalEntryNotFoundError, ValueError, FileNotFoundError):
         return False
     except Exception as e:
-        logger.warning(
-            f"Error checking Whisper model {model_name} download status: {e}"
-        )
+        logger.warning(f"Error checking Whisper model {model_name} download status: {e}")
         return False
 
 
@@ -217,7 +211,5 @@ def get_best_whisper_device_config() -> tuple[str, str]:
                 )
             return "cuda", "int8"
     except Exception as e:
-        logger.warning(
-            f"Error checking for CUDA availability: {e}, falling back to CPU."
-        )
+        logger.warning(f"Error checking for CUDA availability: {e}, falling back to CPU.")
     return "cpu", "int8"

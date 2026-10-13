@@ -1,7 +1,6 @@
 import logging
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -79,9 +78,7 @@ class BaseExerciseEditorWidget(QWidget):
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.layout.setSpacing(10)
 
-        self.type_label = QLabel(
-            f"Exercise Type: {exercise.type.replace('_', ' ').title()}"
-        )
+        self.type_label = QLabel(f"Exercise Type: {exercise.type.replace('_', ' ').title()}")
         self.type_label.setStyleSheet("font-weight: bold; font-size: 13px;")
         self.layout.addWidget(self.type_label)
         self.layout.addWidget(self._create_separator())
@@ -148,9 +145,7 @@ class BaseExerciseEditorWidget(QWidget):
         if is_multiline:
             input_field = QTextEdit()
             input_field.setPlainText(current_value)
-            input_field.textChanged.connect(
-                lambda: callback_func(input_field.toPlainText())
-            )
+            input_field.textChanged.connect(lambda: callback_func(input_field.toPlainText()))
             input_field.setMinimumHeight(60)
         else:
             input_field = QLineEdit()
@@ -201,14 +196,10 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         course_root_dir: str | None,
         parent=None,
     ):
-        super().__init__(
-            exercise, target_language, source_language, course_root_dir, parent
-        )
+        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
 
         prompt_lang_hint = (
-            self.source_language
-            if exercise.type == "translate_to_target"
-            else self.target_language
+            self.source_language if exercise.type == "translate_to_target" else self.target_language
         )
         self.prompt_input = self._add_input_field(
             f"Prompt ({prompt_lang_hint})",
@@ -219,9 +210,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         )
 
         answer_lang_hint = (
-            self.target_language
-            if exercise.type == "translate_to_target"
-            else self.source_language
+            self.target_language if exercise.type == "translate_to_target" else self.source_language
         )
         self.answer_input = self._add_input_field(
             f"Answer ({answer_lang_hint})",
@@ -256,15 +245,11 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
         self.data_changed.emit()
 
     def _update_audio_file(self, text: str):
-        self.exercise.audio_file = (
-            text.strip().replace("\\", "/") if text.strip() else None
-        )
+        self.exercise.audio_file = text.strip().replace("\\", "/") if text.strip() else None
         self.data_changed.emit()
 
     def _update_image_file(self, text: str):
-        self.exercise.image_file = (
-            text.strip().replace("\\", "/") if text.strip() else None
-        )
+        self.exercise.image_file = text.strip().replace("\\", "/") if text.strip() else None
         self.data_changed.emit()
 
     def validate(self) -> tuple[bool, str]:
@@ -276,9 +261,7 @@ class TranslationExerciseEditorWidget(BaseExerciseEditorWidget):
 
 
 class MultipleChoiceOptionEditDialog(QDialog):
-    def __init__(
-        self, option_text="", option_image_file="", is_correct=False, parent=None
-    ):
+    def __init__(self, option_text="", option_image_file="", is_correct=False, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Edit Option")
         layout = QVBoxLayout(self)
@@ -367,9 +350,7 @@ class OptionsEditorMixin:
 
     def _validate_mcq_options(self):
         if not self.exercise.options:
-            self.options_validation_label.setText(
-                "Warning: At least one option is recommended."
-            )
+            self.options_validation_label.setText("Warning: At least one option is recommended.")
             self.options_validation_label.setStyleSheet("color: orange;")
             return
 
@@ -393,9 +374,7 @@ class OptionsEditorMixin:
         if dialog.exec() == QDialog.Accepted:
             text, image_file, is_correct = dialog.get_data()
             if text is not None or image_file is not None:
-                new_option = ExerciseOption(
-                    text=text, image_file=image_file, correct=is_correct
-                )
+                new_option = ExerciseOption(text=text, image_file=image_file, correct=is_correct)
                 if is_correct:
                     for opt in self.exercise.options:
                         opt.correct = False
@@ -406,9 +385,7 @@ class OptionsEditorMixin:
     def _edit_selected_option(self):
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Edit Option", "Please select an option to edit."
-            )
+            QMessageBox.information(self, "Edit Option", "Please select an option to edit.")
             return
         option_obj: ExerciseOption = selected_items[0].data(Qt.UserRole)
         dialog = MultipleChoiceOptionEditDialog(
@@ -435,9 +412,7 @@ class OptionsEditorMixin:
     def _delete_selected_option(self):
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Delete Option", "Please select an option to delete."
-            )
+            QMessageBox.information(self, "Delete Option", "Please select an option to delete.")
             return
         option_obj: ExerciseOption = selected_items[0].data(Qt.UserRole)
         reply = QMessageBox.question(
@@ -495,9 +470,7 @@ class MultipleChoiceExerciseEditorWidget(OptionsEditorMixin, BaseExerciseEditorW
         return True, ""
 
 
-class ImageAssociationExerciseEditorWidget(
-    OptionsEditorMixin, BaseExerciseEditorWidget
-):
+class ImageAssociationExerciseEditorWidget(OptionsEditorMixin, BaseExerciseEditorWidget):
     """Editor for image_association."""
 
     def __init__(
@@ -509,9 +482,7 @@ class ImageAssociationExerciseEditorWidget(
         parent=None,
     ):
         # Call BaseExerciseEditorWidget's __init__ directly, not MultipleChoiceExerciseEditorWidget's
-        super().__init__(
-            exercise, target_language, source_language, course_root_dir, parent
-        )
+        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
         # Prompt (re-add as it's not in Base but needed here)
         self.prompt_input = self._add_input_field(
             "Prompt",  # General prompt, not language specific like MCQ's source_word
@@ -624,16 +595,14 @@ class SentenceJumbleExerciseEditorWidget(BaseExerciseEditorWidget):
             "Prompt (Optional)",
             exercise.prompt or "",
             lambda text: (
-                setattr(self.exercise, "prompt", text.strip() or None)
-                or self.data_changed.emit()
+                setattr(self.exercise, "prompt", text.strip() or None) or self.data_changed.emit()
             ),
         )
         self._add_input_field(
             f"Correct Answer (Full Sentence in {target_language})",
             exercise.answer or "",
             lambda text: (
-                setattr(self.exercise, "answer", text.strip() or None)
-                or self.data_changed.emit()
+                setattr(self.exercise, "answer", text.strip() or None) or self.data_changed.emit()
             ),
             is_required=True,
         )
@@ -648,14 +617,10 @@ class SentenceJumbleExerciseEditorWidget(BaseExerciseEditorWidget):
 
     def _update_words(self):
         self.exercise.words = [
-            line.strip()
-            for line in self.words_input.toPlainText().split("\n")
-            if line.strip()
+            line.strip() for line in self.words_input.toPlainText().split("\n") if line.strip()
         ]
         self.data_changed.emit()
-        self._validate_input_field(
-            self.words_input, True
-        )  # Basic validation for non-empty
+        self._validate_input_field(self.words_input, True)  # Basic validation for non-empty
 
     def _validate_input_field(
         self, input_widget, is_required: bool
@@ -684,16 +649,13 @@ class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
         course_root_dir: str | None,
         parent=None,
     ):
-        super().__init__(
-            exercise, target_language, source_language, course_root_dir, parent
-        )
+        super().__init__(exercise, target_language, source_language, course_root_dir, parent)
 
         self._add_input_field(
             f"Instruction/Prompt ({target_language}, Optional)",
             exercise.prompt or "",
             lambda text: (
-                setattr(self.exercise, "prompt", text.strip() or None)
-                or self.data_changed.emit()
+                setattr(self.exercise, "prompt", text.strip() or None) or self.data_changed.emit()
             ),
             is_multiline=True,
             placeholder_text="e.g., Listen and write what you hear.",
@@ -702,8 +664,7 @@ class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
             f"Correct Transcription ({target_language})",
             exercise.answer or "",
             lambda text: (
-                setattr(self.exercise, "answer", text.strip() or None)
-                or self.data_changed.emit()
+                setattr(self.exercise, "answer", text.strip() or None) or self.data_changed.emit()
             ),
             is_multiline=True,
             is_required=True,
@@ -721,9 +682,7 @@ class DictationExerciseEditorWidget(BaseExerciseEditorWidget):
     def _update_audio_file(self, text: str):
         self.exercise.audio_file = text.strip().replace("\\", "/") or None
         self.data_changed.emit()
-        self._validate_input_field(
-            self.audio_file_input, True
-        )  # Validate audio file as required
+        self._validate_input_field(self.audio_file_input, True)  # Validate audio file as required
 
     def validate(self) -> tuple[bool, str]:
         if not self.exercise.answer or not self.exercise.answer.strip():
@@ -748,8 +707,7 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
             "Title (Optional)",
             exercise.title or "",
             lambda text: (
-                setattr(self.exercise, "title", text.strip() or None)
-                or self.data_changed.emit()
+                setattr(self.exercise, "title", text.strip() or None) or self.data_changed.emit()
             ),
         )
 
@@ -761,9 +719,7 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
         )
 
         self.layout.addWidget(QLabel("Content (Markdown supported): *"))
-        self.prompt_input = QTextEdit(
-            exercise.prompt or ""
-        )  # 'prompt' field holds the content
+        self.prompt_input = QTextEdit(exercise.prompt or "")  # 'prompt' field holds the content
         self.prompt_input.textChanged.connect(self._update_prompt_content)
         self.layout.addWidget(self.prompt_input)
         self.layout.addStretch(1)
@@ -773,9 +729,7 @@ class ContextBlockExerciseEditorWidget(BaseExerciseEditorWidget):
             self.prompt_input.toPlainText().strip() or None
         )  # Content is stored in 'prompt'
         self.data_changed.emit()
-        self._validate_input_field(
-            self.prompt_input, True
-        )  # Validate content as required
+        self._validate_input_field(self.prompt_input, True)  # Validate content as required
 
     def _update_image_file(self, text: str):
         self.exercise.image_file = text.strip().replace("\\", "/") or None
@@ -840,9 +794,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         )
 
         self.options_list_widget = QListWidget()
-        self.options_list_widget.itemDoubleClicked.connect(
-            self._edit_selected_option_dialog
-        )
+        self.options_list_widget.itemDoubleClicked.connect(self._edit_selected_option_dialog)
         self.layout.addWidget(self.options_list_widget)
 
         options_button_layout = QHBoxLayout()
@@ -890,9 +842,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
 
     def _validate_fib_options(self):
         if not self.exercise.options:
-            self.options_validation_label.setText(
-                "Error: Options list cannot be empty."
-            )
+            self.options_validation_label.setText("Error: Options list cannot be empty.")
             self.options_validation_label.setStyleSheet("color: red;")
             return
 
@@ -906,9 +856,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
                 self.options_validation_label.setStyleSheet("color: red;")
                 return
         else:
-            self.options_validation_label.setText(
-                "Error: Correct option is empty, but required."
-            )
+            self.options_validation_label.setText("Error: Correct option is empty, but required.")
             self.options_validation_label.setStyleSheet("color: red;")
             return
 
@@ -919,9 +867,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
         """Ensures the self.exercise.correct_option text is present in self.exercise.options list."""
         correct_text = self.exercise.correct_option
         if correct_text and correct_text.strip():
-            found = any(
-                opt.text == correct_text.strip() for opt in self.exercise.options
-            )
+            found = any(opt.text == correct_text.strip() for opt in self.exercise.options)
             if not found:
                 self.exercise.options.append(
                     ExerciseOption(text=correct_text.strip(), correct=False)
@@ -933,27 +879,21 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
     def _add_option_dialog(self):
         option_text, ok = QInputDialog.getText(self, "Add Option", "Enter option text:")
         if ok and option_text and option_text.strip():
-            if not any(
-                opt.text == option_text.strip() for opt in self.exercise.options
-            ):
+            if not any(opt.text == option_text.strip() for opt in self.exercise.options):
                 self.exercise.options.append(
                     ExerciseOption(text=option_text.strip(), correct=False)
                 )
                 self._populate_options_list()
                 self.data_changed.emit()
             else:
-                QMessageBox.information(
-                    self, "Add Option", "This option text already exists."
-                )
+                QMessageBox.information(self, "Add Option", "This option text already exists.")
         elif ok:
             QMessageBox.warning(self, "Invalid Input", "Option text cannot be empty.")
 
     def _edit_selected_option_dialog(self):
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Edit Option", "Please select an option to edit."
-            )
+            QMessageBox.information(self, "Edit Option", "Please select an option to edit.")
             return
 
         current_item = selected_items[0]
@@ -972,9 +912,7 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
     def _delete_selected_option(self):
         selected_items = self.options_list_widget.selectedItems()
         if not selected_items:
-            QMessageBox.information(
-                self, "Delete Option", "Please select an option to delete."
-            )
+            QMessageBox.information(self, "Delete Option", "Please select an option to delete.")
             return
 
         current_item = selected_items[0]
@@ -998,19 +936,13 @@ class FillInTheBlankExerciseEditorWidget(BaseExerciseEditorWidget):
             self.data_changed.emit()
 
     def validate(self) -> tuple[bool, str]:
-        if (
-            not self.exercise.sentence_template
-            or not self.exercise.sentence_template.strip()
-        ):
+        if not self.exercise.sentence_template or not self.exercise.sentence_template.strip():
             return False, "Sentence template cannot be empty."
         if "__BLANK__" not in self.exercise.sentence_template:
             return False, "Sentence template must contain the '__BLANK__' placeholder."
         if not self.exercise.correct_option or not self.exercise.correct_option.strip():
             return False, "Correct blank word cannot be empty."
-        if (
-            not self.exercise.translation_hint
-            or not self.exercise.translation_hint.strip()
-        ):
+        if not self.exercise.translation_hint or not self.exercise.translation_hint.strip():
             return False, "Translation hint cannot be empty."
         if not self.exercise.options:
             return False, "Please provide at least one option for the blank."

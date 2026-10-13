@@ -108,9 +108,7 @@ class GlossaryEntryEditorDialog(QDialog):
             QMessageBox.warning(self, "Validation Error", "Word cannot be empty.")
             return
         if not self.translation_input.text().strip():
-            QMessageBox.warning(
-                self, "Validation Error", "Translation cannot be empty."
-            )
+            QMessageBox.warning(self, "Validation Error", "Translation cannot be empty.")
             return
 
         self.edited_entry = GlossaryEntry(

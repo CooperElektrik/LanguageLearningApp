@@ -2,7 +2,7 @@ import os
 
 import yaml
 from core import course_loader, glossary_loader, yaml_serializer
-from core.models import Course, GlossaryEntry
+from core.models import Course, Exercise, GlossaryEntry
 
 
 def test_load_manifest_success(temp_course_files):
@@ -22,9 +22,7 @@ def test_load_manifest_not_found():
 def test_load_course_content_success(temp_course_files):
     """Tests that a valid course content file is parsed into model objects."""
     manifest_data = course_loader.load_manifest(temp_course_files)
-    content_path = os.path.join(
-        os.path.dirname(temp_course_files), manifest_data["content_file"]
-    )
+    content_path = os.path.join(os.path.dirname(temp_course_files), manifest_data["content_file"])
 
     course = course_loader.load_course_content(
         content_filepath=content_path,
@@ -46,9 +44,7 @@ def test_load_course_content_success(temp_course_files):
 def test_load_glossary_success(temp_course_files):
     """Tests loading a valid glossary file."""
     manifest_data = course_loader.load_manifest(temp_course_files)
-    glossary_path = os.path.join(
-        os.path.dirname(temp_course_files), manifest_data["glossary_file"]
-    )
+    glossary_path = os.path.join(os.path.dirname(temp_course_files), manifest_data["glossary_file"])
 
     glossary = glossary_loader.load_glossary(
         glossary_path,
@@ -76,7 +72,63 @@ def test_round_trip_serialization(sample_course_data, tmp_path):
     assert len(reloaded_data["units"]) == len(sample_course_data.units)
     assert reloaded_data["units"][0]["title"] == sample_course_data.units[0].title
     assert len(reloaded_data["units"][0]["lessons"][0]["exercises"]) == 2
-    assert (
-        reloaded_data["units"][0]["lessons"][0]["exercises"][0]["type"]
-        == "translate_to_target"
+    assert reloaded_data["units"][0]["lessons"][0]["exercises"][0]["type"] == "translate_to_target"
+
+
+def test_exercise_id_serialization_and_deserialization():
+    """Tests Exercise ID serialization, deserialization, and pronunciation text preservation."""
+    # Test with explicit id
+    ex = Exercise(
+        exercise_id="custom_id_123",
+        id="custom_id_123",
+        type="pronunciation",
+        target_pronunciation_text="bonjour",
     )
+    content_dict = ex.to_content_dict()
+    assert content_dict["id"] == "custom_id_123"
+    assert content_dict["type"] == "pronunciation"
+    assert content_dict["target_pronunciation_text"] == "bonjour"
+
+    # Deserialization via from_dict
+    reconstructed = Exercise.from_dict(content_dict)
+    assert reconstructed.id == "custom_id_123"
+    assert reconstructed.exercise_id == "custom_id_123"
+    assert reconstructed.target_pronunciation_text == "bonjour"
+
+    # Deserialization pronunciation_practice type
+    ex_practice = Exercise(
+        exercise_id="practice_id",
+        type="pronunciation_practice",
+        target_pronunciation_text="guten tag",
+    )
+    practice_dict = ex_practice.to_content_dict()
+    assert practice_dict["id"] == "practice_id"
+    assert practice_dict["target_pronunciation_text"] == "guten tag"
+    reconstructed_practice = Exercise.from_dict(practice_dict)
+    assert reconstructed_practice.target_pronunciation_text == "guten tag"
+
+
+def test_load_lesson_stable_id():
+    """Tests that _load_lesson uses existing id or generates fallback id."""
+    lesson_data = {
+        "lesson_id": "les_01",
+        "title": "Lesson 1",
+        "exercises": [
+            {
+                "id": "stable_ex_id_99",
+                "type": "translate_to_target",
+                "prompt": "Hi",
+                "answer": "Chào",
+            },
+            {"type": "translate_to_target", "prompt": "Bye", "answer": "Tạm biệt"},
+        ],
+    }
+    lesson = course_loader._load_lesson(lesson_data, "unit_01", "vi", "en")
+    assert lesson is not None
+    assert len(lesson.exercises) == 2
+    # First exercise had explicit id
+    assert lesson.exercises[0].id == "stable_ex_id_99"
+    assert lesson.exercises[0].exercise_id == "stable_ex_id_99"
+    # Second exercise falls back to lesson_id_ex{index}
+    assert lesson.exercises[1].id == "les_01_ex1"
+    assert lesson.exercises[1].exercise_id == "les_01_ex1"

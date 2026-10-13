@@ -83,13 +83,13 @@ class BaseTranscriptionTask(QRunnable):
                 self.signals.finished.emit(self.exercise_id, result)
             except Exception as e:
                 logger.error(
-                    f"Background Task: Error during transcription for "
-                    f"{self.exercise_id}: {e}",
+                    f"Background Task: Error during transcription for {self.exercise_id}: {e}",
                     exc_info=True,
                 )
                 self.signals.error.emit(self.exercise_id, str(e))
         finally:
             import os
+
             for path in self.cleanup_paths:
                 try:
                     if os.path.exists(path):
@@ -124,9 +124,7 @@ def resample_audio(input_path: str, target_sr: int, engine_name: str) -> str | N
             output_path = input_path.replace(".wav", f"_resampled_vosk_{target_sr}.wav")
 
         with av.open(input_path) as in_container:
-            in_stream = next(
-                (s for s in in_container.streams if s.type == "audio"), None
-            )
+            in_stream = next((s for s in in_container.streams if s.type == "audio"), None)
             if in_stream is None:
                 logger.error(f"No audio streams found in {input_path}")
                 return None

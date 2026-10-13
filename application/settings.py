@@ -10,9 +10,7 @@ ORG_NAME = "CooperElektrik"  # Used for QStandardPaths, QSettings etc.
 MANIFEST_FILENAME = "manifest.yaml"
 COURSES_DIR = "courses"  # The top-level directory containing all course folders
 ASSETS_DIR = "assets"  # Directory for shared assets like sounds
-IMAGES_DIR = os.path.join(
-    ASSETS_DIR, "images"
-)  # Directory for images like splash screen
+IMAGES_DIR = os.path.join(ASSETS_DIR, "images")  # Directory for images like splash screen
 SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")  # Sub-directory for sound effects
 LOCALIZATION_DIR = "localization"  # Directory containing .qm files
 
@@ -32,9 +30,7 @@ QSETTINGS_KEY_SOUND_VOLUME = "audio/sound_volume"
 QSETTINGS_KEY_FONT_SIZE = "ui/font_size"
 QSETTINGS_KEY_AUTOPLAY_AUDIO = "audio/autoplay_audio_enabled"
 QSETTINGS_KEY_AUTOSHOW_HINTS = "ui/autoshow_hints_enabled"
-QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN = (
-    "onboarding/global_seen_v1"  # v1 for future updates
-)
+QSETTINGS_KEY_GLOBAL_ONBOARDING_SEEN = "onboarding/global_seen_v1"  # v1 for future updates
 QSETTINGS_KEY_LOCALE = "ui/locale"
 QSETTINGS_KEY_AUDIO_INPUT_DEVICE = "audio/input_device"
 QSETTINGS_KEY_INITIAL_AUDIO_SETUP_DONE = "onboarding/initial_audio_setup_v1"

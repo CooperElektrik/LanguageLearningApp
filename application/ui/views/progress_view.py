@@ -132,9 +132,7 @@ class ProgressView(QWidget):
             if widget:
                 widget.deleteLater()
 
-    def _add_achievement(
-        self, title: str, description: str, is_unlocked: bool, icon_filename: str
-    ):
+    def _add_achievement(self, title: str, description: str, is_unlocked: bool, icon_filename: str):
         """Adds a single achievement display to the grid layout."""
 
         achievement_frame = QFrame()
@@ -157,13 +155,9 @@ class ProgressView(QWidget):
         pixmap = QPixmap(icon_path)
         if pixmap.isNull():
             pixmap = (
-                self.style()
-                .standardIcon(QStyle.StandardPixmap.SP_DialogNoButton)
-                .pixmap(64, 64)
+                self.style().standardIcon(QStyle.StandardPixmap.SP_DialogNoButton).pixmap(64, 64)
             )
-            logger.warning(
-                f"Achievement icon not found: {icon_path}. Using default icon."
-            )
+            logger.warning(f"Achievement icon not found: {icon_path}. Using default icon.")
 
         # Apply grayscale effect if locked
         if not is_unlocked:
@@ -187,17 +181,13 @@ class ProgressView(QWidget):
         title_label = QLabel(title)
         title_label.setObjectName("achievement_title_label")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        achievement_layout.addWidget(
-            title_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        achievement_layout.addWidget(title_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
 
         desc_label = QLabel(description)
         desc_label.setObjectName("achievement_description_label")
         desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc_label.setWordWrap(True)
-        achievement_layout.addWidget(
-            desc_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        achievement_layout.addWidget(desc_label, stretch=1, alignment=Qt.AlignmentFlag.AlignCenter)
 
         row = self.achievements_grid_layout.count() // 3  # 3 columns per row
         col = self.achievements_grid_layout.count() % 3
@@ -205,18 +195,14 @@ class ProgressView(QWidget):
 
     def refresh_view(self):
         """Refreshes all dynamic content in the progress view."""
-        self.xp_value_label.setText(
-            self.tr("{0} XP").format(self.progress_manager.get_total_xp())
-        )
+        self.xp_value_label.setText(self.tr("{0} XP").format(self.progress_manager.get_total_xp()))
 
         current_streak = self.progress_manager.get_current_streak()
         self.streak_value_label.setText(self.tr("{0} Days").format(current_streak))
 
         if current_streak > 0:
             self.streak_value_label.setProperty("active_streak", True)
-            self.streak_description_label.setText(
-                self.tr("Keep up the consistent work!")
-            )
+            self.streak_description_label.setText(self.tr("Keep up the consistent work!"))
         else:
             self.streak_value_label.setProperty("active_streak", False)
             self.streak_description_label.setText(self.tr("Start a new streak today!"))
@@ -229,7 +215,9 @@ class ProgressView(QWidget):
         self.retention_desc_label.setText(
             self.tr("Estimated Memory Retention: {0}%").format(avg_retention)
         )
-        learning_count = max(0, retention_stats["learned_count"] - retention_stats["mastered_count"])
+        learning_count = max(
+            0, retention_stats["learned_count"] - retention_stats["mastered_count"]
+        )
         self.retention_breakdown_label.setText(
             self.tr("Mastered: {0}  |  Learning: {1}  |  Due for Review: {2}").format(
                 retention_stats["mastered_count"], learning_count, retention_stats["due_count"]

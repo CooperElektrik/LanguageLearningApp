@@ -106,12 +106,8 @@ class HelpDialog(QDialog):
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(self.tr("Search for a question..."))
-        search_icon = self.style().standardIcon(
-            QStyle.StandardPixmap.SP_FileDialogDetailedView
-        )
-        self.search_input.addAction(
-            search_icon, QLineEdit.ActionPosition.LeadingPosition
-        )
+        search_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView)
+        self.search_input.addAction(search_icon, QLineEdit.ActionPosition.LeadingPosition)
         self.search_input.textChanged.connect(self._on_search_changed)
         top_bar_layout.addWidget(self.search_input)
 
@@ -223,9 +219,7 @@ class HelpDialog(QDialog):
                     ),
                 },
                 "2": {
-                    "question": self.tr(
-                        "How do I return to the course selection screen?"
-                    ),
+                    "question": self.tr("How do I return to the course selection screen?"),
                     "answer": self.tr(
                         "Use the 'File' menu and select 'Return to Course Selection'."
                     ),
@@ -261,9 +255,7 @@ class HelpDialog(QDialog):
             },
             self.tr("Whisper vs. VOSK"): {
                 "7": {
-                    "question": self.tr(
-                        "What are the main differences between Whisper and VOSK?"
-                    ),
+                    "question": self.tr("What are the main differences between Whisper and VOSK?"),
                     "answer": self.tr(
                         "Whisper models are generally more accurate and support a wider range of languages, but they are larger and require more computational resources (especially for larger models). "
                         "VOSK models are typically smaller, faster, and can run efficiently on less powerful hardware, but they are language-specific and may not be as accurate as Whisper for all use cases. "

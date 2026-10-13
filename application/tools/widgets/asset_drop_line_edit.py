@@ -3,7 +3,8 @@
 import logging
 import os
 import shutil
-from PySide6.QtCore import Qt, Signal
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLineEdit, QMessageBox
 
 logger = logging.getLogger(__name__)
@@ -117,20 +118,26 @@ class AssetDropLineEdit(QLineEdit):
 
         if not self.course_root_dir:
             # If no course directory saved yet, just use basename in standard folder
-            return os.path.join("assets", f"{self.asset_type}s", os.path.basename(full_file_path)).replace("\\", "/")
+            return os.path.join(
+                "assets", f"{self.asset_type}s", os.path.basename(full_file_path)
+            ).replace("\\", "/")
 
         dest_dir = os.path.join(self.course_root_dir, "assets", f"{self.asset_type}s")
         os.makedirs(dest_dir, exist_ok=True)
         dest_filename = os.path.basename(full_file_path)
         dest_full_path = os.path.join(dest_dir, dest_filename)
 
-        if not os.path.exists(dest_full_path) or os.path.abspath(full_file_path) != os.path.abspath(dest_full_path):
+        if not os.path.exists(dest_full_path) or os.path.abspath(full_file_path) != os.path.abspath(
+            dest_full_path
+        ):
             try:
                 shutil.copy2(full_file_path, dest_full_path)
                 logger.info(f"Copied dropped asset '{full_file_path}' to '{dest_full_path}'")
             except Exception as e:
                 logger.error(f"Failed to copy dropped asset: {e}")
-                QMessageBox.warning(self, "Asset Copy Error", f"Could not copy asset to course folder: {e}")
+                QMessageBox.warning(
+                    self, "Asset Copy Error", f"Could not copy asset to course folder: {e}"
+                )
                 return None
 
         rel_path = os.path.join("assets", f"{self.asset_type}s", dest_filename).replace("\\", "/")

@@ -36,9 +36,7 @@ class CourseOverviewView(QWidget):
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Course Title
-        self.course_title_label = (
-            QLabel()
-        )  # Will be set in refresh_view or retranslateUi
+        self.course_title_label = QLabel()  # Will be set in refresh_view or retranslateUi
         self.course_title_label.setObjectName("course_title_label")  # For QSS
         self.course_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(self.course_title_label)
@@ -79,9 +77,7 @@ class CourseOverviewView(QWidget):
         review_buttons_layout = QHBoxLayout()
         self.start_review_button = QPushButton(self.tr("Review Due"))
         self.start_review_button.setObjectName("start_review_button_main")
-        self.start_review_button.clicked.connect(
-            self.start_review_session_requested.emit
-        )
+        self.start_review_button.clicked.connect(self.start_review_session_requested.emit)
         review_buttons_layout.addWidget(self.start_review_button)
 
         self.start_weak_review_button = QPushButton(self.tr("Review Weak"))
@@ -89,9 +85,7 @@ class CourseOverviewView(QWidget):
         self.start_weak_review_button.setToolTip(
             self.tr("Review items you struggle with the most.")
         )
-        self.start_weak_review_button.clicked.connect(
-            self.start_weakest_review_requested.emit
-        )
+        self.start_weak_review_button.clicked.connect(self.start_weakest_review_requested.emit)
         review_buttons_layout.addWidget(self.start_weak_review_button)
 
         srs_layout.addLayout(review_buttons_layout)
@@ -142,9 +136,7 @@ class CourseOverviewView(QWidget):
             completed_in_unit = sum(
                 1
                 for les in unit.lessons
-                if self.progress_manager.is_lesson_completed(
-                    les.lesson_id, self.course_manager
-                )
+                if self.progress_manager.is_lesson_completed(les.lesson_id, self.course_manager)
             )
             unit_title_text = (
                 f"{unit.title} ({completed_in_unit}/{len(unit.lessons)} completed)"
@@ -189,8 +181,8 @@ class CourseOverviewView(QWidget):
                     if is_unlocked or is_completed:
                         lesson_button.setEnabled(True)
                         lesson_button.clicked.connect(
-                            lambda checked=False, lid=lesson.lesson_id: (
-                                self.lesson_selected.emit(lid)
+                            lambda checked=False, lid=lesson.lesson_id: self.lesson_selected.emit(
+                                lid
                             )
                         )
                     else:
@@ -226,9 +218,7 @@ class CourseOverviewView(QWidget):
 
         all_exercises = self.course_manager.get_all_exercises()
         retention_stats = self.progress_manager.get_retention_stats(all_exercises)
-        self.retention_badge_label.setText(
-            f"{retention_stats['average_retention']}% Retention"
-        )
+        self.retention_badge_label.setText(f"{retention_stats['average_retention']}% Retention")
 
         all_exercises = self.course_manager.get_all_exercises()
         due_exercises_count = len(
@@ -244,9 +234,7 @@ class CourseOverviewView(QWidget):
             )
             self.start_review_button.setEnabled(True)
         else:
-            self.due_count_label.setText(
-                self.tr("No exercises due for review right now!")
-            )
+            self.due_count_label.setText(self.tr("No exercises due for review right now!"))
             self.start_review_button.setEnabled(False)
 
         self.start_weak_review_button.setEnabled(weak_exercises_count > 0)

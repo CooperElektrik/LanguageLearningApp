@@ -99,9 +99,7 @@ class CourseButton(QPushButton):
         right_panel_layout.setContentsMargins(
             0, 0, 0, 0
         )  # No internal margins for the panel itself
-        right_panel_layout.setSpacing(
-            10
-        )  # Space between separator and metadata text block
+        right_panel_layout.setSpacing(10)  # Space between separator and metadata text block
 
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.VLine)
@@ -133,23 +131,17 @@ class CourseButton(QPushButton):
             language_label.setObjectName("course_button_metadata_label")
             metadata_text_layout.addWidget(language_label)
 
-        right_panel_layout.addLayout(
-            metadata_text_layout
-        )  # Add labels layout to the right panel
+        right_panel_layout.addLayout(metadata_text_layout)  # Add labels layout to the right panel
         # Set a fixed width for the entire right panel to ensure consistent alignment across buttons.
         # This value may need adjustment based on font, language, and content length.
         right_panel_widget.setFixedWidth(260)
-        main_layout.addWidget(
-            right_panel_widget, 0
-        )  # Add panel to main layout, no stretch factor
+        main_layout.addWidget(right_panel_widget, 0)  # Add panel to main layout, no stretch factor
 
         self.setLayout(main_layout)
 
 
 class CourseSelectionView(QWidget):
-    course_selected = Signal(
-        str
-    )  # Emits the absolute path to the course's manifest.yaml
+    course_selected = Signal(str)  # Emits the absolute path to the course's manifest.yaml
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -159,9 +151,7 @@ class CourseSelectionView(QWidget):
 
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(
-            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
-        )
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(10, 10, 10, 10)
@@ -268,16 +258,12 @@ class CourseSelectionView(QWidget):
                         manifest_path,
                     )
                     button.clicked.connect(
-                        lambda checked=False, p=manifest_path: (
-                            self.course_selected.emit(p)
-                        )
+                        lambda checked=False, p=manifest_path: self.course_selected.emit(p)
                     )
                     self.courses_layout.addWidget(button)
                     found_courses = True
                 except Exception as e:
-                    logger.warning(
-                        f"Could not load manifest for course '{course_dir_name}': {e}"
-                    )
+                    logger.warning(f"Could not load manifest for course '{course_dir_name}': {e}")
 
         if not found_courses:
             self._render_empty_state()
@@ -335,7 +321,9 @@ class CourseSelectionView(QWidget):
         QMessageBox.information(
             self,
             self.tr("Starter Course"),
-            self.tr("Starter course was not found in the search directories. Try refreshing or importing an .lcpkg file."),
+            self.tr(
+                "Starter course was not found in the search directories. Try refreshing or importing an .lcpkg file."
+            ),
         )
 
     def _on_import_course_clicked(self):
@@ -371,4 +359,3 @@ class CourseSelectionView(QWidget):
         self.import_button.setText(self.tr("Import Package (.lcpkg)..."))
         self.refresh_button.setText(self.tr("Refresh"))
         logger.debug("CourseSelectionView retranslated.")
-

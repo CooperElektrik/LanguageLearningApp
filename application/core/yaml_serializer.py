@@ -3,16 +3,25 @@ from typing import Any
 
 import yaml
 
-from .models import Course, GlossaryEntry
+from .models import Course, Exercise, GlossaryEntry
 
 logger = logging.getLogger(__name__)
+
+
+def exercise_to_yaml_data(exercise: Exercise) -> dict[str, Any]:
+    """
+    Converts an Exercise object into a dictionary structure suitable for
+    saving to YAML, ensuring 'id' is preserved.
+    """
+    return exercise.to_content_dict()
 
 
 def course_to_yaml_data(course: Course) -> dict[str, Any]:
     """
     Converts a Course object hierarchy into a dictionary structure suitable for
     dumping as the main course content YAML file.
-    Delegates serialization to the models' to_dict() and to_content_dict() methods.
+    Delegates serialization to the models' to_dict() and to_content_dict() methods,
+    preserving exercise IDs.
     """
     # The Course model's to_dict() method is designed to return the top-level
     # dictionary structure for the content file (e.g., {"units": [...]}).
@@ -39,9 +48,7 @@ def save_course_to_yaml(course: Course, filepath: str):
     except OSError as e:
         logger.error(f"Error writing course content file {filepath}: {e}")
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred while saving course content {filepath}: {e}"
-        )
+        logger.error(f"An unexpected error occurred while saving course content {filepath}: {e}")
     return False
 
 
@@ -50,17 +57,13 @@ def save_manifest_to_yaml(manifest_data: dict[str, Any], filepath: str):
     logger.info(f"Attempting to save manifest to {filepath}")
     try:
         with open(filepath, "w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                manifest_data, f, indent=2, sort_keys=False, allow_unicode=True
-            )
+            yaml.safe_dump(manifest_data, f, indent=2, sort_keys=False, allow_unicode=True)
         logger.info(f"Manifest saved successfully to {filepath}")
         return True
     except OSError as e:
         logger.error(f"Error writing manifest file {filepath}: {e}")
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred while saving manifest {filepath}: {e}"
-        )
+        logger.error(f"An unexpected error occurred while saving manifest {filepath}: {e}")
     return False
 
 
@@ -69,15 +72,11 @@ def save_glossary_to_yaml(glossary_entries: list[GlossaryEntry], filepath: str):
     glossary_data_to_save = [entry.to_dict() for entry in glossary_entries]
     try:
         with open(filepath, "w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                glossary_data_to_save, f, indent=2, sort_keys=False, allow_unicode=True
-            )
+            yaml.safe_dump(glossary_data_to_save, f, indent=2, sort_keys=False, allow_unicode=True)
         logger.info(f"Glossary saved successfully to {filepath}")
         return True
     except OSError as e:
         logger.error(f"Error writing glossary file {filepath}: {e}")
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred while saving glossary {filepath}: {e}"
-        )
+        logger.error(f"An unexpected error occurred while saving glossary {filepath}: {e}")
     return False

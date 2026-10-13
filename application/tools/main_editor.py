@@ -20,12 +20,8 @@ except ImportError as e:
     logging.error(
         f"Failed to import core editor modules. Please ensure your Python environment is set up correctly. Error: {e}"
     )
-    print(
-        "If you are running this file directly, ensure your project root is in your Python path."
-    )
-    print(
-        f"Consider running with `python -m application.tools.main_editor` from '{project_root}'"
-    )
+    print("If you are running this file directly, ensure your project root is in your Python path.")
+    print(f"Consider running with `python -m application.tools.main_editor` from '{project_root}'")
     sys.exit(1)
 
 logging.basicConfig(

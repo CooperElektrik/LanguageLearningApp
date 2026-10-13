@@ -81,7 +81,5 @@ def load_glossary(
                 f"Error creating GlossaryEntry from entry at index {i} in {glossary_path}: {e}. Data: {entry_data}"
             )
 
-    logger.info(
-        f"Loaded {len(glossary_entries)} glossary entries from {glossary_path}."
-    )
+    logger.info(f"Loaded {len(glossary_entries)} glossary entries from {glossary_path}.")
     return glossary_entries

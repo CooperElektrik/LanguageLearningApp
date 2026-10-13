@@ -67,19 +67,13 @@ class SettingsDialog(QDialog):
         audio_layout.addWidget(self.autoplay_audio_checkbox)
 
         # Pronunciation/Microphone settings group (new, within Audio)
-        self.pronunciation_settings_group = QGroupBox(
-            self.tr("Pronunciation and Microphone")
-        )
-        self.pronunciation_settings_layout = QFormLayout(
-            self.pronunciation_settings_group
-        )
+        self.pronunciation_settings_group = QGroupBox(self.tr("Pronunciation and Microphone"))
+        self.pronunciation_settings_layout = QFormLayout(self.pronunciation_settings_group)
 
         self.stt_engine_combo = QComboBox()
         self.stt_engine_combo.addItems(settings.STT_ENGINES_AVAILABLE)
         self.stt_engine_combo.currentTextChanged.connect(self._on_stt_engine_changed)
-        self.pronunciation_settings_layout.addRow(
-            self.tr("STT Engine:"), self.stt_engine_combo
-        )
+        self.pronunciation_settings_layout.addRow(self.tr("STT Engine:"), self.stt_engine_combo)
 
         # Whisper-specific widgets
         self.whisper_model_combo = QComboBox()
@@ -98,17 +92,13 @@ class SettingsDialog(QDialog):
         cuda_status_layout.addWidget(self.cuda_availability_label)
         cuda_status_layout.addWidget(self.check_cuda_button)
         self.cuda_status_label = QLabel(self.tr("CUDA Status:"))
-        self.pronunciation_settings_layout.addRow(
-            self.cuda_status_label, cuda_status_layout
-        )
+        self.pronunciation_settings_layout.addRow(self.cuda_status_label, cuda_status_layout)
 
         # VOSK-specific widgets
         self.vosk_model_combo = QComboBox()
         self._populate_vosk_models()
         self.vosk_model_label = QLabel(self.tr("VOSK Model:"))
-        self.pronunciation_settings_layout.addRow(
-            self.vosk_model_label, self.vosk_model_combo
-        )
+        self.pronunciation_settings_layout.addRow(self.vosk_model_label, self.vosk_model_combo)
 
         self.unload_model_button = QPushButton(self.tr("Unload Model from Memory"))
         self.unload_model_button.clicked.connect(self._unload_model)
@@ -128,9 +118,7 @@ class SettingsDialog(QDialog):
         self.volume_label = QLabel(self.tr("Volume:"))
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
-        self.volume_slider.valueChanged.connect(
-            utils.update_sound_volume
-        )  # Live update
+        self.volume_slider.valueChanged.connect(utils.update_sound_volume)  # Live update
 
         volume_layout.addWidget(self.volume_label)
         volume_layout.addWidget(self.volume_slider)
@@ -153,17 +141,13 @@ class SettingsDialog(QDialog):
         self.font_size_slider.setMaximum(14)  # Max font size
         self.font_size_slider.setValue(settings.DEFAULT_FONT_SIZE)  # Initial value
         self.font_size_slider.valueChanged.connect(self._update_font_size_label)
-        self.font_size_label = QLabel(
-            str(settings.DEFAULT_FONT_SIZE) + " pt"
-        )  # Initial label
+        self.font_size_label = QLabel(str(settings.DEFAULT_FONT_SIZE) + " pt")  # Initial label
         font_size_layout = QHBoxLayout()
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_label)
         ui_layout.addRow(self.tr("Font Size:"), font_size_layout)
 
-        self.autoshow_hints_checkbox = QCheckBox(
-            self.tr("Show hints automatically in exercises")
-        )
+        self.autoshow_hints_checkbox = QCheckBox(self.tr("Show hints automatically in exercises"))
         ui_layout.addRow(self.autoshow_hints_checkbox)  # Add as a new row
 
         self.reset_ui_button = QPushButton(self.tr("Reset UI Settings to Default"))
@@ -192,9 +176,7 @@ class SettingsDialog(QDialog):
         )
         dev_layout.addRow(self.dev_mode_checkbox)
 
-        self.reset_onboarding_button = QPushButton(
-            self.tr("Reset Onboarding Message Flag")
-        )
+        self.reset_onboarding_button = QPushButton(self.tr("Reset Onboarding Message Flag"))
         self.reset_onboarding_button.setToolTip(
             self.tr(
                 "Allows the onboarding message to be shown again the next time a course is loaded."
@@ -213,9 +195,7 @@ class SettingsDialog(QDialog):
         )
         buttons.accepted.connect(self.save_settings)
         buttons.rejected.connect(self.reject)
-        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
-            self.apply_settings
-        )
+        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.apply_settings)
         dialog_main_layout.addWidget(buttons)
 
         self.load_settings()
@@ -237,9 +217,7 @@ class SettingsDialog(QDialog):
     def _populate_locale_combo(self):
         """Populates the locale combo box with available languages."""
         self.available_locales = utils.get_available_locales()  # Store for mapping
-        settings_widgets.populate_locale_combo(
-            self.locale_combo, self.available_locales
-        )
+        settings_widgets.populate_locale_combo(self.locale_combo, self.available_locales)
 
     def load_settings(self):
         """Loads settings from QSettings and updates the UI controls."""
@@ -270,15 +248,11 @@ class SettingsDialog(QDialog):
         index = self.audio_input_device_combo.findData(preferred_device_id)
         if index != -1:
             self.audio_input_device_combo.setCurrentIndex(index)
-        elif (
-            default_audio_input_id
-        ):  # Fallback to current system default if saved one not found
+        elif default_audio_input_id:  # Fallback to current system default if saved one not found
             logger.warning(
                 f"Preferred audio input device ID '{preferred_device_id}' not found. Defaulting to system default."
             )
-            default_index = self.audio_input_device_combo.findData(
-                default_audio_input_id
-            )
+            default_index = self.audio_input_device_combo.findData(default_audio_input_id)
             if default_index != -1:
                 self.audio_input_device_combo.setCurrentIndex(default_index)
         else:
@@ -300,9 +274,7 @@ class SettingsDialog(QDialog):
             settings.VOSK_MODEL_DEFAULT,
             type=str,
         )
-        self.vosk_model_combo.setCurrentText(
-            current_vosk_model if current_vosk_model else "None"
-        )
+        self.vosk_model_combo.setCurrentText(current_vosk_model if current_vosk_model else "None")
 
         current_stt_engine = self.q_settings.value(
             settings.QSETTINGS_KEY_STT_ENGINE,
@@ -310,9 +282,7 @@ class SettingsDialog(QDialog):
             type=str,
         )
         self.stt_engine_combo.setCurrentText(current_stt_engine)
-        self._on_stt_engine_changed(
-            current_stt_engine
-        )  # Manually trigger to set visibility
+        self._on_stt_engine_changed(current_stt_engine)  # Manually trigger to set visibility
 
         autoshow_hints_enabled = self.q_settings.value(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
@@ -418,12 +388,8 @@ class SettingsDialog(QDialog):
             self.autoplay_audio_checkbox.isChecked(),
         )
         # Save selected audio input device
-        selected_device_id = (
-            self.audio_input_device_combo.currentData()
-        )  # This is the ID string
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_device_id
-        )
+        selected_device_id = self.audio_input_device_combo.currentData()  # This is the ID string
+        self.q_settings.setValue(settings.QSETTINGS_KEY_AUDIO_INPUT_DEVICE, selected_device_id)
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_STT_ENGINE,
             self.stt_engine_combo.currentText(),
@@ -444,14 +410,10 @@ class SettingsDialog(QDialog):
                 else ""
             ),
         )
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_SOUND_VOLUME, self.volume_slider.value()
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_SOUND_VOLUME, self.volume_slider.value())
 
         # Save Font Size setting
-        self.q_settings.setValue(
-            settings.QSETTINGS_KEY_FONT_SIZE, self.font_size_slider.value()
-        )
+        self.q_settings.setValue(settings.QSETTINGS_KEY_FONT_SIZE, self.font_size_slider.value())
         self.q_settings.setValue(
             settings.QSETTINGS_KEY_AUTOSHOW_HINTS,
             self.autoshow_hints_checkbox.isChecked(),
@@ -495,13 +457,9 @@ class SettingsDialog(QDialog):
 
         self.unload_model_button.setText(self.tr("Unload Model from Memory"))
 
-        self.pronunciation_settings_group.setTitle(
-            self.tr("Pronunciation and Microphone")
-        )
+        self.pronunciation_settings_group.setTitle(self.tr("Pronunciation and Microphone"))
         # Retranslate labels within the QFormLayout for pronunciation settings
-        stt_engine_label = self.pronunciation_settings_layout.labelForField(
-            self.stt_engine_combo
-        )
+        stt_engine_label = self.pronunciation_settings_layout.labelForField(self.stt_engine_combo)
         if stt_engine_label:
             stt_engine_label.setText(self.tr("STT Engine:"))
 
@@ -511,15 +469,11 @@ class SettingsDialog(QDialog):
         if whisper_model_label:
             whisper_model_label.setText(self.tr("Whisper Model:"))
 
-        vosk_model_label = self.pronunciation_settings_layout.labelForField(
-            self.vosk_model_combo
-        )
+        vosk_model_label = self.pronunciation_settings_layout.labelForField(self.vosk_model_combo)
         if vosk_model_label:
             vosk_model_label.setText(self.tr("VOSK Model:"))
 
-        mic_label = self.pronunciation_settings_layout.labelForField(
-            self.audio_input_device_combo
-        )
+        mic_label = self.pronunciation_settings_layout.labelForField(self.audio_input_device_combo)
         if mic_label:
             mic_label.setText(self.tr("Microphone Input Device:"))
 
@@ -542,9 +496,7 @@ class SettingsDialog(QDialog):
         # Row labels in QFormLayout are tricky to retranslate directly without storing references.
         # For simplicity, we might accept that QFormLayout row labels don't auto-update
         # or we would need to store references to those QLabel objects.
-        self.autoshow_hints_checkbox.setText(
-            self.tr("Show hints automatically in exercises")
-        )
+        self.autoshow_hints_checkbox.setText(self.tr("Show hints automatically in exercises"))
         self.reset_ui_button.setText(self.tr("Reset UI Settings to Default"))
 
         # Developer Settings
@@ -599,9 +551,9 @@ class SettingsDialog(QDialog):
                 QMessageBox.information(
                     self,
                     self.tr("Model Unloaded"),
-                    self.tr(
-                        "Whisper model '{0}' has been unloaded from memory."
-                    ).format(loaded_model_name or "None"),
+                    self.tr("Whisper model '{0}' has been unloaded from memory.").format(
+                        loaded_model_name or "None"
+                    ),
                 )
             else:
                 QMessageBox.information(

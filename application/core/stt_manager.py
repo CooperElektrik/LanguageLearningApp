@@ -33,9 +33,7 @@ class STTManager(QObject):
         )
         self._is_loading = False
 
-        self.whisper_device, self.whisper_compute_type = (
-            get_best_whisper_device_config()
-        )
+        self.whisper_device, self.whisper_compute_type = get_best_whisper_device_config()
         logger.info(
             f"Whisper configured to use device='{self.whisper_device}' with compute_type='{self.whisper_compute_type}'."
         )
@@ -145,9 +143,7 @@ class STTManager(QObject):
             loader_task.signals.error.connect(self._on_vosk_model_load_error)
             self.thread_pool.start(loader_task)
         else:
-            logger.warning(
-                f"Unknown STT engine selected: {selected_engine}. Cannot load model."
-            )
+            logger.warning(f"Unknown STT engine selected: {selected_engine}. Cannot load model.")
             self.modelLoadingFinished.emit("Unknown", False)
 
     def _on_whisper_model_loaded(self, model_name: str, model_instance: object):
@@ -192,7 +188,6 @@ class STTManager(QObject):
     def _resample_audio(input_path: str, target_sr: int, engine_name: str) -> str | None:
         """Resamples an audio file to a target sample rate using PyAV (delegates to stt_common)."""
         return resample_audio(input_path, target_sr, engine_name)
-
 
     def transcribe_audio(
         self,
@@ -239,7 +234,5 @@ class STTManager(QObject):
             self.thread_pool.start(task)
             return task
         else:
-            logger.error(
-                f"Cannot transcribe: Unknown STT engine selected: {selected_engine}"
-            )
+            logger.error(f"Cannot transcribe: Unknown STT engine selected: {selected_engine}")
             return None

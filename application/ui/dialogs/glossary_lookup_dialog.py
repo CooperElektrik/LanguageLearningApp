@@ -55,8 +55,7 @@ class GlossaryLookupDialog(QDialog):
             filtered = [
                 entry
                 for entry in self.all_entries
-                if search_term in entry.word.lower()
-                or search_term in entry.translation.lower()
+                if search_term in entry.word.lower() or search_term in entry.translation.lower()
             ]
 
         for entry in filtered:

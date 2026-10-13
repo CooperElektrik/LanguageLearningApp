@@ -10,8 +10,6 @@ Tests verifying UI/UX overhaul components:
 
 import math
 import struct
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock
 
 from PySide6.QtWidgets import QApplication
 
@@ -80,6 +78,7 @@ def test_audio_level_meter_pcm_processing():
     app = QApplication.instance()
     if not app:
         import os
+
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         app = QApplication([])
 

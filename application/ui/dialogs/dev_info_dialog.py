@@ -93,9 +93,7 @@ class DevInfoDialog(QDialog):
                 "Author": course_manager.course.author,
                 "Manifest Path": course_manager.manifest_path,
                 "Content File": course_manager.manifest_data.get("content_file", "N/A"),
-                "Glossary File": course_manager.manifest_data.get(
-                    "glossary_file", "N/A"
-                ),
+                "Glossary File": course_manager.manifest_data.get("glossary_file", "N/A"),
                 "Number of Units": len(course_manager.course.units),
                 "Total Exercises": len(course_manager.get_all_exercises()),
                 "Total Glossary Entries": len(course_manager.glossary),
@@ -132,22 +130,16 @@ class DevInfoDialog(QDialog):
                 "Raw Data": current_exercise.raw_data,
             }
             # Filter out None values for cleaner display
-            exercise_details_filtered = {
-                k: v for k, v in exercise_details.items() if v is not None
-            }
+            exercise_details_filtered = {k: v for k, v in exercise_details.items() if v is not None}
             info_str.append(format_dict_for_display(exercise_details_filtered))
 
             # --- SRS Data for Current Exercise ---
             if progress_manager:
-                srs_data = progress_manager.get_exercise_srs_data(
-                    current_exercise.exercise_id
-                )
+                srs_data = progress_manager.get_exercise_srs_data(current_exercise.exercise_id)
                 info_str.append("-" * 20 + " SRS Data for Current Exercise " + "-" * 20)
                 info_str.append(format_dict_for_display(srs_data))
             info_str.append("\n")
-        elif (
-            course_manager.course
-        ):  # Only show this if a course is loaded but no exercise active
+        elif course_manager.course:  # Only show this if a course is loaded but no exercise active
             info_str.append("No exercise currently active in the player view.\n")
 
         # --- Progress Manager Info ---

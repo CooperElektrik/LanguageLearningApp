@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -27,6 +26,7 @@ SM2_MAX_INTERVAL_DAYS = 365 * 10  # Cap at 10 years
 @dataclass
 class Achievement:
     """Represents a user achievement."""
+
     id: str
     title: str
     description: str
@@ -65,9 +65,7 @@ def apply_sm2_review(
         srs_attrs["repetitions"] = 0
         srs_attrs["correct_in_a_row"] = 0
         srs_attrs["interval_days"] = 0  # Effectively makes it due immediately
-        srs_attrs["ease_factor"] = max(
-            SM2_MIN_EASE_FACTOR, srs_attrs["ease_factor"] - 0.20
-        )
+        srs_attrs["ease_factor"] = max(SM2_MIN_EASE_FACTOR, srs_attrs["ease_factor"] - 0.20)
     else:  # Correct answer
         srs_attrs["correct_in_a_row"] += 1
         srs_attrs["repetitions"] += 1
@@ -112,18 +110,12 @@ class ProgressManager:
             )
             app_data_base_dir = os.getcwd()
 
-        self.progress_data_dir = os.path.join(
-            app_data_base_dir, settings.PROGRESS_DATA_SUBDIR
-        )
-        self.progress_file = os.path.join(
-            self.progress_data_dir, f"{self.course_id}_progress.json"
-        )
+        self.progress_data_dir = os.path.join(app_data_base_dir, settings.PROGRESS_DATA_SUBDIR)
+        self.progress_file = os.path.join(self.progress_data_dir, f"{self.course_id}_progress.json")
         logger.debug(f"Progress file path set to: {self.progress_file}")
 
         # Initialize progress data structures with new 'is_initially_learned' flag
-        self.exercise_srs_data: dict[str, dict[str, Any]] = defaultdict(
-            default_srs_record
-        )
+        self.exercise_srs_data: dict[str, dict[str, Any]] = {}
         self.xp: int = 0
         self.last_study_date: date | None = None
         self.current_streak_days: int = 0
@@ -138,9 +130,7 @@ class ProgressManager:
         if not os.path.exists(self.progress_data_dir):
             try:
                 os.makedirs(self.progress_data_dir, exist_ok=True)
-                logger.info(
-                    f"Created progress data directory: {self.progress_data_dir}"
-                )
+                logger.info(f"Created progress data directory: {self.progress_data_dir}")
             except OSError as e:
                 logger.error(
                     f"Could not create progress data directory {self.progress_data_dir}: {e}. Application may not function correctly."
@@ -152,19 +142,13 @@ class ProgressManager:
         for ex_id, srs_attrs in raw_srs_data.items():
             # Convert datetime strings back to datetime objects
             if srs_attrs.get("last_reviewed"):
-                srs_attrs["last_reviewed"] = datetime.fromisoformat(
-                    srs_attrs["last_reviewed"]
-                )
+                srs_attrs["last_reviewed"] = datetime.fromisoformat(srs_attrs["last_reviewed"])
             if srs_attrs.get("next_review_due"):
-                srs_attrs["next_review_due"] = datetime.fromisoformat(
-                    srs_attrs["next_review_due"]
-                )
+                srs_attrs["next_review_due"] = datetime.fromisoformat(srs_attrs["next_review_due"])
 
             # Ensure new flag exists for older progress files
             if "is_initially_learned" not in srs_attrs:
-                srs_attrs["is_initially_learned"] = (
-                    srs_attrs.get("repetitions", 0) > 0
-                )
+                srs_attrs["is_initially_learned"] = srs_attrs.get("repetitions", 0) > 0
                 logger.info(
                     f"Populated 'is_initially_learned' for {ex_id} based on repetitions for backward compatibility."
                 )
@@ -185,9 +169,7 @@ class ProgressManager:
         logger.debug(f"Loaded {len(self.exercise_notes)} exercise notes.")
 
         self.lesson_progress = data.get("lesson_progress", {})
-        logger.debug(
-            f"Loaded progress for {len(self.lesson_progress)} lessons."
-        )
+        logger.debug(f"Loaded progress for {len(self.lesson_progress)} lessons.")
 
     def load_progress(self):
         """Loads progress data from the JSON file, with automatic backup fallback."""
@@ -228,10 +210,8 @@ class ProgressManager:
                     f"No progress file found for course '{self.course_id}' at {self.progress_file}. Starting fresh."
                 )
             else:
-                logger.warning(
-                    "Resetting all progress data due to critical loading failure."
-                )
-            self.exercise_srs_data = defaultdict(default_srs_record)
+                logger.warning("Resetting all progress data due to critical loading failure.")
+            self.exercise_srs_data = {}
             self.xp = 0
             self.last_study_date = None
             self.current_streak_days = 0
@@ -260,9 +240,7 @@ class ProgressManager:
             "schema_version": 1,
             "exercise_srs_data": srs_data_for_save,
             "xp": self.xp,
-            "last_study_date": (
-                self.last_study_date.isoformat() if self.last_study_date else None
-            ),
+            "last_study_date": (self.last_study_date.isoformat() if self.last_study_date else None),
             "current_streak_days": self.current_streak_days,
             "exercise_notes": self.exercise_notes,
             "lesson_progress": self.lesson_progress,
@@ -305,16 +283,13 @@ class ProgressManager:
                     pass
         return False
 
-
     def set_lesson_progress(self, lesson_id: str, last_exercise_index: int):
         """Updates the last viewed exercise index for a specific lesson."""
         if lesson_id not in self.lesson_progress:
             self.lesson_progress[lesson_id] = {}
         self.lesson_progress[lesson_id]["last_exercise_index"] = last_exercise_index
         self.lesson_progress[lesson_id]["last_updated"] = datetime.now().isoformat()
-        logger.debug(
-            f"Set lesson '{lesson_id}' progress to index {last_exercise_index}"
-        )
+        logger.debug(f"Set lesson '{lesson_id}' progress to index {last_exercise_index}")
         self.save_progress()
 
     def get_lesson_progress(self, lesson_id: str) -> int | None:
@@ -341,9 +316,7 @@ class ProgressManager:
     def get_total_xp(self) -> int:
         return self.xp
 
-    def _calculate_srs_parameters(
-        self, srs_attrs: dict[str, Any], quality_score_sm2: int
-    ):
+    def _calculate_srs_parameters(self, srs_attrs: dict[str, Any], quality_score_sm2: int):
         """Applies the (pure) SM-2 update to one exercise's SRS attributes."""
         apply_sm2_review(srs_attrs, quality_score_sm2)
         logger.debug(
@@ -367,6 +340,8 @@ class ProgressManager:
         logger.debug(
             f"Updating SRS data for exercise '{exercise_id}'. Correct: {is_correct}, Quality: {quality_score_sm2}"
         )
+        if exercise_id not in self.exercise_srs_data:
+            self.exercise_srs_data[exercise_id] = default_srs_record()
         srs_attrs = self.exercise_srs_data[exercise_id]
         srs_attrs["exercise_id"] = exercise_id
 
@@ -380,9 +355,7 @@ class ProgressManager:
 
         if xp_awarded > 0:
             self.xp += xp_awarded
-            logger.info(
-                f"XP awarded for '{exercise_id}': +{xp_awarded}. Total XP: {self.xp}"
-            )
+            logger.info(f"XP awarded for '{exercise_id}': +{xp_awarded}. Total XP: {self.xp}")
             self._update_study_streak()
 
         self.save_progress()
@@ -414,6 +387,7 @@ class ProgressManager:
         """
         Returns the current study streak in days.
         Checks if the streak is still valid based on the last study date.
+        Pure getter without side-effect mutations or disk saves.
         """
         today = date.today()
         if self.last_study_date is None:
@@ -422,14 +396,49 @@ class ProgressManager:
             return self.current_streak_days
         if self.last_study_date == today - timedelta(days=1):
             return self.current_streak_days
-        if self.current_streak_days != 0:
-            self.current_streak_days = 0  # Streak broken
-            self.save_progress()
         return 0
+
+    def get_exercise_progress(self, exercise_id: str) -> dict[str, Any]:
+        """
+        Returns the SRS attributes for an exercise without populating
+        or dirtying disk-bound records during pure read queries.
+        """
+        if exercise_id in self.exercise_srs_data:
+            return self.exercise_srs_data[exercise_id]
+        return default_srs_record()
 
     def get_exercise_srs_data(self, exercise_id: str) -> dict[str, Any]:
         """Returns the current SRS attributes for a specific exercise."""
-        return self.exercise_srs_data[exercise_id]
+        return self.get_exercise_progress(exercise_id)
+
+    def record_exercise_attempt(
+        self,
+        exercise_id: str,
+        is_correct: bool,
+        xp_awarded: int = 0,
+        quality_score_sm2: int = 4,
+    ):
+        """Records an exercise attempt, updating SRS attributes, streak, and persisting progress."""
+        self.update_exercise_srs_data(
+            exercise_id=exercise_id,
+            is_correct=is_correct,
+            xp_awarded=xp_awarded,
+            quality_score_sm2=quality_score_sm2,
+        )
+        if xp_awarded == 0 and is_correct:
+            self._update_study_streak()
+            self.save_progress()
+
+    def record_lesson_completion(self, lesson_id: str, xp_awarded: int = 0):
+        """Records the completion of a lesson, updating streak, clearing in-progress index, and persisting progress."""
+        if lesson_id not in self.lesson_progress:
+            self.lesson_progress[lesson_id] = {}
+        self.lesson_progress[lesson_id]["last_exercise_index"] = 0
+        self.lesson_progress[lesson_id]["last_updated"] = datetime.now().isoformat()
+        self._update_study_streak()
+        if xp_awarded > 0:
+            self.xp += xp_awarded
+        self.save_progress()
 
     def get_retention_stats(self, all_course_exercises: list[Exercise]) -> dict[str, Any]:
         """Calculates memory retention and mastery metrics using the SM-2 / Ebbinghaus decay model."""
@@ -480,28 +489,30 @@ class ProgressManager:
     ) -> list[Exercise]:
         """
         Returns a list of exercise objects that are due for review, sorted by due date.
-        An exercise is due if it has never been reviewed (repetitions == 0) OR
-        if its next_review_due date is in the past or present.
+        An exercise is only due for review if it has been learned (is_initially_learned is True
+        or repetitions > 0) AND its next review date is in the past or present.
+        Unlearned exercises are not marked due for review.
         """
         due_exercises = []
         now = datetime.now()
 
         for exercise in all_course_exercises:
-            srs_attrs = self.exercise_srs_data[exercise.exercise_id]
+            srs_attrs = self.get_exercise_progress(exercise.exercise_id)
+            is_learned = (
+                srs_attrs.get("is_initially_learned") is True or srs_attrs.get("repetitions", 0) > 0
+            )
+            next_due = srs_attrs.get("next_review_due") or srs_attrs.get("next_review_date")
 
-            if srs_attrs["repetitions"] == 0 or (
-                srs_attrs["next_review_due"] and srs_attrs["next_review_due"] <= now
-            ):
+            if is_learned and (next_due and next_due <= now):
                 due_exercises.append(exercise)
 
-        # Priority:
-        # 1. Overdue reviewed exercises (sorted by earliest next_review_due)
-        # 2. Unreviewed exercises (repetitions == 0)
+        # Priority: overdue reviewed exercises sorted by earliest next review date
         due_exercises.sort(
             key=lambda ex: (
-                0 if (self.exercise_srs_data[ex.exercise_id]["next_review_due"] and self.exercise_srs_data[ex.exercise_id]["next_review_due"] <= now) else 1,
-                self.exercise_srs_data[ex.exercise_id]["next_review_due"] or datetime.max,
-                self.exercise_srs_data[ex.exercise_id]["repetitions"],
+                self.get_exercise_progress(ex.exercise_id).get("next_review_due")
+                or self.get_exercise_progress(ex.exercise_id).get("next_review_date")
+                or datetime.max,
+                self.get_exercise_progress(ex.exercise_id).get("repetitions", 0),
             )
         )
 
@@ -516,16 +527,18 @@ class ProgressManager:
         """
         reviewed_exercises = []
         for exercise in all_course_exercises:
-            srs_attrs = self.exercise_srs_data[exercise.exercise_id]
+            srs_attrs = self.get_exercise_progress(exercise.exercise_id)
             # Only consider exercises that have been seen at least once
-            if srs_attrs["repetitions"] > 0:
+            if srs_attrs.get("repetitions", 0) > 0:
                 reviewed_exercises.append(exercise)
 
         # Sort by ease_factor (ascending), then by last_reviewed (oldest first)
         reviewed_exercises.sort(
             key=lambda ex: (
-                self.exercise_srs_data[ex.exercise_id]["ease_factor"],
-                self.exercise_srs_data[ex.exercise_id]["last_reviewed"] or datetime.min,
+                self.get_exercise_progress(ex.exercise_id).get(
+                    "ease_factor", SM2_DEFAULT_EASE_FACTOR
+                ),
+                self.get_exercise_progress(ex.exercise_id).get("last_reviewed") or datetime.min,
             )
         )
 
@@ -541,8 +554,8 @@ class ProgressManager:
             return True  # An empty lesson is considered completed
 
         for exercise in lesson_exercises:
-            srs_attrs = self.exercise_srs_data[exercise.exercise_id]
-            if not srs_attrs["is_initially_learned"]:  # Check the new flag
+            srs_attrs = self.get_exercise_progress(exercise.exercise_id)
+            if not srs_attrs.get("is_initially_learned", False):  # Check the new flag
                 return False  # At least one exercise not yet initially learned
         return True  # All exercises are initially learned
 
@@ -605,9 +618,7 @@ class ProgressManager:
         4. If Developer Mode is active, all lessons are considered unlocked.
         """
         if utils.is_developer_mode_active():
-            logger.debug(
-                f"Developer Mode: Lesson '{lesson_id}' is considered unlocked."
-            )
+            logger.debug(f"Developer Mode: Lesson '{lesson_id}' is considered unlocked.")
             return True
 
         all_units = course_manager_ref.get_units()
@@ -634,9 +645,7 @@ class ProgressManager:
         # Rule 3: Lesson is the first in its unit, but not the first unit overall.
         # Check if all lessons in the previous unit are completed.
         if unit_idx > 0 and lesson_idx == 0:
-            return self._is_previous_unit_completed(
-                unit_idx, all_units, course_manager_ref
-            )
+            return self._is_previous_unit_completed(unit_idx, all_units, course_manager_ref)
 
         return False  # Default to locked if no explicit unlock rule applies
 
@@ -655,11 +664,7 @@ class ProgressManager:
         all_completed = False
         if course_manager_ref and getattr(course_manager_ref, "course", None):
             units = course_manager_ref.get_units()
-            all_lessons = [
-                lesson
-                for unit in units
-                for lesson in unit.lessons
-            ]
+            all_lessons = [lesson for unit in units for lesson in unit.lessons]
             if all_lessons:
                 all_completed = all(
                     self.is_lesson_completed(lesson.lesson_id, course_manager_ref)
